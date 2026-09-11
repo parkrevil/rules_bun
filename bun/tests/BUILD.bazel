@@ -1,0 +1,37 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load(":action_test.bzl", "action_fixture", "hardening_emitted_test")
+load(":hardening_test.bzl", "hardening_test")
+load(":platform_transition.bzl", "with_platform")
+load(":semver_test.bzl", "semver_test_suite")
+
+package(default_visibility = ["//visibility:private"])
+
+semver_test_suite(name = "semver")
+
+action_fixture(name = "action_fixture")
+
+hardening_emitted_test(
+    name = "hardening_emitted_test",
+    target_under_test = ":action_fixture",
+)
+
+hardening_test(name = "hardening_test")
+
+[
+    [
+        with_platform(
+            name = "fixture_" + platform,
+            platform = "//bun/tests/platforms:" + platform,
+            target = [":action_fixture"],
+        ),
+        build_test(
+            name = "cross_" + platform + "_test",
+            targets = ["fixture_" + platform],
+        ),
+    ]
+    for platform in [
+        "darwin_aarch64",
+        "linux_aarch64",
+        "windows_x64",
+    ]
+]

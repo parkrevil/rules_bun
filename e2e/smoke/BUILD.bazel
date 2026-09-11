@@ -1,0 +1,3 @@
+load(":verify.bzl", "verify_toolchain")
+
+verify_toolchain(name = "verify")

@@ -1,0 +1,16 @@
+module(
+    name = "rules_bun",
+    bazel_compatibility = [">=9.2.0"],
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
+bun_dev.toolchain(bun_version = "1.4.2")
+use_repo(bun_dev, "bun_toolchains")
+
+register_toolchains(
+    "@bun_toolchains//:all",
+    dev_dependency = True,
+)
