@@ -19,7 +19,10 @@ bzl_library(
 bzl_library(
     name = "extensions",
     srcs = ["extensions.bzl"],
-    deps = [":repositories"],
+    deps = [
+        ":repositories",
+        "//bun/private:semver",
+    ],
 )
 
 bzl_library(
@@ -31,3 +34,17 @@ bzl_library(
         "//bun/private:versions",
     ],
 )
+
+[
+    starlark_doc_extract(
+        name = name + ".doc_extract",
+        src = name + ".bzl",
+        deps = [":" + name],
+    )
+    for name in [
+        "defs",
+        "extensions",
+        "repositories",
+        "toolchain",
+    ]
+]
