@@ -1,4 +1,7 @@
 load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@bazelrc-preset.bzl", "bazelrc_preset")
+
+bazelrc_preset(name = "preset")
 
 gazelle_binary(
     name = "gazelle_bin",

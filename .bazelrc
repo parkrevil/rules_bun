@@ -1,8 +1,6 @@
-common --enable_platform_specific_config
+import %workspace%/tools/preset.bazelrc
+
+common --config=ruleset
 common --lockfile_mode=error
-
-test --test_output=errors
-
-build --incompatible_strict_action_env
 
 try-import %workspace%/.bazelrc.user
