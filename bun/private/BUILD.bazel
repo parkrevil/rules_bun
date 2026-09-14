@@ -1,26 +1,6 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//bun:__subpackages__"])
-
-[
-    bzl_library(
-        name = name,
-        srcs = [name + ".bzl"],
-        visibility = ["//visibility:public"],
-    )
-    for name in [
-        "platforms",
-        "providers",
-        "semver",
-        "paths",
-        "versions",
-    ]
-]
-
-bzl_library(
-    name = "hardening",
-    srcs = ["hardening.bzl"],
-)
 
 bzl_library(
     name = "action",
@@ -33,4 +13,34 @@ bzl_library(
     srcs = ["toolchains_repo.bzl"],
     visibility = ["//visibility:public"],
     deps = [":platforms"],
+)
+
+bzl_library(
+    name = "hardening",
+    srcs = ["hardening.bzl"],
+)
+
+bzl_library(
+    name = "paths",
+    srcs = ["paths.bzl"],
+)
+
+bzl_library(
+    name = "platforms",
+    srcs = ["platforms.bzl"],
+)
+
+bzl_library(
+    name = "providers",
+    srcs = ["providers.bzl"],
+)
+
+bzl_library(
+    name = "semver",
+    srcs = ["semver.bzl"],
+)
+
+bzl_library(
+    name = "versions",
+    srcs = ["versions.bzl"],
 )

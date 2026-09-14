@@ -1,8 +1,6 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
-
-toolchain_type(name = "toolchain_type")
 
 bzl_library(
     name = "defs",
@@ -34,17 +32,3 @@ bzl_library(
         "//bun/private:versions",
     ],
 )
-
-[
-    starlark_doc_extract(
-        name = name + ".doc_extract",
-        src = name + ".bzl",
-        deps = [":" + name],
-    )
-    for name in [
-        "defs",
-        "extensions",
-        "repositories",
-        "toolchain",
-    ]
-]

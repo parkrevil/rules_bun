@@ -9,7 +9,7 @@ toolchain(
     name = "{platform}_toolchain",
     exec_compatible_with = {compatible_with},
     toolchain = "@{user_repo}_{platform}//:bun_toolchain",
-    toolchain_type = "@rules_bun//bun:toolchain_type",
+    toolchain_type = "@rules_bun//bun/toolchain:execution_type",
 )
 """.format(
             platform = platform,

@@ -13,7 +13,7 @@ def _fixture_impl(ctx):
 
 action_fixture = rule(
     implementation = _fixture_impl,
-    toolchains = ["//bun:toolchain_type"],
+    toolchains = ["//bun/toolchain:execution_type"],
 )
 
 _REQUIRED = [

@@ -9,7 +9,7 @@ def bun_action(
         progress_message = None,
         env = {},
         param_file = False):
-    toolchain = ctx.toolchains["//bun:toolchain_type"]
+    toolchain = ctx.toolchains["//bun/toolchain:execution_type"]
     bun = toolchain.buninfo.bun
     bunfig = empty_bunfig(ctx)
 

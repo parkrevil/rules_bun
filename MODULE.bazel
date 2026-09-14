@@ -3,8 +3,13 @@ module(
     bazel_compatibility = [">=9.2.0"],
 )
 
-bazel_dep(name = "bazel_skylib", version = "1.8.2")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "package_metadata", version = "0.0.13")
+bazel_dep(name = "platforms", version = "1.1.0")
+
+bazel_dep(name = "bazel_lib", version = "3.7.2", dev_dependency = True)
+bazel_dep(name = "bazel_skylib", version = "1.9.2", dev_dependency = True)
+bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.2", dev_dependency = True)
+bazel_dep(name = "gazelle", version = "0.54.0", dev_dependency = True, repo_name = "bazel_gazelle")
 
 bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
 bun_dev.toolchain(bun_version = "1.4.2")

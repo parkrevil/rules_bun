@@ -1,7 +1,8 @@
 common --enable_platform_specific_config
+common --lockfile_mode=error
 
 test --test_output=errors
 
 build --incompatible_strict_action_env
 
-try-import %workspace%/local.bazelrc
+try-import %workspace%/.bazelrc.user
