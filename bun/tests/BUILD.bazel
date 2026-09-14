@@ -17,21 +17,35 @@ hardening_emitted_test(
 
 hardening_test(name = "hardening_test")
 
-[
-    [
-        with_platform(
-            name = "fixture_" + platform,
-            platform = "//bun/tests/platforms:" + platform,
-            target = [":action_fixture"],
-        ),
-        build_test(
-            name = "cross_" + platform + "_test",
-            targets = ["fixture_" + platform],
-        ),
-    ]
-    for platform in [
-        "darwin_aarch64",
-        "linux_aarch64",
-        "windows_x64",
-    ]
-]
+with_platform(
+    name = "fixture_darwin_aarch64",
+    platform = "//bun/tests/platforms:darwin_aarch64",
+    target = [":action_fixture"],
+)
+
+build_test(
+    name = "cross_darwin_aarch64_test",
+    targets = [":fixture_darwin_aarch64"],
+)
+
+with_platform(
+    name = "fixture_linux_aarch64",
+    platform = "//bun/tests/platforms:linux_aarch64",
+    target = [":action_fixture"],
+)
+
+build_test(
+    name = "cross_linux_aarch64_test",
+    targets = [":fixture_linux_aarch64"],
+)
+
+with_platform(
+    name = "fixture_windows_x64",
+    platform = "//bun/tests/platforms:windows_x64",
+    target = [":action_fixture"],
+)
+
+build_test(
+    name = "cross_windows_x64_test",
+    targets = [":fixture_windows_x64"],
+)

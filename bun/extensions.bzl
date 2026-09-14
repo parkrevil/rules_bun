@@ -6,7 +6,7 @@ Only the root module may request toolchains under another name.
 
 Example:
 
-    bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
+    bun = use_extension("@parkrevil_rules_bun//bun:extensions.bzl", "bun")
     bun.toolchain(bun_version = "1.4.2")
     use_repo(bun, "bun_toolchains")
 
