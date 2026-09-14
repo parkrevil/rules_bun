@@ -1,3 +1,5 @@
+"""Version ordering used to pick one Bun version among several requests."""
+
 _MAX_SEGMENTS = 4
 
 def _parse_number(text, version):
@@ -12,6 +14,14 @@ def _parse_number(text, version):
     return int(text)
 
 def version_key(version):
+    """Returns the sort key of a version string.
+
+    Args:
+        version: Version string.
+
+    Returns:
+        Sort key.
+    """
     if not version:
         fail("버전 문자열이 비어 있다.")
 
@@ -36,6 +46,14 @@ def version_key(version):
     return (release, 0 if prerelease else 1, prerelease)
 
 def max_version(versions):
+    """Returns the highest version in a list.
+
+    Args:
+        versions: Version strings.
+
+    Returns:
+        Highest version string.
+    """
     if not versions:
         fail("버전 목록이 비어 있다.")
 

@@ -1,3 +1,5 @@
+"""Helper for running Bun in build actions."""
+
 load(":hardening.bzl", "empty_bunfig", "hardening_args")
 
 def bun_action(
@@ -9,6 +11,18 @@ def bun_action(
         progress_message = None,
         env = {},
         param_file = False):
+    """Runs Bun from the toolchain as a build action with hardening flags.
+
+    Args:
+        ctx: Rule context.
+        arguments: Arguments passed to Bun.
+        outputs: Output files.
+        inputs: Input files or depsets.
+        mnemonic: Action mnemonic.
+        progress_message: Progress message.
+        env: Environment variables.
+        param_file: Whether to pass arguments through a param file.
+    """
     toolchain = ctx.toolchains["//bun/toolchain:execution_type"]
     bun = toolchain.buninfo.bun
     bunfig = empty_bunfig(ctx)

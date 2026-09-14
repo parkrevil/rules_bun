@@ -10,6 +10,7 @@ gazelle_binary(
 
 gazelle(
     name = "gazelle",
+    extra_args = ["-exclude=bun/tests"],
     gazelle = "gazelle_bin",
     visibility = ["//visibility:public"],
 )

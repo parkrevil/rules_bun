@@ -1,3 +1,5 @@
+"""Rule that runs the registered Bun toolchain to check rules_bun as an external module."""
+
 load("@rules_bun//bun:defs.bzl", "BUN_TOOLCHAIN_TYPE")
 
 _WRITE_VERSION = "await Bun.write(Bun.argv[Bun.argv.length - 1], Bun.version + \"\\n\")"

@@ -1,3 +1,5 @@
+"""Settings for every package in rules_bun."""
+
 repo(
     default_package_metadata = ["//:package_metadata"],
 )

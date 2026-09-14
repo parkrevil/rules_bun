@@ -1,11 +1,26 @@
+"""Repository rules that fetch Bun releases and declare their toolchains.
+
+Most users should use the `bun` module extension from `//bun:extensions.bzl`
+instead of calling these directly.
+"""
+
 load("//bun/private:platforms.bzl", "PLATFORMS")
 load("//bun/private:toolchains_repo.bzl", "toolchains_repo")
 load("//bun/private:versions.bzl", "TOOL_VERSIONS")
 
 _ATTRS = {
-    "bun_version": attr.string(mandatory = True),
-    "integrity": attr.string(),
-    "platform": attr.string(mandatory = True, values = PLATFORMS.keys()),
+    "bun_version": attr.string(
+        doc = "Bun version to download.",
+        mandatory = True,
+    ),
+    "integrity": attr.string(
+        doc = "Subresource Integrity of the release archive. Defaults to the value rules_bun knows for `bun_version`.",
+    ),
+    "platform": attr.string(
+        doc = "Platform of the release archive, such as `linux-x64`.",
+        mandatory = True,
+        values = PLATFORMS.keys(),
+    ),
 }
 
 def _bun_repo_impl(repository_ctx):
@@ -65,10 +80,22 @@ bun_toolchain(
 
 bun_repositories = repository_rule(
     _bun_repo_impl,
+    doc = "Downloads a Bun release for one platform and defines a `bun_toolchain` target for it.",
     attrs = _ATTRS,
 )
 
 def bun_register_toolchains(name, integrity = {}, **kwargs):
+    """Creates Bun repositories for every supported platform and a repository of toolchains.
+
+    Creates `<name>_<platform>` for each platform and `<name>_toolchains`,
+    whose `:all` target can be passed to `register_toolchains`.
+
+    Args:
+        name: Base name of the generated repositories.
+        integrity: Subresource Integrity of each release archive, keyed by platform.
+            Missing platforms use the values rules_bun knows for the version.
+        **kwargs: Passed to `bun_repositories`, such as `bun_version`.
+    """
     for platform in PLATFORMS.keys():
         bun_repositories(
             name = name + "_" + platform,

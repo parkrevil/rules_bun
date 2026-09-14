@@ -1,3 +1,5 @@
+"""Test that the hardening flags stop Bun from loading a `bunfig.toml` preload or an `.env` file."""
+
 load("//bun:defs.bzl", "BUN_TOOLCHAIN_TYPE")
 load("//bun/private:hardening.bzl", "empty_bunfig", "hardening_args")
 load("//bun/private:paths.bzl", "runfiles_path")

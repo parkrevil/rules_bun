@@ -1,3 +1,5 @@
+"""Integrity of the Bun release archives that rules_bun knows."""
+
 TOOL_VERSIONS = {
     "1.4.2": {
         "linux-x64": "sha256-NjaPrvdSeHXV/6UuU81IAhdB8qg+tiCKjdZAaNQiqRM=",

@@ -1,3 +1,5 @@
+"""Repository rule that declares a toolchain target for every Bun platform."""
+
 load(":platforms.bzl", "PLATFORMS")
 
 def _toolchains_repo_impl(repository_ctx):

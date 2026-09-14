@@ -1,3 +1,5 @@
+"""Unit tests for `//bun/private:semver.bzl`."""
+
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("//bun/private:semver.bzl", "max_version", "version_key")
 

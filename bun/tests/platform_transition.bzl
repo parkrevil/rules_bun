@@ -1,3 +1,5 @@
+"""Rule that builds targets for another platform, used to test toolchain resolution."""
+
 def _transition_impl(_settings, attr):
     return {"//command_line_option:platforms": str(attr.platform)}
 

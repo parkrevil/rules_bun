@@ -1,3 +1,5 @@
+"""Helpers for runfiles paths."""
+
 def runfiles_path(ctx, file):
     if file.short_path.startswith("../"):
         return file.short_path[3:]

@@ -1,3 +1,5 @@
+"""Analysis test that `bun_action` emits the hardening flags."""
+
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//bun/private:action.bzl", "bun_action")
 

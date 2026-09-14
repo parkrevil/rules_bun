@@ -1,3 +1,5 @@
+"""Platforms that Bun publishes release archives for, with their Bazel constraints."""
+
 PLATFORMS = {
     "linux-x64": struct(
         compatible_with = [

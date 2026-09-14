@@ -2,7 +2,6 @@ load("@package_metadata//licenses/rules:license.bzl", "license")
 load("@package_metadata//purl:purl.bzl", "purl")
 load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
 
-# gazelle:exclude bun/tests
 # gazelle:map_kind bzl_library bzl_library @bazel_lib//:bzl_library.bzl
 
 package_metadata(

@@ -1,13 +1,43 @@
+"""Module extension that registers Bun toolchains.
+
+Every module may request a Bun version under the default name, `bun`.
+When several versions are requested under the same name, the highest one is used.
+Only the root module may request toolchains under another name.
+
+Example:
+
+    bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
+    bun.toolchain(bun_version = "1.4.2")
+    use_repo(bun, "bun_toolchains")
+
+    register_toolchains("@bun_toolchains//:all")
+"""
+
 load("//bun:repositories.bzl", "bun_register_toolchains")
 load("//bun/private:semver.bzl", "max_version")
 
 _DEFAULT_NAME = "bun"
 
-bun_toolchain = tag_class(attrs = {
-    "name": attr.string(default = _DEFAULT_NAME),
-    "bun_version": attr.string(mandatory = True),
-    "integrity": attr.string_dict(),
-})
+bun_toolchain = tag_class(
+    doc = "Requests a Bun toolchain.",
+    attrs = {
+        "name": attr.string(
+            doc = "Base name of the generated repositories. Only the root module may change it.",
+            default = _DEFAULT_NAME,
+        ),
+        "bun_version": attr.string(
+            doc = "Bun version to download, such as `1.4.2`.",
+            mandatory = True,
+        ),
+        "integrity": attr.string_dict(
+            doc = """\
+Subresource Integrity of each release archive, keyed by platform
+(`linux-x64`, `linux-aarch64`, `darwin-x64`, `darwin-aarch64`, `windows-x64`).
+Required for every platform when rules_bun does not know `bun_version`.
+""",
+        ),
+    },
+)
 
 def _toolchain_extension(module_ctx):
     registrations = {}
@@ -22,17 +52,7 @@ def _toolchain_extension(module_ctx):
             registrations[toolchain.name][toolchain.bun_version] = toolchain.integrity
 
     for name, declared in registrations.items():
-        versions = sorted(declared.keys())
-        if len(versions) > 1:
-            selected = max_version(versions)
-
-            print("NOTE: bun 툴체인 {} 에 여러 버전 {} 이 있어 {} 를 선택했다.".format(
-                name,
-                versions,
-                selected,
-            ))
-        else:
-            selected = versions[0]
+        selected = max_version(declared.keys())
 
         bun_register_toolchains(
             name = name,
@@ -44,6 +64,7 @@ def _toolchain_extension(module_ctx):
 
 bun = module_extension(
     implementation = _toolchain_extension,
+    doc = "Registers the Bun toolchains requested with `bun.toolchain`.",
     tag_classes = {"toolchain": bun_toolchain},
     os_dependent = False,
     arch_dependent = False,
