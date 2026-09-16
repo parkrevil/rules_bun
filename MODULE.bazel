@@ -1,5 +1,5 @@
 module(
-    name = "parkrevil_rules_bun",
+    name = "rules_bun",
     bazel_compatibility = [">=9.2.0"],
 )
 

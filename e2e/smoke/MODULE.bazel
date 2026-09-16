@@ -1,14 +1,14 @@
-module(name = "parkrevil_rules_bun_e2e_smoke")
+module(name = "rules_bun_e2e_smoke")
 
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "parkrevil_rules_bun", version = "0.0.0")
+bazel_dep(name = "rules_bun", version = "0.0.0")
 local_path_override(
-    module_name = "parkrevil_rules_bun",
+    module_name = "rules_bun",
     path = "../..",
 )
 
-bun = use_extension("@parkrevil_rules_bun//bun:extensions.bzl", "bun")
+bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
 bun.toolchain(bun_version = "1.4.2")
 use_repo(bun, "bun_toolchains")
 

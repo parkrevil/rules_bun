@@ -61,7 +61,7 @@ def _bun_repo_impl(repository_ctx):
 
     exe = ".exe" if platform.startswith("windows") else ""
 
-    repository_ctx.file("BUILD.bazel", """load("@parkrevil_rules_bun//bun:toolchain.bzl", "bun_toolchain")
+    repository_ctx.file("BUILD.bazel", """load("@rules_bun//bun:toolchain.bzl", "bun_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
