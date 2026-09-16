@@ -1,6 +1,12 @@
 {
   "homepage": "https://github.com/parkrevil/rules_bun",
-  "maintainers": [],
+  "maintainers": [
+    {
+      "github": "parkrevil",
+      "github_user_id": 6592422,
+      "name": "Junhyung Park"
+    }
+  ],
   "repository": ["github:parkrevil/rules_bun"],
   "versions": [],
   "yanked_versions": {}
