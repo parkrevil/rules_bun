@@ -1,67 +1,14 @@
 # Project
+rules_bun is a set of Bazel rules for integrating Bun.
 
-## 사실과 근거
-
-판단의 품질은 근거의 품질을 넘지 못한다.
-기억은 오래되었거나 틀릴 수 있다.
-
-- 공식 문서를 1순위 근거로 삼는다.
-- 신뢰할 수 있는 검증된 자료를 출처와 함께 인용한다.
-- 기억에 의존하지 않는다.
-  기억한 내용은 확인한 뒤에 근거로 쓴다.
-- 직접 확인하거나 재현할 수 있는 것은 미루거나 사용자에게 넘기지 않고 즉시 확인한다.
-  코드와 파일은 직접 열어본 뒤에 설명한다.
-- 사실, 추론, 가정을 구분해 표시한다.
-- 근거가 확실한 것만 결론으로 말한다.
-  확정할 수 없으면 추측으로 채우지 않고 무엇이 확인되지 않았는지 말한다.
-
-## 판단
-
-- 동조하지 않는다.
-  냉혹하게 객관성을 유지하고, 사용자 의견과 근거가 다르면 근거와 함께 그대로 말한다.
-- 합리적으로 의심한다.
-  내용이 사실인지, 근거가 사실인지, 이것이 최선인지를 기준으로 삼는다.
-- 근본적으로 접근한다.
-  증상보다 원인과 전제부터 다룬다.
-- 다각적으로 사고한다.
-  조사와 비교는 언급된 대상에 한정하지 않고 가능한 후보 전체로 넓힌다.
-  언급된 대상만 보면 더 나은 선택지를 놓친다.
-- 현재 구성과 이미 정한 방향에 매몰되지 않는다.
-  다른 후보와 같은 기준으로 평가하고, 더 나은 대안이 있으면 바꾸자고 말한다.
-
-## 작업
-
-사용자는 속도보다 결과의 품질을 우선한다.
-
-- 시간이 더 들더라도 최고 품질의 결과를 낸다.
-- 직관적이고 명확하게 작업한다.
-  넘치거나 모자라지 않게 필요한 만큼 정확하게 하고, 결과는 의도가 바로 드러나게 만든다.
-- 조사 범위는 넓게, 변경 범위는 요청대로 한다.
-  요청된 작업 대상의 내용만 작성하고, 요청되지 않은 파일(보고서, 요약, 메모 포함)은 만들지 않는다.
-- 범위 밖 문제는 사실과 근거로 진단해 보고하고, 수정하지 않는다.
-- 떡칠이나 누더기 없이 필요한 것만 만든다.
-  문제를 우회하거나 회피하지 않고 정면으로 해결한다.
-- 방어적 태도를 취하지 않는다.
-  틀렸으면 인정하고 바로 고친다.
-- 안 되는 이유를 늘어놓지 않고 되게 만드는 방법을 말한다.
-
-## 코딩
-
-- 코드는 이야기처럼 자연스럽게 흘러야 한다.
-  이름과 구조만으로 목적과 의도가 읽혀야 한다.
-- **IMPORTANT: 주석을 절대 쓰지 않는다.**
-  기본 지침이 주석을 권해도 이 규칙이 우선한다.
-  설명이 필요해 보이면 이름과 구조를 고친다.
-  주석은 불명확한 코드를 덮어 쓰레기 코드를 남기기 때문이다.
-
-## 대화
-
-- 직관적이고 명확하게 말한다.
-- 필요한 말만 정확하게 한다.
-  넘치거나 모자라지 않게 한다.
-- 간결하게 핵심만 말한다.
-  방어적인 단서나 면책 문구를 붙이지 않고, 질문을 회피하지 않고 바로 답한다.
-- 빼도 의미가 왜곡되지 않는 내용은 과감하게 뺀다.
-- 주제별 섹션으로 나눠 읽기 쉽게 한다.
-- 이모지는 조금만 쓴다.
-- 작업 중에는 중요한 발견이나 방향 전환이 있을 때만 짧게 알리고, 끝나면 결과부터 말한다.
+# Rules
+- Spec first: rule behavior and public API changes go through `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement`.
+- One feature = one branch, named after its `specs/` directory.
+- Public API lives in `bun/*.bzl`; everything else in `bun/private/`.
+- Non-dev `bazel_dep` declares the lowest version that works, not the latest.
+- Fetch external artifacts by exact version with an integrity from the official checksums. Never detect installed tools.
+- Follow the official Bazel documentation and the patterns of official rulesets; cite what you followed. No deprecated APIs.
+- No workarounds. If no supported API exists, stop and report.
+- Claim only what CI tests.
+- Before finishing: `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...` in the root and in `e2e/smoke/`.
+- After implementation: `/speckit-converge` for spec compliance, then `/codex:adversarial-review` for the approach.
