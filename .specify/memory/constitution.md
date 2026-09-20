@@ -1,50 +1,57 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# rules_bun Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Public API Boundary
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The public API is `bun/*.bzl` and `//bun/toolchain:execution_type`. Implementation MUST live in
+`bun/private/`, tests in `bun/tests/` and `e2e/smoke/`. Anything outside the public API MAY change
+in any release, so it MUST NOT be documented as usable by consumers.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Tested Claims
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Every behavior change MUST add or update a test in `bun/tests/` or `e2e/smoke/`. Documentation,
+specs, and reports MUST claim only behavior a test covers, and MUST name the platforms the test
+actually ran on. Behavior that no test covers is reported as unverified, never as working.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Pinned, Verified Downloads
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Repository rules MUST download an exact version and verify it with an `integrity` value taken from
+the upstream checksum file. They MUST NOT detect, probe, or run host-installed tools, and build
+actions MUST run only tools that come from a registered toolchain. This is what makes a build
+reproducible on a machine that is not the author's.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Minimum Dependency Versions
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Minimal version selection turns every `bazel_dep` version into a requirement on consumers.
+A `bazel_dep` without `dev_dependency = True` MUST declare the lowest version the ruleset works
+with, and MUST be raised only when a change needs the newer version. `e2e/smoke` consumes the
+ruleset with exactly those declared versions and MUST keep passing.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Supported APIs Only
+
+Rules MUST follow bazel.build documentation and the patterns of bazelbuild and bazel-contrib
+rulesets, and the source URLs MUST be recorded in the feature's `research.md`. Deprecated APIs are
+forbidden. Every API MUST be used as its documentation specifies; undocumented behavior MUST NOT be
+relied on. Feature detection for an API that every Bazel version in `bazel_compatibility` provides
+is forbidden. When no supported API does the job, work stops and the gap is reported instead of
+worked around.
+
+### VI. Shell-Free Actions and Tests
+
+Rules MUST run tools with `ctx.actions.run` and `Args`. `ctx.actions.run_shell`, generated shell
+scripts, and shell test launchers are forbidden, because Bash is absent on Windows, a supported
+platform. Tests that need a launcher MUST use a purpose-made rule from bazel-skylib.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution governs every change in this repository, including changes made outside the Spec
+Kit workflow. `AGENTS.md` holds the workflow; this file holds the rules the workflow enforces.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments MUST go through `speckit-constitution` and carry a version bump: MAJOR for removing or
+redefining a principle, MINOR for adding one or materially expanding guidance, PATCH for
+clarifications. Every plan records its Constitution Check, `speckit-analyze` treats a conflict with
+a MUST principle as critical, and such a conflict blocks the change until either the change or this
+constitution is amended.
+
+**Version**: 1.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
