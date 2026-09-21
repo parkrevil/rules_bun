@@ -7,3 +7,9 @@ feature.json
 
 # Per-machine extension config overrides.
 extensions/*/local-config.yml
+
+# Catalog caches and the install lock the CLI writes while running.
+.workflow-install.lock
+workflows/.cache/
+extensions/.cache/
+workflows/runs/

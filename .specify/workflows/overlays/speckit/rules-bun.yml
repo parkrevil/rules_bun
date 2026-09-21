@@ -1,0 +1,163 @@
+id: "rules-bun"
+extends: "speckit"
+priority: 10
+edits:
+  # speckit.specify writes specs/<NNN>-<name>/ and .specify/feature.json but never
+  # touches git. The start point is explicit: without it the branch is cut from
+  # whatever HEAD happens to be, folding the previous feature's commits into this
+  # one. stdout is the feature directory, used by the steps below.
+  - insert_after: specify
+    step:
+      id: feature-branch
+      type: shell
+      run: |
+        dir=$(sed -n 's/.*"feature_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .specify/feature.json)
+        [ -n "$dir" ] || { echo "feature_directory missing from .specify/feature.json" >&2; exit 1; }
+        [ -f "$dir/spec.md" ] || { echo "$dir/spec.md missing; .specify/feature.json is stale" >&2; exit 1; }
+        case "$dir" in
+          *"'"*) echo "a feature directory containing an apostrophe is unsupported: $dir" >&2; exit 1 ;;
+        esac
+        branch=$(basename "$dir")
+        if git show-ref --verify --quiet "refs/heads/$branch"; then
+          git switch "$branch" >&2 || exit 1
+        else
+          git switch -c "$branch" main >&2 || exit 1
+        fi
+        printf '%s' "$dir"
+
+  # on_reject: retry pauses so the operator can act and resume. abort would end
+  # the run for good: resume accepts only a paused or failed run.
+  - replace: review-spec
+    step:
+      id: review-spec
+      type: gate
+      message: "Reject to pause: /speckit-clarify asks questions and cannot run from here, so run it in your own session, then `specify workflow resume`."
+      show_file: "{{ steps.feature-branch.output.stdout }}/spec.md"
+      options: [approve, reject]
+      on_reject: retry
+
+  - replace: review-plan
+    step:
+      id: review-plan
+      type: gate
+      message: "research.md holds the sources this plan relied on. Reject to pause, revise, then `specify workflow resume`."
+      show_file: "{{ steps.feature-branch.output.stdout }}/plan.md"
+      options: [approve, reject]
+      on_reject: retry
+
+  # Every command step needs its own `integration`: the stock workflow sets no
+  # top-level integration key, so the engine default is None and an omitted key
+  # fails at dispatch.
+  - insert_before: implement
+    step:
+      id: analyze
+      command: speckit.analyze
+      integration: "{{ inputs.integration }}"
+
+  - insert_before: implement
+    step:
+      id: review-analysis
+      type: gate
+      message: "The analysis is above. Reject to pause and fix the artifacts, then `specify workflow resume`."
+      options: [approve, reject]
+      on_reject: retry
+
+  # The loop stops silently when it hits max_iterations, so assert the
+  # convergence it was supposed to reach.
+  - insert_after: implement
+    step:
+      id: converged
+      type: shell
+      run: |
+        dir='{{ steps.feature-branch.output.stdout }}'
+        grep -Eq '^[[:space:]]*- \[[ xX]\][[:space:]]+T[0-9]+' "$dir/tasks.md" ||
+          { echo "$dir/tasks.md holds no task lines" >&2; exit 1; }
+        n=$(grep -c '^[[:space:]]*- \[ \]' "$dir/tasks.md")
+        [ $? -le 1 ] || exit 1
+        [ "$n" = "0" ] || { echo "build stopped with $n unchecked task(s) in $dir/tasks.md" >&2; exit 1; }
+
+  # gazelle rewrites BUILD files in place and exits 0 either way, so it
+  # normalizes the tree before the reviews read it; prek and the two bazel test
+  # invocations are what gate.
+  - insert_after: implement
+    step:
+      id: verify
+      type: shell
+      timeout: 3600
+      run: |
+        bazel run //:gazelle && prek run --all-files && bazel test //... && \
+        (cd e2e/smoke && bazel test //...)
+
+  # Two independent adversarial reviews. Prompt steps stream to the terminal and
+  # record an empty stdout, so both are readable at the final gate only in the
+  # terminal that ran them.
+  - insert_after: implement
+    step:
+      id: review-claude
+      type: prompt
+      integration: claude
+      timeout: 1800
+      prompt: |
+        Adversarially review this branch against
+        {{ steps.feature-branch.output.stdout }}/spec.md and
+        .specify/memory/constitution.md. Report only defects you can point at with a
+        file:line. Do not modify, stage, or commit any file.
+
+  # The Codex plugin's own review command, not a bare `codex exec`: it carries the
+  # challenge-the-approach framing, and --wait suppresses the question it would
+  # otherwise ask. No --base: any base forces branch mode and diffs <base>...HEAD,
+  # and this workflow never commits, so the review would see an empty diff.
+  # continue_on_error is kept here only, because the plugin is third-party and
+  # optional; its absence, a login failure and the timeout all surface as one
+  # step_continue_on_error entry in the run log.
+  - insert_after: implement
+    step:
+      id: review-codex
+      type: prompt
+      integration: claude
+      timeout: 1800
+      continue_on_error: true
+      prompt: "/codex:adversarial-review --wait"
+
+  - insert_after: implement
+    step:
+      id: review-final
+      type: gate
+      message: "Converged, checks passed. The Claude review is above; so is the Codex review unless the run log shows step_continue_on_error for review-codex."
+      options: [approve, reject]
+      on_reject: abort
+
+  # converge appends tasks and hands back to implement, so the loop repeats while
+  # tasks.md still has unchecked boxes. A gate cannot live in here: a nested pause
+  # re-runs the whole body on resume. The condition cannot read converge's report
+  # either, because command steps stream their output. max_iterations is 4 total
+  # passes, and the engine never re-checks the condition after the last one.
+  - replace: implement
+    step:
+      id: build
+      type: do-while
+      max_iterations: 4
+      condition: '{{ steps.remaining-tasks.output.stdout != "0" }}'
+      steps:
+        - id: implement-pass
+          command: speckit.implement
+          integration: "{{ inputs.integration }}"
+
+        - id: converge
+          command: speckit.converge
+          integration: "{{ inputs.integration }}"
+
+        # An interpolated value lands in the script as shell syntax, so the
+        # feature directory is quoted and feature-branch refuses a path holding
+        # an apostrophe. A tasks.md that is missing, or that holds no task lines,
+        # is a broken run rather than convergence.
+        - id: remaining-tasks
+          type: shell
+          run: |
+            dir='{{ steps.feature-branch.output.stdout }}'
+            [ -f "$dir/tasks.md" ] || { echo "$dir/tasks.md is missing" >&2; exit 1; }
+            grep -Eq '^[[:space:]]*- \[[ xX]\][[:space:]]+T[0-9]+' "$dir/tasks.md" ||
+              { echo "$dir/tasks.md holds no task lines" >&2; exit 1; }
+            n=$(grep -c '^[[:space:]]*- \[ \]' "$dir/tasks.md")
+            [ $? -le 1 ] || exit 1
+            printf '%s' "$n"
