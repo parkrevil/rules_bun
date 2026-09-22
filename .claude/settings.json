@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bazel test //...)",
+      "Bash(bazel query *)",
+      "Bash(gh search *)",
+      "Bash(bazel run //:gazelle)",
+      "Bash(bazel build //...)",
+      "Bash(bazel test //bun/tests:all)",
+      "Bash(bazel mod deps *)",
+      "Bash(bazel help *)",
+      "Bash(npm view *)",
+      "Bash(bazel --version)",
+      "Bash(bazel mod graph *)",
+      "Bash(bazel info *)"
+    ]
+  }
+}
