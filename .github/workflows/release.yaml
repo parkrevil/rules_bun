@@ -10,7 +10,7 @@ permissions:
   actions: read
 jobs:
   release:
-    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.7.0
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@1d798ff015ed0696433e01e2c3ccbb2abefadad7 # v7.7.0
     with:
       release_files: rules_bun-*.tar.gz
       prerelease: false
@@ -21,11 +21,12 @@ jobs:
     uses: ./.github/workflows/publish.yaml
     with:
       tag_name: ${{ github.ref_name }}
-    secrets: inherit
+    secrets:
+      BCR_PUBLISH_TOKEN: ${{ secrets.BCR_PUBLISH_TOKEN }}
   finalize:
     needs: publish
     runs-on: ubuntu-latest
     steps:
-      - uses: softprops/action-gh-release@v3.0.3
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ github.ref_name }}
