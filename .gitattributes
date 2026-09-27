@@ -1,0 +1,8 @@
+/.agents export-ignore
+/.claude export-ignore
+/.specify export-ignore
+/specs export-ignore
+/AGENTS.md export-ignore
+/CLAUDE.md export-ignore
+/MODULE.bazel.lock export-ignore
+/e2e/smoke/MODULE.bazel.lock export-ignore
