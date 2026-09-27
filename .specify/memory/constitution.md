@@ -43,6 +43,30 @@ Rules MUST run tools with `ctx.actions.run` and `Args`. `ctx.actions.run_shell`,
 scripts, and shell test launchers are forbidden, because Bash is absent on Windows, a supported
 platform. Tests that need a launcher MUST use a purpose-made rule from bazel-skylib.
 
+### VII. Releases Come From Tags
+
+A release version exists only as a git tag. `MODULE.bazel` MUST NOT declare a `version`; the
+registry's copy, which `publish-to-bcr` patches from the tag, is the source of truth.
+
+Choosing the version is an editorial act and MUST NOT be delegated to a tool. Minimal version
+selection assumes every new version of a module is backwards compatible, and `compatibility_level`
+is deprecated, so a published version cannot afterwards be corrected by any mechanism. The only
+defence against a break that the version does not announce is a build failure that states the
+migration path, and a breaking change MUST ship with one.
+
+A release tag MUST be `vMAJOR.MINOR.PATCH`: exactly three numeric segments, no prerelease or build
+metadata. Bazel accepts looser formats, but `release.yaml` triggers only on `v*.*.*` and
+`publish-to-bcr` derives the version by stripping the `v`.
+
+The registry is add-only, so a published version MUST NOT be re-cut. A defect is fixed forward in a
+new version; a version that must no longer be used is yanked in `metadata.json` with a reason,
+except the latest version, which is deprecated instead.
+
+A tag MUST NOT be cut from a commit whose `CI` run did not succeed. Nothing enforces this: the
+release build runs `bazel test //...` for the root module on Linux only, while `.bcr/presubmit.yml`
+runs `e2e/smoke` on debian11, macos, ubuntu2204 and windows, so an untested platform fails in the
+registry instead.
+
 ## Governance
 
 This constitution governs every change in this repository, including changes made outside the Spec
@@ -54,4 +78,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-20
+**Version**: 1.1.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-27
