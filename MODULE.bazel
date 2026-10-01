@@ -14,7 +14,7 @@ bazel_dep(name = "gazelle", version = "0.54.0", dev_dependency = True, repo_name
 
 bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
 bun_dev.toolchain(bun_version = "1.4.2")
-use_repo(bun_dev, "bun_toolchains")
+use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-x64", "bun_toolchains", "bun_windows-x64")
 
 register_toolchains(
     "@bun_toolchains//:all",

@@ -5,7 +5,7 @@ load("@rules_bun//bun:defs.bzl", "BUN_TOOLCHAIN_TYPE")
 _WRITE_VERSION = "await Bun.write(Bun.argv[Bun.argv.length - 1], Bun.version + \"\\n\")"
 
 def _impl(ctx):
-    bun = ctx.toolchains[BUN_TOOLCHAIN_TYPE].buninfo.bun
+    buninfo = ctx.toolchains[BUN_TOOLCHAIN_TYPE].buninfo
     out = ctx.actions.declare_file(ctx.label.name + ".txt")
 
     args = ctx.actions.args()
@@ -13,12 +13,13 @@ def _impl(ctx):
     args.add(out)
 
     ctx.actions.run(
-        executable = bun,
+        executable = buninfo.bun,
         arguments = [args],
         outputs = [out],
-        tools = [bun],
+        tools = buninfo.tool_files,
+        toolchain = BUN_TOOLCHAIN_TYPE,
         mnemonic = "BunVersion",
-        progress_message = "Bun 버전 확인 중 %{label}",
+        progress_message = "Checking the Bun version of %{label}",
     )
     return [DefaultInfo(files = depset([out]))]
 

@@ -1,51 +1,52 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load(":action_test.bzl", "action_fixture", "hardening_emitted_test")
-load(":hardening_test.bzl", "hardening_test")
-load(":platform_transition.bzl", "with_platform")
+load("//bun:toolchain.bzl", "bun_toolchain")
 load(":semver_test.bzl", "semver_test_suite")
+load(
+    ":toolchain_test.bzl",
+    "bun_bin_genrule_test",
+    "bun_bin_value_test",
+    "exec_cfg_test_suite",
+    "resolved_bun",
+    "toolchain_rejection_test_suite",
+    "toolchain_selection_test_suite",
+)
+load(":versions_test.bzl", "versions_test_suite")
 
 package(default_visibility = ["//visibility:private"])
 
 semver_test_suite(name = "semver")
 
-action_fixture(name = "action_fixture")
+versions_test_suite(name = "versions")
 
-hardening_emitted_test(
-    name = "hardening_emitted_test",
-    target_under_test = ":action_fixture",
+toolchain_selection_test_suite(name = "selection")
+
+toolchain_rejection_test_suite(name = "rejection")
+
+exec_cfg_test_suite(name = "exec_cfg")
+
+bun_toolchain(
+    name = "bun_bin_toolchain",
+    bun = "@bun_linux-x64//:bun",
+    version = "0.0.0",
 )
 
-hardening_test(name = "hardening_test")
-
-with_platform(
-    name = "fixture_darwin_aarch64",
-    platform = "//bun/tests/platforms:darwin_aarch64",
-    target = [":action_fixture"],
+bun_bin_value_test(
+    name = "bun_bin_value_test",
+    target_under_test = ":bun_bin_toolchain",
 )
 
-build_test(
-    name = "cross_darwin_aarch64_test",
-    targets = [":fixture_darwin_aarch64"],
+genrule(
+    name = "bun_bin_genrule",
+    outs = ["bun_bin_genrule.txt"],
+    cmd = "$(BUN_BIN) --version > $@",
+    cmd_bat = "$(BUN_BIN) --version > $@",
+    tags = ["manual"],
+    toolchains = ["//bun/toolchain:execution_type"],
 )
 
-with_platform(
-    name = "fixture_linux_aarch64",
-    platform = "//bun/tests/platforms:linux_aarch64",
-    target = [":action_fixture"],
-)
+resolved_bun(name = "bun_bin_resolved")
 
-build_test(
-    name = "cross_linux_aarch64_test",
-    targets = [":fixture_linux_aarch64"],
-)
-
-with_platform(
-    name = "fixture_windows_x64",
-    platform = "//bun/tests/platforms:windows_x64",
-    target = [":action_fixture"],
-)
-
-build_test(
-    name = "cross_windows_x64_test",
-    targets = [":fixture_windows_x64"],
+bun_bin_genrule_test(
+    name = "bun_bin_genrule_test",
+    resolved = ":bun_bin_resolved",
+    target_under_test = ":bun_bin_genrule",
 )

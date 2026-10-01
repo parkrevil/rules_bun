@@ -23,3 +23,62 @@ platform(
         "@platforms//cpu:x86_64",
     ],
 )
+
+platform(
+    name = "darwin_x64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "linux_x64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+# Platforms no Bun release supports. A hub toolchain that is missing one of its
+# constraints matches one of these, so the rejection tests fail.
+
+platform(
+    name = "darwin_riscv64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:riscv64",
+    ],
+)
+
+platform(
+    name = "linux_riscv64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:riscv64",
+    ],
+)
+
+platform(
+    name = "windows_riscv64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:riscv64",
+    ],
+)
+
+platform(
+    name = "freebsd_x64",
+    constraint_values = [
+        "@platforms//os:freebsd",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "freebsd_aarch64",
+    constraint_values = [
+        "@platforms//os:freebsd",
+        "@platforms//cpu:aarch64",
+    ],
+)
