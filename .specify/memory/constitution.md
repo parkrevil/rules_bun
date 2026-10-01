@@ -4,9 +4,13 @@
 
 ### I. Public API Boundary
 
-The public API is `bun/*.bzl` and `//bun/toolchain:execution_type`. Implementation MUST live in
-`bun/private/`, tests in `bun/tests/` and `e2e/smoke/`. Anything outside the public API MAY change
-in any release, so it MUST NOT be documented as usable by consumers.
+The public API is `bun/*.bzl`, `//bun/toolchain:execution_type` and `//bun/toolchain:target_type`.
+`execution_type` is resolved against the execution platform, for rules that run Bun in build
+actions; `target_type` is resolved against the target platform, for rules whose programs run there,
+and consumers MAY register their own toolchains for either, as rules-template, rules_python and
+rules_js allow for their runtime toolchain types. Implementation MUST live in `bun/private/`, tests
+in `bun/tests/` and `e2e/smoke/`. Anything outside the public API MAY change in any release, so it
+MUST NOT be documented as usable by consumers.
 
 ### II. Tested Claims
 
@@ -37,11 +41,20 @@ relied on. Feature detection for an API that every Bazel version in `bazel_compa
 is forbidden. When no supported API does the job, work stops and the gap is reported instead of
 worked around.
 
+A pattern or dependency from outside bazelbuild and bazel-contrib MAY be used only when the user
+approved it, and the feature's `research.md` MUST record its source, the approval, and why no
+bazelbuild or bazel-contrib pattern serves. Its own documentation then counts as the documentation
+it is used by. Approved so far: hermeticbuild/hermetic-launcher (BCR module `hermetic_launcher`),
+the shell-free launcher aspect-build/rules_js uses, approved on 2026-10-01 for launching programs
+and tests.
+
 ### VI. Shell-Free Actions and Tests
 
 Rules MUST run tools with `ctx.actions.run` and `Args`. `ctx.actions.run_shell`, generated shell
 scripts, and shell test launchers are forbidden, because Bash is absent on Windows, a supported
-platform. Tests that need a launcher MUST use a purpose-made rule from bazel-skylib.
+platform. This repository's own tests that need a launcher MUST use a purpose-made rule from
+bazel-skylib. Executable and test rules the ruleset provides to consumers MUST launch through a
+native executable or another mechanism that needs no shell, never a shell script.
 
 ### VII. Releases Come From Tags
 
@@ -78,4 +91,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-09-27
+**Version**: 1.2.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-01
