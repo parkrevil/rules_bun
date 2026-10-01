@@ -11,26 +11,19 @@ bzl_library(
     name = "toolchain",
     srcs = ["toolchain.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["//bun/private:providers"],
+    deps = ["//bun/private:toolchain"],
 )
 
 bzl_library(
     name = "extensions",
     srcs = ["extensions.bzl"],
     visibility = ["//visibility:public"],
-    deps = [
-        ":repositories",
-        "//bun/private:semver",
-    ],
+    deps = ["//bun/private:extensions"],
 )
 
 bzl_library(
     name = "repositories",
     srcs = ["repositories.bzl"],
     visibility = ["//visibility:public"],
-    deps = [
-        "//bun/private:platforms",
-        "//bun/private:toolchains_repo",
-        "//bun/private:versions",
-    ],
+    deps = ["//bun/private:repositories"],
 )

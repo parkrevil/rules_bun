@@ -1,6 +1,38 @@
 """Repository rule that declares a toolchain target for every Bun platform."""
 
-load(":platforms.bzl", "PLATFORMS")
+# Platforms that Bun publishes release archives for, with their Bazel constraints.
+PLATFORMS = {
+    "linux-x64": struct(
+        compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:x86_64",
+        ],
+    ),
+    "linux-aarch64": struct(
+        compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:aarch64",
+        ],
+    ),
+    "darwin-x64": struct(
+        compatible_with = [
+            "@platforms//os:macos",
+            "@platforms//cpu:x86_64",
+        ],
+    ),
+    "darwin-aarch64": struct(
+        compatible_with = [
+            "@platforms//os:macos",
+            "@platforms//cpu:aarch64",
+        ],
+    ),
+    "windows-x64": struct(
+        compatible_with = [
+            "@platforms//os:windows",
+            "@platforms//cpu:x86_64",
+        ],
+    ),
+}
 
 def _toolchains_repo_impl(repository_ctx):
     build_content = ""
@@ -21,8 +53,6 @@ toolchain(
 
     repository_ctx.file("BUILD.bazel", build_content)
 
-    if not hasattr(repository_ctx, "repo_metadata"):
-        return None
     return repository_ctx.repo_metadata(reproducible = True)
 
 toolchains_repo = repository_rule(

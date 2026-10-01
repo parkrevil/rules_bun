@@ -4,12 +4,12 @@ _MAX_SEGMENTS = 4
 
 def _parse_number(text, version):
     if not text:
-        fail("버전 \"{}\" 의 세그먼트가 비어 있다.".format(version))
+        fail("Version \"{}\" has an empty segment.".format(version))
     for ch in text.elems():
         if not ch.isdigit():
             fail(
-                "버전 \"{}\" 에 숫자가 아닌 세그먼트 \"{}\" 가 있다. ".format(version, text) +
-                "지원 형식은 `<숫자>(.<숫자>)*` 이며 뒤에 `-<prerelease>` 를 붙일 수 있다.",
+                "Version \"{}\" has a non-numeric segment \"{}\". ".format(version, text) +
+                "The supported format is `<number>(.<number>)*`, optionally followed by `-<prerelease>`.",
             )
     return int(text)
 
@@ -23,7 +23,7 @@ def version_key(version):
         Sort key.
     """
     if not version:
-        fail("버전 문자열이 비어 있다.")
+        fail("The version string is empty.")
 
     parts = version.split("-", 1)
     core = parts[0]
@@ -32,7 +32,7 @@ def version_key(version):
     segments = core.split(".")
     if len(segments) > _MAX_SEGMENTS:
         fail(
-            "버전 \"{}\" 의 세그먼트가 {} 개다. 최대 {} 개까지 지원한다.".format(
+            "Version \"{}\" has {} segments; at most {} are supported.".format(
                 version,
                 len(segments),
                 _MAX_SEGMENTS,
@@ -55,7 +55,7 @@ def max_version(versions):
         Highest version string.
     """
     if not versions:
-        fail("버전 목록이 비어 있다.")
+        fail("The version list is empty.")
 
     best = versions[0]
     best_key = version_key(best)
