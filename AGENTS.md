@@ -9,9 +9,9 @@ the structural baseline. Where they define a way, use it instead of designing on
 
 # Rules
 - Read and follow `.specify/memory/constitution.md` before changing anything.
-- Korean for the diagnostics a build prints — `fail()`, `progress_message`, test failure messages —
-  and for commit subjects after the conventional-commit type. English everywhere else, including
-  docstrings, `doc =` strings, and `specs/`.
+- English for everything in the repository: the diagnostics a build prints (`fail()`,
+  `progress_message`, test failure messages), commit messages, docstrings, `doc =` strings, and
+  `specs/`. The ruleset is for every Bazel user, not one language community.
 - A change under `bun/`, `e2e/`, or `MODULE.bazel` goes through
   `specify workflow run speckit -i spec="<description>"`. Answering a gate is the user's.
 - Before handing back a change: in the root, `bazel run //:gazelle`, `prek run --all-files`,
