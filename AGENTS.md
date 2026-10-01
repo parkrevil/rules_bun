@@ -1,7 +1,8 @@
 # Project
-rules_bun exposes a downloaded Bun release as a Bazel toolchain. A rule declares
-`BUN_TOOLCHAIN_TYPE` from `//bun:defs.bzl` and reads `ctx.toolchains[BUN_TOOLCHAIN_TYPE].buninfo`;
-registering a toolchain is the consuming module's job.
+rules_bun is a complete Bazel ruleset for Bun: what a repository needs to build, run and test a
+Bun project with Bazel. It provides a hermetic Bun toolchain, rules that run Bun programs and Bun
+tests, npm dependencies fetched from `bun.lock` with pinned, verified integrity, and bundling with
+`bun build`. Registering the toolchain is the consuming module's job.
 
 Follow the official documentation — bazel.build for Bazel, bun.com for Bun — and the official
 rulesets of bazelbuild and bazel-contrib as the reference, with `bazel-contrib/rules-template` as
