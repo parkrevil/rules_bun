@@ -53,7 +53,7 @@ and tests.
 Rules MUST run tools with `ctx.actions.run` and `Args`. `ctx.actions.run_shell`, generated shell
 scripts, and shell test launchers are forbidden, because Bash is absent on Windows, a supported
 platform. This repository's own tests that need a launcher MUST use a purpose-made rule from
-bazel-skylib. Executable and test rules the ruleset provides to consumers MUST launch through a
+bazel-skylib or the ruleset's own executable and test rules. Executable and test rules the ruleset provides to consumers MUST launch through a
 native executable or another mechanism that needs no shell, never a shell script.
 
 ### VII. Releases Come From Tags
@@ -91,4 +91,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-01
+**Version**: 1.2.1 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-02
