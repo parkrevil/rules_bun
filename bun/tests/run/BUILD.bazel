@@ -1,0 +1,27 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+bun_test(
+    name = "skeleton_test",
+    srcs = ["skeleton.test.ts"],
+)
+
+bun_binary(
+    name = "hello",
+    entry_point = "hello.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "failing_test",
+    srcs = ["failing.test.ts"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "failing_spawn_test",
+    srcs = ["failing_spawn.test.ts"],
+    data = [":failing_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

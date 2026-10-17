@@ -1,0 +1,7 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "preload_test",
+    srcs = ["preload.test.ts"],
+    preload = ["setup.ts"],
+)

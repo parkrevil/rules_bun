@@ -1,0 +1,29 @@
+load("//bun:defs.bzl", "bun_test")
+load("//bun/tests/support:runfiles_manifest.bzl", "runfiles_manifest")
+
+runfiles_manifest(
+    name = "hello_manifest",
+    testonly = True,
+    target = "//bun/tests/run:hello",
+)
+
+runfiles_manifest(
+    name = "skeleton_test_manifest",
+    testonly = True,
+    target = "//bun/tests/run:skeleton_test",
+)
+
+# Spawns each target as `bazel test --spawn_strategy=local --noenable_runfiles`
+# starts a test: RUNFILES_DIR names a directory that holds no runfiles, and
+# RUNFILES_MANIFEST_FILE names Bazel's manifest.
+bun_test(
+    name = "manifest_only_test",
+    srcs = ["manifest_only.test.ts"],
+    data = [
+        ":hello_manifest",
+        ":skeleton_test_manifest",
+        "//bun/tests/run:hello",
+        "//bun/tests/run:skeleton_test",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)

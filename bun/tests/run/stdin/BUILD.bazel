@@ -1,0 +1,14 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "cat",
+    entry_point = "cat.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "stdin_test",
+    srcs = ["stdin.test.ts"],
+    data = [":cat"],
+    deps = ["//bun/tests/support:spawn"],
+)

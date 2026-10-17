@@ -1,0 +1,17 @@
+load("//bun:defs.bzl", "bun_binary")
+
+# A self-checking program. Run it as:
+#   bazel run //bun/tests/run/app:main -- extra
+bun_binary(
+    name = "main",
+    # Bazel splits the third value into `split` and `a b` (Bourne-shell tokenization).
+    args = [
+        "--name=world",
+        "$(rlocationpath message.txt)",
+        "split 'a b'",
+    ],
+    data = ["message.txt"],
+    entry_point = "main.ts",
+    env = {"GREETING": "hello"},
+    deps = ["//bun/tests/run/lib:greet"],
+)

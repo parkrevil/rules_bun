@@ -1,0 +1,22 @@
+load("@rules_bun//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+
+bun_library(
+    name = "greet",
+    srcs = ["greet.ts"],
+)
+
+bun_test(
+    name = "greet_test",
+    srcs = ["greet.test.ts"],
+    deps = [":greet"],
+)
+
+# A self-checking program: `bazel run //app:main` exits 0, or 1 naming the wrong item.
+bun_binary(
+    name = "main",
+    args = ["--name=world"],
+    data = ["message.txt"],
+    entry_point = "main.ts",
+    env = {"GREETING": "hello"},
+    deps = [":greet"],
+)

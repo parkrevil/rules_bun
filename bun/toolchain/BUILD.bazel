@@ -2,3 +2,8 @@ toolchain_type(
     name = "execution_type",
     visibility = ["//visibility:public"],
 )
+
+toolchain_type(
+    name = "target_type",
+    visibility = ["//visibility:public"],
+)

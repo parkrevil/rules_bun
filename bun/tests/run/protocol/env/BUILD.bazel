@@ -1,0 +1,26 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "env_test",
+    srcs = ["env.test.ts"],
+    env = {
+        "RULES_BUN_BOTH": "declared",
+        "RULES_BUN_DECLARED": "declared",
+    },
+    env_inherit = [
+        "RULES_BUN_UNSET",
+        "RULES_BUN_BOTH",
+    ],
+)
+
+# Run by CI with RULES_BUN_INHERITED=set and RULES_BUN_BOTH=inherited.
+bun_test(
+    name = "env_inherit_set_test",
+    srcs = ["env_inherit_set.test.ts"],
+    env = {"RULES_BUN_BOTH": "declared"},
+    env_inherit = [
+        "RULES_BUN_INHERITED",
+        "RULES_BUN_BOTH",
+    ],
+    tags = ["manual"],
+)

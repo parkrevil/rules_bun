@@ -1,0 +1,96 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "probe",
+    entry_point = "probe.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "probe_test",
+    srcs = ["probe.test.ts"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "isolation_test",
+    srcs = ["isolation.test.ts"],
+    data = [
+        ":probe",
+        ":probe_test",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_binary(
+    name = "imports_package",
+    entry_point = "imports_package.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "imports_package_test",
+    srcs = ["imports_package.test.ts"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "install_test",
+    srcs = ["install.test.ts"],
+    data = [
+        "registry/rules-bun-fixture-pkg-1.0.0.tgz",
+        ":imports_package",
+        ":imports_package_test",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_test(
+    name = "bun_options_test",
+    srcs = ["bun_options.test.ts"],
+    data = [
+        ":probe",
+        ":probe_test",
+        "//bun/private:launcher.js",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+# The Windows stub cannot inspect the environment (hermetic-launcher#78); canary
+# C16 pins that limitation.
+bun_test(
+    name = "bun_options_injection_test",
+    srcs = ["bun_options_injection.test.ts"],
+    data = [
+        "bun_options_preload.ts",
+        ":probe",
+        ":probe_test",
+    ],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_binary(
+    name = "cache_probe",
+    entry_point = "cache_probe.ts",
+    tags = ["manual"],
+)
+
+bun_binary(
+    name = "tiny",
+    entry_point = "tiny.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "transpiler_cache_test",
+    srcs = ["transpiler_cache.test.ts"],
+    data = [
+        ":cache_probe",
+        ":tiny",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)

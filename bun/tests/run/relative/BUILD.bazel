@@ -1,0 +1,43 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/support:runfiles_manifest.bzl", "runfiles_manifest")
+
+bun_binary(
+    name = "print_runfiles",
+    entry_point = "print_runfiles.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "print_runfiles_test",
+    srcs = ["print_runfiles.test.ts"],
+    tags = ["manual"],
+)
+
+runfiles_manifest(
+    name = "print_runfiles_manifest",
+    target = ":print_runfiles",
+)
+
+runfiles_manifest(
+    name = "print_runfiles_test_manifest",
+    testonly = True,
+    target = ":print_runfiles_test",
+)
+
+# Spawns each target with RUNFILES_DIR or RUNFILES_MANIFEST_FILE relative to the
+# spawn's working directory. The Windows stub resolves its runfiles its own way.
+bun_test(
+    name = "relative_spawn_test",
+    srcs = ["relative_spawn.test.ts"],
+    data = [
+        ":print_runfiles",
+        ":print_runfiles_manifest",
+        ":print_runfiles_test",
+        ":print_runfiles_test_manifest",
+    ],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["//bun/tests/support:spawn"],
+)

@@ -56,7 +56,7 @@ def _bun_repo_impl(repository_ctx):
 
     exe = ".exe" if platform.startswith("windows") else ""
 
-    repository_ctx.file("BUILD.bazel", """load("@rules_bun//bun:toolchain.bzl", "bun_toolchain")
+    repository_ctx.file("BUILD.bazel", """load("@rules_bun//bun:toolchain.bzl", "bun_target_toolchain", "bun_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -64,6 +64,12 @@ exports_files(["bun{exe}"])
 
 bun_toolchain(
     name = "bun_toolchain",
+    bun = "bun{exe}",
+    version = "{version}",
+)
+
+bun_target_toolchain(
+    name = "bun_target_toolchain",
     bun = "bun{exe}",
     version = "{version}",
 )

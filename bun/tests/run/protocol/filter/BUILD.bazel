@@ -1,0 +1,8 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "filter_test",
+    srcs = ["filter.test.ts"],
+    data = ["//bun/tests/run/protocol/junit:math_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

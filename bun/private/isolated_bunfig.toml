@@ -1,0 +1,11 @@
+# The configuration file of the first Bun process of a bun_binary or bun_test on
+# Linux and macOS, which the shell launcher passes with --config=, and the only
+# one the second Bun process of a bun_binary reads on every OS (FR-018, FR-018a).
+# --config= takes the place of a bunfig.toml of the working directory.
+
+# Load no .env file.
+env = false
+
+# Never install a missing package.
+[install]
+auto = "disable"

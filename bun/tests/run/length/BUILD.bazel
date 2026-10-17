@@ -1,0 +1,21 @@
+load("//bun:defs.bzl", "bun_test")
+load(":many_tests.bzl", "many_tests")
+
+# 400 test files whose command line exceeds 32,767 characters.
+many_tests(
+    name = "many_tests",
+    count = 400,
+)
+
+bun_test(
+    name = "long_cmdline_test",
+    srcs = [":many_tests"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "length_test",
+    srcs = ["length.test.ts"],
+    data = [":long_cmdline_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

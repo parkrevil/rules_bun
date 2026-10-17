@@ -1,0 +1,22 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "slow_test",
+    srcs = ["slow.test.ts"],
+    tags = ["manual"],
+)
+
+# Bazel passes `args` only when it runs the test itself, so this is not spawned:
+# it passes only when `--timeout=6000` reaches `bun test`.
+bun_test(
+    name = "slow_declared_test",
+    srcs = ["slower.test.ts"],
+    args = ["--timeout=6000"],
+)
+
+bun_test(
+    name = "args_spawn_test",
+    srcs = ["args_spawn.test.ts"],
+    data = [":slow_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

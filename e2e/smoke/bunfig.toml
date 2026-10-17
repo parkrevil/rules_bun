@@ -1,0 +1,6 @@
+# A fixture declared by no target (FR-018): //app:greet_test asserts that Bun
+# does not read it.
+preload = ["./smoke_preload.ts"]
+
+[test]
+preload = ["./smoke_preload.ts"]

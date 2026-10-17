@@ -1,0 +1,15 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "math_test",
+    srcs = ["math.test.ts"],
+    tags = ["manual"],
+    visibility = ["//bun/tests:__subpackages__"],
+)
+
+bun_test(
+    name = "junit_test",
+    srcs = ["junit.test.ts"],
+    data = [":math_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

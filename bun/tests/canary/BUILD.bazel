@@ -1,0 +1,40 @@
+load("//bun:defs.bzl", "bun_test")
+
+# Canaries (FR-028): each pins an upstream behavior the rules work around and
+# fails, naming the workaround and the upstream link, once it changes.
+
+bun_test(
+    name = "c7_windows_args_test",
+    srcs = ["c7_windows_args.test.ts"],
+    data = ["//bun/tests/run/args:echo"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_test(
+    name = "c16_windows_bun_options_test",
+    srcs = ["c16_windows_bun_options.test.ts"],
+    data = ["//bun/tests/run:hello"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_test(
+    name = "c1_preserve_symlinks_test",
+    srcs = ["c1_preserve_symlinks.test.ts"],
+)
+
+bun_test(
+    name = "c2_snapshot_test",
+    srcs = ["c2_snapshot.test.ts"],
+)
+
+bun_test(
+    name = "c4_config_form_test",
+    srcs = ["c4_config_form.test.ts"],
+)
+
+bun_test(
+    name = "c13_regexp_limit_test",
+    srcs = ["c13_regexp_limit.test.ts"],
+)
