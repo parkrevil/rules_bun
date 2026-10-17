@@ -46,15 +46,17 @@ approved it, and the feature's `research.md` MUST record its source, the approva
 bazelbuild or bazel-contrib pattern serves. Its own documentation then counts as the documentation
 it is used by. Approved so far: hermeticbuild/hermetic-launcher (BCR module `hermetic_launcher`),
 the shell-free launcher aspect-build/rules_js uses, approved on 2026-10-01 for launching programs
-and tests.
+and tests; since v2.0.0 it is the Windows launcher only.
 
-### VI. Shell-Free Actions and Tests
+### VI. Shell-Free Actions; Launchers as the Reference Rulesets Build Them
 
-Rules MUST run tools with `ctx.actions.run` and `Args`. `ctx.actions.run_shell`, generated shell
-scripts, and shell test launchers are forbidden, because Bash is absent on Windows, a supported
-platform. This repository's own tests that need a launcher MUST use a purpose-made rule from
-bazel-skylib or the ruleset's own executable and test rules. Executable and test rules the ruleset provides to consumers MUST launch through a
-native executable or another mechanism that needs no shell, never a shell script.
+Build actions MUST run tools with `ctx.actions.run` and `Args`; `ctx.actions.run_shell` is
+forbidden. Executable and test rules the ruleset provides to consumers MUST launch as the
+bazelbuild and bazel-contrib rulesets do: on Linux and macOS through a generated shell launcher
+that finds its files with Bazel's runfiles library for Bash, as rules_python's bootstrap does, and
+on Windows, where Bash is not guaranteed, through a native launcher (see V), so that no Windows
+build or run requires Bash. This repository's own tests that need a launcher MUST use a
+purpose-made rule from bazel-skylib or the ruleset's own executable and test rules.
 
 ### VII. Releases Come From Tags
 
@@ -91,4 +93,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 1.2.1 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-02
+**Version**: 2.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-17
