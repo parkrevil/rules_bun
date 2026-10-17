@@ -1,0 +1,7 @@
+load("//bun:defs.bzl", "bun_library")
+
+bun_library(
+    name = "spawn",
+    srcs = ["spawn.ts"],
+    visibility = ["//bun/tests:__subpackages__"],
+)

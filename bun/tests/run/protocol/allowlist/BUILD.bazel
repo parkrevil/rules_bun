@@ -1,0 +1,14 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "target_test",
+    srcs = ["target.test.ts"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "allowlist_test",
+    srcs = ["allowlist.test.ts"],
+    data = [":target_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

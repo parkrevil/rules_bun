@@ -1,5 +1,23 @@
 load("//bun:toolchain.bzl", "bun_toolchain")
+load(
+    ":run_test.bzl",
+    "analysis_failure_test_suite",
+    "binary_test_suite",
+    "copy_tree_test_suite",
+    "library_test_suite",
+    "skeleton_test_suite",
+    "test_coverage_test_suite",
+    "test_rule_test_suite",
+)
 load(":semver_test.bzl", "semver_test_suite")
+load(
+    ":target_toolchain_test.bzl",
+    "launcher_platform_test_suite",
+    "platform_failure_test_suite",
+    "rule_platform_test_suite",
+    "target_cfg_test_suite",
+    "target_toolchain_selection_test_suite",
+)
 load(
     ":toolchain_test.bzl",
     "bun_bin_genrule_test",
@@ -22,6 +40,33 @@ toolchain_selection_test_suite(name = "selection")
 toolchain_rejection_test_suite(name = "rejection")
 
 exec_cfg_test_suite(name = "exec_cfg")
+
+target_toolchain_selection_test_suite(name = "target_selection")
+
+target_cfg_test_suite(name = "target_cfg")
+
+rule_platform_test_suite(name = "rule_platform")
+
+platform_failure_test_suite(name = "platform_failure")
+
+launcher_platform_test_suite(
+    name = "launcher_platform",
+    long_name_binary = ":long_" + "x" * 235,
+)
+
+library_test_suite(name = "library")
+
+skeleton_test_suite(name = "skeleton")
+
+binary_test_suite(name = "binary")
+
+analysis_failure_test_suite(name = "analysis_failure")
+
+copy_tree_test_suite(name = "copy_tree")
+
+test_rule_test_suite(name = "test_rule")
+
+test_coverage_test_suite(name = "test_coverage")
 
 bun_toolchain(
     name = "bun_bin_toolchain",

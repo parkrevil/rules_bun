@@ -1,0 +1,14 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "exit3",
+    entry_point = "exit3.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "exit_test",
+    srcs = ["exit.test.ts"],
+    data = [":exit3"],
+    deps = ["//bun/tests/support:spawn"],
+)

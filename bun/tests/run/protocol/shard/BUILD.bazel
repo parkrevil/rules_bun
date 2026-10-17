@@ -1,0 +1,28 @@
+load("//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "sharded_test",
+    srcs = [
+        "a.test.ts",
+        "b.test.ts",
+        "c.test.ts",
+    ],
+    shard_count = 2,
+)
+
+bun_test(
+    name = "shard_target_test",
+    srcs = [
+        "a.test.ts",
+        "b.test.ts",
+        "c.test.ts",
+    ],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "shard_spawn_test",
+    srcs = ["shard_spawn.test.ts"],
+    data = [":shard_target_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

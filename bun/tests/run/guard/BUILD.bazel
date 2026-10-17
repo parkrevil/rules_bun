@@ -1,0 +1,133 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+load(":many_files.bzl", "many_files")
+load(":undeclared.bzl", "undeclared_files")
+
+# Files no target declares, placed where the load guard must reject them (R13).
+undeclared_files(
+    name = "undeclared",
+    guarded = "guarded",
+    trees = [
+        "caught",
+        "guarded",
+        "isolate_test",
+        "large_set",
+        "preload_undeclared_test",
+        "static_stale",
+    ],
+)
+
+bun_binary(
+    name = "guarded",
+    srcs = [
+        "declared_cjs.cjs",
+        "declared_esm.ts",
+    ],
+    data = ["declared.json"],
+    entry_point = "guarded.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_binary(
+    name = "static_stale",
+    entry_point = "static_stale.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "preload_undeclared_test",
+    srcs = ["passing.test.ts"],
+    preload = ["preload_undeclared.ts"],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "isolate_test",
+    srcs = [
+        "passing.test.ts",
+        "second.test.ts",
+    ],
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "guard_test",
+    srcs = ["guard.test.ts"],
+    data = [
+        ":guarded",
+        ":isolate_test",
+        ":preload_undeclared_test",
+        ":static_stale",
+        ":undeclared",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_test(
+    name = "fail_closed_test",
+    srcs = ["fail_closed.test.ts"],
+    data = [
+        "marker.test.ts",
+        "marker.ts",
+        "//bun/private:launcher.js",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+many_files(
+    name = "large_files",
+    count = 10000,
+)
+
+bun_binary(
+    name = "large_set",
+    data = [":large_files"],
+    entry_point = "import_argument.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "large_set_test",
+    srcs = ["large_set.test.ts"],
+    data = [
+        ":large_set",
+        ":undeclared",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+many_files(
+    name = "over_limit_files",
+    count = 22000,
+    name_length = 50,
+)
+
+bun_binary(
+    name = "over_limit",
+    data = [":over_limit_files"],
+    entry_point = "import_argument.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "over_limit_test",
+    srcs = ["over_limit.test.ts"],
+    data = [":over_limit"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_binary(
+    name = "caught",
+    entry_point = "caught.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "caught_test",
+    srcs = ["caught.test.ts"],
+    data = [
+        ":caught",
+        ":undeclared",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)

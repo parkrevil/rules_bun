@@ -1,0 +1,34 @@
+load("//bun:defs.bzl", "bun_library", "bun_test")
+load("//bun/tests/support:runfiles_manifest.bzl", "runfiles_manifest")
+
+bun_library(
+    name = "spaced",
+    srcs = ["with space.ts"],
+    data = ["with space.txt"],
+)
+
+bun_test(
+    name = "spaces_test",
+    srcs = ["with space.test.ts"],
+    deps = [":spaced"],
+)
+
+runfiles_manifest(
+    name = "spaces_test_manifest",
+    testonly = True,
+    target = ":spaces_test",
+)
+
+# Runs spaces_test with Bazel's runfiles manifest only: under linux-sandbox a
+# runfiles tree is staged even with --noenable_runfiles, and on Linux and macOS
+# the shell launcher finds its files through the manifest, then exports that tree
+# as RUNFILES_DIR (runfiles_export_envvars of the Bash runfiles library).
+bun_test(
+    name = "manifest_spawn_test",
+    srcs = ["manifest_spawn.test.ts"],
+    data = [
+        ":spaces_test",
+        ":spaces_test_manifest",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)

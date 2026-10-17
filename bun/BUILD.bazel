@@ -4,7 +4,11 @@ bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["//bun/private:providers"],
+    deps = [
+        "//bun/private:library",
+        "//bun/private:providers",
+        "//bun/private:run",
+    ],
 )
 
 bzl_library(

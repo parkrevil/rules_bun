@@ -1,0 +1,8 @@
+load("//bun:defs.bzl", "bun_test")
+
+# undeclared.test.ts, next to declared.test.ts, fails on purpose and is declared
+# by no target.
+bun_test(
+    name = "declared_test",
+    srcs = ["declared.test.ts"],
+)

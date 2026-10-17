@@ -1,0 +1,46 @@
+load("//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+
+bun_library(
+    name = "covered",
+    srcs = ["covered.ts"],
+)
+
+bun_test(
+    name = "coverage_test",
+    srcs = ["covered.test.ts"],
+    deps = [":covered"],
+)
+
+bun_test(
+    name = "coverage_target_test",
+    srcs = ["covered.test.ts"],
+    tags = ["manual"],
+    deps = [":covered"],
+)
+
+bun_test(
+    name = "coverage_spawn_test",
+    srcs = ["coverage_spawn.test.ts"],
+    data = [":coverage_target_test"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+# Checks the merged report of `bazel coverage --combined_report=lcov :coverage_test` (quickstart 6).
+bun_binary(
+    name = "coverage_check",
+    entry_point = "check.ts",
+)
+
+bun_test(
+    name = "coverage_chdir_target_test",
+    srcs = ["chdir.test.ts"],
+    tags = ["manual"],
+    deps = [":covered"],
+)
+
+bun_test(
+    name = "coverage_chdir_test",
+    srcs = ["chdir_spawn.test.ts"],
+    data = [":coverage_chdir_target_test"],
+    deps = ["//bun/tests/support:spawn"],
+)

@@ -45,6 +45,13 @@ toolchain(
     toolchain = "@{user_repo}_{platform}//:bun_toolchain",
     toolchain_type = "@rules_bun//bun/toolchain:execution_type",
 )
+
+toolchain(
+    name = "{platform}_target_toolchain",
+    target_compatible_with = {compatible_with},
+    toolchain = "@{user_repo}_{platform}//:bun_target_toolchain",
+    toolchain_type = "@rules_bun//bun/toolchain:target_type",
+)
 """.format(
             platform = platform,
             user_repo = repository_ctx.attr.user_repository_name,

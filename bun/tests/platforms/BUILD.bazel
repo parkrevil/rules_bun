@@ -1,3 +1,5 @@
+load("//bun/tests/support:empty_toolchain.bzl", "empty_toolchain")
+
 package(default_visibility = ["//bun:__subpackages__"])
 
 platform(
@@ -81,4 +83,39 @@ platform(
         "@platforms//os:freebsd",
         "@platforms//cpu:aarch64",
     ],
+)
+
+# hermetic_launcher 0.0.16 registers a stub template for this platform, and no
+# Bun release supports it.
+platform(
+    name = "no_bun",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:s390x",
+    ],
+)
+
+# A Windows platform for which hermetic_launcher 0.0.16 registers no stub
+# template (it registers one for Windows on x86_64 only); the tests register a
+# Bun for it.
+platform(
+    name = "no_stub",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+# Lets the test action of a test built for Windows run on any execution platform
+# (Test Encyclopedia, "Execution platform": a toolchain registered for
+# default_test_toolchain_type takes precedence over Bazel's), so it runs on the
+# first registered one, the host. Registered only by the analysis test of a
+# bun_test for windows_x64, through --extra_toolchains in its configuration.
+empty_toolchain(name = "empty_test_toolchain")
+
+toolchain(
+    name = "windows_test_on_host",
+    target_compatible_with = ["@platforms//os:windows"],
+    toolchain = ":empty_test_toolchain",
+    toolchain_type = "@bazel_tools//tools/test:default_test_toolchain_type",
 )

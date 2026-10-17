@@ -1,0 +1,28 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "echo",
+    entry_point = "echo.ts",
+    tags = ["manual"],
+    visibility = ["//bun/tests:__subpackages__"],
+)
+
+bun_test(
+    name = "args_test",
+    srcs = ["args.test.ts"],
+    data = [":echo"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+# The Windows stub splits quoted arguments (G1). This test waits for a
+# hermetic-launcher release that fixes hermeticbuild/hermetic-launcher#80.
+bun_test(
+    name = "args_quotes_test",
+    srcs = ["args_quotes.test.ts"],
+    data = [":echo"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["//bun/tests/support:spawn"],
+)

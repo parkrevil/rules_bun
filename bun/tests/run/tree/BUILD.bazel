@@ -1,0 +1,61 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/support:runfiles_manifest.bzl", "runfiles_manifest")
+
+# undeclared.ts is checked in next to sibling.ts and undeclared_sibling.test.ts but declared
+# by no target.
+bun_binary(
+    name = "sibling",
+    entry_point = "sibling.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "sibling_test",
+    srcs = ["undeclared_sibling.test.ts"],
+    tags = ["manual"],
+)
+
+runfiles_manifest(
+    name = "sibling_manifest",
+    target = ":sibling",
+)
+
+runfiles_manifest(
+    name = "sibling_test_manifest",
+    testonly = True,
+    target = ":sibling_test",
+)
+
+# Spawns each target once as it is and once with Bazel's runfiles manifest only:
+# under linux-sandbox a runfiles tree is staged even with --noenable_runfiles, and
+# on Linux and macOS the shell launcher finds its files through the manifest, then
+# exports that tree as RUNFILES_DIR (runfiles_export_envvars of the Bash runfiles
+# library).
+bun_test(
+    name = "sibling_spawn_test",
+    srcs = ["sibling_spawn.test.ts"],
+    data = [
+        ":sibling",
+        ":sibling_manifest",
+        ":sibling_test",
+        ":sibling_test_manifest",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+write_file(
+    name = "generated",
+    out = "generated.txt",
+    content = [
+        "generated",
+        "",
+    ],
+    newline = "unix",
+)
+
+bun_test(
+    name = "generated_data_test",
+    srcs = ["generated_data.test.ts"],
+    data = [":generated"],
+)
