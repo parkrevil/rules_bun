@@ -1,3 +1,4 @@
+* text=auto eol=lf
 /.agents export-ignore
 /.claude export-ignore
 /.specify export-ignore

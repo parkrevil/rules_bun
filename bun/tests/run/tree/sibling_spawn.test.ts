@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
-import { rlocation, spawnTarget } from "../../support/spawn.ts";
+import { executable, rlocation, spawnTarget } from "../../support/spawn.ts";
 
 const MISSING = "Cannot find module './undeclared.ts'";
 
-// Bazel's runfiles manifest only, without the runfiles directory.
+// Bazel's runfiles manifest only, without the runfiles directory. Bazel names it
+// after the executable, which is `<name>.exe` on Windows.
 function manifestOnly(target: string) {
-  const manifest = rlocation(`_main/bun/tests/run/tree/${target}.runfiles_manifest`);
+  const manifest = rlocation(`${executable(`_main/bun/tests/run/tree/${target}`)}.runfiles_manifest`);
   return { env: { RUNFILES_DIR: undefined, RUNFILES_MANIFEST_FILE: manifest } };
 }
 

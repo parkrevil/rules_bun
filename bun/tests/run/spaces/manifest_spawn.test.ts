@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { rlocation, spawnTarget } from "../../support/spawn.ts";
+import { executable, rlocation, spawnTarget } from "../../support/spawn.ts";
 
 test("paths with a space resolve through the runfiles manifest only", async () => {
-  const manifest = rlocation("_main/bun/tests/run/spaces/spaces_test.runfiles_manifest");
+  // Bazel names the manifest after the executable, which is `<name>.exe` on Windows.
+  const manifest = rlocation(`${executable("_main/bun/tests/run/spaces/spaces_test")}.runfiles_manifest`);
   const result = await spawnTarget("_main/bun/tests/run/spaces/spaces_test", {
     env: { RUNFILES_DIR: undefined, RUNFILES_MANIFEST_FILE: manifest },
   });
