@@ -23,11 +23,11 @@ behavior.
 | `bun_binary` | executable rule | **new**; `entry_point`, `srcs`, `data`, `deps`, `env`, plus Bazel's common executable attributes (`args`, …) |
 | `bun_test` | test rule | **new**; `srcs` (test files), `data`, `deps`, `preload`, `env`, `env_inherit`, plus Bazel's common test attributes (`args`, `shard_count`, `size`, …) |
 
-Behavior promised to consumers (each covered by a test named in data-model.md). Platforms: the
-tests that run targets ran on Linux (WSL) only (tdd-log.md). On macOS and Windows every run-time
-item below is unverified until the named CI run of POST-1 passes on that operating system; for
-macOS and Windows target platforms only analysis (the executable, its runfiles, the Bun it
-carries, analysis failures) is tested, by analysis tests on Linux (WSL).
+Behavior promised to consumers (each covered by a test named in data-model.md). Platforms: root
+`bazel test //...`, which holds the tests that run targets and the analysis tests, passes on Linux
+(WSL; tdd-log.md) and, in CI run 39051132545 of POST-1 (commit 63044a8), on the GitHub Actions
+images `ubuntu-24.04`, `macos-26-arm64` and `windows-2025-vs2026`. An item tested on fewer
+platforms, or unverified, says so.
 
 - The Bun that runs comes from a toolchain of `target_type` resolved for the target's platform.
   With no such toolchain, analysis fails with an English message naming the missing toolchain
@@ -38,10 +38,12 @@ carries, analysis failures) is tested, by analysis tests on Linux (WSL).
   It works with a runfiles tree and with a manifest only, including `bazel run
   --noenable_runfiles` and `bazel test` without a sandbox. Running it needs `/usr/bin/env`, `bash`
   and the utilities that library calls (`grep`, `sed`, `cut`, `tr`, `wc`, `awk`, `tail`, `uname`,
-  `dirname`, `basename`) on the machine that runs the target; tested on Linux (WSL), unverified on
-  macOS. For a Windows target platform the executable is a native hermetic-launcher stub
-  (`<name>.exe`), checked by an analysis test on Linux (WSL); that no Windows build or run needs
-  Bash is unverified until the Windows CI job of POST-1 passes.
+  `dirname`, `basename`) on the machine that runs the target; tested on Linux and macOS.
+  `bazel run --noenable_runfiles` and `bazel test` without a sandbox ran on Linux only (job
+  `manifest-only`). For a Windows target platform the executable is a native hermetic-launcher
+  stub (`<name>.exe`); the builds, tests and `bazel run` of both modules pass without Bash on
+  Windows (job `windows-without-bash`: Bazel's shell set to a path that does not exist, no Bash
+  directory on the `PATH` of actions, tests and `bazel run`).
 - Files: each `bun_binary`/`bun_test` copies its entry point or test files, sources, preloads and
   data files, including those of its `deps`, into its own directory `<name>.bun/` next to its
   outputs, and Bun runs those copies. A file the target does not declare, even one next to a
@@ -89,7 +91,7 @@ carries, analysis failures) is tested, by analysis tests on Linux (WSL).
     turns it off.
   - `BUN_OPTIONS`, which bun.com documents as arguments prepended to every Bun execution: on Linux
     and macOS a set `BUN_OPTIONS` fails the run with an English error naming it before Bun starts
-    (tested on Linux (WSL), unverified on macOS; see Known limitations for Windows).
+    (tested on Linux and macOS; see Known limitations for Windows).
 - `env` values are taken literally: `$(location …)` and other substitutions are not expanded,
   because an expanded path does not resolve from the copy tree or without a runfiles tree. Data is
   located through `import.meta.dir` (next item).
@@ -102,23 +104,26 @@ carries, analysis failures) is tested, by analysis tests on Linux (WSL).
   because Bun runs only the copies.
 - Command line: when the command line of the process that runs the consumer's code, as the
   running OS builds it, would exceed 32,767 characters (the Windows limit), the run fails with an
-  English error naming the length and the limit, on every OS (tested on Linux (WSL)).
+  English error naming the length and the limit, on every OS (tested on Linux, macOS and
+  Windows).
 
 Known limitations, stated in the rules' `doc` (research R14):
 
-- Windows (unverified until the Windows CI job of POST-1 passes; canary C7 pins it there): an
-  argument containing `"` is split, and runtime arguments past 128 are dropped
-  (hermetic-launcher#80), until a release fixes it.
-- Windows (unverified until the Windows CI job of POST-1 passes; canary C16 pins it there): an
-  inherited `BUN_OPTIONS` reaches the first Bun process, because the stub cannot change the
-  environment (hermetic-launcher#78), and can run code before or instead of the rule's launcher.
+- Windows (canary C7, passed on `windows-2025-vs2026`: a quoted argument does not arrive
+  unchanged, and of 130 arguments fewer arrive): an argument containing `"` is split, and runtime
+  arguments past 128 are dropped, as hermetic-launcher#80 reports, until a release fixes it.
+- Windows (canary C16, passed on `windows-2025-vs2026`: code that an inherited
+  `BUN_OPTIONS=--eval=…` names runs): an inherited `BUN_OPTIONS` reaches the first Bun process,
+  because the stub cannot change the environment (hermetic-launcher#78), so code it names runs
+  there.
 - Snapshot tests (`toMatchSnapshot`) are not supported.
 - The first Bun process runs only the rule's launcher. On Linux and macOS it writes no
-  transpiler-cache entry (tested on Linux (WSL)); on Windows it may write one for the launcher
-  (unverified on Windows) and may also read `bunfig.toml` from the
-  working directory (hermetic-launcher#81; unverified on Windows, canary C4 pins Bun's side on
-  Linux (WSL)); on Linux and macOS it reads only the rule's configuration file (tested on Linux
-  (WSL)).
+  transpiler-cache entry (tested on Linux and macOS); on Windows it may write one for the launcher
+  (unverified: `transpiler_cache_test` does not check the first process there) and may also read
+  `bunfig.toml` from the working directory (hermetic-launcher#81; unverified: `isolation_test`
+  does not check the first process there; canary C4 pins Bun's side and passed on Linux, macOS
+  and Windows); on Linux and macOS it reads only the rule's configuration file (tested on Linux
+  and macOS).
 - The load guard is a check, not complete isolation. It does not cover modules loaded before it
   (on Windows, such a `bunfig.toml` preload of the first process), code the program starts itself (Workers, child processes,
   `Bun.build`), or plain file reads (`Bun.file`, `fs`); `tsconfig.json` and `package.json` in
