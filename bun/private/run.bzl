@@ -30,14 +30,15 @@ Launching: on Linux and macOS the executable `<name>` is a shell launcher that f
 rule's files with the Bash runfiles library (`@rules_shell//shell/runfiles`), so running it needs
 `/usr/bin/env`, `bash` and the utilities that library calls (`grep`, `sed`, `cut`, `tr`, `wc`,
 `awk`, `tail`, `uname`, `dirname`, `basename`). For a Windows target platform the executable is
-`<name>.exe`, a hermetic-launcher stub; that running it needs no Bash is unverified (see Platforms). The shell launcher finds
-its files through a runfiles manifest when no runfiles tree is staged, so `bazel run
+`<name>.exe`, a hermetic-launcher stub, which runs without Bash (see Platforms). The shell launcher
+finds its files through a runfiles manifest when no runfiles tree is staged, so `bazel run
 --noenable_runfiles` and `bazel test --noenable_runfiles` without a sandbox work.
 
-Platforms: the tests that run these rules' targets ran on Linux (WSL) only. On macOS and Windows,
-what this documentation says about running a target is unverified until a CI run on that operating
-system passes; for macOS and Windows target platforms, only what analysis decides (the executable,
-its runfiles, the Bun it carries, analysis failures) is tested, by analysis tests on Linux (WSL).
+Platforms: the tests that run these rules' targets pass on Linux (WSL) and, in CI, on the GitHub
+Actions images `ubuntu-24.04`, `macos-26-arm64` and `windows-2025-vs2026`. On Windows they also pass
+with Bazel's shell set to a path that does not exist and no Bash directory on the `PATH` of
+actions, tests and `bazel run`. `bazel run` and `bazel test` with `--noenable_runfiles` and no
+sandbox, and `bazel coverage`, ran on Linux only.
 
 Limits: the guard's pattern may be at most 1,048,576 characters with Bun 1.4.2, and its length
 grows with the unique part of the declared files' real paths; beyond that the run fails naming
@@ -45,17 +46,18 @@ the declared-file count. When the command line of the Bun process that runs the 
 running operating system builds it, would exceed 32,767 characters (the Windows limit), the run
 fails naming the length and the limit, on every operating system. On Linux and macOS the Bun
 process that runs only the rule's launcher writes no transpiler-cache entry, and a set
-`BUN_OPTIONS` fails the run before Bun starts. Each of these ran on Linux (WSL) only.
+`BUN_OPTIONS` fails the run before Bun starts. Each of these is tested on the platforms named in
+Platforms, the Linux and macOS ones on Linux and macOS.
 
-Windows only, unverified until a CI run on Windows passes (no test of them has run on Windows;
-the 256-byte analysis failure is tested on Linux (WSL)): an argument containing `"` is split and runtime arguments past 128 are dropped
-(https://github.com/hermeticbuild/hermetic-launcher/issues/80); the Bun process that runs only
-the rule's launcher may read a `bunfig.toml` of the working directory
-(https://github.com/hermeticbuild/hermetic-launcher/issues/81); an inherited `BUN_OPTIONS` reaches
-that process, because the stub cannot change the environment
-(https://github.com/hermeticbuild/hermetic-launcher/issues/78), and can run code before or instead
-of the rule's launcher; and a target whose runfiles path of `<name>.launch.json` is longer than 256
-bytes fails analysis naming the path.
+Windows only, each tested on `windows-2025-vs2026` unless marked unverified: an argument containing
+`"` does not arrive unchanged, and of 130 runtime arguments fewer arrive
+(https://github.com/hermeticbuild/hermetic-launcher/issues/80 reports the first split and arguments
+past 128 dropped); the Bun process that runs only the rule's launcher may read a `bunfig.toml` of
+the working directory (https://github.com/hermeticbuild/hermetic-launcher/issues/81; unverified);
+an inherited `BUN_OPTIONS` reaches that process, because the stub cannot change the environment
+(https://github.com/hermeticbuild/hermetic-launcher/issues/78), so code it names runs there; and a
+target whose runfiles path of `<name>.launch.json` is longer than 256 bytes fails analysis naming
+the path.
 
 A target platform without a `//bun/toolchain:target_type` toolchain, or a Windows target platform
 without a hermetic-launcher stub, fails analysis naming the missing toolchain type.
