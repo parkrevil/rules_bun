@@ -432,7 +432,7 @@ def _copy_tree_test_rule_test_impl(ctx):
 
     _assert_no_copy_at_tree_root(env, _TEST_TREE)
 
-    # The shell launcher of a Linux or macOS host passes it to the first process.
+    # The shell launcher of a Linux or macOS target passes it to the first process.
     runfiles = _paths(target[DefaultInfo].default_runfiles.files.to_list())
     asserts.true(
         env,
@@ -442,7 +442,19 @@ def _copy_tree_test_rule_test_impl(ctx):
 
     return analysistest.end(env)
 
-copy_tree_test_rule_test = analysistest.make(_copy_tree_test_rule_test_impl)
+# The shell launcher is the Linux and macOS one, so the target platform is pinned
+# to linux_x64 on every host. As for the other bun_test platform tests, the host
+# comes first among the execution platforms, so the rule's own actions run there.
+copy_tree_test_rule_test = analysistest.make(
+    _copy_tree_test_rule_test_impl,
+    config_settings = {
+        "//command_line_option:extra_execution_platforms": [
+            str(Label("@platforms//host")),
+            str(Label("//bun/tests/platforms:linux_x64")),
+        ],
+        "//command_line_option:platforms": [str(Label("//bun/tests/platforms:linux_x64"))],
+    },
+)
 
 def _directory_fixture_impl(ctx):
     out = ctx.actions.declare_directory(ctx.label.name)
