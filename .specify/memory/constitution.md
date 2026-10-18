@@ -8,9 +8,11 @@ The public API is `bun/*.bzl`, `//bun/toolchain:execution_type` and `//bun/toolc
 `execution_type` is resolved against the execution platform, for rules that run Bun in build
 actions; `target_type` is resolved against the target platform, for rules whose programs run there,
 and consumers MAY register their own toolchains for either, as rules-template, rules_python and
-rules_js allow for their runtime toolchain types. Implementation MUST live in `bun/private/`, tests
-in `bun/tests/` and `e2e/smoke/`. Anything outside the public API MAY change in any release, so it
-MUST NOT be documented as usable by consumers.
+rules_js allow for their runtime toolchain types. The targets that the ruleset's module extensions
+generate for a consumer, under the naming rules the extension's documentation states, are public API
+as well, as rules_js makes its generated `node_modules` targets. Implementation MUST live in
+`bun/private/`, tests in `bun/tests/` and `e2e/smoke/`. Anything outside the public API MAY change
+in any release, so it MUST NOT be documented as usable by consumers.
 
 ### II. Tested Claims
 
@@ -21,9 +23,10 @@ actually ran on. Behavior that no test covers is reported as unverified, never a
 ### III. Pinned, Verified Downloads
 
 Repository rules MUST download an exact version and verify it with an `integrity` value taken from
-the upstream checksum file. They MUST NOT detect, probe, or run host-installed tools, and build
-actions MUST run only tools that come from a registered toolchain. This is what makes a build
-reproducible on a machine that is not the author's.
+the upstream checksum file or, for a registry package, from the integrity the registry published, as
+the consumer's lockfile records it (as rules_js verifies pnpm-lock.yaml entries). They MUST NOT
+detect, probe, or run host-installed tools, and build actions MUST run only tools that come from a
+registered toolchain. This is what makes a build reproducible on a machine that is not the author's.
 
 ### IV. Minimum Dependency Versions
 
@@ -100,4 +103,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 2.1.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-18
+**Version**: 2.2.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-18
