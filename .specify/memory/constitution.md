@@ -41,6 +41,13 @@ relied on. Feature detection for an API that every Bazel version in `bazel_compa
 is forbidden. When no supported API does the job, work stops and the gap is reported instead of
 worked around.
 
+Material an upstream owner's documentation links to as the description of a format or behavior
+(for example a release blog post the docs point to) counts as that owner's documentation. A field
+of an upstream file format that this material does not describe MAY be read only when a test pins
+it against output the pinned upstream version itself produced, an FR-028-style canary fails when
+that output changes, and the feature's `research.md` records the field, the evidence and the
+user's approval; the first such approval, on 2026-10-18, covers `bun.lock`.
+
 A pattern or dependency from outside bazelbuild and bazel-contrib MAY be used only when the user
 approved it, and the feature's `research.md` MUST record its source, the approval, and why no
 bazelbuild or bazel-contrib pattern serves. Its own documentation then counts as the documentation
@@ -93,4 +100,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-17
+**Version**: 2.1.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-18
