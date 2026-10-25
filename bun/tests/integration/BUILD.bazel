@@ -2,6 +2,12 @@ load("//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
 load("//bun/tests/integration/registry:archives.bzl", "ARCHIVES")
 load(":inner_inputs.bzl", "inner_inputs")
 
+# The Bazel-in-Bazel tests are tagged requires-network, as tools/preset.bazelrc
+# asks of tests that need network access: macOS's sandbox with network denied
+# keeps the inner Bazel's JVM from reaching the loopback registry. On Linux,
+# .bazelrc adds block-network to every test, which takes precedence (Bazel's
+# Spawns.requiresNetwork), so the inner builds stay offline there.
+
 # The pinned Bazel of the platform the test runs on (G10).
 alias(
     name = "bazel_binary",
@@ -59,6 +65,7 @@ bun_test(
     name = "harness_test",
     size = "enormous",
     srcs = ["harness.test.ts"],
+    tags = ["requires-network"],
     deps = [":inner"],
 )
 
@@ -76,6 +83,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:npm_registry",
@@ -92,6 +100,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:phantom-user@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:q@2.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -109,6 +118,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:b@2.0.0.tgz",
         "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -124,6 +134,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:npm_registry",
@@ -140,6 +151,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:npm_registry",
@@ -157,6 +169,7 @@ bun_test(
         "//bun/tests/npm/fixtures/bins_dirbin:bun.lock",
         "//bun/tests/npm/fixtures/bins_dirbin:package.json",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -178,6 +191,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:native-win32-x64@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:native@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -192,6 +206,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:phantom-user@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -210,6 +225,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -220,6 +236,7 @@ bun_test(
     name = "lockfile_errors_test",
     size = "enormous",
     srcs = ["lockfile_errors.test.ts"],
+    tags = ["requires-network"],
     deps = [":inner"],
 )
 
@@ -227,6 +244,7 @@ bun_test(
     name = "manifest_mismatch_test",
     size = "enormous",
     srcs = ["manifest_mismatch.test.ts"],
+    tags = ["requires-network"],
     deps = [":inner"],
 )
 
@@ -234,6 +252,7 @@ bun_test(
     name = "conflict_test",
     size = "enormous",
     srcs = ["conflict.test.ts"],
+    tags = ["requires-network"],
     deps = [":inner"],
 )
 
@@ -245,6 +264,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -264,6 +284,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:p@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:q@1.0.0.tgz",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -274,6 +295,7 @@ bun_test(
     name = "reproducible_test",
     size = "enormous",
     srcs = ["reproducible.test.ts"],
+    tags = ["requires-network"],
     deps = [":inner"],
 )
 
@@ -288,6 +310,7 @@ bun_test(
         "//bun/tests/npm/fixtures/workspace_base:package.json",
         "//bun/tests/npm/fixtures/workspace_base:packages/w1/package.json",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/support:spawn",
@@ -302,6 +325,7 @@ bun_test(
         "//bun/tests/npm/scale:bun.lock",
         "//bun/tests/npm/scale:package.json",
     ],
+    tags = ["requires-network"],
     deps = [
         ":inner",
         "//bun/tests/npm/scale:generate",
