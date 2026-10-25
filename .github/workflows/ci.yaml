@@ -170,8 +170,10 @@ jobs:
       # The image has Bash, and Bazel finds it on its own. These flags point Bazel's
       # shell and rules_shell's toolchain at a path that does not exist, and give
       # actions that take Bazel's default environment, tests and `bazel run` a PATH
-      # without a Bash directory. No disk cache and no cached test results: the
-      # tests must run under these flags.
+      # without a Bash directory. Tests also get BAZEL_SH, so the Bazel-in-Bazel
+      # tests' inner Bazel is set up the same way, and Git's cmd directory (git.exe,
+      # no Bash), which `bun patch --commit` in a canary runs. No disk cache and no
+      # cached test results: the tests must run under these flags.
       - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
@@ -182,7 +184,8 @@ jobs:
             common --repo_env=BAZEL_SH=C:/no-bash/bash.exe
             common --action_env=PATH=C:\\Windows
             common --host_action_env=PATH=C:\\Windows
-            common --test_env=PATH=C:\\Windows
+            common --test_env=PATH="C:\\Windows;C:\\Program Files\\Git\\cmd"
+            common --test_env=BAZEL_SH=C:/no-bash/bash.exe
             common --nocache_test_results
             run --run_env=PATH=C:\\Windows
             run --run_env==BAZEL_SH

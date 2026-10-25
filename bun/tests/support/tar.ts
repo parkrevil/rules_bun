@@ -134,8 +134,8 @@ function paxRecord(key: string, value: string): string {
 
 /**
  * Writes entries, in the given order, as a gzip-compressed tar archive with
- * uid and gid 0, the given mtime (seconds) and fixed modes, so that the same
- * entries always give the same bytes.
+ * uid and gid 0, the given mtime (seconds), fixed modes and a fixed gzip OS
+ * field, so that the same entries give the same bytes on every host.
  */
 export function writeTgz(entries: TarEntry[], mtime = 0): Uint8Array {
   const blocks: Uint8Array[] = [];
@@ -158,7 +158,11 @@ export function writeTgz(entries: TarEntry[], mtime = 0): Uint8Array {
     tar.set(b, offset);
     offset += b.length;
   }
-  return Bun.gzipSync(tar, { level: 9 });
+  const gz = Bun.gzipSync(tar, { level: 9 });
+  // zlib writes the host's code into the gzip header's OS field (RFC 1952 section
+  // 2.3.1: 3 on Unix, 10 on Windows); fix it at 3 so every host writes the same bytes.
+  gz[9] = 3;
+  return gz;
 }
 
 /** Returns the parsed `package.json` of an npm package archive (any top-level directory). */

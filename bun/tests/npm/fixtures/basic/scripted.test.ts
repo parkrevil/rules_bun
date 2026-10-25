@@ -10,6 +10,7 @@ import scripted from "scripted";
 test("the package loads and its postinstall did not run", () => {
   expect(scripted).toBeDefined();
   const dir = dirname(require.resolve("scripted"));
-  expect(dir).toContain(".store/scripted@1.0.0/node_modules/scripted");
+  // Windows paths use "\\".
+  expect(dir.replaceAll("\\", "/")).toContain(".store/scripted@1.0.0/node_modules/scripted");
   expect(existsSync(join(dir, "postinstall-ran"))).toBe(false);
 });

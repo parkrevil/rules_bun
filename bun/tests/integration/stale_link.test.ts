@@ -27,7 +27,8 @@ test(
 
     inner.write("bun.lock", lockfile.replace("{PHANTOM_INFO}", "{}"));
     const stale = await inner.run(["test", "//:phantom_test", "--test_output=errors"]);
-    const output = stale.stdout + stale.stderr;
+    // Windows paths use "\\".
+    const output = (stale.stdout + stale.stderr).replaceAll("\\", "/");
     console.log(output.split("\n").filter((l) => /error|declare|clean/i.test(l)).join("\n"));
     expect(stale.exitCode).not.toBe(0);
     expect(output).toMatch(

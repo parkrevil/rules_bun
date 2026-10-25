@@ -38,6 +38,9 @@ test("tar entries round-trip with fixed bytes", () => {
   expect(writeTgz(entries)).toEqual(first);
   expect(readTgz(first).map((e) => e.name)).toEqual(entries.map((e) => e.name));
   expect(packageJson(first)).toEqual({});
+  // The gzip header's OS field (RFC 1952 section 2.3.1) is fixed, not the host's,
+  // so archives and the integrity recorded for them match on Windows.
+  expect(first[9]).toBe(3);
 });
 
 test("serves a packument with every version, dist.tarball and a sha512 integrity", async () => {
