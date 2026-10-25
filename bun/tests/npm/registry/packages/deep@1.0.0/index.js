@@ -1,1 +1,1 @@
-module.exports = require("./lib/level0_directory_name/level1_directory_name/level2_directory_name/level3_directory_name/level4_directory_name/level5_directory_name/level6_directory_name/level7_directory_name/leaf_module_file.js");
+module.exports = require("./lib/level0_directory/level1_directory/level2_directory/level3_directory/level4_directory/level5_directory/level6_directory/level7_directory/leaf_module_file.js");

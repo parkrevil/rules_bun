@@ -27,7 +27,7 @@ test("the longest store path of the copy tree", () => {
 });
 
 test("the deepest fixture module loads through the target", () => {
-  // deep's index.js requires lib/level0_directory_name/…/leaf_module_file.js,
+  // deep's index.js requires lib/level0_directory/…/leaf_module_file.js,
   // the file at the longest store path.
   expect(require("deep")).toBe("deep");
 });
