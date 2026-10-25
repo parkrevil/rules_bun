@@ -6,7 +6,7 @@
 // bounds are asserted on Linux.
 
 import { afterAll, expect, test } from "bun:test";
-import { lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { join, normalize, sep } from "node:path";
 import { packageName, scalePackages, WIDTH, writeArchives } from "../npm/scale/generate.ts";
 import { rlocation } from "../support/spawn.ts";
@@ -96,9 +96,26 @@ function guardPatternLength(name: string): number {
   const end = source.indexOf("function registerGuard(");
   if (start === -1 || end === -1) throw new Error("launcher.js no longer defines escapeRegExp before registerGuard");
   const guardPattern = new Function(`${source.slice(start, end)}\nreturn guardPattern;`)();
-  const runfiles = join(inner.dir, "bazel-bin", `${name}.runfiles`);
-  const config = JSON.parse(readFileSync(join(inner.dir, "bazel-bin", `${name}.launch.json`), "utf8"));
-  const real = (path: string) => realpathSync(join(runfiles, path));
+  // The launcher's own runfiles lookup, through the target's manifest: Windows has
+  // no runfiles tree by default.
+  const resolverStart = source.indexOf("function runfilesResolver(");
+  const resolverEnd = source.indexOf("\n}\n", resolverStart) + 2;
+  if (resolverStart === -1 || resolverEnd === 1) throw new Error("launcher.js no longer defines runfilesResolver");
+  const bin = join(inner.dir, "bazel-bin");
+  const manifest = [`${name}.runfiles_manifest`, `${name}.exe.runfiles_manifest`].map((m) => join(bin, m)).find(existsSync);
+  if (manifest === undefined) throw new Error(`no runfiles manifest for ${name} in ${bin}`);
+  const resolve = new Function(
+    "process",
+    "readFileSync",
+    "existsSync",
+    "join",
+    "fail",
+    `${source.slice(resolverStart, resolverEnd)}\nreturn runfilesResolver();`,
+  )({ env: { RUNFILES_MANIFEST_FILE: manifest } }, readFileSync, existsSync, join, (message: string) => {
+    throw new Error(message);
+  });
+  const config = JSON.parse(readFileSync(join(bin, `${name}.launch.json`), "utf8"));
+  const real = (path: string) => realpathSync(resolve(path));
   const paths = config.copies.map(([copy]: [string]) => real(copy));
   const root = real(config.entry_point).slice(0, -(sep + normalize(config.entry_point_tree)).length);
   const prefixes = (config.directories ?? []).map((d: string) => root + sep + d.split("/").join(sep) + sep);
