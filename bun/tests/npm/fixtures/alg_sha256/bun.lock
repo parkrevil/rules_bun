@@ -1,0 +1,17 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "alg-sha256",
+      "dependencies": {
+        "a": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:44735/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha256-s+mOAWEMYMyf2257GTzSe4SFAEvH5lC8pLyIEgBuGrs=="],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:44735/b/-/b-1.0.0.tgz", {}, "sha256-8g6vqoz7VZSF3q+usG8U2ewW29hpJqLpm58Gyor/u/o=="],
+  }
+}

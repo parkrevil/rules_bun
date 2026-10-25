@@ -1,0 +1,7 @@
+{
+  "name": "dirbin",
+  "version": "1.0.0",
+  "directories": {
+    "bin": "bin"
+  }
+}

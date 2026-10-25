@@ -1,0 +1,336 @@
+load("//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+load("//bun/tests/integration/registry:archives.bzl", "ARCHIVES")
+load(":inner_inputs.bzl", "inner_inputs")
+
+# The pinned Bazel of the platform the test runs on (G10).
+alias(
+    name = "bazel_binary",
+    actual = select({
+        ":darwin_aarch64": "@integration_bazel_darwin_arm64//file",
+        ":darwin_x86_64": "@integration_bazel_darwin_x86_64//file",
+        ":linux_aarch64": "@integration_bazel_linux_arm64//file",
+        ":windows_x86_64": "@integration_bazel_windows_x86_64//file",
+        "//conditions:default": "@integration_bazel_linux_x86_64//file",
+    }),
+)
+
+[
+    config_setting(
+        name = name,
+        constraint_values = [
+            "@platforms//os:" + os,
+            "@platforms//cpu:" + cpu,
+        ],
+    )
+    for name, os, cpu in [
+        ("darwin_aarch64", "macos", "aarch64"),
+        ("darwin_x86_64", "macos", "x86_64"),
+        ("linux_aarch64", "linux", "aarch64"),
+        ("windows_x86_64", "windows", "x86_64"),
+    ]
+]
+
+filegroup(
+    name = "workspace_files",
+    srcs = glob(["workspaces/**"]),
+)
+
+inner_inputs(
+    name = "inner_inputs",
+    archives = {"@" + repo + "//file": path for repo, path in ARCHIVES.items()},
+    bazel = ":bazel_binary",
+    registry = "//bun/tests/integration/registry:files",
+    rules_bun = "//:rules_bun_files",
+    workspaces = ":workspace_files",
+)
+
+bun_library(
+    name = "inner",
+    srcs = [
+        "support/inner.ts",
+        "support/secrets.ts",
+    ],
+    data = [":inner_inputs"],
+    visibility = ["//bun/tests:__subpackages__"],
+    deps = ["//bun/tests/support:npm_registry"],
+)
+
+bun_test(
+    name = "harness_test",
+    size = "enormous",
+    srcs = ["harness.test.ts"],
+    deps = [":inner"],
+)
+
+bun_test(
+    name = "replace_test",
+    size = "enormous",
+    srcs = ["replace.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/alg_sha256:bun.lock",
+        "//bun/tests/npm/fixtures/alg_sha256:package.json",
+        "//bun/tests/npm/fixtures/alg_sha384:bun.lock",
+        "//bun/tests/npm/fixtures/alg_sha384:package.json",
+        "//bun/tests/npm/fixtures/basic:bun.lock",
+        "//bun/tests/npm/fixtures/basic:package.json",
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "source_node_modules_test",
+    size = "enormous",
+    srcs = ["source_node_modules.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:p@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:phantom-user@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:q@2.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+test_suite(name = "integration_tests")
+
+bun_test(
+    name = "multi_test",
+    size = "enormous",
+    srcs = ["multi.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@2.0.0.tgz",
+        "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "credentials_test",
+    size = "enormous",
+    srcs = ["credentials.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:@scope+s@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "registries_test",
+    size = "enormous",
+    srcs = ["registries.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:@scope+s@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "bins_test",
+    size = "enormous",
+    srcs = ["bins.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/bins_clash:bun.lock",
+        "//bun/tests/npm/fixtures/bins_clash:package.json",
+        "//bun/tests/npm/fixtures/bins_dirbin:bun.lock",
+        "//bun/tests/npm/fixtures/bins_dirbin:package.json",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "restricted_test",
+    size = "enormous",
+    srcs = ["restricted.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/restricted:bun.lock",
+        "//bun/tests/npm/fixtures/restricted:package.json",
+        "//bun/tests/npm/registry/archives:bin-darwin-arm64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native-darwin-arm64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native-darwin-x64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native-linux-arm64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native-linux-x64-musl@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native-win32-x64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:native@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "stale_link_test",
+    size = "enormous",
+    srcs = ["stale_link.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:phantom-user@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "fetch_algorithms_test",
+    size = "enormous",
+    srcs = ["fetch_algorithms.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/alg_sha256:bun.lock",
+        "//bun/tests/npm/fixtures/alg_sha256:package.json",
+        "//bun/tests/npm/fixtures/alg_sha384:bun.lock",
+        "//bun/tests/npm/fixtures/alg_sha384:package.json",
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "lockfile_errors_test",
+    size = "enormous",
+    srcs = ["lockfile_errors.test.ts"],
+    deps = [":inner"],
+)
+
+bun_test(
+    name = "manifest_mismatch_test",
+    size = "enormous",
+    srcs = ["manifest_mismatch.test.ts"],
+    deps = [":inner"],
+)
+
+bun_test(
+    name = "conflict_test",
+    size = "enormous",
+    srcs = ["conflict.test.ts"],
+    deps = [":inner"],
+)
+
+bun_test(
+    name = "integrity_test",
+    size = "enormous",
+    srcs = ["integrity.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "laziness_test",
+    size = "enormous",
+    srcs = ["laziness.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@2.0.0.tgz",
+        "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:p-user@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:p@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:q@1.0.0.tgz",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "reproducible_test",
+    size = "enormous",
+    srcs = ["reproducible.test.ts"],
+    deps = [":inner"],
+)
+
+bun_test(
+    name = "members_test",
+    size = "enormous",
+    srcs = ["members.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/workspace_added:bun.lock",
+        "//bun/tests/npm/fixtures/workspace_added:packages/w3/package.json",
+        "//bun/tests/npm/fixtures/workspace_base:bun.lock",
+        "//bun/tests/npm/fixtures/workspace_base:package.json",
+        "//bun/tests/npm/fixtures/workspace_base:packages/w1/package.json",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "scale_test",
+    size = "enormous",
+    srcs = ["scale.test.ts"],
+    data = [
+        "//bun/tests/npm/scale:bun.lock",
+        "//bun/tests/npm/scale:package.json",
+    ],
+    deps = [
+        ":inner",
+        "//bun/tests/npm/scale:generate",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_library(
+    name = "ci_tools",
+    srcs = [
+        "compare_mod_output.ts",
+        "disk_cache_check.ts",
+    ],
+)
+
+bun_binary(
+    name = "disk_cache_check",
+    entry_point = "disk_cache_check.ts",
+    deps = [":ci_tools"],
+)
+
+bun_binary(
+    name = "compare_mod_output",
+    entry_point = "compare_mod_output.ts",
+    deps = [":ci_tools"],
+)
+
+bun_test(
+    name = "ci_tools_test",
+    srcs = ["ci_tools.test.ts"],
+    deps = [":ci_tools"],
+)

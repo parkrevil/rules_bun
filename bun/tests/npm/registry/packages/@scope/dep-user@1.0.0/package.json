@@ -1,0 +1,8 @@
+{
+  "name": "@scope/dep-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@scope/dep": "2.0.0"
+  }
+}

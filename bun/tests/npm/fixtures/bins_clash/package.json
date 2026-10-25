@@ -1,0 +1,7 @@
+{
+  "name": "bins-clash",
+  "private": true,
+  "dependencies": {
+    "clash-bin": "1.0.0"
+  }
+}

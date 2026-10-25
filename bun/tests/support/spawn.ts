@@ -1,7 +1,7 @@
 // Helpers for spawn tests (FR-021): a passing bun_test lists a `manual` target in
 // `data`, resolves its executable through runfiles and starts it.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 // Variables of the Bazel test protocol that the spawned target must not inherit
@@ -50,6 +50,34 @@ export function rlocation(path: string): string {
     const found = join(dir, path);
     if (!existsSync(found)) throw new Error(`${path} is not in the runfiles directory ${dir}`);
     return found;
+  }
+  throw new Error("neither RUNFILES_MANIFEST_FILE nor RUNFILES_DIR is set");
+}
+
+/**
+ * Returns the rlocation paths of the runfiles directly or indirectly under the
+ * rlocation directory `dir`, sorted, through RUNFILES_MANIFEST_FILE or
+ * RUNFILES_DIR.
+ */
+export function rlocationList(dir: string): string[] {
+  const prefix = dir.endsWith("/") ? dir : `${dir}/`;
+  const manifestFile = process.env.RUNFILES_MANIFEST_FILE;
+  if (manifestFile) {
+    manifest ??= readManifest(manifestFile);
+    return [...manifest.keys()].filter((k) => k.startsWith(prefix)).sort();
+  }
+  const root = process.env.RUNFILES_DIR;
+  if (root) {
+    const found: string[] = [];
+    const visit = (path: string) => {
+      for (const entry of readdirSync(join(root, path), { withFileTypes: true })) {
+        const child = `${path}/${entry.name}`;
+        if (statSync(join(root, child)).isDirectory()) visit(child);
+        else found.push(child);
+      }
+    };
+    visit(prefix.slice(0, -1));
+    return found.sort();
   }
   throw new Error("neither RUNFILES_MANIFEST_FILE nor RUNFILES_DIR is set");
 }

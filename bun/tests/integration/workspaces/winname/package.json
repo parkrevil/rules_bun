@@ -1,0 +1,7 @@
+{
+  "name": "winname-canary",
+  "private": true,
+  "dependencies": {
+    "winname": "1.0.0"
+  }
+}

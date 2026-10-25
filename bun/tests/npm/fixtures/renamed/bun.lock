@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "renamed",
+      "dependencies": {
+        "build-files": "1.0.0",
+        "spaced": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "build-files": ["build-files@1.0.0", "http://127.0.0.1:44943/build-files/-/build-files-1.0.0.tgz", {}, "sha512-DwiNuH0ZDUxkBkkxOlecrMt5aGioIDGxaipVhMsrCve33cCTz++dkPkDpYyt+OK7uHfKmBxqSAtLflyfOIG2xA=="],
+
+    "spaced": ["spaced@1.0.0", "http://127.0.0.1:44943/spaced/-/spaced-1.0.0.tgz", {}, "sha512-zSr92Vsl9RXKkG7216IjNbh1ZIG9mskCbX+brs0FjLgeculDqqTN9vyE7CAZ103GRoNUJzZpO9nrsSSIBBNhDQ=="],
+  }
+}

@@ -1,0 +1,13 @@
+load("@npm_user_npm//:defs.bzl", "npm_link_all_packages")
+load("@rules_bun//bun:defs.bzl", "bun_test")
+
+exports_files(["bun.lock"])
+
+npm_link_all_packages()
+
+bun_test(
+    name = "c_test",
+    srcs = ["c.test.ts"],
+    visibility = ["//visibility:public"],
+    deps = [":node_modules/c"],
+)

@@ -1,0 +1,11 @@
+load("@npm_unsupported//:defs.bzl", "npm_link_all_packages")
+
+# The analysis tests in //bun/tests/npm inspect these targets.
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()

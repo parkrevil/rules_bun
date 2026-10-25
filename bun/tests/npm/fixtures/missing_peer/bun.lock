@@ -1,0 +1,16 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "missing-peer",
+      "dependencies": {
+        "ident-a": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "ident-a": ["ident-a@1.0.0", "http://127.0.0.1:45945/ident-a/-/ident-a-1.0.0.tgz", { "peerDependencies": { "state": "^1.0.0" } }, "sha512-iqTJkNIBqNe6tZZKox5bRM2fWYFzA1Kd/CYqwk33OERgOFK47WB7FkYTxdf/f+crjy5lyHNrduerd4Z5V50z8g=="],
+
+  }
+}

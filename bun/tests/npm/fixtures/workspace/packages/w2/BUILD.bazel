@@ -1,0 +1,28 @@
+load("@npm_workspace//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+
+npm_link_all_packages()
+
+# The target a workspace: dependency on w2 links to (workspace_target_name).
+bun_library(
+    name = "pkg",
+    srcs = ["index.ts"],
+    data = ["package.json"],
+    visibility = ["//bun/tests/npm:__subpackages__"],
+    deps = [":node_modules/c"],
+)
+
+# Imports a, which w2 does not declare (US4-1); started by undeclared_test.
+bun_binary(
+    name = "undeclared",
+    entry_point = "undeclared_main.ts",
+    tags = ["manual"],
+    deps = [":node_modules/c"],
+)
+
+bun_test(
+    name = "undeclared_test",
+    srcs = ["undeclared.test.ts"],
+    data = [":undeclared"],
+    deps = ["//bun/tests/support:spawn"],
+)

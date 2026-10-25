@@ -1,7 +1,29 @@
-load("//bun:defs.bzl", "bun_library")
+load("//bun:defs.bzl", "bun_library", "bun_test")
 
 bun_library(
     name = "spawn",
     srcs = ["spawn.ts"],
     visibility = ["//bun/tests:__subpackages__"],
+)
+
+bun_library(
+    name = "tar",
+    srcs = ["tar.ts"],
+    visibility = ["//bun/tests:__subpackages__"],
+)
+
+bun_library(
+    name = "npm_registry",
+    srcs = ["npm_registry.ts"],
+    visibility = ["//bun/tests:__subpackages__"],
+    deps = [":tar"],
+)
+
+bun_test(
+    name = "npm_registry_test",
+    srcs = ["npm_registry.test.ts"],
+    deps = [
+        ":npm_registry",
+        ":tar",
+    ],
 )

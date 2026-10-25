@@ -1,0 +1,11 @@
+{
+  "name": "nomatch-aix-ppc64",
+  "version": "1.0.0",
+  "main": "index.js",
+  "os": [
+    "aix"
+  ],
+  "cpu": [
+    "ppc64"
+  ]
+}

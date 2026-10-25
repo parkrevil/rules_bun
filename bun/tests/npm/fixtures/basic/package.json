@@ -1,0 +1,39 @@
+{
+  "name": "basic",
+  "private": true,
+  "dependencies": {
+    "@scope/s": "1.0.0",
+    "a": "1.0.0",
+    "b": "1.0.0",
+    "build-files": "1.0.0",
+    "c": "1.0.0",
+    "cyc-a": "1.0.0",
+    "deep": "1.0.0",
+    "dirbin": "1.0.0",
+    "emptydir": "1.0.0",
+    "excluded": "1.0.0",
+    "ident-a": "1.0.0",
+    "native": "1.0.0",
+    "negated": "1.0.0",
+    "nomatch": "1.0.0",
+    "nonjs-bin": "1.0.0",
+    "p": "1.0.0",
+    "p-user": "1.0.0",
+    "pc-a": "1.0.0",
+    "phantom-user": "1.0.0",
+    "q": "1.0.0",
+    "q2-user": "1.0.0",
+    "scripted": "1.0.0",
+    "single-bin": "1.0.0",
+    "spaced": "1.0.0",
+    "state": "1.0.0",
+    "toplevel": "1.0.0",
+    "weird-bin": "1.0.0",
+    "x": "2.0.0",
+    "y": "1.0.0",
+    "z": "1.0.0"
+  },
+  "trustedDependencies": [
+    "scripted"
+  ]
+}

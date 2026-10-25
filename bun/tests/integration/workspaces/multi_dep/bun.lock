@@ -1,0 +1,17 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "multi-dep",
+      "dependencies": {
+        "c": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "b": ["b@2.0.0", "{REGISTRY}/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "c": ["c@1.0.0", "{REGISTRY}/c/-/c-1.0.0.tgz", { "dependencies": { "b": "^2.0.0" } }, "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw=="],
+  }
+}

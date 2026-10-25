@@ -1,0 +1,17 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# Imports nomatch, whose optional packages match no Bazel platform (US3-3);
+# started by nomatch_test.
+bun_binary(
+    name = "nomatch",
+    entry_point = "main.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/nomatch"],
+)
+
+bun_test(
+    name = "nomatch_test",
+    srcs = ["nomatch.test.ts"],
+    data = [":nomatch"],
+    deps = ["//bun/tests/support:spawn"],
+)

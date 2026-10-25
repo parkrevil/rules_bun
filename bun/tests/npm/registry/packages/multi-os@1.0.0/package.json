@@ -1,0 +1,13 @@
+{
+  "name": "multi-os",
+  "version": "1.0.0",
+  "main": "index.js",
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}

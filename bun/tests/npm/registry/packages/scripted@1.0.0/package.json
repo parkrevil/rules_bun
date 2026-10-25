@@ -1,0 +1,8 @@
+{
+  "name": "scripted",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node -e \"require('fs').writeFileSync('postinstall-ran', '')\""
+  }
+}

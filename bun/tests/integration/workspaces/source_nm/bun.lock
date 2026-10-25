@@ -1,0 +1,20 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "source-nm",
+      "dependencies": {
+        "p": "1.0.0",
+        "phantom-user": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "p": ["p@1.0.0", "{REGISTRY}/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "phantom-user": ["phantom-user@1.0.0", "{REGISTRY}/phantom-user/-/phantom-user-1.0.0.tgz", {}, "sha512-+aeabcnV/fg0kQG23LsIlCe/jj9D/STvupv2CF4CyYJJxkbyNBjDNz0MWZpeCEBU57GiLPY2rGcRYAnnmGzkjw=="],
+
+    "q": ["q@2.0.0", "{REGISTRY}/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+  }
+}

@@ -24,3 +24,668 @@ register_toolchains(
     "@bun_toolchains//:all",
     dev_dependency = True,
 )
+
+# Results of the pure npm modules on the fixture lockfiles, for the unit tests.
+fixture_results = use_extension("//bun/tests/npm:fixture_results.bzl", "fixture_results", dev_dependency = True)
+use_repo(fixture_results, "npm_fixture_results")
+
+# The root fixture hubs (dev only). Every package their lockfiles list is replaced by a
+# checked-in archive (research G3), so no root test fetches a fixture lockfile's URL.
+npm = use_extension("//bun:extensions.bzl", "npm", dev_dependency = True)
+npm.translate_lock(
+    name = "npm_unsupported",
+    bun_lock = "//bun/tests/npm/fixtures/unsupported:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_basic",
+    bun_lock = "//bun/tests/npm/fixtures/basic:bun.lock",
+    exclude_package_contents = {
+        "*": ["test/**"],
+        "excluded": ["docs/**"],
+    },
+)
+npm.replace_package(
+    package = "@scope/s@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:@scope+s@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "a@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "b@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "b@2.0.0",
+    replacement = "//bun/tests/npm/registry/archives:b@2.0.0.tgz",
+)
+npm.replace_package(
+    package = "build-files@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:build-files@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "c@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "cyc-a@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:cyc-a@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "cyc-b@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:cyc-b@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "deep@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:deep@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "dirbin@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:dirbin@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "emptydir@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:emptydir@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "excluded@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:excluded@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "ident-a@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:ident-a@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-darwin-arm64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-darwin-arm64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-darwin-x64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-darwin-x64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-linux-arm64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-linux-arm64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-linux-x64-musl@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-linux-x64-musl@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-linux-x64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-linux-x64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-win32-x64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-win32-x64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "negated-not-win@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:negated-not-win@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "negated@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:negated@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "nomatch-aix-ppc64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:nomatch-aix-ppc64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "nomatch-sunos-x64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:nomatch-sunos-x64@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "nomatch@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:nomatch@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "nonjs-bin@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:nonjs-bin@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "p-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:p-user@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "p@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:p@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "pc-a@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:pc-a@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "pc-b@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:pc-b@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "phantom-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:phantom-user@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "q2-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:q2-user@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "q@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:q@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "q@2.0.0",
+    replacement = "//bun/tests/npm/registry/archives:q@2.0.0.tgz",
+)
+npm.replace_package(
+    package = "scripted@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:scripted@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "single-bin@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:single-bin@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "spaced@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:spaced@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "state@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:state@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "toplevel@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:toplevel@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "weird-bin@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:weird-bin@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "x@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:x@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "x@2.0.0",
+    replacement = "//bun/tests/npm/registry/archives:x@2.0.0.tgz",
+)
+npm.replace_package(
+    package = "y@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:y@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "z@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:z@1.0.0.tgz",
+)
+npm.translate_lock(
+    name = "npm_aix",
+    bun_lock = "//bun/tests/npm/fixtures/aix:bun.lock",
+)
+npm.replace_package(
+    package = "aix-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:aix-user@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "native-aix-x64@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:native-aix-x64@1.0.0.tgz",
+)
+npm.translate_lock(
+    name = "npm_hoisted",
+    bun_lock = "//bun/tests/npm/fixtures/hoisted:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_missing_peer",
+    bun_lock = "//bun/tests/npm/fixtures/missing_peer:bun.lock",
+)
+
+# Excludes files that rules_bun renames, by their archive names (FR-033).
+npm.translate_lock(
+    name = "npm_renamed",
+    bun_lock = "//bun/tests/npm/fixtures/renamed:bun.lock",
+    exclude_package_contents = {
+        "build-files": ["sub/BUILD.bazel"],
+        "spaced": ["file with space.js"],
+    },
+)
+
+# a@1.0.0 at the key "a" with b@2.0.0, where npm_basic's a@1.0.0 has b@1.0.0 (FR-017, US9).
+npm.translate_lock(
+    name = "npm_overrides_top",
+    bun_lock = "//bun/tests/npm/fixtures/overrides_top:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_workspace",
+    bun_lock = "//bun/tests/npm/fixtures/workspace:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_jsx",
+    bun_lock = "//bun/tests/npm/fixtures/jsx:bun.lock",
+)
+npm.replace_package(
+    package = "react@19.2.0",
+    replacement = "//bun/tests/npm/fixtures/jsx/archives:react-19.2.0.tgz",
+)
+npm.replace_package(
+    package = "react-dom@19.2.0",
+    replacement = "//bun/tests/npm/fixtures/jsx/archives:react-dom-19.2.0.tgz",
+)
+npm.replace_package(
+    package = "scheduler@0.27.0",
+    replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
+)
+use_repo(npm, "npm_aix", "npm_basic", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
+
+# The downloads the Bazel-in-Bazel tests serve to their inner builds (research
+# G5, G10), for the root module only.
+# BEGIN integration archives (bun/tests/integration/registry/update.ts)
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "integration_bazel_linux_x86_64",
+    dev_dependency = True,
+    executable = True,
+    integrity = "sha256-dmipXbElDxLEBAclHk4gO07Ivzm8SV0vSFstjJkEhpQ=",
+    urls = ["https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-linux-x86_64"],
+)
+
+http_file(
+    name = "integration_bazel_linux_arm64",
+    dev_dependency = True,
+    executable = True,
+    integrity = "sha256-BJ3SH0Ctl52xHD7mjJakLOdfEYXmmsYasg3hUBQnpBA=",
+    urls = ["https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-linux-arm64"],
+)
+
+http_file(
+    name = "integration_bazel_darwin_x86_64",
+    dev_dependency = True,
+    executable = True,
+    integrity = "sha256-FMm8sBMDs4GS4OKJUFHBvPGb+J1+QW9a7utItrYkz78=",
+    urls = ["https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-darwin-x86_64"],
+)
+
+http_file(
+    name = "integration_bazel_darwin_arm64",
+    dev_dependency = True,
+    executable = True,
+    integrity = "sha256-3UZjUqPk01gbiJh0DuH/IIhmzL4l+NNnxdy5UCGVh+Y=",
+    urls = ["https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-darwin-arm64"],
+)
+
+http_file(
+    name = "integration_bazel_windows_x86_64",
+    dev_dependency = True,
+    downloaded_file_path = "bazel.exe",
+    executable = True,
+    integrity = "sha256-X8LygFuMaXpUcyVYV2k40GurY6oPm2YQzAHSyuA4hwU=",
+    urls = ["https://github.com/bazelbuild/bazel/releases/download/9.2.0/bazel-9.2.0-windows-x86_64.exe"],
+)
+
+http_file(
+    name = "integration_v1.10.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-oan3h1qktqlIDKOE1YZfHM8bCx+urWtHqkfXlwmlxf0=",
+    urls = ["https://github.com/bats-core/bats-core/archive/v1.10.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_bazel_features-v1.42.1.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-gYm6yaa/nMFVqFTEy+v+v1i5ynotCmdkX30MH4PFI6w=",
+    urls = ["https://github.com/bazel-contrib/bazel_features/releases/download/v1.42.1/bazel_features-v1.42.1.tar.gz"],
+)
+
+http_file(
+    name = "integration_bazel-lib-v3.0.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-b9Ox4aOMp0T5ZkvkYnztgIlcfS7jU4kcFy8athMJyTM=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/bazel-lib-v3.0.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_copy_directory-darwin_amd64",
+    dev_dependency = True,
+    integrity = "sha256-tGsD2nE+TMNTUBexNFioxaJkJ4zbgDRnTdgMyyhaKX0=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_directory-darwin_amd64"],
+)
+
+http_file(
+    name = "integration_copy_directory-darwin_arm64",
+    dev_dependency = True,
+    integrity = "sha256-Qz6fj3/dwlXYRP3DmIsvtDa2+XXrbq/oqi5qm7MvWHw=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_directory-darwin_arm64"],
+)
+
+http_file(
+    name = "integration_copy_directory-linux_amd64",
+    dev_dependency = True,
+    integrity = "sha256-vurTjHDXOikNYkXT4nbDwihuJHDgAkhIdlfsFTNO9To=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_directory-linux_amd64"],
+)
+
+http_file(
+    name = "integration_copy_directory-linux_arm64",
+    dev_dependency = True,
+    integrity = "sha256-4t/eerwuDB7i0SHuZk4cfA73VeF7Qi797I8Xj3S8uKQ=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_directory-linux_arm64"],
+)
+
+http_file(
+    name = "integration_copy_directory-windows_amd64.exe",
+    dev_dependency = True,
+    integrity = "sha256-mm1p+XO8XDypdMQlWpc7VjGgB++OqY9PHUVhCva03qs=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_directory-windows_amd64.exe"],
+)
+
+http_file(
+    name = "integration_copy_to_directory-darwin_amd64",
+    dev_dependency = True,
+    integrity = "sha256-dJeA/iy7hou7CoW6o7e641Fh/OGXf77V1JduF12aHBM=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_to_directory-darwin_amd64"],
+)
+
+http_file(
+    name = "integration_copy_to_directory-darwin_arm64",
+    dev_dependency = True,
+    integrity = "sha256-Yc7X0/i2gB+Bq30fQIxde7XElKoYO4XRoFLFGDeL5yk=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_to_directory-darwin_arm64"],
+)
+
+http_file(
+    name = "integration_copy_to_directory-linux_amd64",
+    dev_dependency = True,
+    integrity = "sha256-p0n/W/HKY2Dn/YFSc84GZDKiMgCVLJDpX8X5IYkdrgk=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_to_directory-linux_amd64"],
+)
+
+http_file(
+    name = "integration_copy_to_directory-linux_arm64",
+    dev_dependency = True,
+    integrity = "sha256-QnqOfO2PItgqu6gxMmec4xy4nb4EDKba2Ce5+zF7N3s=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_to_directory-linux_arm64"],
+)
+
+http_file(
+    name = "integration_copy_to_directory-windows_amd64.exe",
+    dev_dependency = True,
+    integrity = "sha256-GAlwvViEl7rI6kagf1nzsARSucSH6CougNM8OVMB+wA=",
+    urls = ["https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/copy_to_directory-windows_amd64.exe"],
+)
+
+http_file(
+    name = "integration_rules_jvm_external-6.7.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-oeNRYH8E/tKWujPEl30/4qYV7VDfeJZna2eqyZPFPBg=",
+    urls = ["https://github.com/bazel-contrib/rules_jvm_external/releases/download/6.7/rules_jvm_external-6.7.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_python-1.7.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-9gnzQdbpCQuYGz9FMk0FqBn9elpWQ0+EnHYZcc4sR9o=",
+    urls = ["https://github.com/bazel-contrib/rules_python/releases/download/1.7.0/rules_python-1.7.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_supply-chain-v0.0.6.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-W9DMdZTqUo/Sj5jYJFfxV4J9SMwg4HvP27VgcvNcj2c=",
+    urls = ["https://github.com/bazel-contrib/supply-chain/releases/download/v0.0.6/supply-chain-v0.0.6.tar.gz"],
+)
+
+http_file(
+    name = "integration_apple_support.1.24.2.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-hiXMe3spUuOBAeF7Sp58BDs6efVdJuR3KBmJGZhyXhY=",
+    urls = ["https://github.com/bazelbuild/apple_support/releases/download/1.24.2/apple_support.1.24.2.tar.gz"],
+)
+
+http_file(
+    name = "integration_bazel-skylib-1.9.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-O1tJAGGB9fj/Ym743c6qlem7itKU97XXsR6p992vjFk=",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/1.9.0/bazel-skylib-1.9.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_platforms-1.1.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-261KI6vMphceR7ee3FO9akEGejt1+eixBGVrRZ/yUEY=",
+    urls = ["https://github.com/bazelbuild/platforms/releases/download/1.1.0/platforms-1.1.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_apple.4.1.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-IBUrFNmkIK/BWs6QXAL9ZCXdzrCEYw8/BDsoet8Pzb0=",
+    urls = ["https://github.com/bazelbuild/rules_apple/releases/download/4.1.0/rules_apple.4.1.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_cc-0.2.17.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-KD+hzarxcjN4mHSc9Lmx716iadpZVAlU5R+6DnuPJ3o=",
+    urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.2.17/rules_cc-0.2.17.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_java-9.1.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-Thooolwu+lNQDJKNIs7/vFBd2VszWi0CWDaik7WSIS8=",
+    urls = ["https://github.com/bazelbuild/rules_java/releases/download/9.1.0/rules_java-9.1.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_kotlin-v1.9.6.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-O3cpdv7Hvc2h2EudObF2WJQkwEfrIXW+0JqsYw5Qr0M=",
+    urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/v1.9.6/rules_kotlin-v1.9.6.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_license-1.0.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-JtQCH2iY4juC75UweDid1JrCtWGKxWSt5O+HzO0Uezg=",
+    urls = ["https://github.com/bazelbuild/rules_license/releases/download/1.0.0/rules_license-1.0.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_shell-v0.6.1.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-5rh8ib0LJwOeOvLF2gEUdFLyQPddUF9baICHTzEDYwc=",
+    urls = ["https://github.com/bazelbuild/rules_shell/releases/download/v0.6.1/rules_shell-v0.6.1.tar.gz"],
+)
+
+http_file(
+    name = "integration_rules_swift.3.1.2.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-Xv9xfBi7UTKFtJmt1o8jMVCc1OQR/whelqhrM0LB5ao=",
+    urls = ["https://github.com/bazelbuild/rules_swift/releases/download/3.1.2/rules_swift.3.1.2.tar.gz"],
+)
+
+http_file(
+    name = "integration_stardoc-0.7.2.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-Dh7UqY8m5xh3a9ZNBT0CuzTZhXLM0D1ro1URKhIFcGs=",
+    urls = ["https://github.com/bazelbuild/stardoc/releases/download/0.7.2/stardoc-0.7.2.tar.gz"],
+)
+
+http_file(
+    name = "integration_buildozer-v8.5.1.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-vQeG4Pi2rtjDWJi0wG9kuoU9YdfINh7bWo1Dxuo39cY=",
+    urls = ["https://github.com/fmeum/buildozer/releases/download/v8.5.1/buildozer-v8.5.1.tar.gz"],
+)
+
+http_file(
+    name = "integration_googletest-1.17.0.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-Zfq3AdmCnTjLd8FKzcQx0hCL/b+JeeQOuK5Wft8Qsnw=",
+    urls = ["https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz"],
+)
+
+http_file(
+    name = "integration_finalize-stub-aarch64-linux",
+    dev_dependency = True,
+    integrity = "sha256-BCvzLltRGosqNG8055h24O4lL+oDpsc70W0j5XhbKYw=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/finalize-stub-aarch64-linux"],
+)
+
+http_file(
+    name = "integration_finalize-stub-aarch64-macos",
+    dev_dependency = True,
+    integrity = "sha256-5FeNi4BWyFemTcGBRN5yciQ1gvgtp2NGzXHfue4OsWM=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/finalize-stub-aarch64-macos"],
+)
+
+http_file(
+    name = "integration_finalize-stub-x86_64-linux",
+    dev_dependency = True,
+    integrity = "sha256-x6CcZg+ZgVAwWzK9xhmCDsHHtKi+FTkByx4yw7oOROk=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/finalize-stub-x86_64-linux"],
+)
+
+http_file(
+    name = "integration_finalize-stub-x86_64-macos",
+    dev_dependency = True,
+    integrity = "sha256-VVt6raoqAGHqN8yui25AlaYxAXj4bTEGckc9QOt/Qmk=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/finalize-stub-x86_64-macos"],
+)
+
+http_file(
+    name = "integration_finalize-stub-x86_64-windows.exe",
+    dev_dependency = True,
+    integrity = "sha256-xoo6QJ8oeQAcJ9xx3oXfJ5Q+MA51QRgDk13ZDZPz2a8=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/finalize-stub-x86_64-windows.exe"],
+)
+
+http_file(
+    name = "integration_runfiles-stub-aarch64-linux",
+    dev_dependency = True,
+    integrity = "sha256-3CJATBA9qgDNlch6FdQp58mh5sj/2I4eSThGObyxa9A=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/runfiles-stub-aarch64-linux"],
+)
+
+http_file(
+    name = "integration_runfiles-stub-aarch64-macos",
+    dev_dependency = True,
+    integrity = "sha256-cssIkrV4qeaYc6cmyKqm1J7LKmeWxwUT2vIhMr9cUIY=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/runfiles-stub-aarch64-macos"],
+)
+
+http_file(
+    name = "integration_runfiles-stub-x86_64-linux",
+    dev_dependency = True,
+    integrity = "sha256-sTQaUTUIcfG99Fc4cGlONTs/48ra60DZMYRGRN7i6Qc=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/runfiles-stub-x86_64-linux"],
+)
+
+http_file(
+    name = "integration_runfiles-stub-x86_64-macos",
+    dev_dependency = True,
+    integrity = "sha256-cyIn1CEqy+6PEEfqDwWC3mdm5Tit9LuZi48MJXJ8mbU=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/runfiles-stub-x86_64-macos"],
+)
+
+http_file(
+    name = "integration_runfiles-stub-x86_64-windows.exe",
+    dev_dependency = True,
+    integrity = "sha256-EpoYF4pvEKGWcGruP0AcCT2HshWwOg/AXMJl8Jydicc=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/binaries-20260811/runfiles-stub-x86_64-windows.exe"],
+)
+
+http_file(
+    name = "integration_hermetic_launcher-v0.0.16.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-i9GcIhNi2r1VmhdsuwAfWDPsNnfeCza0BrL4euDqrQQ=",
+    urls = ["https://github.com/hermeticbuild/hermetic-launcher/releases/download/v0.0.16/hermetic_launcher-v0.0.16.tar.gz"],
+)
+
+http_file(
+    name = "integration_bun-darwin-aarch64.zip",
+    dev_dependency = True,
+    integrity = "sha256-kJh6OhbX21VtiGrD1VHnttPt8KHPQ6yu1iLoZ2vh0S8=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-aarch64.zip"],
+)
+
+http_file(
+    name = "integration_bun-darwin-x64.zip",
+    dev_dependency = True,
+    integrity = "sha256-gFINfhdSYwjJGF0mFnmsbSd5jTgDoOn3/5Ehq4r/sBI=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-x64.zip"],
+)
+
+http_file(
+    name = "integration_bun-linux-aarch64.zip",
+    dev_dependency = True,
+    integrity = "sha256-VDKLvC2cjgyfiSxUTWbFeoO4QTnjSQnl7oF1jxrI/ac=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-aarch64.zip"],
+)
+
+http_file(
+    name = "integration_bun-linux-x64.zip",
+    dev_dependency = True,
+    integrity = "sha256-NjaPrvdSeHXV/6UuU81IAhdB8qg+tiCKjdZAaNQiqRM=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip"],
+)
+
+http_file(
+    name = "integration_bun-windows-x64.zip",
+    dev_dependency = True,
+    integrity = "sha256-zkwXSXsvKXEqmdPVPwKN4ozULjusuFiVmefwAOSbZAU=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip"],
+)
+
+http_file(
+    name = "integration_protobuf-33.4.bazel.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-aH6YpHGXO1xf1xF1DEC4uCwK3jP2Sdtl4AspDyk0Wis=",
+    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v33.4/protobuf-33.4.bazel.tar.gz"],
+)
+
+http_file(
+    name = "integration_pybind11_bazel-2.12.0.zip",
+    dev_dependency = True,
+    integrity = "sha256-pYwlxf4GOnAFf6IMuOFfO9oZsQMDBby1M68eRfNqSlU=",
+    urls = ["https://github.com/pybind/pybind11_bazel/releases/download/v2.12.0/pybind11_bazel-2.12.0.zip"],
+)
+
+http_file(
+    name = "integration_coreutils-0.1.0-aarch64-apple-darwin.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-fYBo89ESeNlveOtCtn0kC7j7I4ZyTqWXSB6X7HUmXZw=",
+    urls = ["https://github.com/uutils/coreutils/releases/download/0.1.0/coreutils-0.1.0-aarch64-apple-darwin.tar.gz"],
+)
+
+http_file(
+    name = "integration_coreutils-0.1.0-aarch64-unknown-linux-musl.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-ZXIpLudLtqfvqI8F0NCnpcaWuuCuNBpDi5g653dcnUc=",
+    urls = ["https://github.com/uutils/coreutils/releases/download/0.1.0/coreutils-0.1.0-aarch64-unknown-linux-musl.tar.gz"],
+)
+
+http_file(
+    name = "integration_coreutils-0.1.0-x86_64-apple-darwin.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-CifwnwOBEom53c/4xrfBv26XG16sPdU2IIpA4sHqnNk=",
+    urls = ["https://github.com/uutils/coreutils/releases/download/0.1.0/coreutils-0.1.0-x86_64-apple-darwin.tar.gz"],
+)
+
+http_file(
+    name = "integration_coreutils-0.1.0-x86_64-pc-windows-msvc.zip",
+    dev_dependency = True,
+    integrity = "sha256-T/PH5RSa3iCjQkh9HAnMbMY1ma9t+yjSVYuSV4CnLYI=",
+    urls = ["https://github.com/uutils/coreutils/releases/download/0.1.0/coreutils-0.1.0-x86_64-pc-windows-msvc.zip"],
+)
+
+http_file(
+    name = "integration_coreutils-0.1.0-x86_64-unknown-linux-musl.tar.gz",
+    dev_dependency = True,
+    integrity = "sha256-RjZINHsfwzdBSoZL2pYMnL0b1KVA80TAEP9bs1GZ5tc=",
+    urls = ["https://github.com/uutils/coreutils/releases/download/0.1.0/coreutils-0.1.0-x86_64-unknown-linux-musl.tar.gz"],
+)
+
+# END integration archives

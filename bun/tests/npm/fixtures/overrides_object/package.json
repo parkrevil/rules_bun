@@ -1,0 +1,13 @@
+{
+  "name": "overrides",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "overrides": {
+    "a": {
+      ".": "1.0.0",
+      "b": "2.0.0"
+    }
+  }
+}

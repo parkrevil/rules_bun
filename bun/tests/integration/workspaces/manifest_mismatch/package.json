@@ -1,0 +1,16 @@
+{
+  "name": "manifest-mismatch",
+  "private": true,
+  "workspaces": {
+    "packages": [],
+    "catalog": {
+      "a": "1.0.0"
+    }
+  },
+  "dependencies": {
+    "a": "catalog:"
+  },
+  "overrides": {
+    "b": "1.0.0"
+  }
+}

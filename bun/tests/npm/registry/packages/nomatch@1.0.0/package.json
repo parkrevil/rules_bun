@@ -1,0 +1,9 @@
+{
+  "name": "nomatch",
+  "version": "1.0.0",
+  "main": "index.js",
+  "optionalDependencies": {
+    "nomatch-sunos-x64": "1.0.0",
+    "nomatch-aix-ppc64": "1.0.0"
+  }
+}

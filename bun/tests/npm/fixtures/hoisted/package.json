@@ -1,0 +1,8 @@
+{
+  "name": "hoisted",
+  "private": true,
+  "dependencies": {
+    "phantom-user": "1.0.0",
+    "b": "1.0.0"
+  }
+}

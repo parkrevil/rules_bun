@@ -1,0 +1,16 @@
+load("//bun:defs.bzl", "bun_library")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+bun_library(
+    name = "generate",
+    srcs = ["generate.ts"],
+    visibility = ["//bun/tests:__subpackages__"],
+    deps = [
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:tar",
+    ],
+)

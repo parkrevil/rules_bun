@@ -1,0 +1,20 @@
+load("@npm_workspace//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_test")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# The root gets the catalog's q@1.0.0 (US4-3) and the alias as Bun links it
+# (Edge Case: aliased is b@2.0.0).
+bun_test(
+    name = "root_test",
+    srcs = ["root.test.ts"],
+    deps = [
+        ":node_modules/aliased",
+        ":node_modules/q",
+    ],
+)

@@ -1,0 +1,7 @@
+{
+  "name": "alg-sha384",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  }
+}

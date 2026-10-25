@@ -1,0 +1,10 @@
+{
+  "name": "restricted",
+  "private": true,
+  "dependencies": {
+    "native": "1.0.0"
+  },
+  "optionalDependencies": {
+    "bin-darwin-arm64": "1.0.0"
+  }
+}

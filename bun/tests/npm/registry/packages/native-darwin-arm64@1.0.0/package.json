@@ -1,0 +1,11 @@
+{
+  "name": "native-darwin-arm64",
+  "version": "1.0.0",
+  "main": "index.js",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ]
+}

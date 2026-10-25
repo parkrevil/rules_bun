@@ -1,0 +1,6 @@
+load("@rules_bun//bun:defs.bzl", "bun_test")
+
+bun_test(
+    name = "pass_test",
+    srcs = ["pass.test.ts"],
+)

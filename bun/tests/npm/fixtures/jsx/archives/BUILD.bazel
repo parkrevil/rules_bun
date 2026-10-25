@@ -1,0 +1,7 @@
+# react, react-dom and scheduler as the public npm registry served them, written
+# by bun/tests/npm/registry/fetch_react.ts; npm_jsx replaces their downloads.
+
+exports_files(
+    glob(["*.tgz"]),
+    visibility = ["//visibility:public"],
+)

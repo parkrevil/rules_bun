@@ -1,0 +1,76 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "workspace-root",
+      "dependencies": {
+        "a": "1.0.0",
+        "aliased": "npm:b@2.0.0",
+        "q": "catalog:",
+      },
+    },
+    "packages/w1": {
+      "name": "w1",
+      "version": "1.0.0",
+      "dependencies": {
+        "a": "1.0.0",
+        "p": "1.0.0",
+        "p-user": "1.0.0",
+        "q": "2.0.0",
+        "w2": "workspace:*",
+      },
+      "devDependencies": {
+        "single-bin": "1.0.0",
+      },
+      "optionalDependencies": {
+        "native-linux-x64": "1.0.0",
+      },
+      "peerDependencies": {
+        "state": "1.0.0",
+      },
+    },
+    "packages/w2": {
+      "name": "w2",
+      "version": "1.0.0",
+      "dependencies": {
+        "c": "1.0.0",
+      },
+    },
+  },
+  "overrides": {
+    "r": "1.0.0",
+  },
+  "catalog": {
+    "q": "1.0.0",
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:45195/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "aliased": ["b@2.0.0", "http://127.0.0.1:45195/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:45195/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "c": ["c@1.0.0", "http://127.0.0.1:45195/c/-/c-1.0.0.tgz", { "dependencies": { "b": "^2.0.0" } }, "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw=="],
+
+    "native-linux-x64": ["native-linux-x64@1.0.0", "http://127.0.0.1:45195/native-linux-x64/-/native-linux-x64-1.0.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-S73CDOryadHD+vH4DrOTDU27ja3CFqJbXhibpzcEEXkUTrwq0yfP5Fe0Q+RERpGzy68LCSTyIgGQbrn44ws7Kw=="],
+
+    "p": ["p@1.0.0", "http://127.0.0.1:45195/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "p-user": ["p-user@1.0.0", "http://127.0.0.1:45195/p-user/-/p-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0" } }, "sha512-y5+XBk5r/8wnG1rPhrLPGs1J2fE3BqygDnsVII6PYdPYyUvzn74Cet5uZ2Lubb+uMJVSRnbDN64WuldBzpHtVA=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:45195/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "single-bin": ["single-bin@1.0.0", "http://127.0.0.1:45195/single-bin/-/single-bin-1.0.0.tgz", { "bin": "cli.ts" }, "sha512-6uXpPhdvW0zAkL3xfQL+cFK+H1qjIOWTjKNUXPRY3hGjKr+kWMoZMUvYdy/ehGi7cQBelGw9mlFxQH1mgUChJw=="],
+
+    "state": ["state@1.0.0", "http://127.0.0.1:45195/state/-/state-1.0.0.tgz", {}, "sha512-sGZb7AOYLr4Imwh9FrhNETSJfhtvq+mXb+/hYcvjmeld/a3Q7GWCWfJ0P4pMKmshVrUC6R439QTySFxhzDq0zw=="],
+
+    "w1": ["w1@workspace:packages/w1"],
+
+    "w2": ["w2@workspace:packages/w2"],
+
+    "c/b": ["b@2.0.0", "http://127.0.0.1:45195/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "w1/q": ["q@2.0.0", "http://127.0.0.1:45195/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+  }
+}

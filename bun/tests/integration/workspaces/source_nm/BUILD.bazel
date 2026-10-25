@@ -1,0 +1,27 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@rules_bun//bun:defs.bzl", "bun_test")
+
+exports_files(["bun.lock"])
+
+npm_link_all_packages()
+
+# phantom-user requires b, which it does not declare (US1-7).
+bun_test(
+    name = "phantom_test",
+    srcs = ["phantom.test.ts"],
+    deps = [":node_modules/phantom-user"],
+)
+
+# The test imports b, which it does not declare (Edge Case).
+bun_test(
+    name = "source_test",
+    srcs = ["source.test.ts"],
+)
+
+# p's optional peer r, which nothing provides, sits in the source node_modules
+# (US5-2).
+bun_test(
+    name = "optional_peer_test",
+    srcs = ["optional_peer.test.ts"],
+    deps = [":node_modules/p"],
+)

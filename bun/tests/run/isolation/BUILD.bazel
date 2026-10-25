@@ -1,5 +1,11 @@
 load("//bun:defs.bzl", "bun_binary", "bun_test")
 
+# Also served by //bun/tests/npm/fixtures/basic/isolation:isolation_test.
+exports_files(
+    ["registry/rules-bun-fixture-pkg-1.0.0.tgz"],
+    visibility = ["//bun/tests:__subpackages__"],
+)
+
 bun_binary(
     name = "probe",
     entry_point = "probe.ts",

@@ -1,0 +1,5 @@
+"""Settings for every package of the consumer test module."""
+
+# A node_modules directory that `bun install` writes stays out of Bazel's
+# packages (the rules_bun documentation recommends this to consumers).
+ignore_directories(["**/node_modules"])

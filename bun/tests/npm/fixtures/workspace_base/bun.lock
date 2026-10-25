@@ -1,0 +1,23 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "members-root",
+    },
+    "packages/w1": {
+      "name": "w1",
+      "version": "1.0.0",
+      "dependencies": {
+        "a": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:46603/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:46603/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "w1": ["w1@workspace:packages/w1"],
+  }
+}

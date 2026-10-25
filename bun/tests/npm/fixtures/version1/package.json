@@ -1,0 +1,8 @@
+{
+  "name": "version1",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "c": "1.0.0"
+  }
+}

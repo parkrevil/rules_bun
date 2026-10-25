@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "bins-dirbin",
+      "dependencies": {
+        "dirbin": "1.0.0",
+        "single-bin": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "dirbin": ["dirbin@1.0.0", "http://127.0.0.1:44917/dirbin/-/dirbin-1.0.0.tgz", { "binDir": "bin" }, "sha512-aYTrJU33VqmjkMA6YntcDbYCpAAnOuwh361QX9q2BDctGWlIb3hOCeswq3Kuuf7uxEfKOFgMFWWpXWenxG/hPg=="],
+
+    "single-bin": ["single-bin@1.0.0", "http://127.0.0.1:44917/single-bin/-/single-bin-1.0.0.tgz", { "bin": "cli.ts" }, "sha512-6uXpPhdvW0zAkL3xfQL+cFK+H1qjIOWTjKNUXPRY3hGjKr+kWMoZMUvYdy/ehGi7cQBelGw9mlFxQH1mgUChJw=="],
+  }
+}

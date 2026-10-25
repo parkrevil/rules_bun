@@ -1,0 +1,13 @@
+load("//bun:defs.bzl", "bun_library", "bun_test")
+
+bun_library(
+    name = "lib",
+    srcs = ["lib.ts"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "lib_test",
+    srcs = ["lib.test.ts"],
+    deps = [":lib"],
+)

@@ -1,0 +1,7 @@
+# The local registry of the Bazel-in-Bazel tests, written by update.ts.
+
+filegroup(
+    name = "files",
+    srcs = ["bazel_registry.json"] + glob(["modules/**"]),
+    visibility = ["//bun/tests/integration:__pkg__"],
+)

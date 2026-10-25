@@ -4,4 +4,10 @@ repo(
     default_package_metadata = ["//:package_metadata"],
 )
 
-ignore_directories(["e2e"])
+# e2e holds the consumer test module. bun/tests/npm/registry/packages holds the
+# sources of the npm fixture archives, some with BUILD files of their own; only
+# bun/tests/npm/registry/pack.ts reads them, by hand.
+ignore_directories([
+    "e2e",
+    "bun/tests/npm/registry/packages",
+])

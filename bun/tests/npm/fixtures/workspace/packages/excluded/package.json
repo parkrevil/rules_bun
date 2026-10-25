@@ -1,0 +1,7 @@
+{
+  "name": "excluded-member",
+  "version": "1.0.0",
+  "dependencies": {
+    "r": "1.0.0"
+  }
+}

@@ -1,0 +1,18 @@
+load("//bun:defs.bzl", "bun_test")
+load(":glob_members.bzl", "glob_members")
+
+glob_members(name = "glob_members")
+
+# The workspace glob matcher against the pinned Bun (research R9).
+bun_test(
+    name = "glob_compare_test",
+    srcs = ["glob_compare.test.ts"],
+    data = [
+        ":glob_members",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+    ],
+    deps = [
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)

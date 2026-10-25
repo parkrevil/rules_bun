@@ -1,0 +1,8 @@
+load("@npm_missing_peer//:defs.bzl", "npm_link_all_packages")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()

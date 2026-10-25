@@ -1,0 +1,70 @@
+load("@npm_basic//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# The analysis tests in //bun/tests/npm inspect these targets.
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+bun_test(
+    name = "imports_test",
+    srcs = ["imports.test.ts"],
+    deps = [
+        ":node_modules/@scope/s",
+        ":node_modules/a",
+        ":node_modules/c",
+    ],
+)
+
+# imports_test without packages: its action count is the A of P + E + L + A
+# (layout_test, research G8).
+bun_test(
+    name = "imports_baseline",
+    srcs = ["imports.test.ts"],
+    tags = ["manual"],
+)
+
+# Calls phantom-user, which requires the undeclared b (US1-7); started by
+# phantom_test.
+bun_binary(
+    name = "phantom",
+    entry_point = "phantom_main.ts",
+    tags = ["manual"],
+    deps = [
+        ":node_modules/b",
+        ":node_modules/phantom-user",
+    ],
+)
+
+bun_test(
+    name = "phantom_test",
+    srcs = ["phantom.test.ts"],
+    data = [":phantom"],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+bun_test(
+    name = "scripted_test",
+    srcs = ["scripted.test.ts"],
+    deps = [":node_modules/scripted"],
+)
+
+# The longest store path (research G8) and a load of the file at its end
+# (research G11).
+bun_test(
+    name = "path_length_test",
+    srcs = ["path_length.test.ts"],
+    deps = [":node_modules/deep"],
+)
+
+# native loads the platform package of the platform it runs on (US3-1).
+bun_test(
+    name = "native_test",
+    srcs = ["native.test.ts"],
+    deps = [":node_modules/native"],
+)

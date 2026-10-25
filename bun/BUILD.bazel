@@ -22,7 +22,10 @@ bzl_library(
     name = "extensions",
     srcs = ["extensions.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["//bun/private:extensions"],
+    deps = [
+        "//bun/private:extensions",
+        "//bun/private:npm_extension",
+    ],
 )
 
 bzl_library(
@@ -30,4 +33,17 @@ bzl_library(
     srcs = ["repositories.bzl"],
     visibility = ["//visibility:public"],
     deps = ["//bun/private:repositories"],
+)
+
+# The files a consumer of the module needs, for the Bazel-in-Bazel tests (G5).
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]) + [
+        "//bun/private:all_files",
+        "//bun/toolchain:all_files",
+    ],
+    visibility = [
+        "//:__pkg__",
+        "//bun/tests:__subpackages__",
+    ],
 )

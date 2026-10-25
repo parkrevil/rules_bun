@@ -1,0 +1,20 @@
+load("@npm_renamed//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_test")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# exclude_package_contents names files that rules_bun renames, by their archive
+# names (FR-033, FR-035).
+bun_test(
+    name = "excluded_test",
+    srcs = ["excluded.test.ts"],
+    deps = [
+        ":node_modules/build-files",
+        ":node_modules/spaced",
+    ],
+)

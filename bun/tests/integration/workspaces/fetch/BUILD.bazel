@@ -1,0 +1,27 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@rules_bun//bun:defs.bzl", "bun_test")
+
+exports_files(["bun.lock"])
+
+npm_link_all_packages()
+
+# Needs no package.
+bun_test(
+    name = "plain_test",
+    srcs = ["plain.test.ts"],
+)
+
+# Needs a and, through it, b@1.0.0.
+bun_test(
+    name = "a_test",
+    srcs = ["a.test.ts"],
+    deps = [":node_modules/a"],
+)
+
+# Needs p-user and, through it, p, whose peer q resolves to the q@1.0.0 the root
+# workspace lists; its optional peer r stays unprovided.
+bun_test(
+    name = "p_user_test",
+    srcs = ["p_user.test.ts"],
+    deps = [":node_modules/p-user"],
+)

@@ -1,0 +1,31 @@
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("//bun:defs.bzl", "bun_test")
+
+# US6-1: package executables run with their arguments.
+bun_test(
+    name = "bins_test",
+    srcs = ["bins.test.ts"],
+    data = [
+        "//bun/tests/npm/fixtures/basic:node_modules/@scope/s/bin/s-tool",
+        "//bun/tests/npm/fixtures/basic:node_modules/single-bin/bin/single-bin",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
+# US6-2: a package executable as a build action's tool.
+run_binary(
+    name = "written",
+    outs = ["written.json"],
+    args = [
+        "--out=$@",
+        "from",
+        "run_binary",
+    ],
+    tool = "//bun/tests/npm/fixtures/basic:node_modules/single-bin/bin/single-bin",
+)
+
+bun_test(
+    name = "tool_test",
+    srcs = ["tool.test.ts"],
+    data = [":written"],
+)

@@ -1,0 +1,8 @@
+{
+  "name": "weird-bin",
+  "version": "1.0.0",
+  "bin": {
+    "run tool": "a.js",
+    "run:tool2": "b.js"
+  }
+}

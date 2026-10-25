@@ -1,0 +1,23 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "manifest-mismatch",
+      "dependencies": {
+        "a": "catalog:",
+      },
+    },
+  },
+  "overrides": {
+    "b": "1.0.0",
+  },
+  "catalog": {
+    "a": "1.0.0",
+  },
+  "packages": {
+    "a": ["a@1.0.0", "{REGISTRY}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "b": ["b@1.0.0", "{REGISTRY}/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+  }
+}
