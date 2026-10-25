@@ -14,15 +14,18 @@ test("an empty trustedDependencies is not written", async () => {
   const { lock } = await runInstall(
     { "package.json": manifest({ name: "c-td", dependencies: { scripted: "1.0.0" }, trustedDependencies: [] }) },
     // Red: the list is not empty.
-    { alter: red({ files: (f) => ({ "package.json": f["package.json"].replace('"trustedDependencies": []', '"trustedDependencies": ["scripted"]') }) }) },
+    { lockfileOnly: true, alter: red({ files: (f) => ({ "package.json": f["package.json"].replace('"trustedDependencies": []', '"trustedDependencies": ["scripted"]') }) }) },
   );
   if ("trustedDependencies" in lock) canaryFail("C-TD", ACCESS, REVISIT, SOURCE, lock.trustedDependencies);
 });
 
 test("a non-empty trustedDependencies is written", async () => {
-  const { lock } = await runInstall({
-    "package.json": manifest({ name: "c-td", dependencies: { scripted: "1.0.0" }, trustedDependencies: ["scripted"] }),
-  });
+  // --lockfile-only: the canary pins what the lockfile records and must not run the
+  // package's postinstall, which needs a host `node`.
+  const { lock } = await runInstall(
+    { "package.json": manifest({ name: "c-td", dependencies: { scripted: "1.0.0" }, trustedDependencies: ["scripted"] }) },
+    { lockfileOnly: true },
+  );
   if (JSON.stringify(lock.trustedDependencies) !== JSON.stringify(["scripted"])) {
     canaryFail("C-TD", ACCESS, REVISIT, SOURCE, lock.trustedDependencies);
   }
