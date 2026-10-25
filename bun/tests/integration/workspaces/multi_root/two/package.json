@@ -1,0 +1,7 @@
+{
+  "name": "multi-two",
+  "private": true,
+  "dependencies": {
+    "b": "2.0.0"
+  }
+}

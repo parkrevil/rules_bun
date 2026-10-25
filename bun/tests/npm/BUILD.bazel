@@ -1,0 +1,45 @@
+load(":bins_test.bzl", "bins_test_suite")
+load(":compare_test.bzl", "compare_test_suite")
+load(":generated_test.bzl", "generated_test_suite")
+load(":glob_test.bzl", "glob_test_suite")
+load(":jsonc_test.bzl", "jsonc_test_suite")
+load(":layout_test.bzl", "layout_test_suite")
+load(":lockfile_test.bzl", "lockfile_test_suite")
+load(":naming_test.bzl", "naming_test_suite")
+load(":npmrc_test.bzl", "npmrc_test_suite")
+load(":overrides_test.bzl", "overrides_test_suite")
+load(":platforms_test.bzl", "platforms_test_suite")
+load(":resolve_test.bzl", "resolve_test_suite")
+load(":uniqueness_test.bzl", "uniqueness_test_suite")
+load(":unsupported_test.bzl", "unsupported_test_suite")
+load(":workspaces_test.bzl", "workspaces_test_suite")
+
+bins_test_suite(name = "bins")
+
+compare_test_suite(name = "compare")
+
+generated_test_suite(name = "generated")
+
+glob_test_suite(name = "glob")
+
+jsonc_test_suite(name = "jsonc")
+
+layout_test_suite(name = "layout")
+
+lockfile_test_suite(name = "lockfile")
+
+naming_test_suite(name = "naming")
+
+npmrc_test_suite(name = "npmrc")
+
+overrides_test_suite(name = "overrides")
+
+platforms_test_suite(name = "platforms")
+
+resolve_test_suite(name = "resolve")
+
+uniqueness_test_suite(name = "uniqueness")
+
+unsupported_test_suite(name = "unsupported")
+
+workspaces_test_suite(name = "workspaces")

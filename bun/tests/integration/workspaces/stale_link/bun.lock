@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "stale-link",
+      "dependencies": {
+        "b": "1.0.0",
+        "phantom-user": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "b": ["b@1.0.0", "{REGISTRY}/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "phantom-user": ["phantom-user@1.0.0", "{REGISTRY}/phantom-user/-/phantom-user-1.0.0.tgz", {PHANTOM_INFO}, "sha512-+aeabcnV/fg0kQG23LsIlCe/jj9D/STvupv2CF4CyYJJxkbyNBjDNz0MWZpeCEBU57GiLPY2rGcRYAnnmGzkjw=="],
+  }
+}

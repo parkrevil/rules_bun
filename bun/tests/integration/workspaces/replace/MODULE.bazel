@@ -1,0 +1,31 @@
+bazel_dep(name = "rules_bun")
+
+bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
+bun.toolchain(bun_version = "1.4.2")
+use_repo(bun, "bun_toolchains")
+
+register_toolchains("@bun_toolchains//:all")
+
+npm = use_extension("@rules_bun//bun:extensions.bzl", "npm")
+npm.translate_lock(
+    name = "npm_256",
+    bun_lock = "//s256:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_384",
+    bun_lock = "//s384:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_512",
+    bun_lock = "//s512:bun.lock",
+)
+
+# The test writes the replacements here.
+# buildifier: disable=no-effect
+{REPLACEMENTS}
+
+use_repo(npm, "npm_256", "npm_384", "npm_512")
+
+# The test writes extra tags here.
+# buildifier: disable=no-effect
+{EXTRA}

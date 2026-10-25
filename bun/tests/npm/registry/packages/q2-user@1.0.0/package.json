@@ -1,0 +1,9 @@
+{
+  "name": "q2-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "p": "^1.0.0",
+    "q": "2.0.0"
+  }
+}

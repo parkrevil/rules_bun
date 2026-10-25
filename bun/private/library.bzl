@@ -15,6 +15,10 @@ def check_no_directory(label, files):
         if f.is_directory:
             fail("{}: data holds the directory {}; directories in data are not supported".format(label, f.short_path))
 
+def packages_of(info):
+    """The `packages` of a `BunLibraryInfo`; a provider created without the field holds none."""
+    return getattr(info, "packages", None) or depset()
+
 def library_info(srcs, data, deps):
     """Returns the `BunLibraryInfo` of a target.
 
@@ -24,13 +28,14 @@ def library_info(srcs, data, deps):
         deps: List of the target's `deps` targets, each providing `BunLibraryInfo`.
 
     Returns:
-        `BunLibraryInfo` with the transitive sources and data files.
+        `BunLibraryInfo` with the transitive sources, data files and package link records.
     """
     return BunLibraryInfo(
         srcs = depset(srcs, transitive = [d[BunLibraryInfo].srcs for d in deps]),
         data = depset(
             transitive = [t[DefaultInfo].files for t in data] + [d[BunLibraryInfo].data for d in deps],
         ),
+        packages = depset(transitive = [packages_of(d[BunLibraryInfo]) for d in deps]),
     )
 
 def library_runfiles(ctx, files, data, deps):
@@ -82,7 +87,7 @@ copy tree and runs them there. A directory in `data` fails analysis.""",
             allow_files = True,
         ),
         "deps": attr.label_list(
-            doc = "Other `bun_library` targets.",
+            doc = "Other `bun_library` targets and npm package targets (`:node_modules/<package>`), whose packages it passes on.",
             providers = [BunLibraryInfo],
         ),
     },

@@ -34,6 +34,73 @@ jobs:
         env:
           RULES_BUN_INHERITED: set
           RULES_BUN_BOTH: inherited
+      - if: matrix.folder == '.'
+        run: bazel run //bun/tests/npm/fixtures/jsx:render
+      - if: matrix.folder == '.'
+        run: bazel run //bun/tests/npm/fixtures/basic:node_modules/single-bin/bin/single-bin -- x
+      - if: matrix.folder == 'e2e/smoke'
+        run: bazel run //jsx:render
+      # The npm extension's repositories, compared across OSes by mod-compare.
+      - if: matrix.folder == 'e2e/smoke'
+        run: bazel mod show_extension @rules_bun//bun:extensions.bzl%npm > show_extension.txt
+      - if: matrix.folder == 'e2e/smoke'
+        run: bazel mod show_repo --all_repos > show_repo.txt
+      - if: matrix.folder == 'e2e/smoke'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mod-output-${{ matrix.os }}
+          path: |
+            e2e/smoke/show_extension.txt
+            e2e/smoke/show_repo.txt
+      # The same output for an inner workspace whose lockfile lists packages restricted
+      # by os and cpu, written by reproducible_test. Run again without cached results,
+      # so the files come from this OS's run and are present in bazel-testlogs.
+      - if: matrix.folder == '.'
+        run: bazel test //bun/tests/integration:reproducible_test --nocache_test_results
+      - if: matrix.folder == '.'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mod-output-reproducible-${{ matrix.os }}
+          path: bazel-testlogs/bun/tests/integration/reproducible_test/test.outputs/
+          if-no-files-found: error
+  mod-compare:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+          bazelrc: common --config=ci
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: mod-output-*
+          path: ${{ runner.temp }}/mod-output
+      - run: >-
+          bazel run //bun/tests/integration:compare_mod_output -- ${{ runner.temp }}/mod-output/mod-output-ubuntu-latest ${{ runner.temp }}/mod-output/mod-output-macos-latest ${{ runner.temp }}/mod-output/mod-output-windows-latest
+      - run: >-
+          bazel run //bun/tests/integration:compare_mod_output -- ${{ runner.temp }}/mod-output/mod-output-reproducible-ubuntu-latest ${{ runner.temp }}/mod-output/mod-output-reproducible-macos-latest ${{ runner.temp }}/mod-output/mod-output-reproducible-windows-latest
+  network-denied:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: [".", "e2e/smoke"]
+    defaults:
+      run:
+        working-directory: ${{ matrix.folder }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # No disk cache: the tests must run without network.
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+          bazelrc: ${{ matrix.folder == '.' && 'common --config=ci' || '' }}
+      - run: bazel fetch //...
+      - run: bazel test //... --nosandbox_default_allow_network
   manifest-only:
     runs-on: ubuntu-latest
     strategy:
@@ -121,13 +188,45 @@ jobs:
             run --run_env==BAZEL_SH
       - run: bazel test //...
       - run: bazel run ${{ matrix.folder == '.' && '//bun/tests/run/app:main -- extra' || '//app:main' }}
+  windows-symlinks:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: [".", "e2e/smoke"]
+    defaults:
+      run:
+        working-directory: ${{ matrix.folder }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # No disk cache: the tests must run with symbolic links instead of junctions.
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+          bazelrc: ${{ matrix.folder == '.' && 'common --config=ci' || '' }}
+      - run: bazel --windows_enable_symlinks test //...
+  windows-disk-cache:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The job's own disk cache, empty at the start: the second output base must
+      # get every action that consumes a package store link from it.
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+          bazelrc: common --config=ci
+      - run: bazel --output_base=C:/ob-a build //bun/tests/npm/... --disk_cache=C:/dc --execution_log_json_file=${{ runner.temp }}/a.json
+      - run: bazel --output_base=C:/ob-b build //bun/tests/npm/... --disk_cache=C:/dc --execution_log_json_file=${{ runner.temp }}/b.json
+      - run: bazel --output_base=C:/ob-b run //bun/tests/integration:disk_cache_check -- ${{ runner.temp }}/b.json
   prek:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
   conclusion:
-    needs: [test, manifest-only, coverage, output-root-with-space, windows-without-bash, prek]
+    needs: [test, mod-compare, network-denied, manifest-only, coverage, output-root-with-space, windows-without-bash, windows-symlinks, windows-disk-cache, prek]
     runs-on: ubuntu-latest
     if: always()
     steps:

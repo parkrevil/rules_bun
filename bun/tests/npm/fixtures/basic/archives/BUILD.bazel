@@ -1,0 +1,16 @@
+load("//bun:defs.bzl", "bun_test")
+
+# Package archives with BUILD files, a file name outside Bazel's target-name set,
+# a top-level directory other than package/, excluded contents and empty
+# directories (FR-033, FR-034, FR-035).
+bun_test(
+    name = "archives_test",
+    srcs = ["archives.test.ts"],
+    deps = [
+        "//bun/tests/npm/fixtures/basic:node_modules/build-files",
+        "//bun/tests/npm/fixtures/basic:node_modules/emptydir",
+        "//bun/tests/npm/fixtures/basic:node_modules/excluded",
+        "//bun/tests/npm/fixtures/basic:node_modules/spaced",
+        "//bun/tests/npm/fixtures/basic:node_modules/toplevel",
+    ],
+)

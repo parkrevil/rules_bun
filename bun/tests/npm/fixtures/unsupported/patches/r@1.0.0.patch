@@ -1,0 +1,7 @@
+diff --git a/index.js b/index.js
+index 13d683225fa95696571b63315a915d6ad7f17115..54651cf0f67e69bba85a9feee10cc83ece4bf528 100644
+--- a/index.js
++++ b/index.js
+@@ -1 +1 @@
+-module.exports = { name: "r", version: "1.0.0" };
++module.exports = { name: "r", version: "patched" };

@@ -1,0 +1,8 @@
+{
+  "name": "renamed",
+  "private": true,
+  "dependencies": {
+    "build-files": "1.0.0",
+    "spaced": "1.0.0"
+  }
+}

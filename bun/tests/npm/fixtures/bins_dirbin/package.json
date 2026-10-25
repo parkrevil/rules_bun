@@ -1,0 +1,8 @@
+{
+  "name": "bins-dirbin",
+  "private": true,
+  "dependencies": {
+    "dirbin": "1.0.0",
+    "single-bin": "1.0.0"
+  }
+}

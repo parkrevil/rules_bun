@@ -46,10 +46,89 @@ bzl_library(
     srcs = ["run.bzl"],
     deps = [
         ":library",
+        "@bazel_lib//lib:copy_directory",
         "@bazel_lib//lib:copy_file",
         "@bazel_skylib//lib:shell",
         "@hermetic_launcher//launcher:lib_bzl",
     ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//bun:__pkg__"],
+)
+
+bzl_library(
+    name = "lockfile",
+    srcs = ["lockfile.bzl"],
+    deps = [":jsonc"],
+)
+
+bzl_library(
+    name = "resolve",
+    srcs = ["resolve.bzl"],
+    deps = [":lockfile"],
+)
+
+bzl_library(
+    name = "npm_extension",
+    srcs = ["npm_extension.bzl"],
+    deps = [
+        ":library",
+        ":lockfile",
+        ":npm_names",
+        ":npm_repositories",
+        ":npmrc",
+        ":resolve",
+        ":workspaces",
+    ],
+)
+
+bzl_library(
+    name = "npm_package",
+    srcs = ["npm_package.bzl"],
+    deps = [
+        ":library",
+        ":providers",
+        "@bazel_lib//lib:copy_to_directory",
+    ],
+)
+
+bzl_library(
+    name = "overrides",
+    srcs = ["overrides.bzl"],
+    deps = [":lockfile"],
+)
+
+bzl_library(
+    name = "workspaces",
+    srcs = ["workspaces.bzl"],
+    deps = [
+        ":lockfile",
+        ":overrides",
+    ],
+)
+
+bzl_library(
+    name = "npm_repositories",
+    srcs = ["npm_repositories.bzl"],
+    deps = ["@bazel_tools//tools/build_defs/repo:utils.bzl"],
+)
+
+bzl_library(
+    name = "jsonc",
+    srcs = ["jsonc.bzl"],
+)
+
+bzl_library(
+    name = "npm_names",
+    srcs = ["npm_names.bzl"],
+)
+
+bzl_library(
+    name = "npmrc",
+    srcs = ["npmrc.bzl"],
 )
 
 bzl_library(

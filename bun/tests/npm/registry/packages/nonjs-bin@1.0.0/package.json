@@ -1,0 +1,7 @@
+{
+  "name": "nonjs-bin",
+  "version": "1.0.0",
+  "bin": {
+    "nonjs": "bin/tool"
+  }
+}

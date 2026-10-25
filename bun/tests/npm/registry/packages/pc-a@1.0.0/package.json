@@ -1,0 +1,11 @@
+{
+  "name": "pc-a",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "pc-b": "1.0.0"
+  },
+  "peerDependencies": {
+    "pc-b": "1.0.0"
+  }
+}

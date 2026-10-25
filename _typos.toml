@@ -1,0 +1,3 @@
+[default]
+# Subresource Integrity values (`sha512-<base64>`), whole or truncated, are not words.
+extend-ignore-re = ["sha(1|256|384|512)-[A-Za-z0-9+/]+=*"]

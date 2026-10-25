@@ -1,0 +1,8 @@
+bazel_dep(name = "rules_bun")
+
+npm = use_extension("@rules_bun//bun:extensions.bzl", "npm")
+npm.translate_lock(
+    bun_lock = "//:bun.lock",
+    npmrc = "//:.npmrc",
+)
+use_repo(npm, "npm")

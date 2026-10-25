@@ -1,0 +1,48 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# FR-022 with packages: a target carrying packages reads no bunfig.toml or .env
+# of its working directory and installs no missing package; isolation_test
+# starts these.
+bun_binary(
+    name = "probe",
+    entry_point = "probe.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "probe_test",
+    srcs = ["probe.test.ts"],
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_binary(
+    name = "missing",
+    entry_point = "missing.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "missing_test",
+    srcs = ["missing.test.ts"],
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "isolation_test",
+    srcs = ["isolation.test.ts"],
+    data = [
+        ":missing",
+        ":missing_test",
+        ":probe",
+        ":probe_test",
+        "//bun/tests/run/isolation:registry/rules-bun-fixture-pkg-1.0.0.tgz",
+    ],
+    deps = [
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)

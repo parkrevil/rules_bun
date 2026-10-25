@@ -1,0 +1,21 @@
+{
+  "name": "workspace-root",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "!packages/excluded"
+    ],
+    "catalog": {
+      "q": "1.0.0"
+    }
+  },
+  "overrides": {
+    "r": "1.0.0"
+  },
+  "dependencies": {
+    "a": "1.0.0",
+    "aliased": "npm:b@2.0.0",
+    "q": "catalog:"
+  }
+}

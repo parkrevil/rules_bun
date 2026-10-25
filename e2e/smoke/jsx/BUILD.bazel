@@ -1,0 +1,32 @@
+load("@rules_bun//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+
+# The JSX proof in the consumer module (US8, SC-001, SC-002): React from the
+# public npm registry, through the npm extension's public targets only.
+bun_library(
+    name = "render_lib",
+    srcs = [
+        "expected.ts",
+        "render.tsx",
+    ],
+    deps = ["//:node_modules/react"],
+)
+
+bun_test(
+    name = "render_test",
+    srcs = ["render.test.tsx"],
+    deps = [
+        ":render_lib",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+    ],
+)
+
+# `bazel run //jsx:render` prints the markup and exits 0, or 1 on a mismatch.
+bun_binary(
+    name = "render",
+    entry_point = "render_main.tsx",
+    deps = [
+        ":render_lib",
+        "//:node_modules/react-dom",
+    ],
+)

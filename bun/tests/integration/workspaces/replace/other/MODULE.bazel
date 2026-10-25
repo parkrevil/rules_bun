@@ -1,0 +1,12 @@
+module(
+    name = "other",
+    version = "1.0.0",
+)
+
+bazel_dep(name = "rules_bun")
+
+npm = use_extension("@rules_bun//bun:extensions.bzl", "npm")
+npm.replace_package(
+    package = "b@1.0.0",
+    replacement = "//:b.tgz",
+)

@@ -1,0 +1,8 @@
+{
+  "name": "aix-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "optionalDependencies": {
+    "native-aix-x64": "1.0.0"
+  }
+}

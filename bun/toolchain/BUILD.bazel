@@ -7,3 +7,9 @@ toolchain_type(
     name = "target_type",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//bun:__pkg__"],
+)

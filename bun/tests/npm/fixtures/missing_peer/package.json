@@ -1,0 +1,7 @@
+{
+  "name": "missing-peer",
+  "private": true,
+  "dependencies": {
+    "ident-a": "1.0.0"
+  }
+}

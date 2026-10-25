@@ -1,0 +1,13 @@
+{
+  "name": "native",
+  "version": "1.0.0",
+  "main": "index.js",
+  "optionalDependencies": {
+    "native-linux-x64": "1.0.0",
+    "native-linux-x64-musl": "1.0.0",
+    "native-linux-arm64": "1.0.0",
+    "native-darwin-x64": "1.0.0",
+    "native-darwin-arm64": "1.0.0",
+    "native-win32-x64": "1.0.0"
+  }
+}

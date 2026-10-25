@@ -1,0 +1,9 @@
+{
+  "name": "@scope/s",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "s-tool": "bin/tool.js",
+    "s-other": "bin/other.mjs"
+  }
+}

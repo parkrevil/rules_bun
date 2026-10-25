@@ -1,0 +1,17 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@rules_bun//bun:defs.bzl", "bun_test")
+
+exports_files(["bun.lock"])
+
+npm_link_all_packages()
+
+# phantom-user requires b; the lockfile the test writes decides whether it
+# declares it.
+bun_test(
+    name = "phantom_test",
+    srcs = ["phantom.test.ts"],
+    deps = [
+        ":node_modules/b",
+        ":node_modules/phantom-user",
+    ],
+)

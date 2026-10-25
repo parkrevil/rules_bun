@@ -42,6 +42,15 @@ platform(
     ],
 )
 
+# An optional package whose os is aix is selected here (T128).
+platform(
+    name = "aix_x64",
+    constraint_values = [
+        "@platforms//os:aix",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
 # Platforms no Bun release supports. A hub toolchain that is missing one of its
 # constraints matches one of these, so the rejection tests fail.
 

@@ -1,0 +1,17 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "alg-sha384",
+      "dependencies": {
+        "a": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:45749/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha384-a+7c4/Z7YWq21ja3gZi8UdOaoTLaBwI+KUHk7ohC3qrPM8uzLircDESXlVvEuMdd=="],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:45749/b/-/b-1.0.0.tgz", {}, "sha384-fz1nEoeeeDsw8ChFVWfMMGZH7VerhajXU1sFmonu5AorrfHhRNbD4HsOejAEkh8H=="],
+  }
+}

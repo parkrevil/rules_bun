@@ -1,0 +1,13 @@
+{
+  "name": "bin-darwin-arm64",
+  "version": "1.0.0",
+  "bin": {
+    "rbin": "cli.js"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ]
+}

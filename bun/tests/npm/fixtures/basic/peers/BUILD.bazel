@@ -1,0 +1,34 @@
+load("//bun:defs.bzl", "bun_test")
+
+_BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
+
+# US5-1: ident-a and the test load one instance of their peer state.
+bun_test(
+    name = "identity_test",
+    srcs = ["identity.test.ts"],
+    deps = [
+        _BASIC + "ident-a",
+        _BASIC + "state",
+    ],
+)
+
+# US5-2: p-user provides no q, so p's q is the root workspace's q@1.0.0; p's
+# optional peer r, which nothing provides, cannot load.
+bun_test(
+    name = "workspace_peer_test",
+    srcs = ["workspace_peer.test.ts"],
+    deps = [_BASIC + "p-user"],
+)
+
+# US5-3: p's peer q is the version each target's dependent provides.
+bun_test(
+    name = "provided_q1_test",
+    srcs = ["provided_q1.test.ts"],
+    deps = [_BASIC + "p"],
+)
+
+bun_test(
+    name = "provided_q2_test",
+    srcs = ["provided_q2.test.ts"],
+    deps = [_BASIC + "q2-user"],
+)

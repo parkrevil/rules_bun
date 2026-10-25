@@ -1,0 +1,16 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# Depends on a only, but imports c (US1-5); started by undeclared_test.
+bun_binary(
+    name = "undeclared",
+    entry_point = "main.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "undeclared_test",
+    srcs = ["undeclared.test.ts"],
+    data = [":undeclared"],
+    deps = ["//bun/tests/support:spawn"],
+)

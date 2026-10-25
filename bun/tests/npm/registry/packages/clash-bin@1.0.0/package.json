@@ -1,0 +1,8 @@
+{
+  "name": "clash-bin",
+  "version": "1.0.0",
+  "bin": {
+    "a b": "a.js",
+    "a:b": "b.js"
+  }
+}

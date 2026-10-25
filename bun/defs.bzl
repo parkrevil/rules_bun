@@ -25,6 +25,11 @@
         deps = [":greet"],
     )
 
+npm packages come from the `npm` extension (`@rules_bun//bun:extensions.bzl`): its
+`:node_modules/<package>` targets go in `deps` of all three rules, and `bun_library` passes them on
+to the targets that depend on it. The documentation of `bun_binary` and `bun_test` describes the
+package layout, peers, the load guard with packages and the platforms tested.
+
 `bun_binary` and `bun_test` run the Bun of the `BUN_TARGET_TOOLCHAIN_TYPE` toolchain resolved for
 the target platform. On Linux and macOS their executable is a shell launcher that finds its files
 with the Bash runfiles library (`@rules_shell//shell/runfiles`), and running it needs

@@ -1,0 +1,32 @@
+load("@npm_hoisted//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# A lockfile that the pinned Bun re-saved with `"configVersion": 0`, the setting of a hoisted
+# install (Edge Cases, T127). Its packages get the isolated layout all the same.
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# Calls phantom-user, which requires the undeclared b; a hoisted install would put b at the root,
+# where phantom-user finds it. Started by phantom_test.
+bun_binary(
+    name = "phantom",
+    entry_point = "phantom_main.ts",
+    tags = ["manual"],
+    deps = [
+        ":node_modules/b",
+        ":node_modules/phantom-user",
+    ],
+)
+
+bun_test(
+    name = "phantom_test",
+    srcs = ["phantom.test.ts"],
+    data = [":phantom"],
+    deps = ["//bun/tests/support:spawn"],
+)

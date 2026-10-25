@@ -1,0 +1,19 @@
+{
+  "name": "catalog",
+  "private": true,
+  "workspaces": {
+    "packages": [],
+    "catalog": {
+      "b": "1.0.0"
+    },
+    "catalogs": {
+      "two": {
+        "q": "2.0.0"
+      }
+    }
+  },
+  "dependencies": {
+    "b": "catalog:",
+    "q": "catalog:two"
+  }
+}

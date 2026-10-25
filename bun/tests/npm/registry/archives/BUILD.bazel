@@ -1,0 +1,16 @@
+# The npm fixture archives, written by bun/tests/npm/registry/pack.ts. Root test
+# hubs use them through npm.replace_package; tests serve them from the loopback
+# registry.
+
+# glob writes a name starting with "@" (a scoped package's archive) as ":@...",
+# which exports_files does not take.
+exports_files(
+    [f.removeprefix(":") for f in glob(["*.tgz"])],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "archives",
+    srcs = glob(["*.tgz"]),
+    visibility = ["//bun/tests:__subpackages__"],
+)

@@ -1,0 +1,8 @@
+{
+  "name": "negated",
+  "version": "1.0.0",
+  "main": "index.js",
+  "optionalDependencies": {
+    "negated-not-win": "1.0.0"
+  }
+}

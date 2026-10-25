@@ -1,0 +1,43 @@
+load("@npm_jsx//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary", "bun_library", "bun_test")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+bun_library(
+    name = "render_lib",
+    srcs = [
+        "expected.ts",
+        "render.tsx",
+    ],
+    deps = [":node_modules/react"],
+)
+
+bun_test(
+    name = "render_test",
+    srcs = ["render.test.tsx"],
+    deps = [
+        ":node_modules/react-dom",
+        ":render_lib",
+    ],
+)
+
+bun_binary(
+    name = "render",
+    entry_point = "render_main.tsx",
+    deps = [
+        ":node_modules/react-dom",
+        ":render_lib",
+    ],
+)
+
+bun_test(
+    name = "render_spawn_test",
+    srcs = ["render_spawn.test.ts"],
+    data = [":render"],
+    deps = ["//bun/tests/support:spawn"],
+)

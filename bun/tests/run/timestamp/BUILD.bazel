@@ -1,0 +1,14 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "elapsed",
+    entry_point = "elapsed.ts",
+    tags = ["manual"],
+)
+
+bun_test(
+    name = "timestamp_test",
+    srcs = ["timestamp.test.ts"],
+    data = [":elapsed"],
+    deps = ["//bun/tests/support:spawn"],
+)

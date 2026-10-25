@@ -23,3 +23,17 @@ alias(
     name = "gazelle",
     actual = "//tools:gazelle",
 )
+
+# Every file a consumer of the module needs: what the Bazel-in-Bazel tests
+# override rules_bun with (research G5).
+filegroup(
+    name = "rules_bun_files",
+    srcs = [
+        "BUILD.bazel",
+        "LICENSE",
+        "MODULE.bazel",
+        "REPO.bazel",
+        "//bun:all_files",
+    ],
+    visibility = ["//bun/tests:__subpackages__"],
+)

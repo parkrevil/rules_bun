@@ -1,0 +1,56 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "fetch",
+      "dependencies": {
+        "a": "1.0.0",
+        "c": "1.0.0",
+        "native": "1.0.0",
+        "p-user": "1.0.0",
+        "q": "1.0.0",
+        "q2-user": "1.0.0",
+        "r": "1.0.0",
+        "x": "2.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "{REGISTRY}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "b": ["b@1.0.0", "{REGISTRY}/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "c": ["c@1.0.0", "{REGISTRY}/c/-/c-1.0.0.tgz", { "dependencies": { "b": "^2.0.0" } }, "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw=="],
+
+    "native": ["native@1.0.0", "{REGISTRY}/native/-/native-1.0.0.tgz", { "optionalDependencies": { "native-darwin-arm64": "1.0.0", "native-darwin-x64": "1.0.0", "native-linux-arm64": "1.0.0", "native-linux-x64": "1.0.0", "native-linux-x64-musl": "1.0.0", "native-win32-x64": "1.0.0" } }, "sha512-HJkKKTPF8K3cXFcwBV1wxXAjJ+ay6W3umq4j2ey3trnPCSyk7lCy0je1ptdN2vRz/EQh7gtMIMD9EB8mwOotTQ=="],
+
+    "native-darwin-arm64": ["native-darwin-arm64@1.0.0", "{REGISTRY}/native-darwin-arm64/-/native-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-urQGWYaZViOQmrp/glFt/8XY3O7grThH1T9XEgwtYFEW/trqHmqExzc7tca4Dei+Z7Dq/Ys32kHRlRdJWNB9Qg=="],
+
+    "native-darwin-x64": ["native-darwin-x64@1.0.0", "{REGISTRY}/native-darwin-x64/-/native-darwin-x64-1.0.0.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-ZuPsrkOA/aGDENGnE6P9ndi7XVMksXAKF4YWmSWhkeF9EGFXCQwgv6Ssb8OW8beKal0yZmZmHEPnt/tcrjQQkQ=="],
+
+    "native-linux-arm64": ["native-linux-arm64@1.0.0", "{REGISTRY}/native-linux-arm64/-/native-linux-arm64-1.0.0.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-NJpEvttttIHawPoIH7FgDHgTB75GLvhO9sJx+7C0SFrX+HDqFSYlTM+/vZ006GS3P9qS1J7GFOPKeqzDl7ofrQ=="],
+
+    "native-linux-x64": ["native-linux-x64@1.0.0", "{REGISTRY}/native-linux-x64/-/native-linux-x64-1.0.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-S73CDOryadHD+vH4DrOTDU27ja3CFqJbXhibpzcEEXkUTrwq0yfP5Fe0Q+RERpGzy68LCSTyIgGQbrn44ws7Kw=="],
+
+    "native-linux-x64-musl": ["native-linux-x64-musl@1.0.0", "{REGISTRY}/native-linux-x64-musl/-/native-linux-x64-musl-1.0.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-kToI9nrIz3dLoMrnAHORWD7iDplFhLpGbxUBVQ+u69SU3DfKAWiJ7x9xISYOutGoReyaA+kwDRWqy0q2rPlIcQ=="],
+
+    "native-win32-x64": ["native-win32-x64@1.0.0", "{REGISTRY}/native-win32-x64/-/native-win32-x64-1.0.0.tgz", { "os": "win32", "cpu": "x64" }, "sha512-RftHOR2TLb5vW6khXzrcFmosHOcTF1iYQRx6BwV45pMqGzIEQUnKLP0qiTJyNfS0TGE5qof0VulpScFLBJBsEA=="],
+
+    "p": ["p@1.0.0", "{REGISTRY}/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "p-user": ["p-user@1.0.0", "{REGISTRY}/p-user/-/p-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0" } }, "sha512-y5+XBk5r/8wnG1rPhrLPGs1J2fE3BqygDnsVII6PYdPYyUvzn74Cet5uZ2Lubb+uMJVSRnbDN64WuldBzpHtVA=="],
+
+    "q": ["q@1.0.0", "{REGISTRY}/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "q2-user": ["q2-user@1.0.0", "{REGISTRY}/q2-user/-/q2-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0", "q": "2.0.0" } }, "sha512-LKRiUDcxZXa/iMDmuGTuMIfrMBVbDm64B61q9mCRoxptjGV951vycs3hiVPlC2UuJRTZCcaRCbhxpgImyCNDtw=="],
+
+    "r": ["r@1.0.0", "{REGISTRY}/r/-/r-1.0.0.tgz", {}, "sha512-Wolab2Htrgl65Wq4UnDlWY+ZQ9Kz1gdZYUZnDALmWX15/MuL713+kcyDIZC/EJlhZacHmNO7q7RQk+WyE6mNsA=="],
+
+    "x": ["x@2.0.0", "{REGISTRY}/x/-/x-2.0.0.tgz", {}, "sha512-pGDAzj99S0HP0UgJCX3mjCofTa2S9qchnFLu2VWGKKr4RWB14R3hXZSlfMpUdltTIe/tdh+mpxjh39xsOtH8Lw=="],
+
+    "c/b": ["b@2.0.0", "{REGISTRY}/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "q2-user/q": ["q@2.0.0", "{REGISTRY}/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+  }
+}

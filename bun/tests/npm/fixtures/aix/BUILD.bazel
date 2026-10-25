@@ -1,0 +1,12 @@
+load("@npm_aix//:defs.bzl", "npm_link_all_packages")
+
+# aix-user's optional native-aix-x64 has os aix and cpu x64 (T128); the analysis tests in
+# //bun/tests/npm:platforms inspect :node_modules/aix-user.
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()

@@ -1,0 +1,7 @@
+{
+  "name": "aix",
+  "private": true,
+  "dependencies": {
+    "aix-user": "1.0.0"
+  }
+}

@@ -1,0 +1,221 @@
+load("//bun:defs.bzl", "bun_library", "bun_test")
+
+# bun.lock canaries (FR-024, research Part 3): each pins one lockfile access the
+# blog post does not describe against what the pinned Bun writes, and fails,
+# naming the reader function to revisit, once it changes.
+
+bun_library(
+    name = "support",
+    srcs = ["support.ts"],
+    data = ["//bun/tests/npm/registry/archives"],
+    deps = [
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "c_ver_test",
+    srcs = ["c_ver.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_url2_test",
+    srcs = ["c_url2.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_ver1_test",
+    srcs = ["c_ver1.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_wskey_test",
+    srcs = ["c_wskey.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_wsname_test",
+    srcs = ["c_wsname.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_wsdeps_test",
+    srcs = ["c_wsdeps.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_keypath_test",
+    srcs = ["c_keypath.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_slot0_test",
+    srcs = ["c_slot0.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_td_test",
+    srcs = ["c_td.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_url1_test",
+    srcs = ["c_url1.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_info_test",
+    srcs = ["c_info.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_integrity_test",
+    srcs = ["c_integrity.test.ts"],
+    deps = [
+        ":support",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "c_infodeps_test",
+    srcs = ["c_infodeps.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_peers_test",
+    srcs = ["c_peers.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_oscpu_test",
+    srcs = ["c_oscpu.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_bin_test",
+    srcs = ["c_bin.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_alias_test",
+    srcs = ["c_alias.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_overrides_test",
+    srcs = ["c_overrides.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_catalog_test",
+    srcs = ["c_catalog.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_patched_test",
+    srcs = ["c_patched.test.ts"],
+    deps = [
+        ":support",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+test_suite(
+    name = "canaries",
+    tests = [
+        ":c_alias_test",
+        ":c_bin_test",
+        ":c_catalog_test",
+        ":c_info_test",
+        ":c_infodeps_test",
+        ":c_integrity_test",
+        ":c_keypath_test",
+        ":c_oscpu_test",
+        ":c_overrides_test",
+        ":c_patched_test",
+        ":c_peers_test",
+        ":c_slot0_test",
+        ":c_td_test",
+        ":c_url1_test",
+        ":c_url2_test",
+        ":c_ver1_test",
+        ":c_ver_test",
+        ":c_winname_test",
+        ":c_wsdeps_test",
+        ":c_wskey_test",
+        ":c_wsname_test",
+    ],
+)
+
+# Windows only (FR-036, research G2); the expectation is pinned from a local
+# Windows run (T141).
+bun_test(
+    name = "c_winname_test",
+    size = "enormous",
+    srcs = ["c_winname.test.ts"],
+    data = ["//bun/tests/npm/registry/archives:winname@1.0.0.tgz"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [
+        "//bun/tests/integration:inner",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)

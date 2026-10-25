@@ -1,0 +1,7 @@
+{
+  "name": "multi-dep",
+  "private": true,
+  "dependencies": {
+    "c": "1.0.0"
+  }
+}
