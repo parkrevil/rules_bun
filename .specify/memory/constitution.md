@@ -4,7 +4,10 @@
 
 ### I. Public API Boundary
 
-The public API is `bun/*.bzl`, `//bun/toolchain:execution_type` and `//bun/toolchain:target_type`.
+The public API is `bun/*.bzl`, `//bun/toolchain:execution_type`, `//bun/toolchain:target_type`, and
+the libc constraint `//bun/platforms/libc:libc` with its values `:unconstrained` (the default),
+`:glibc` and `:musl`, laid out as rules_js's public `@aspect_rules_js//platforms/libc` because
+Bazel's `@platforms` has no libc constraint.
 `execution_type` is resolved against the execution platform, for rules that run Bun in build
 actions; `target_type` is resolved against the target platform, for rules whose programs run there,
 and consumers MAY register their own toolchains for either, as rules-template, rules_python and
@@ -103,4 +106,4 @@ clarifications. Every plan records its Constitution Check, `speckit-analyze` tre
 a MUST principle as critical, and such a conflict blocks the change until either the change or this
 constitution is amended.
 
-**Version**: 2.2.1 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-21
+**Version**: 2.3.0 | **Ratified**: 2026-09-20 | **Last Amended**: 2026-10-27
