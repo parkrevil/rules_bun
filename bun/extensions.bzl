@@ -5,7 +5,7 @@
 root module may request toolchains under another name.
 
     bun = use_extension("@rules_bun//bun:extensions.bzl", "bun")
-    bun.toolchain(bun_version = "1.4.2")
+    bun.toolchain(bun_version = "1.4.4")
     use_repo(bun, "bun_toolchains")
 
     register_toolchains("@bun_toolchains//:all")

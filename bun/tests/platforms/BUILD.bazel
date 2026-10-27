@@ -42,6 +42,25 @@ platform(
     ],
 )
 
+# Linux platforms that say their C library (research R11 of specs/004-bun-1-4-4-upgrade).
+platform(
+    name = "linux_x64_glibc",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "//bun/platforms/libc:glibc",
+    ],
+)
+
+platform(
+    name = "linux_x64_musl",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "//bun/platforms/libc:musl",
+    ],
+)
+
 # An optional package whose os is aix is selected here (T128).
 platform(
     name = "aix_x64",

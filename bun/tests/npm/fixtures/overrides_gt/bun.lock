@@ -15,8 +15,8 @@
     },
   },
   "packages": {
-    "a": ["a@1.0.0", "http://127.0.0.1:44801/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+    "a": ["a@1.0.0", "http://127.0.0.1:28761/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
 
-    "b": ["b@2.0.0", "http://127.0.0.1:44801/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+    "b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
   }
 }

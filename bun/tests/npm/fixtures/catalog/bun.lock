@@ -19,8 +19,8 @@
     },
   },
   "packages": {
-    "b": ["b@1.0.0", "http://127.0.0.1:46591/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
 
-    "q": ["q@2.0.0", "http://127.0.0.1:46591/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+    "q": ["q@2.0.0", "http://127.0.0.1:28761/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
   }
 }

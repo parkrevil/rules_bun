@@ -5,7 +5,7 @@
 //
 //   bun check_integrity.js <archive> <integrity> <package> <archive label> <stamp>
 //
-// Bun 1.4.2 writes an integrity as the digest's unpadded base64 followed by
+// Bun 1.4.4 writes an integrity as the digest's unpadded base64 followed by
 // "==" (canary C-INTEGRITY), so the base64 values are compared without padding.
 
 const [archive, expected, pkg, label, stamp] = process.argv.slice(2);

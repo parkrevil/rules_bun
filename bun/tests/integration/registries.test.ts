@@ -23,7 +23,7 @@ afterAll(async () => {
   for (const cleanup of cleanups) await cleanup();
 });
 
-// The lockfile the pinned Bun 1.4.2 wrote for package.json, with the URL of
+// The lockfile the pinned Bun 1.4.4 wrote for package.json, with the URL of
 // each entry as the case gives it.
 function lockfile(urls: { a: string; s: string; b: string }): string {
   return `{

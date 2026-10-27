@@ -11,8 +11,8 @@
     },
   },
   "packages": {
-    "b": ["b@1.0.0", "http://127.0.0.1:45493/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
 
-    "phantom-user": ["phantom-user@1.0.0", "http://127.0.0.1:45493/phantom-user/-/phantom-user-1.0.0.tgz", {}, "sha512-+aeabcnV/fg0kQG23LsIlCe/jj9D/STvupv2CF4CyYJJxkbyNBjDNz0MWZpeCEBU57GiLPY2rGcRYAnnmGzkjw=="],
+    "phantom-user": ["phantom-user@1.0.0", "http://127.0.0.1:28761/phantom-user/-/phantom-user-1.0.0.tgz", {}, "sha512-+aeabcnV/fg0kQG23LsIlCe/jj9D/STvupv2CF4CyYJJxkbyNBjDNz0MWZpeCEBU57GiLPY2rGcRYAnnmGzkjw=="],
   }
 }

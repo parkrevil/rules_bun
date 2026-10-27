@@ -31,6 +31,9 @@ import { assembleWorkspace } from "../support/inner.ts";
 const BEGIN = "# BEGIN integration archives (bun/tests/integration/registry/update.ts)";
 const END = "# END integration archives";
 const BAZEL_VERSION = "9.2.0";
+// The Bun version the nested workspaces request.
+const BUN_VERSION = "1.4.4";
+const BUN_PLATFORMS = ["linux-x64", "linux-aarch64", "darwin-x64", "darwin-aarch64", "windows-x64"];
 const BAZEL_PLATFORMS = ["linux-x86_64", "linux-arm64", "darwin-x86_64", "darwin-arm64", "windows-x86_64"];
 const BCR = "https://bcr.bazel.build";
 
@@ -231,8 +234,13 @@ async function main() {
   // Integrity of the downloads a file upstream lists.
   const known = new Map(sourceIntegrity);
   const versions = readFileSync(join(root, "bun", "private", "versions.bzl"), "utf8");
-  for (const m of versions.matchAll(/"([a-z0-9-]+)": "(sha256-[^"]+)"/g)) {
-    known.set(`https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-${m[1]}.zip`, m[2]);
+  const block = versions.match(new RegExp(`"${BUN_VERSION.replaceAll(".", "\\.")}": \\{([^}]*)\\}`))?.[1];
+  if (block === undefined) throw new Error(`bun/private/versions.bzl has no entry for Bun ${BUN_VERSION}`);
+  const bunIntegrity = new Map([...block.matchAll(/"([a-z0-9-]+)": "(sha256-[^"]+)"/g)].map((m) => [m[1], m[2]]));
+  for (const platform of BUN_PLATFORMS) {
+    const value = bunIntegrity.get(platform);
+    if (value === undefined) throw new Error(`bun/private/versions.bzl has no ${platform} integrity for Bun ${BUN_VERSION}`);
+    known.set(`https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-${platform}.zip`, value);
   }
 
   const taken = new Set<string>();

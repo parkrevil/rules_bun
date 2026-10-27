@@ -6,7 +6,7 @@
     "local": "file:./local",
     "nointegrity": "1.0.0",
     "r": "1.0.0",
-    "tb": "http://127.0.0.1:46573/b/-/b-1.0.0.tgz"
+    "tb": "http://127.0.0.1:28761/b/-/b-1.0.0.tgz"
   },
   "patchedDependencies": {
     "r@1.0.0": "patches/r@1.0.0.patch"

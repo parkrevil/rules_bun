@@ -74,7 +74,7 @@ Defines a Bun toolchain for `@rules_bun//bun/toolchain:target_type`, the Bun tha
 `buninfo` field holding `BunInfo`. Register it with a `toolchain()` whose
 `target_compatible_with` names the platform the Bun runs on:
 
-    bun_target_toolchain(name = "my_bun", bun = "@my_bun//:bun", version = "1.4.2")
+    bun_target_toolchain(name = "my_bun", bun = "@my_bun//:bun", version = "1.4.4")
 
     toolchain(
         name = "my_bun_toolchain",

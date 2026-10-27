@@ -1,4 +1,4 @@
-"""Workspace glob cases the matcher must answer as Bun 1.4.2 does (research R9).
+"""Workspace glob cases the matcher must answer as Bun 1.4.4 does (research R9).
 
 `glob_compare.test.ts` builds `TREE` under `TEST_TMPDIR`, runs the pinned Bun's
 `install --lockfile-only` for each case's `workspaces` patterns and compares the lockfile's
@@ -63,6 +63,11 @@ GLOB_CASES = {
     "negation_braces": ["packages/*", "!packages/{a,b}"],
     "negation_globstar": ["packages/*", "!**/excluded"],
     "negation_first": ["!packages/excluded", "packages/*"],
+    "negation_then_glob": ["packages/*", "!packages/a*", "packages/a*"],
+    "negation_globstar_dir": ["**", "!packages/**"],
+    "negation_dot_slash": ["packages/*", "!./packages/excluded"],
+    "negation_trailing_slash": ["packages/*", "!packages/excluded/"],
+    "negation_glob_of_path": ["packages/a", "!packages/*"],
     "negation_then_path": ["packages/*", "!packages/a*", "packages/ab"],
     "negation_of_path": ["packages/a", "packages/b", "!packages/a"],
     "node_modules": ["packages/a/node_modules/*"],

@@ -1,9 +1,9 @@
 """Workspace members and manifests compared with `bun.lock` (FR-006, research R9).
 
 Members are the directories the root `package.json`'s `workspaces` patterns match, by Bun's glob
-syntax (bun.com `runtime/glob`), with the semantics the pinned Bun 1.4.2 shows and
-`bun/tests/npm/workspaces` pins against it: patterns apply in list order; a negative pattern
-removes what the globs before it matched, not a directory listed by its path; wildcards do not
+syntax (bun.com `runtime/glob`), with the semantics the pinned Bun 1.4.4 shows and
+`bun/tests/npm/workspaces` pins against it: a negative pattern, wherever it stands in the list,
+removes what any glob matched, not a directory listed by its path; wildcards do not
 match a leading `.`; `{a,b}` expands within one segment; `**` enters no hidden directory and no
 pattern enters `node_modules`; a
 matched directory is a member when it holds `package.json`. Each member's four dependency maps
@@ -202,20 +202,19 @@ def match_members(patterns, list_dir, has_manifest, file):
         `struct(value, error)`; `value` is the sorted member paths.
     """
     members = {}
+    negatives = []
     for raw in patterns:
         negative = raw.startswith("!")
         base = _normalize(raw[1:] if negative else raw)
 
-        # Braces expand within one segment: Bun 1.4.2 matches nothing for `{a/b,c}`.
+        # Braces expand within one segment: Bun 1.4.4 matches nothing for `{a/b,c}`.
         expansions = [[]]
         for segment in base.split("/") if base else []:
             expansions = [e + [a] for e in expansions for a in _expand_braces(segment)]
         for segments in expansions:
             pattern = "/".join(segments)
             if negative:
-                for path, how in members.items():
-                    if how == "glob" and _path_matches(segments, path):
-                        members.pop(path)
+                negatives.append(segments)
             elif [c for c in _GLOB_CHARACTERS.elems() if c in pattern]:
                 for path in _glob(segments, list_dir):
                     if path and has_manifest(path):
@@ -224,6 +223,10 @@ def match_members(patterns, list_dir, has_manifest, file):
                 if not pattern or not has_manifest(pattern):
                     return _error('{}: the workspace "{}" holds no package.json; {}'.format(file, raw, _REMEDY))
                 members[pattern] = "path"
+    for segments in negatives:
+        for path, how in members.items():
+            if how == "glob" and _path_matches(segments, path):
+                members.pop(path)
     return struct(value = sorted(members.keys()), error = None)
 
 def _error(message):

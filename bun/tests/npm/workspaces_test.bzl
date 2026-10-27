@@ -1,8 +1,7 @@
 """Unit tests of the workspace glob matcher of `//bun/private:workspaces.bzl` (R9, US4-4).
 
-The semantics are the ones Bun 1.4.2 shows (T081 pins them against Bun): patterns apply in list
-order, and a negative pattern removes what the globs before it matched, not a directory listed by
-its path.
+The semantics are the ones Bun 1.4.4 shows (T081 pins them against Bun): a negative pattern,
+wherever it stands in the list, removes what any glob matched, not a directory listed by its path.
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
@@ -77,12 +76,15 @@ def _negation_test_impl(ctx):
     asserts.equals(env, ["packages/ab", "packages/excluded"], _match(["packages/*", "!packages/{a,b}"]))
     asserts.equals(env, ["packages/a", "packages/ab", "packages/b"], _match(["packages/*", "!**/excluded"]))
 
-    # A negative pattern removes only what the globs before it matched.
-    asserts.equals(env, ["packages/a", "packages/ab", "packages/b", "packages/excluded"], _match(["!packages/excluded", "packages/*"]))
-    asserts.equals(env, ["packages/ab", "packages/b", "packages/excluded"], _match(["packages/*", "!packages/a*", "packages/ab"]))
+    # A negative pattern removes what any glob matched, before or after it.
+    asserts.equals(env, ["packages/a", "packages/ab", "packages/b"], _match(["!packages/excluded", "packages/*"]))
+    asserts.equals(env, ["packages/b", "packages/excluded"], _match(["packages/*", "!packages/a*", "packages/a*"]))
+    asserts.equals(env, ["other/c", "tools/t1", "tools/t22"], _match(["**", "!packages/**"]))
 
     # A directory listed by its path is not removed by a negative pattern.
+    asserts.equals(env, ["packages/ab", "packages/b", "packages/excluded"], _match(["packages/*", "!packages/a*", "packages/ab"]))
     asserts.equals(env, ["packages/a", "packages/b"], _match(["packages/a", "packages/b", "!packages/a"]))
+    asserts.equals(env, ["packages/a"], _match(["packages/a", "!packages/*"]))
     return unittest.end(env)
 
 def _members_test_impl(ctx):

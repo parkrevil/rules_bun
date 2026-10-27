@@ -1,0 +1,34 @@
+# The C library of a Linux target platform, for npm packages that declare `libc` (research R11 of
+# specs/004-bun-1-4-4-upgrade). Laid out as rules_js's public @aspect_rules_js//platforms/libc,
+# because @platforms has no libc constraint. A platform without it is `unconstrained`: every libc
+# variant of a package is linked there.
+
+constraint_setting(
+    name = "libc",
+    default_constraint_value = ":unconstrained",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "unconstrained",
+    constraint_setting = ":libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "glibc",
+    constraint_setting = ":libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "musl",
+    constraint_setting = ":libc",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//bun:__pkg__"],
+)

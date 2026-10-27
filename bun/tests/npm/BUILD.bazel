@@ -4,6 +4,7 @@ load(":generated_test.bzl", "generated_test_suite")
 load(":glob_test.bzl", "glob_test_suite")
 load(":jsonc_test.bzl", "jsonc_test_suite")
 load(":layout_test.bzl", "layout_test_suite")
+load(":libc_test.bzl", "libc_test_suite")
 load(":lockfile_test.bzl", "lockfile_test_suite")
 load(":naming_test.bzl", "naming_test_suite")
 load(":npmrc_test.bzl", "npmrc_test_suite")
@@ -27,6 +28,8 @@ jsonc_test_suite(name = "jsonc")
 layout_test_suite(name = "layout")
 
 lockfile_test_suite(name = "lockfile")
+
+libc_test_suite(name = "libc")
 
 naming_test_suite(name = "naming")
 

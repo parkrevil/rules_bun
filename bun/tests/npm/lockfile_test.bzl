@@ -92,6 +92,9 @@ def _entries_test_impl(ctx):
     asserts.equals(env, ["arm64"], basic["native-darwin-arm64"]["cpu"])
     asserts.equals(env, ["!win32"], basic["negated-not-win"]["os"])
     asserts.equals(env, [], basic["a"]["os"])
+    asserts.equals(env, ["glibc"], basic["native-linux-x64"]["libc"])
+    asserts.equals(env, ["musl"], basic["native-linux-x64-musl"]["libc"])
+    asserts.equals(env, [], basic["native-darwin-arm64"]["libc"])
 
     p = basic["p"]
     asserts.equals(env, {"q": "^1.0.0 || ^2.0.0", "r": "^1.0.0"}, p["peers"])

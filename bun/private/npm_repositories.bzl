@@ -219,32 +219,70 @@ def _matches(values, actual):
     positives = [v for v in values if not v.startswith("!")]
     return actual in positives if positives else True
 
-def _holds(conditions, os, cpu):
-    """Whether one of `conditions` (each a list of `[os, cpu]` requirements) holds for npm values."""
+# npm `libc` values -> constraint values of //bun/platforms/libc (feature 004 research R11).
+_LIBC = {
+    "glibc": str(Label("//bun/platforms/libc:glibc")),
+    "musl": str(Label("//bun/platforms/libc:musl")),
+}
+
+def libc_matches(values, os, libc):
+    """npm's `libc` rule (npm-install-checks `checkPlatform`) for a target's npm `os` and `libc`.
+
+    npm defines libc only on Linux, so a package with `libc` matches no other OS. A Linux platform
+    without the libc constraint (`libc` is `None`) does not say which libc it has, so it matches,
+    and every libc variant is carried there.
+
+    Args:
+        values: The entry's `libc` list.
+        os: The target's npm `os`, or `None` for an OS without a mapping.
+        libc: The target's npm `libc`, or `None` when the platform does not set it.
+
+    Returns:
+        Whether the entry may be carried on that target.
+    """
+    if not values:
+        return True
+    if os != "linux":
+        return False
+    if libc == None or values == ["any"]:
+        return True
+    return _matches(values, libc)
+
+def _holds(conditions, os, cpu, libc):
+    """Whether one of `conditions` (each a list of `[os, cpu, libc]` requirements) holds for npm values."""
     for condition in conditions:
-        if all([_matches(r[0], os) and _matches(r[1], cpu) for r in condition]):
+        if all([_matches(r[0], os) and _matches(r[1], cpu) and libc_matches(r[2], os, libc) for r in condition]):
             return True
     return False
 
 def _settings():
-    """Config setting name -> (npm os, npm cpu, constraint labels): one per OS and per OS and CPU."""
+    """Config setting name -> (npm os, npm cpu, npm libc, constraint labels).
+
+    One per OS and per OS and CPU, and for Linux also each of those with a libc.
+    """
     settings = {}
     for os, os_constraint in _OS.items():
-        settings["_os_" + os_constraint] = (os, None, ["@platforms//os:" + os_constraint])
-        for cpu, cpu_constraint in _CPU.items():
-            settings["_os_{}__cpu_{}".format(os_constraint, cpu_constraint)] = (
-                os,
-                cpu,
-                ["@platforms//os:" + os_constraint, "@platforms//cpu:" + cpu_constraint],
-            )
+        os_label = "@platforms//os:" + os_constraint
+        libcs = [(None, None)] + (sorted(_LIBC.items()) if os == "linux" else [])
+        for libc, libc_label in libcs:
+            libc_suffix = "__libc_" + libc if libc else ""
+            libc_labels = [libc_label] if libc else []
+            settings["_os_" + os_constraint + libc_suffix] = (os, None, libc, [os_label] + libc_labels)
+            for cpu, cpu_constraint in _CPU.items():
+                settings["_os_{}__cpu_{}{}".format(os_constraint, cpu_constraint, libc_suffix)] = (
+                    os,
+                    cpu,
+                    libc,
+                    [os_label, "@platforms//cpu:" + cpu_constraint] + libc_labels,
+                )
     return settings
 
 def _selections(optional):
     """Setting name (or `//conditions:default`) -> the optional instance IDs carried there."""
     selections = {}
-    for name, (os, cpu, _) in _settings().items():
-        selections[name] = sorted([i for i, conditions in optional.items() if _holds(conditions, os, cpu)])
-    selections["//conditions:default"] = sorted([i for i, conditions in optional.items() if _holds(conditions, None, None)])
+    for name, (os, cpu, libc, _) in _settings().items():
+        selections[name] = sorted([i for i, conditions in optional.items() if _holds(conditions, os, cpu, libc)])
+    selections["//conditions:default"] = sorted([i for i, conditions in optional.items() if _holds(conditions, None, None, None)])
     return selections
 
 def _npm_hub_repository_impl(repository_ctx):
@@ -286,7 +324,7 @@ npm_instance(
         ))
     links = json.decode(repository_ctx.attr.links)
     if [link for aliases in links.values() for link in aliases.values() if link.get("optional")]:
-        for name, (_, _, constraints) in sorted(_settings().items()):
+        for name, (_, _, _, constraints) in sorted(_settings().items()):
             build.append("""
 config_setting(
     name = {name},
@@ -325,8 +363,8 @@ def _select(selections):
 def _compatible(link):
     \"\"\"`target_compatible_with` of the bins of a link: where the platform select carries its root.
 
-    A declared optional package with `os` or `cpu` is absent elsewhere (research R8), and so are
-    its bins (FR-016).
+    A declared optional package with `os`, `cpu` or `libc` is absent elsewhere (research R8;
+    feature 004 research R11), and so are its bins (FR-016).
     \"\"\"
     if link["select"] == None or link["root"] in link["closure"]:
         return []

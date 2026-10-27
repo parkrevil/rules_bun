@@ -47,9 +47,12 @@ def _walk_test_impl(ctx):
     basic = RESULTS["basic"]["lockfile"]["value"]["entries"]
     asserts.equals(env, "c/b", walk_key(basic, ["c"], "b"))
     asserts.equals(env, "b", walk_key(basic, ["a"], "b"))
-    asserts.equals(env, "y/b", walk_key(basic, ["y", "x"], "b"))
-    asserts.equals(env, "z/x/b", walk_key(basic, ["z", "x"], "b"))
+    asserts.equals(env, "y/x/b", walk_key(basic, ["y", "x"], "b"))
+    asserts.equals(env, "b", walk_key(basic, ["z", "x"], "b"))
     asserts.equals(env, None, walk_key(basic, ["a"], "missing"))
+
+    # The nearest parent's entry wins over the root's.
+    asserts.equals(env, "y/b", walk_key({"b": 1, "y": 1, "y/b": 1, "y/x": 1}, ["y", "x"], "b"))
 
     # `@s/a/b`'s parent is `@s/a`, never `@s`: splitting the scope would find `@s/c`.
     scoped = {"@s/a": 1, "@s/a/b": 1, "@s/c": 1, "c": 1, "@s/a/@s/d": 1, "@s/d": 1}
@@ -66,7 +69,7 @@ def _basic_links_test_impl(ctx):
     asserts.equals(env, "a@1.0.0", _nv(resolution, a["root"]))
     asserts.equals(env, ["a@1.0.0", "b@1.0.0"], _closure_nvs(resolution, a))
     asserts.equals(env, ["b@2.0.0", "c@1.0.0"], _closure_nvs(resolution, root["c"]))
-    asserts.equals(env, ["b@2.0.0", "x@1.0.0", "y@1.0.0"], _closure_nvs(resolution, root["y"]))
+    asserts.equals(env, ["b@1.0.0", "b@2.0.0", "x@1.0.0", "y@1.0.0"], _closure_nvs(resolution, root["y"]))
     return unittest.end(env)
 
 def _workspace_test_impl(ctx):

@@ -29,6 +29,15 @@ const a1 = archive(dir, { name: "a", version: "1.0.0" });
 const a2 = archive(dir, { name: "a", version: "2.0.0", dependencies: { b: "^1.0.0" } });
 const scoped = archive(dir, { name: "@scope/s", version: "1.0.0" }, "s");
 
+test("listens on the port it is given", () => {
+  const free = start({});
+  const port = free.port;
+  free.stop();
+  const fixed = start({ port });
+  expect(fixed.port).toBe(port);
+  expect(fixed.url).toBe(`http://127.0.0.1:${port}`);
+});
+
 test("tar entries round-trip with fixed bytes", () => {
   const entries = [
     { name: "package/package.json", type: "file" as const, data: encoder.encode("{}") },

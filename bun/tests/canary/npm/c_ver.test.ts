@@ -1,4 +1,4 @@
-// Canary C-VER (FR-024, research L2, G7): Bun 1.4.2 writes lockfileVersion 2 for
+// Canary C-VER (FR-024, research L2, G7): Bun 1.4.4 writes lockfileVersion 2 for
 // a plain install and 3 for a scoped override.
 
 import { test } from "bun:test";

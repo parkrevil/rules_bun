@@ -1,4 +1,4 @@
-// Canary C-URL1 (FR-024, research L10, E2, E4): Bun 1.4.2 writes slot 1 as ""
+// Canary C-URL1 (FR-024, research L10, E2, E4): Bun 1.4.4 writes slot 1 as ""
 // when the manifest's tarball is under https://registry.npmjs.org/, and the
 // full URL otherwise.
 

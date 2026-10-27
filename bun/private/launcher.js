@@ -70,7 +70,7 @@ function commandLineLength(args) {
   return parts.join(" ").length + 1;
 }
 
-// The longest guard pattern Bun 1.4.2 compiles, in characters (research R13;
+// The longest guard pattern Bun 1.4.4 compiles, in characters (research R13;
 // canary C13).
 const MAX_GUARD_PATTERN = 1048576;
 
@@ -271,7 +271,7 @@ async function main() {
   if (pattern.length > MAX_GUARD_PATTERN) {
     fail(
       `${config.label}: the load guard pattern for ${config.copies.length} declared files is ` +
-        `${pattern.length} characters long, over the limit of ${MAX_GUARD_PATTERN} (Bun 1.4.2)`,
+        `${pattern.length} characters long, over the limit of ${MAX_GUARD_PATTERN} (Bun 1.4.4)`,
     );
   }
 
@@ -282,7 +282,7 @@ async function main() {
     if (userArgs[0] === "--") {
       fail(
         `${config.label}: "--" as the first program argument is not supported, ` +
-          'because Bun 1.4.2 drops a "--" directly after the entry point',
+          'because Bun 1.4.4 drops a "--" directly after the entry point',
       );
     }
     argv = [

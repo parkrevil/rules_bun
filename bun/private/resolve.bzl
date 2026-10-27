@@ -255,18 +255,20 @@ def _ids(nodes, hash_fn):
 def _closure(edges, restrictions, root, root_condition):
     """The instances reachable from `root`, unconditionally and behind platform conditions.
 
-    An optional dependency on a package whose entry has `os` or `cpu` holds only where those match
-    (research R8); every instance reached through it inherits the condition.
+    An optional dependency on a package whose entry has `os`, `cpu` or `libc` holds only where
+    those match (research R8; feature 004 research R11); every instance reached through it
+    inherits the condition.
 
     Args:
         edges: Instance ID -> alias -> instance ID.
-        restrictions: Instance ID -> alias -> `[os, cpu]` of each platform-restricted optional edge.
+        restrictions: Instance ID -> alias -> `[os, cpu, libc]` of each platform-restricted optional
+            edge.
         root: The link's root instance ID.
-        root_condition: The condition of the root itself: `[]` or `[[os, cpu]]`.
+        root_condition: The condition of the root itself: `[]` or `[[os, cpu, libc]]`.
 
     Returns:
         `(closure, optional)`: the sorted IDs reached unconditionally, and ID -> the conditions it
-        is reached under, each a sorted list of `[os, cpu]` requirements that must all hold.
+        is reached under, each a sorted list of `[os, cpu, libc]` requirements that must all hold.
     """
     reached = {}
     queue = [(root, root_condition)]
@@ -289,8 +291,8 @@ def _closure(edges, restrictions, root, root_condition):
     return closure, optional
 
 def _restriction(entry):
-    """`[os, cpu]` of an entry restricted to platforms, or `None`."""
-    return [entry.os, entry.cpu] if entry.os or entry.cpu else None
+    """`[os, cpu, libc]` of an entry restricted to platforms, or `None`."""
+    return [entry.os, entry.cpu, entry.libc] if entry.os or entry.cpu or entry.libc else None
 
 def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     """Resolves a read lockfile into package instances and per-workspace links.

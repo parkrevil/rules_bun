@@ -23,7 +23,7 @@ afterAll(async () => {
   for (const cleanup of cleanups) await cleanup();
 });
 
-// The lockfile the pinned Bun 1.4.2 wrote for the workspace's package.json,
+// The lockfile the pinned Bun 1.4.4 wrote for the workspace's package.json,
 // with a's URL on `aRegistry`.
 function lockfile(main: string, aRegistry: string): string {
   return `{

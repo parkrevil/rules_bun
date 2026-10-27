@@ -1,0 +1,16 @@
+{
+  "name": "bin-linux-x64-musl",
+  "version": "1.0.0",
+  "bin": {
+    "rbin": "cli.js"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "libc": [
+    "musl"
+  ]
+}

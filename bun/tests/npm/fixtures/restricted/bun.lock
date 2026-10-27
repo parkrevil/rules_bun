@@ -9,24 +9,27 @@
       },
       "optionalDependencies": {
         "bin-darwin-arm64": "1.0.0",
+        "bin-linux-x64-musl": "1.0.0",
       },
     },
   },
   "packages": {
-    "bin-darwin-arm64": ["bin-darwin-arm64@1.0.0", "http://127.0.0.1:46077/bin-darwin-arm64/-/bin-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64", "bin": { "rbin": "cli.js" } }, "sha512-7k3k7ZiKImLSdRXCOwObWqQK1BZT2g1cQgWt9g5zIwJK8By7hkrtDRquVn3oygM6rIhyvxNh/drcExUly7NuGQ=="],
+    "bin-darwin-arm64": ["bin-darwin-arm64@1.0.0", "http://127.0.0.1:28761/bin-darwin-arm64/-/bin-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64", "bin": { "rbin": "cli.js" } }, "sha512-7k3k7ZiKImLSdRXCOwObWqQK1BZT2g1cQgWt9g5zIwJK8By7hkrtDRquVn3oygM6rIhyvxNh/drcExUly7NuGQ=="],
 
-    "native": ["native@1.0.0", "http://127.0.0.1:46077/native/-/native-1.0.0.tgz", { "optionalDependencies": { "native-darwin-arm64": "1.0.0", "native-darwin-x64": "1.0.0", "native-linux-arm64": "1.0.0", "native-linux-x64": "1.0.0", "native-linux-x64-musl": "1.0.0", "native-win32-x64": "1.0.0" } }, "sha512-HJkKKTPF8K3cXFcwBV1wxXAjJ+ay6W3umq4j2ey3trnPCSyk7lCy0je1ptdN2vRz/EQh7gtMIMD9EB8mwOotTQ=="],
+    "bin-linux-x64-musl": ["bin-linux-x64-musl@1.0.0", "http://127.0.0.1:28761/bin-linux-x64-musl/-/bin-linux-x64-musl-1.0.0.tgz", { "os": "linux", "cpu": "x64", "libc": "musl", "bin": { "rbin": "cli.js" } }, "sha512-G3Aw+ZBHLMjU8Goycv/EKJLU3I8kvnivoTAHRcFATYspeW50alZYK226rEBtPQKG7obpyv5uA9be6ZSCPEPN8Q=="],
 
-    "native-darwin-arm64": ["native-darwin-arm64@1.0.0", "http://127.0.0.1:46077/native-darwin-arm64/-/native-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-urQGWYaZViOQmrp/glFt/8XY3O7grThH1T9XEgwtYFEW/trqHmqExzc7tca4Dei+Z7Dq/Ys32kHRlRdJWNB9Qg=="],
+    "native": ["native@1.0.0", "http://127.0.0.1:28761/native/-/native-1.0.0.tgz", { "optionalDependencies": { "native-darwin-arm64": "1.0.0", "native-darwin-x64": "1.0.0", "native-linux-arm64": "1.0.0", "native-linux-x64": "1.0.0", "native-linux-x64-musl": "1.0.0", "native-win32-x64": "1.0.0" } }, "sha512-HJkKKTPF8K3cXFcwBV1wxXAjJ+ay6W3umq4j2ey3trnPCSyk7lCy0je1ptdN2vRz/EQh7gtMIMD9EB8mwOotTQ=="],
 
-    "native-darwin-x64": ["native-darwin-x64@1.0.0", "http://127.0.0.1:46077/native-darwin-x64/-/native-darwin-x64-1.0.0.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-ZuPsrkOA/aGDENGnE6P9ndi7XVMksXAKF4YWmSWhkeF9EGFXCQwgv6Ssb8OW8beKal0yZmZmHEPnt/tcrjQQkQ=="],
+    "native-darwin-arm64": ["native-darwin-arm64@1.0.0", "http://127.0.0.1:28761/native-darwin-arm64/-/native-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-urQGWYaZViOQmrp/glFt/8XY3O7grThH1T9XEgwtYFEW/trqHmqExzc7tca4Dei+Z7Dq/Ys32kHRlRdJWNB9Qg=="],
 
-    "native-linux-arm64": ["native-linux-arm64@1.0.0", "http://127.0.0.1:46077/native-linux-arm64/-/native-linux-arm64-1.0.0.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-NJpEvttttIHawPoIH7FgDHgTB75GLvhO9sJx+7C0SFrX+HDqFSYlTM+/vZ006GS3P9qS1J7GFOPKeqzDl7ofrQ=="],
+    "native-darwin-x64": ["native-darwin-x64@1.0.0", "http://127.0.0.1:28761/native-darwin-x64/-/native-darwin-x64-1.0.0.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-ZuPsrkOA/aGDENGnE6P9ndi7XVMksXAKF4YWmSWhkeF9EGFXCQwgv6Ssb8OW8beKal0yZmZmHEPnt/tcrjQQkQ=="],
 
-    "native-linux-x64": ["native-linux-x64@1.0.0", "http://127.0.0.1:46077/native-linux-x64/-/native-linux-x64-1.0.0.tgz", { "os": "linux", "cpu": "x64" }, ""],
+    "native-linux-arm64": ["native-linux-arm64@1.0.0", "http://127.0.0.1:28761/native-linux-arm64/-/native-linux-arm64-1.0.0.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-NJpEvttttIHawPoIH7FgDHgTB75GLvhO9sJx+7C0SFrX+HDqFSYlTM+/vZ006GS3P9qS1J7GFOPKeqzDl7ofrQ=="],
 
-    "native-linux-x64-musl": ["native-linux-x64-musl@1.0.0", "http://127.0.0.1:46077/native-linux-x64-musl/-/native-linux-x64-musl-1.0.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-kToI9nrIz3dLoMrnAHORWD7iDplFhLpGbxUBVQ+u69SU3DfKAWiJ7x9xISYOutGoReyaA+kwDRWqy0q2rPlIcQ=="],
+    "native-linux-x64": ["native-linux-x64@1.0.0", "http://127.0.0.1:28761/native-linux-x64/-/native-linux-x64-1.0.0.tgz", { "os": "linux", "cpu": "x64", "libc": "glibc" }, ""],
 
-    "native-win32-x64": ["native-win32-x64@1.0.0", "http://127.0.0.1:46077/native-win32-x64/-/native-win32-x64-1.0.0.tgz", { "os": "win32", "cpu": "x64" }, "sha512-RftHOR2TLb5vW6khXzrcFmosHOcTF1iYQRx6BwV45pMqGzIEQUnKLP0qiTJyNfS0TGE5qof0VulpScFLBJBsEA=="],
+    "native-linux-x64-musl": ["native-linux-x64-musl@1.0.0", "http://127.0.0.1:28761/native-linux-x64-musl/-/native-linux-x64-musl-1.0.0.tgz", { "os": "linux", "cpu": "x64", "libc": "musl" }, "sha512-kToI9nrIz3dLoMrnAHORWD7iDplFhLpGbxUBVQ+u69SU3DfKAWiJ7x9xISYOutGoReyaA+kwDRWqy0q2rPlIcQ=="],
+
+    "native-win32-x64": ["native-win32-x64@1.0.0", "http://127.0.0.1:28761/native-win32-x64/-/native-win32-x64-1.0.0.tgz", { "os": "win32", "cpu": "x64" }, "sha512-RftHOR2TLb5vW6khXzrcFmosHOcTF1iYQRx6BwV45pMqGzIEQUnKLP0qiTJyNfS0TGE5qof0VulpScFLBJBsEA=="],
   }
 }

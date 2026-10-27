@@ -1,5 +1,5 @@
 // Packages whose bun.lock integrity uses sha256 or sha384 are fetched and
-// verified like sha512 ones (FR-009, constitution III). Bun 1.4.2 writes every
+// verified like sha512 ones (FR-009, constitution III). Bun 1.4.4 writes every
 // integrity as the digest's unpadded base64 followed by "==" (canary
 // C-INTEGRITY), which Bazel's downloader rejects as invalid base64 for these
 // digest lengths; the extension pads the base64 correctly (tasks.md T121).
