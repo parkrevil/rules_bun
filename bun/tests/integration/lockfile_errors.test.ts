@@ -23,8 +23,8 @@ const CASES: [string, string, string | Uint8Array, string[]][] = [
     new Uint8Array([...new TextEncoder().encode("#!/usr/bin/env bun\nbun-lockfile-format-v0\n"), 0, 1, 2, 255]),
     ["//:bun.lockb", "binary lockfile", "bun install --save-text-lockfile --frozen-lockfile --lockfile-only"],
   ],
-  ["lockfileVersion 0", "bun.lock", lockfile(0), ["//:bun.lock", "lockfileVersion 0 is not supported", "run `bun install` with Bun 1.4.2 and commit bun.lock"]],
-  ["lockfileVersion 4", "bun.lock", lockfile(4), ["//:bun.lock", "lockfileVersion 4 is not supported", "run `bun install` with Bun 1.4.2 and commit bun.lock"]],
+  ["lockfileVersion 0", "bun.lock", lockfile(0), ["//:bun.lock", "lockfileVersion 0 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
+  ["lockfileVersion 4", "bun.lock", lockfile(4), ["//:bun.lock", "lockfileVersion 4 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
   ["invalid JSONC", "bun.lock", '{ "lockfileVersion": 2, /* not closed', ["//:bun.lock", "is not closed", "run `bun install` to rewrite bun.lock"]],
   [
     "two entries of one package version with different integrities, one unsupported",

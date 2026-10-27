@@ -1,0 +1,11 @@
+{
+  "name": "dependency-conflict",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "b": "1.0.0",
+    "x": "2.0.0",
+    "y": "1.0.0",
+    "z": "1.0.0"
+  }
+}

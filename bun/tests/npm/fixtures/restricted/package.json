@@ -5,6 +5,7 @@
     "native": "1.0.0"
   },
   "optionalDependencies": {
-    "bin-darwin-arm64": "1.0.0"
+    "bin-darwin-arm64": "1.0.0",
+    "bin-linux-x64-musl": "1.0.0"
   }
 }

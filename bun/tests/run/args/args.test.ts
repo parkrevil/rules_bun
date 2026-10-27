@@ -17,6 +17,6 @@ for (const args of [["--", "x"], ["--"]]) {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain('"--" as the first program argument');
-    expect(result.stderr).toContain("Bun 1.4.2 drops");
+    expect(result.stderr).toContain("Bun 1.4.4 drops");
   });
 }

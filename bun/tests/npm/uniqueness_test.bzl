@@ -6,6 +6,7 @@ load("//bun:defs.bzl", "bun_test")
 load("//bun/private:npm_package.bzl", "npm_instance", "npm_link")
 
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
+_CONFLICT = "//bun/tests/npm/fixtures/dependency_conflict:node_modules/"
 
 def _make_failure_test(messages):
     def impl(ctx):
@@ -16,7 +17,8 @@ def _make_failure_test(messages):
 
     return analysistest.make(impl, expect_failure = True)
 
-# y/x and z/x are x@1.0.0 entries whose dependency b resolves to different lockfile keys.
+# y/x and z/x are x@1.0.0 entries whose dependency b resolves to b@2.0.0 under y and b@1.0.0 under
+# z (the dependency_conflict fixture, feature 004 research R12).
 _dependency_test = _make_failure_test(["x@1.0.0", 'dependency "b"', "b@2.0.0"])
 
 # p with the root's q@1.0.0, and p through q2-user, which provides q@2.0.0.
@@ -66,7 +68,7 @@ def uniqueness_test_suite(name):
         name: Name of the test suite and prefix of its tests.
     """
     cases = [
-        ("dependency", _dependency_test, [_BASIC + "y", _BASIC + "z"]),
+        ("dependency", _dependency_test, [_CONFLICT + "y", _CONFLICT + "z"]),
         ("peer", _peer_test, [_BASIC + "p", _BASIC + "q2-user"]),
         ("missing_peer", _missing_peer_test, ["//bun/tests/npm/fixtures/missing_peer:node_modules/ident-a"]),
         ("hubs_alike", _hubs_alike_test, [_BASIC + "a", "//bun/tests/npm/fixtures/workspace:node_modules/a"]),

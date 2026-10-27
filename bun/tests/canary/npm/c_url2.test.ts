@@ -1,5 +1,5 @@
 // Canary C-URL2 (FR-024, research L10, R11, E4): for an npm entry whose slot 1
-// is "", Bun 1.4.2 requests `/{name}/-/{basename}-{version}.tgz` from the
+// is "", Bun 1.4.4 requests `/{name}/-/{basename}-{version}.tgz` from the
 // configured default registry, for scoped and unscoped packages alike.
 
 import { test } from "bun:test";

@@ -1,4 +1,4 @@
-// The workspace glob matcher against Bun 1.4.2 (research R9): for each case of
+// The workspace glob matcher against Bun 1.4.4 (research R9): for each case of
 // glob_cases.bzl the pinned Bun's `install --lockfile-only` writes the
 // lockfile's `workspaces` keys, which must equal the member set
 // glob_members.json holds.

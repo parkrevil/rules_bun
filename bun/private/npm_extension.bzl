@@ -70,7 +70,7 @@ _DIGEST_BYTES = {"sha256": 32, "sha384": 48, "sha512": 64}
 def padded_integrity(integrity):
     """An integrity with its base64 padded to the digest's length, as Bazel's downloader reads it.
 
-    Bun 1.4.2 writes every integrity as the digest's unpadded base64 followed by `==` (canary
+    Bun 1.4.4 writes every integrity as the digest's unpadded base64 followed by `==` (canary
     C-INTEGRITY), which is invalid base64 for a `sha256` or `sha384` digest; the digest is kept.
 
     Args:
@@ -353,7 +353,7 @@ Generated targets (public API, under these naming rules):
 - `:node_modules/<package>/bin/<bin>` for each `bin` entry of such a package (a string `bin` is
   named after the package name without its scope); it runs with `bazel run` or as a build action's
   tool, and a file whose extension Bun does not run fails its analysis. The bins of a declared
-  optional package with `os` or `cpu` are compatible only with the platforms it matches, so
+  optional package with `os`, `cpu` or `libc` are compatible only with the platforms it matches, so
   `bazel build //...` skips them elsewhere. Executables declared only through `directories.bin`
   get no target.
 - Every character of `<package>` or `<bin>` outside Bazel's target-name set is written `_`; two
@@ -363,9 +363,16 @@ Repositories named `<name>__...` and other targets of the hub are not public API
 
 Packages: an optional dependency whose entry has `os` or `cpu` is carried only on target platforms
 that match (`select()` on `@platforms`, `!` negations included); a value with no `@platforms`
-constraint, such as `sunos` or `ppc64`, matches no platform. `bun.lock` records no `libc`, so every
-`libc` variant of a matching package is carried. A non-optional dependency is carried whatever its
-`os` and `cpu` say. An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
+constraint, such as `sunos` or `ppc64`, matches no platform. An entry's `libc` (`glibc` or `musl`,
+which Bun 1.4.4 writes) is matched against the target platform's
+`@rules_bun//bun/platforms/libc:libc` constraint, by npm's rule: on a Linux platform with
+`@rules_bun//bun/platforms/libc:glibc` or `:musl`, only the entries whose `libc` allows that C
+library are carried; on a Linux platform without the constraint (its default,
+`:unconstrained`), every `libc` variant is carried, because the platform does not say which C
+library it has; an entry with `libc` matches no other OS. To get only one variant, add the C
+library to the Linux platform: `constraint_values = ["@platforms//os:linux",
+"@platforms//cpu:x86_64", "@rules_bun//bun/platforms/libc:glibc"]`. A non-optional dependency is
+carried whatever its `os`, `cpu` and `libc` say. An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
 and any other resolution, a patched package, an entry without integrity, an integrity algorithm
 other than `sha256`, `sha384` and `sha512`) gets no download; a target that needs it fails analysis
 naming the package and the reason, and other targets are unaffected. A link that reaches such an

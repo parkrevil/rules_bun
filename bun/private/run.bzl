@@ -43,7 +43,7 @@ with Bazel's shell set to a path that does not exist and no Bash directory on th
 actions, tests and `bazel run`. `bazel run` and `bazel test` with `--noenable_runfiles` and no
 sandbox, and `bazel coverage`, ran on Linux only.
 
-Limits: the guard's pattern may be at most 1,048,576 characters with Bun 1.4.2, and its length
+Limits: the guard's pattern may be at most 1,048,576 characters with Bun 1.4.4, and its length
 grows with the unique part of the declared files' real paths; beyond that the run fails naming
 the declared-file count. When the command line of the Bun process that runs the {code}, as the
 running operating system builds it, would exceed 32,767 characters (the Windows limit), the run
@@ -89,9 +89,8 @@ root and an undeclared import from it fails with the guard's error naming the fi
 module-not-found error. No lifecycle
 script (`preinstall`, `postinstall`, ...) runs, whatever `trustedDependencies` says: Bun runs
 scripts for the packages named there or, when the field is absent, for those on the list
-`bun pm default-trusted` prints (`bun pm untrusted` lists only the packages it blocked), and Bun
-1.4.2 writes no empty `trustedDependencies` to `bun.lock`. Packages with native add-ons or
-WebAssembly are not covered by a test.
+`bun pm default-trusted` prints (`bun pm untrusted` lists only the packages it blocked).
+Packages with native add-ons or WebAssembly are not covered by a test.
 
 Links in the copy tree are symbolic links of type `directory`, which Bazel creates as directory
 junctions on Windows, so no Bazel flag is needed there. Store paths are deep: the longest tested
@@ -534,7 +533,7 @@ bun_binary = rule(
 `bazel run` runs `entry_point` as Bun's main module with the target's `args` and `env`;
 `process.argv.slice(2)` is exactly the program's arguments, and the exit code, standard input,
 standard output and standard error are Bun's. An argument list whose first argument is `--` fails
-with an English error, because Bun 1.4.2 drops a `--` directly after the entry point. A
+with an English error, because Bun 1.4.4 drops a `--` directly after the entry point. A
 `$(rlocationpath …)` in `args` names the original data file, which may be read through
 `RUNFILES_DIR` or `RUNFILES_MANIFEST_FILE`, but importing it fails the load guard. A data file of
 another repository has no stable path relative to `import.meta.dir`, because the path contains
@@ -592,7 +591,7 @@ directory of `<name>.bun/` is not verified. Those parent directories include Baz
 `execroot/_main`, which links every top-level entry of the main repository, so a `bunfig.toml`
 or `.env` at the root of the workspace is within reach if Bun searches upward; the rules_bun
 consumer test module has both, declared by no target, and checks that neither takes effect. Bun
-1.4.2 does not install a missing package under `bun test`.
+1.4.4 does not install a missing package under `bun test`.
 """ + _FILES_DOC.format(main = "test files", preload = "preloads ", code = "tests"),
     test = True,
     fragments = ["platform"],

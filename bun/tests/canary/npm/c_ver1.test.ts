@@ -1,5 +1,5 @@
 // Canary C-VER1 (FR-024, research L2, G7): a version-2 lockfile whose stamp is
-// edited to 1 keeps lockfileVersion 1 when Bun 1.4.2 re-saves it, with entries
+// edited to 1 keeps lockfileVersion 1 when Bun 1.4.4 re-saves it, with entries
 // of the shapes the reader reads (L9-L16).
 
 import { test } from "bun:test";

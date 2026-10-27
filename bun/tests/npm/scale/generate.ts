@@ -15,7 +15,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { startRegistry } from "../../support/npm_registry.ts";
+import { FIXTURE_PORT, startRegistry } from "../../support/npm_registry.ts";
 import { type TarEntry, writeTgz } from "../../support/tar.ts";
 
 export const LAYERS = 20;
@@ -85,7 +85,7 @@ export function writeArchives(dir: string): string[] {
 async function main() {
   const work = mkdtempSync(join(tmpdir(), "rules-bun-scale-"));
   try {
-    const registry = startRegistry({ archives: writeArchives(join(work, "archives")) });
+    const registry = startRegistry({ archives: writeArchives(join(work, "archives")), port: FIXTURE_PORT });
     try {
       const project = join(work, "project");
       mkdirSync(project);

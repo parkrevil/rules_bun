@@ -79,14 +79,6 @@ bun_test(
 )
 
 bun_test(
-    name = "c_td_test",
-    srcs = ["c_td.test.ts"],
-    deps = [
-        ":support",
-    ],
-)
-
-bun_test(
     name = "c_url1_test",
     srcs = ["c_url1.test.ts"],
     deps = [
@@ -131,6 +123,14 @@ bun_test(
 bun_test(
     name = "c_oscpu_test",
     srcs = ["c_oscpu.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_libc_test",
+    srcs = ["c_libc.test.ts"],
     deps = [
         ":support",
     ],
@@ -188,12 +188,12 @@ test_suite(
         ":c_infodeps_test",
         ":c_integrity_test",
         ":c_keypath_test",
+        ":c_libc_test",
         ":c_oscpu_test",
         ":c_overrides_test",
         ":c_patched_test",
         ":c_peers_test",
         ":c_slot0_test",
-        ":c_td_test",
         ":c_url1_test",
         ":c_url2_test",
         ":c_ver1_test",

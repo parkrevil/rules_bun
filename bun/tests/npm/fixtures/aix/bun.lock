@@ -10,8 +10,8 @@
     },
   },
   "packages": {
-    "aix-user": ["aix-user@1.0.0", "http://127.0.0.1:46627/aix-user/-/aix-user-1.0.0.tgz", { "optionalDependencies": { "native-aix-x64": "1.0.0" } }, "sha512-reweSCQBi78poVhRYAprgvSD9gEWXXpiMuIWtNF6WvayZoaoB+p9lrRSv9J7fvic/KMccHSv6WfIEVBVvUMC0Q=="],
+    "aix-user": ["aix-user@1.0.0", "http://127.0.0.1:28761/aix-user/-/aix-user-1.0.0.tgz", { "optionalDependencies": { "native-aix-x64": "1.0.0" } }, "sha512-reweSCQBi78poVhRYAprgvSD9gEWXXpiMuIWtNF6WvayZoaoB+p9lrRSv9J7fvic/KMccHSv6WfIEVBVvUMC0Q=="],
 
-    "native-aix-x64": ["native-aix-x64@1.0.0", "http://127.0.0.1:46627/native-aix-x64/-/native-aix-x64-1.0.0.tgz", { "os": "aix", "cpu": "x64" }, "sha512-Xm28b3SSUc25V7Uo+evWMIDbAAvR09CqS9V+oqLDIjNHruNgdvc0W+hgEyt3rdJ6Ut+LtWCN9F6BpX2+QaeXsQ=="],
+    "native-aix-x64": ["native-aix-x64@1.0.0", "http://127.0.0.1:28761/native-aix-x64/-/native-aix-x64-1.0.0.tgz", { "os": "aix", "cpu": "x64" }, "sha512-Xm28b3SSUc25V7Uo+evWMIDbAAvR09CqS9V+oqLDIjNHruNgdvc0W+hgEyt3rdJ6Ut+LtWCN9F6BpX2+QaeXsQ=="],
   }
 }

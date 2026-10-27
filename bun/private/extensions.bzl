@@ -13,7 +13,7 @@ bun_toolchain = tag_class(
             default = _DEFAULT_NAME,
         ),
         "bun_version": attr.string(
-            doc = "Bun version to download, such as `1.4.2`.",
+            doc = "Bun version to download, such as `1.4.4`.",
             mandatory = True,
         ),
         "integrity": attr.string_dict(

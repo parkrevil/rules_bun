@@ -64,7 +64,7 @@ def _kind(resolution):
     return "npm"
 
 def _strings(value):
-    """A string or a list of strings as a list (`os`, `cpu`: a string when one value)."""
+    """A string or a list of strings as a list (`os`, `cpu`, `libc`: a string when one value)."""
     if value == None:
         return []
     if type(value) == "string":
@@ -121,6 +121,7 @@ def _entry(key, entry, file):
             optional_peers = list(info.get("optionalPeers", [])),  # L14
             os = _strings(info.get("os")),  # L15
             cpu = _strings(info.get("cpu")),  # L15
+            libc = _strings(info.get("libc")),  # Written by Bun 1.4.4 (canary C-LIBC)
             bin = _bin(name, info.get("bin")),  # L16
         ),
         error = None,
@@ -150,7 +151,7 @@ def read_lockfile(text, file):
     if version not in SUPPORTED_VERSIONS:
         return _error(
             ("{}: lockfileVersion {} is not supported; rules_bun reads lockfileVersion 1, 2 and 3, " +
-             "the versions Bun 1.4.2 writes: run `bun install` with Bun 1.4.2 and commit bun.lock").format(file, version),
+             "the versions Bun 1.4.4 writes: run `bun install` with Bun 1.4.4 and commit bun.lock").format(file, version),
         )
 
     workspaces = {}

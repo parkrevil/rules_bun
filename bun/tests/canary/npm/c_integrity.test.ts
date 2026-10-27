@@ -1,5 +1,5 @@
 // Canary C-INTEGRITY (FR-024, research L12): slot 3 of an npm entry is the SRI
-// the packument published, in the form Bun 1.4.2 writes it: the digest's
+// the packument published, in the form Bun 1.4.4 writes it: the digest's
 // unpadded base64 followed by "==" whatever the algorithm, which is the
 // published value for sha512 only.
 
@@ -12,7 +12,7 @@ import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./suppor
 const READER = "normalize_integrity in bun/private/lockfile.bzl";
 const ALGORITHMS = { "a@1.0.0": "sha256", "b@1.0.0": "sha384", "c@1.0.0": "sha512" } as const;
 
-/** What Bun 1.4.2 writes for a published SRI value. */
+/** What Bun 1.4.4 writes for a published SRI value. */
 function written(published: string): string {
   return published.replace(/=*$/, "") + "==";
 }

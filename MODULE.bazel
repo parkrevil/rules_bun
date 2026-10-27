@@ -17,7 +17,7 @@ bazel_dep(name = "bazelrc-preset.bzl", version = "1.9.2", dev_dependency = True)
 bazel_dep(name = "gazelle", version = "0.54.0", dev_dependency = True, repo_name = "bazel_gazelle")
 
 bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
-bun_dev.toolchain(bun_version = "1.4.2")
+bun_dev.toolchain(bun_version = "1.4.4")
 use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-x64", "bun_toolchains", "bun_windows-x64")
 
 register_toolchains(
@@ -237,6 +237,10 @@ npm.translate_lock(
     bun_lock = "//bun/tests/npm/fixtures/hoisted:bun.lock",
 )
 npm.translate_lock(
+    name = "npm_dependency_conflict",
+    bun_lock = "//bun/tests/npm/fixtures/dependency_conflict:bun.lock",
+)
+npm.translate_lock(
     name = "npm_missing_peer",
     bun_lock = "//bun/tests/npm/fixtures/missing_peer:bun.lock",
 )
@@ -276,7 +280,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_basic", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_basic", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.
@@ -607,36 +611,36 @@ http_file(
 http_file(
     name = "integration_bun-darwin-aarch64.zip",
     dev_dependency = True,
-    integrity = "sha256-kJh6OhbX21VtiGrD1VHnttPt8KHPQ6yu1iLoZ2vh0S8=",
-    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-aarch64.zip"],
+    integrity = "sha256-wkDX8My5DCY6hJ/NsJt+5iYw2SE0jtaq/ahrnVd7xRA=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-darwin-aarch64.zip"],
 )
 
 http_file(
     name = "integration_bun-darwin-x64.zip",
     dev_dependency = True,
-    integrity = "sha256-gFINfhdSYwjJGF0mFnmsbSd5jTgDoOn3/5Ehq4r/sBI=",
-    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-x64.zip"],
+    integrity = "sha256-UKNJH3Orwv6BZzFxqFdi07wswWgMzsrdmD3pmt93l34=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-darwin-x64.zip"],
 )
 
 http_file(
     name = "integration_bun-linux-aarch64.zip",
     dev_dependency = True,
-    integrity = "sha256-VDKLvC2cjgyfiSxUTWbFeoO4QTnjSQnl7oF1jxrI/ac=",
-    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-aarch64.zip"],
+    integrity = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-aarch64.zip"],
 )
 
 http_file(
     name = "integration_bun-linux-x64.zip",
     dev_dependency = True,
-    integrity = "sha256-NjaPrvdSeHXV/6UuU81IAhdB8qg+tiCKjdZAaNQiqRM=",
-    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip"],
+    integrity = "sha256-v4zL+ysLgBWeD5ptFcVTF63YB3U028YTCj7bUvzLOVw=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-x64.zip"],
 )
 
 http_file(
     name = "integration_bun-windows-x64.zip",
     dev_dependency = True,
-    integrity = "sha256-zkwXSXsvKXEqmdPVPwKN4ozULjusuFiVmefwAOSbZAU=",
-    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-windows-x64.zip"],
+    integrity = "sha256-zSwPzMePPt4fUMqCehXwY+2hPU0VCj0GdPT24yPYZKU=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-windows-x64.zip"],
 )
 
 http_file(

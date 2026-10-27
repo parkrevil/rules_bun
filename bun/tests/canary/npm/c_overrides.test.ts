@@ -1,4 +1,4 @@
-// Canary C-OVERRIDES (FR-006, research L18, R9): the lockfile form Bun 1.4.2
+// Canary C-OVERRIDES (FR-006, research L18, R9): the lockfile form Bun 1.4.4
 // writes for each manifest override form rules_bun accepts, which
 // normalize_overrides reproduces before comparing.
 

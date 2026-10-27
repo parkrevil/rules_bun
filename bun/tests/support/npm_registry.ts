@@ -7,6 +7,10 @@ import { packageJson } from "./tar.ts";
 
 export type IntegrityAlgorithm = "sha256" | "sha384" | "sha512" | "none";
 
+/** The loopback port the fixture writers serve on, so the lockfiles they write are reproducible
+ * (specs/004-bun-1-4-4-upgrade research R13). */
+export const FIXTURE_PORT = 28761;
+
 export interface ArchiveSpec {
   /** Path of the `.tgz` file the packument is built from. */
   path: string;
@@ -33,6 +37,9 @@ export interface RegistryOptions {
   tarballBase?: string;
   /** Changes a packument before it is served. */
   packument?: (name: string, packument: Record<string, any>) => Record<string, any>;
+  /** Loopback port to listen on; default a free one. The fixture writers fix it, so the URLs
+   * Bun writes into a lockfile are the same on every run. */
+  port?: number;
 }
 
 export interface LogEntry {
@@ -133,7 +140,7 @@ export function startRegistry(options: RegistryOptions = {}): Registry {
 
   const server = Bun.serve({
     hostname: "127.0.0.1",
-    port: 0,
+    port: options.port ?? 0,
     fetch(request) {
       const raw = new URL(request.url).pathname;
       let path = raw;

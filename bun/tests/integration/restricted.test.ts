@@ -3,7 +3,9 @@
 // records no integrity for it) and bin-darwin-arm64 (os darwin, cpu arm64) is
 // absent. `bazel build //...` passes; the native link fails naming the
 // unsupported package, and the bin of bin-darwin-arm64 is incompatible there
-// and buildable for darwin arm64.
+// and buildable for darwin arm64. The bin of bin-linux-x64-musl (libc musl) is
+// incompatible on a Linux platform with the glibc constraint and buildable with
+// the musl one (specs/004-bun-1-4-4-upgrade research R11).
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -11,7 +13,7 @@ import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
 const FIXTURE = "_main/bun/tests/npm/fixtures/restricted";
-const ARCHIVES = ["bin-darwin-arm64", "native", "native-darwin-arm64", "native-darwin-x64", "native-linux-arm64", "native-linux-x64-musl", "native-win32-x64"].map(
+const ARCHIVES = ["bin-darwin-arm64", "bin-linux-x64-musl", "native", "native-darwin-arm64", "native-darwin-x64", "native-linux-arm64", "native-linux-x64-musl", "native-win32-x64"].map(
   (p) => rlocation(`_main/bun/tests/npm/registry/archives/${p}@1.0.0.tgz`),
 );
 const inner = new Inner("restricted", { npmArchives: ARCHIVES });
@@ -66,6 +68,20 @@ test(
   async () => {
     const result = await inner.run(["build", "--nobuild", "--platforms=//:darwin_arm64", "//:node_modules/bin-darwin-arm64/bin/rbin"]);
     expect(result.exitCode, result.stderr).toBe(0);
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "the bin of a libc-restricted optional package follows the platform's libc constraint (FR-013)",
+  async () => {
+    const target = "//:node_modules/bin-linux-x64-musl/bin/rbin";
+    const glibc = await inner.run(["build", "--nobuild", "--platforms=//:linux_x64_glibc", target]);
+    expect(glibc.exitCode).not.toBe(0);
+    expect(glibc.stderr).toContain(`${target} is incompatible and cannot be built`);
+    const musl = await inner.run(["build", "--nobuild", "--platforms=//:linux_x64_musl", target]);
+    expect(musl.exitCode, musl.stderr).toBe(0);
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,

@@ -10,6 +10,6 @@
     },
   },
   "packages": {
-    "clash-bin": ["clash-bin@1.0.0", "http://127.0.0.1:46511/clash-bin/-/clash-bin-1.0.0.tgz", { "bin": { "a b": "a.js", "a:b": "b.js" } }, "sha512-ytbxZOJk8rpwqObAvNaqpTU+a6nZA2EO5+vYURTOwYHYpVxnO1vLJgBpXNC4MDx5t63vVi/ENwYTqFl44yH0oA=="],
+    "clash-bin": ["clash-bin@1.0.0", "http://127.0.0.1:28761/clash-bin/-/clash-bin-1.0.0.tgz", { "bin": { "a b": "a.js", "a:b": "b.js" } }, "sha512-ytbxZOJk8rpwqObAvNaqpTU+a6nZA2EO5+vYURTOwYHYpVxnO1vLJgBpXNC4MDx5t63vVi/ENwYTqFl44yH0oA=="],
   }
 }

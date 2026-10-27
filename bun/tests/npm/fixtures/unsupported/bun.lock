@@ -9,7 +9,7 @@
         "local": "file:./local",
         "nointegrity": "1.0.0",
         "r": "1.0.0",
-        "tb": "http://127.0.0.1:46573/b/-/b-1.0.0.tgz",
+        "tb": "http://127.0.0.1:28761/b/-/b-1.0.0.tgz",
       },
     },
   },
@@ -17,16 +17,16 @@
     "r@1.0.0": "patches/r@1.0.0.patch",
   },
   "packages": {
-    "a": ["a@1.0.0", "http://127.0.0.1:46573/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+    "a": ["a@1.0.0", "http://127.0.0.1:28761/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
 
-    "b": ["b@1.0.0", "http://127.0.0.1:46573/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
 
     "local": ["local@file:local", {}],
 
-    "nointegrity": ["nointegrity@1.0.0", "http://127.0.0.1:46573/nointegrity/-/nointegrity-1.0.0.tgz", {}, ""],
+    "nointegrity": ["nointegrity@1.0.0", "http://127.0.0.1:28761/nointegrity/-/nointegrity-1.0.0.tgz", {}, ""],
 
-    "r": ["r@1.0.0", "http://127.0.0.1:46573/r/-/r-1.0.0.tgz", {}, "sha512-Wolab2Htrgl65Wq4UnDlWY+ZQ9Kz1gdZYUZnDALmWX15/MuL713+kcyDIZC/EJlhZacHmNO7q7RQk+WyE6mNsA=="],
+    "r": ["r@1.0.0", "http://127.0.0.1:28761/r/-/r-1.0.0.tgz", {}, "sha512-Wolab2Htrgl65Wq4UnDlWY+ZQ9Kz1gdZYUZnDALmWX15/MuL713+kcyDIZC/EJlhZacHmNO7q7RQk+WyE6mNsA=="],
 
-    "tb": ["b@http://127.0.0.1:46573/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+    "tb": ["b@http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
   }
 }

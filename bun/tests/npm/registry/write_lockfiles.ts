@@ -14,7 +14,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { type ArchiveSpec, type IntegrityAlgorithm, type Registry, startRegistry } from "../../support/npm_registry.ts";
+import { type ArchiveSpec, FIXTURE_PORT, type IntegrityAlgorithm, type Registry, startRegistry } from "../../support/npm_registry.ts";
 
 const here = import.meta.dir;
 const archivesDir = join(here, "archives");
@@ -138,8 +138,6 @@ const projects: Record<string, Project> = {
     check(lock) {
       keys(lock, Object.keys(BASIC_DEPS));
       assert(slot0(lock, "c/b") === "b@2.0.0", "c/b is not b@2.0.0");
-      assert(slot0(lock, "y/x") === "x@1.0.0" && slot0(lock, "z/x") === "x@1.0.0", "y/x and z/x are not both x@1.0.0");
-      assert(walk(lock, "y/x", "b") !== walk(lock, "z/x", "b"), "the b walks of y/x and z/x reach the same key");
       assert(lock.trustedDependencies?.[0] === "scripted", "trustedDependencies is not [scripted]");
     },
   },
@@ -240,7 +238,7 @@ const projects: Record<string, Project> = {
       "package.json": json({
         name: "catalog",
         private: true,
-        // Bun 1.4.2 reads catalogs only under "workspaces" ("b@catalog: is not in
+        // Bun 1.4.4 reads catalogs only under "workspaces" ("b@catalog: is not in
         // the catalog" for a top-level "catalog").
         workspaces: { packages: [], catalog: { b: "1.0.0" }, catalogs: { two: { q: "2.0.0" } } },
         dependencies: { b: "catalog:", q: "catalog:two" },
@@ -317,7 +315,8 @@ const projects: Record<string, Project> = {
   // Platform-restricted optional packages that a link reaches only through its
   // platform select (T134, T136): native's native-linux-x64 is published without
   // an integrity, so it is unsupported; bin-darwin-arm64, a declared optional
-  // dependency with os darwin and cpu arm64, has a JavaScript bin.
+  // dependency with os darwin and cpu arm64, has a JavaScript bin, and so has
+  // bin-linux-x64-musl, with libc musl (specs/004-bun-1-4-4-upgrade research R11).
   restricted: {
     noIntegrity: ["native-linux-x64@1.0.0"],
     files: () => ({
@@ -325,7 +324,7 @@ const projects: Record<string, Project> = {
         name: "restricted",
         private: true,
         dependencies: { native: "1.0.0" },
-        optionalDependencies: { "bin-darwin-arm64": "1.0.0" },
+        optionalDependencies: { "bin-darwin-arm64": "1.0.0", "bin-linux-x64-musl": "1.0.0" },
       }),
     }),
     check(lock) {
@@ -333,6 +332,7 @@ const projects: Record<string, Project> = {
       assert(lock.packages["native-linux-x64"][3] === "", `native-linux-x64 integrity ${lock.packages["native-linux-x64"][3]}`);
       assert(lock.packages["bin-darwin-arm64"][2].bin?.rbin === "cli.js", "bin-darwin-arm64 has no rbin");
       assert(lock.packages["bin-darwin-arm64"][2].os === "darwin", `bin-darwin-arm64 os ${lock.packages["bin-darwin-arm64"][2].os}`);
+      assert(lock.packages["bin-linux-x64-musl"][2].libc === "musl", `bin-linux-x64-musl libc ${lock.packages["bin-linux-x64-musl"][2].libc}`);
     },
   },
   // FR-033 on files rules_bun renames (T138): the hub npm_renamed excludes
@@ -349,6 +349,29 @@ const projects: Record<string, Project> = {
   // FR-017's missing peer: Bun installs a non-optional peer, so no lockfile it
   // writes lacks one; the entry of ident-a's peer state is removed after the
   // install (the only edit of what Bun wrote besides version1's stamp).
+  // One package version whose dependency resolves to two versions in one closure: y/x and z/x are
+  // x@1.0.0, and x's b is y's b@2.0.0 under y and the root's b@1.0.0 under z. Bun 1.4.4 writes a
+  // y/x/b entry that keeps x@1.0.0's b one version, so the entry line is removed, as missing_peer
+  // removes one, to give the ruleset's check a lockfile to reject (research R12).
+  dependency_conflict: {
+    files: () => ({
+      "package.json": json({ name: "dependency-conflict", private: true, dependencies: { a: "1.0.0", b: "1.0.0", x: "2.0.0", y: "1.0.0", z: "1.0.0" } }),
+    }),
+    async run({ dir, bun }) {
+      await bun("install");
+      const lockPath = join(dir, "bun.lock");
+      const lines = readFileSync(lockPath, "utf8").split("\n");
+      const kept = lines.filter((line) => !line.trimStart().startsWith('"y/x/b": ["b@1.0.0"'));
+      assert(kept.length === lines.length - 1, "bun.lock has no single y/x/b entry line");
+      writeFileSync(lockPath, kept.join("\n"));
+    },
+    check(lock) {
+      assert(slot0(lock, "y/x") === "x@1.0.0" && slot0(lock, "z/x") === "x@1.0.0", "y/x and z/x are not both x@1.0.0");
+      const underY = walk(lock, "y/x", "b");
+      const underZ = walk(lock, "z/x", "b");
+      assert(underY && underZ && slot0(lock, underY) !== slot0(lock, underZ), "x@1.0.0's b is one version under y and z");
+    },
+  },
   missing_peer: {
     files: () => ({ "package.json": json({ name: "missing-peer", private: true, dependencies: { "ident-a": "1.0.0" } }) }),
     async run({ dir, bun }) {
@@ -418,7 +441,7 @@ function writeFiles(dir: string, files: Files) {
 // Bun runs as a child process without blocking this process, which serves the
 // loopback registry it fetches from.
 async function generate(name: string, project: Project) {
-  const registry = startRegistry({ archives: archives(project) });
+  const registry = startRegistry({ archives: archives(project), port: FIXTURE_PORT });
   const work = mkdtempSync(join(tmpdir(), `rules-bun-lock-${name}-`));
   try {
     const dir = join(work, name);

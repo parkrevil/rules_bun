@@ -184,6 +184,7 @@ bun_test(
         "//bun/tests/npm/fixtures/restricted:bun.lock",
         "//bun/tests/npm/fixtures/restricted:package.json",
         "//bun/tests/npm/registry/archives:bin-darwin-arm64@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:bin-linux-x64-musl@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:native-darwin-arm64@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:native-darwin-x64@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:native-linux-arm64@1.0.0.tgz",

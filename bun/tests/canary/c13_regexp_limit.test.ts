@@ -1,4 +1,4 @@
-// Canary C13 (FR-028): pins that Bun 1.4.2 compiles a regular expression of
+// Canary C13 (FR-028): pins that Bun 1.4.4 compiles a regular expression of
 // 1,048,576 pattern characters, accepts it as a Bun.plugin onLoad filter, and
 // rejects one of 1,048,577 characters as too large. When this fails, revisit the
 // prefix trie and the declared-file limit of the load guard (R13), which the fix

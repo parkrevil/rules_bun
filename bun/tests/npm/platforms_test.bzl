@@ -1,4 +1,5 @@
-"""Analysis tests of platform-specific optional dependencies (FR-016, US3, research R8, G6)."""
+"""Analysis tests of platform-specific optional dependencies (FR-016, US3, research R8; feature 004
+research R11 for libc, which Bun 1.4.4 writes)."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
@@ -6,16 +7,19 @@ load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
 _AIX = "//bun/tests/npm/fixtures/aix:node_modules/aix-user"
 
-_PLATFORMS = ["linux_x64", "linux_aarch64", "darwin_x64", "darwin_aarch64", "windows_x64"]
+_PLATFORMS = ["linux_x64", "linux_x64_glibc", "linux_x64_musl", "linux_aarch64", "darwin_x64", "darwin_aarch64", "windows_x64"]
 
 # Package -> platform -> the platform-restricted optional packages it carries.
 _EXPECTED = {
     "native": {
         "darwin_aarch64": ["native-darwin-arm64"],
         "darwin_x64": ["native-darwin-x64"],
-        # Both libc variants: bun.lock records no libc (G6).
         "linux_aarch64": ["native-linux-arm64"],
+        # Bun 1.4.4 writes `libc`: a platform without the libc constraint carries both variants,
+        # one with it only the variant whose `libc` accepts it (feature 004 research R11).
         "linux_x64": ["native-linux-x64", "native-linux-x64-musl"],
+        "linux_x64_glibc": ["native-linux-x64"],
+        "linux_x64_musl": ["native-linux-x64-musl"],
         "windows_x64": ["native-win32-x64"],
     },
     "negated": {p: [] if p == "windows_x64" else ["negated-not-win"] for p in _PLATFORMS},
@@ -45,6 +49,8 @@ def _make(platform):
     )
 
 linux_x64_test = _make("linux_x64")
+linux_x64_glibc_test = _make("linux_x64_glibc")
+linux_x64_musl_test = _make("linux_x64_musl")
 linux_aarch64_test = _make("linux_aarch64")
 darwin_x64_test = _make("darwin_x64")
 darwin_aarch64_test = _make("darwin_aarch64")
@@ -56,6 +62,8 @@ _RULES = {
     "darwin_x64": darwin_x64_test,
     "linux_aarch64": linux_aarch64_test,
     "linux_x64": linux_x64_test,
+    "linux_x64_glibc": linux_x64_glibc_test,
+    "linux_x64_musl": linux_x64_musl_test,
     "windows_x64": windows_x64_test,
 }
 
