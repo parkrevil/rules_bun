@@ -40,7 +40,9 @@ finds its files through a runfiles manifest when no runfiles tree is staged, so 
 --noenable_runfiles` and `bazel test --noenable_runfiles` without a sandbox work.
 
 Platforms: the jobs of rules_bun's CI (`.github/workflows/ci.yaml`) that run these rules'
-targets. The root suite and the `e2e/smoke` suite pass on the GitHub Actions runners
+targets; a statement here holds once a CI run of the change passes, and a test whose
+`target_compatible_with` names one OS runs only there. The root suite and the `e2e/smoke` suite
+pass on the GitHub Actions runners
 `ubuntu-latest`, `macos-latest` and `windows-latest` (job `test`). On `ubuntu-latest` only: with
 tests denied network access (`network-denied`), `bazel test` and `bazel run` with
 `--noenable_runfiles`, also without a sandbox (`manifest-only`), and `bazel coverage`
@@ -110,7 +112,8 @@ Limitation"); without it, packages are untested there. A file name Windows canno
 `aux.js` or `a:b.js`, is handled as Bazel's extractor handles it; rules_bun promises neither a
 failure nor a message. On Windows (one local run), Bazel 9.2.0's extraction of `a:b.js` fails with
 an internal error, so such a package cannot be fetched there. The package tests are part of the
-root suite, so they ran where Platforms says.
+root suite, so they ran where Platforms says, except a test constrained to one OS (the case-only
+file name test, Linux).
 """
 
 # hermetic-launcher limits each embedded stub argument to 256 bytes.
@@ -391,13 +394,15 @@ def _windows_stub(ctx, buninfo, launch_config):
     finalizer runs with the command line its README documents.
     """
     toolchain = ctx.toolchains[_WINDOWS_LAUNCHER_TYPE]
-    for toolchain_type, field in [(launcher.template_toolchain_type, "template"), (launcher.finalizer_toolchain_type, "finalizer")]:
+
+    # hermetic-launcher matches the template to the target platform and the finalizer, which runs
+    # in the build, to the execution platform (its toolchains' exec_compatible_with).
+    for toolchain_type, field, platform in [
+        (launcher.template_toolchain_type, "template", "the target platform {}".format(ctx.fragments.platform.platform)),
+        (launcher.finalizer_toolchain_type, "finalizer", "the execution platform of this target"),
+    ]:
         if toolchain == None or getattr(toolchain, field) == None:
-            fail("{}: no toolchain of type {} matches the target platform {}".format(
-                ctx.label,
-                toolchain_type,
-                ctx.fragments.platform.platform,
-            ))
+            fail("{}: no toolchain of type {} matches {}".format(ctx.label, toolchain_type, platform))
     _check_embedded_arguments(ctx, [buninfo.bun, ctx.file._launcher, launch_config])
     embedded, transformed = launcher.args_from_entrypoint(buninfo.bun)
     launcher.append_embedded_arg(arg = "--no-env-file", embedded_args = embedded, transformed_args = transformed)

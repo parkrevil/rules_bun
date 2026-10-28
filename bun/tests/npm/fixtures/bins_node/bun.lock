@@ -10,6 +10,6 @@
     },
   },
   "packages": {
-    "node-bin": ["node-bin@1.0.0", "http://127.0.0.1:28761/node-bin/-/node-bin-1.0.0.tgz", { "bin": { "tsc": "bin/tsc", "envs": "bin/envs", "abs": "bin/abs", "bunbin": "bin/bunbin", "sh": "bin/sh", "noline": "bin/noline", "dir": "bin/dir", "gone": "bin/gone" } }, "sha512-MMApqFTLP4KijN5m8W97tP54cjSG45Y3o7LzS4xw32sBTvktz9KUbwa5n3YcRpQCwNir4hjNVc+xINzAEF/i2A=="],
+    "node-bin": ["node-bin@1.0.0", "http://127.0.0.1:28761/node-bin/-/node-bin-1.0.0.tgz", { "bin": { "tsc": "bin/tsc", "envs": "bin/envs", "abs": "bin/abs", "bunbin": "bin/bunbin", "sh": "bin/sh", "noline": "bin/noline", "dir": "bin/dir", "gone": "bin/gone", "build": "bin/Build", "missingjs": "bin/missing.js" } }, "sha512-OWc1z14Qyd+CM2DpwZ4g099gq2dlO79vNmvobvcWITFuIlethP2/e0+mKCQPEanwM8pDT8AoHL3kEP1KgltSOw=="],
   }
 }

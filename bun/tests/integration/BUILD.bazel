@@ -182,6 +182,25 @@ bun_test(
     ],
 )
 
+# Linux only: on a case-insensitive file system the BUILD and build files of
+# case-build@1.0.0 are one file once extracted.
+bun_test(
+    name = "rename_test",
+    size = "enormous",
+    srcs = ["rename.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:case-build@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:rename-collision@1.0.0.tgz",
+    ],
+    tags = ["requires-network"],
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        ":inner",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
 bun_test(
     name = "restricted_test",
     size = "enormous",

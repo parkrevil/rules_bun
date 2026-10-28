@@ -24,10 +24,38 @@ def has_userinfo(url):
     Returns:
         Whether the authority holds an `@`.
     """
+    return _userinfo(url) != None
+
+def _userinfo(url):
+    """The user information of a URL's authority, or `None` when it has none."""
     authority = url.partition("://")[2] or url
     for end in ["/", "?", "#"]:
         authority = authority.partition(end)[0]
-    return "@" in authority
+    if "@" not in authority:
+        return None
+    return authority.rpartition("@")[0]
+
+def has_credentials(url):
+    """Whether a URL carries a secret in its user information (feature 005, P1).
+
+    Any user information of a URL that is not SSH may be a token or a password, so it counts. An
+    SSH URL (`ssh://`, `git+ssh://`) authenticates with keys: its user name, such as `git` in
+    `git+ssh://git@github.com/o/r.git`, is an identity, and only a password (`user:password@`)
+    counts.
+
+    Args:
+        url: The URL.
+
+    Returns:
+        Whether the URL carries a secret.
+    """
+    userinfo = _userinfo(url)
+    if userinfo == None:
+        return False
+    scheme = url.partition("://")[0] if "://" in url else ""
+    if scheme in ("ssh", "git+ssh"):
+        return ":" in userinfo
+    return True
 
 def read_npmrc(text, file):
     """Reads the registry keys of an `.npmrc`.

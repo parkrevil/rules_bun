@@ -19,8 +19,12 @@ repos:
   - repo: https://github.com/keith/pre-commit-buildifier
     rev: 8.5.1.3
     hooks:
+      # The npm fixture sources are JavaScript whatever their names (BUILD,
+      # build.bazel); pack.ts packs them byte for byte.
       - id: buildifier
+        exclude: ^bun/tests/npm/registry/packages/
       - id: buildifier-lint
+        exclude: ^bun/tests/npm/registry/packages/
   - repo: https://github.com/crate-ci/typos
     rev: v1.50.1
     hooks:

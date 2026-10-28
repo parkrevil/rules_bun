@@ -3,7 +3,7 @@
 load(":lockfile.bzl", "DEPENDENCY_KINDS", "read_lockfile")
 load(":npm_names.bzl", "bin_targets", "target_name")
 load(":npm_repositories.bzl", "npm_hub_repository", "npm_package_repository")
-load(":npmrc.bzl", "has_userinfo", "package_url", "read_npmrc")
+load(":npmrc.bzl", "has_credentials", "package_url", "read_npmrc")
 load(":resolve.bzl", "resolve")
 load(":workspaces.bzl", "compare_manifests", "match_members", "workspace_patterns")
 
@@ -16,7 +16,8 @@ a member `package.json` and the lockfile differ in dependencies, workspace membe
 overrides ("run `bun install` and commit bun.lock"), when two entries of one `name@version` record
 different URLs or integrities, when the root `package.json` uses an override form rules_bun
 does not compare, and when a URL in `bun.lock` (an entry's URL or resolution, a dependency
-specifier) or in a `package.json` holds user information, as a registry URL of `npmrc` does: the
+specifier) or in a `package.json` holds credentials (any user information, except the user name
+of an `ssh://` or `git+ssh://` URL, which is an identity), as a registry URL of `npmrc` does: the
 error names the file and the entry or dependency, never the URL, since credentials come only from
 Bazel's downloader (`--credential_helper`, `.netrc`). Overrides are compared as Bun reads them: `overrides` when present, else
 `resolutions`.""",
@@ -120,12 +121,12 @@ _USERINFO_REMEDY = "give credentials through Bazel's downloader (--credential_he
 # Bounds the walk of nested dependency maps; Starlark has no unbounded loop.
 _MAX_MAPS = 1 << 20
 
-def _url_with_userinfo(text):
-    """Whether a specifier or resolution is a URL whose authority holds user information."""
-    return type(text) == "string" and "://" in text and has_userinfo(text)
+def _url_with_credentials(text):
+    """Whether a specifier or resolution is a URL that carries credentials (`has_credentials`)."""
+    return type(text) == "string" and "://" in text and has_credentials(text)
 
 def _check_lockfile_urls(file, lockfile):
-    """Fails naming the first entry whose URL holds user information (FR-002, research R2).
+    """Fails naming the first entry whose URL holds credentials (FR-002, research R2).
 
     The URL is slot 1 of an npm entry and the resolution of slot 0 of any other entry. Neither the
     URL nor slot 0 is printed; the key is a package path.
@@ -133,8 +134,8 @@ def _check_lockfile_urls(file, lockfile):
     for key in sorted(lockfile.entries.keys()):
         entry = lockfile.entries[key]
         url = entry.url if entry.kind == "npm" else entry.resolution
-        if (entry.kind == "npm" and has_userinfo(url)) or _url_with_userinfo(url):
-            fail('rules_bun: {}: the packages entry "{}" records a URL that holds user information (credentials before an @); {}'.format(file, key, _USERINFO_REMEDY))
+        if (entry.kind == "npm" and has_credentials(url)) or _url_with_credentials(url):
+            fail('rules_bun: {}: the packages entry "{}" records a URL that holds credentials (user information other than an SSH user name); {}'.format(file, key, _USERINFO_REMEDY))
 
 def _check_specs(file, maps):
     """Fails naming the first dependency whose specifier is a URL holding user information (FR-002).
@@ -153,8 +154,8 @@ def _check_specs(file, maps):
             value = current[name]
             if type(value) == "dict":
                 work.append(value)
-            elif _url_with_userinfo(value):
-                fail('rules_bun: {}: the dependency "{}" is a URL that holds user information (credentials before an @); {}'.format(file, name, _USERINFO_REMEDY))
+            elif _url_with_credentials(value):
+                fail('rules_bun: {}: the dependency "{}" is a URL that holds credentials (user information other than an SSH user name); {}'.format(file, name, _USERINFO_REMEDY))
     fail("rules_bun: {} nests more than {} dependency maps".format(file, _MAX_MAPS))
 
 def _read_json(module_ctx, path, file):
@@ -474,7 +475,9 @@ other than `sha256`, `sha384` and `sha512`) gets no download; a target that need
 naming the package and the reason, and other targets are unaffected. A link that reaches such an
 entry, on any platform, is tagged `manual`, so `bazel build //...` skips it. An archive's files keep their
 names, `BUILD` and `BUILD.bazel` files in any case (`build`, `Build.bazel`) and names outside the
-target-name set included. An empty directory of an
+target-name set included. Two names in one directory that differ only in case (`BUILD` and
+`build`) stay two files on a case-sensitive file system; on a case-insensitive one (macOS,
+Windows) extracting the archive leaves one of them, and which one is not covered by a test. An empty directory of an
 archive is not carried. Archives holding symbolic links are not covered by a test (unverified).
 
 Fetching: only the packages a requested target needs are downloaded, by Bazel's downloader, and

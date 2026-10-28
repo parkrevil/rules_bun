@@ -759,3 +759,11 @@ Task: "T058 [US6] build-files case variants, re-pack, glob/layout assertions"
 - [P] tasks touch different files and depend on nothing incomplete.
 - Every commit leaves `bazel test //...` green.
 - Stop at any checkpoint to validate the story on its own.
+
+---
+
+## Phase 13: Convergence
+
+- [X] T088 Pin the rename-collision behavior of `_make_addressable` in `bun/private/npm_repositories.bzl` with a test: add to `bun/tests/npm/registry/packages/build-files@1.0.0/` (re-packed with `pack.ts`, lockfiles rewritten with `write_lockfiles.ts`) a directory holding both `BUILD` and `build`, and a fixture whose archive holds `_rules_bun_1_` next to a renamed file; assert in `bun/tests/npm/layout_test.bzl` that `BUILD` and `build` are both renamed to distinct safe names and mapped back, and that the collision fails with `cannot rename ... the archive already holds`. Today both files get distinct names, so no diagnostic fires for `BUILD` + `build`, unlike the spec's edge case and the T058 row of `tdd-log.md`; record the observed behavior and correct that row and research A6 per spec Edge Cases (`BUILD` + `build`, renamed name collision), Constitution II (contradicts)
+- [X] T089 Cover a renamed bin file in the bin decision of `_bin_reasons` (`bun/private/npm_repositories.bzl`): add to `node-bin@1.0.0` a bin whose path is renamed by `_make_addressable` (for example `bin/Build`, extensionless, `#!/usr/bin/env node`), re-pack and rewrite the `bins_node` lockfile; in `bun/tests/npm/bins_test.bzl` assert its `npm_bin` analyzes, and in `bun/tests/integration/bins.test.ts` that `bazel run` of it prints its output; record red/green in `tdd-log.md` and update research A6 ("no fixture holds a renamed bin") per FR-012, plan T039 (partial)
+- [X] T090 Check the plan's performance goal (no regression of feature 003 SC-010): run `bazel test //bun/tests/integration:scale_test --test_output=all --nocache_test_results` three times on `main` and three times on this branch in one session, record the printed evaluation times in `tdd-log.md` (this branch printed 986 ms and 1351 ms against the 1 s goal); on a regression, stop and report per plan: Performance Goals (partial)

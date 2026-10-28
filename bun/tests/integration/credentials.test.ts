@@ -204,20 +204,20 @@ const USERINFO_CASES: UserinfoCase[] = [
         `    "a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, ${A}],
     "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", {}, ${B}],`,
       ),
-    expected: ["//:bun.lock", 'the packages entry "a" records a URL that holds user information'],
+    expected: ["//:bun.lock", 'the packages entry "a" records a URL that holds credentials'],
   },
   {
     name: "(b) a tarball entry's resolution",
     manifest: { t: "http://127.0.0.1:1/t.tgz" },
     lock: (r) => workspaceLock({ t: "http://127.0.0.1:1/t.tgz" }, `    "t": ["t@${withUser(r)}/t.tgz", {}],`),
-    expected: ["//:bun.lock", 'the packages entry "t" records a URL that holds user information'],
+    expected: ["//:bun.lock", 'the packages entry "t" records a URL that holds credentials'],
   },
   {
     name: "(c) a git+https entry's resolution",
     manifest: { g: "git+https://host/r.git" },
     lock: () =>
       workspaceLock({ g: "git+https://host/r.git" }, `    "g": ["g@git+https://${USER}:${TOKEN}@host/r.git#abc", {}, "abc"],`),
-    expected: ["//:bun.lock", 'the packages entry "g" records a URL that holds user information'],
+    expected: ["//:bun.lock", 'the packages entry "g" records a URL that holds credentials'],
   },
   {
     name: "(d) one of two entries of a package version with different URLs",
@@ -229,7 +229,7 @@ const USERINFO_CASES: UserinfoCase[] = [
     "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", { "dependencies": { "a": "1.0.0" } }, ${B}],
     "b/a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", {}, ${A}],`,
       ),
-    expected: ["//:bun.lock", 'the packages entry "b/a" records a URL that holds user information'],
+    expected: ["//:bun.lock", 'the packages entry "b/a" records a URL that holds credentials'],
   },
   {
     name: "(e) an .npmrc registry",
@@ -249,16 +249,44 @@ const USERINFO_CASES: UserinfoCase[] = [
     name: "(g) a dependency spec of a workspace package.json",
     manifest: { a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` },
     lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
-    expected: ["//:package.json", 'the dependency "p" is a URL that holds user information'],
+    expected: ["//:package.json", 'the dependency "p" is a URL that holds credentials'],
   },
   {
     name: "(h) a dependency spec of bun.lock workspaces",
     manifest: { a: "1.0.0" },
     lock: (r) =>
       workspaceLock({ a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
-    expected: ["//:bun.lock", 'the dependency "p" is a URL that holds user information'],
+    expected: ["//:bun.lock", 'the dependency "p" is a URL that holds credentials'],
   },
 ];
+
+// An SSH user name is an identity, not a secret (feature 005, P1): a git+ssh entry such as
+// `git+ssh://git@github.com/o/r.git` is only unsupported, so the lockfile evaluates and only a
+// target that needs it fails (FR-010 of feature 003).
+test(
+  "FR-002: an SSH user name in a git+ssh resolution is not taken for credentials",
+  async () => {
+    const session = evaluation();
+    const before = session.log.length;
+    const spec = "git+ssh://git@host/r.git";
+    session.write("package.json", JSON.stringify({ name: "registries", private: true, dependencies: { a: "1.0.0", g: spec } }, null, 2));
+    session.write(".npmrc", "");
+    session.write(
+      "bun.lock",
+      workspaceLock(
+        { a: "1.0.0", g: spec },
+        `    "a": ["a@1.0.0", "${session.registry.url}/a/-/a-1.0.0.tgz", {}, ${A}],
+    "g": ["g@${spec}#abc", {}, "abc"],`,
+      ),
+    );
+    // Loading the packages evaluates the extension; nothing is fetched.
+    const result = await session.run(["query", "//:node_modules/g"]);
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stderr).not.toContain("credentials");
+    assertOffline(session.log.slice(before));
+  },
+  INNER_TIMEOUT,
+);
 
 for (const c of USERINFO_CASES) {
   test(

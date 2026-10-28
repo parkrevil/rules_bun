@@ -389,8 +389,12 @@ absent) while `bun.toolchain` keeps working in `e2e/smoke`.
 - A release that does not publish a musl archive for a platform, or whose `SHASUMS256.txt` lacks it:
   work stops and the gap is reported; no integrity is computed from a local download.
 - `os: ["any", "!linux"]`: the result is whatever `checkList` returns for it.
-- An archive holding both `BUILD` and `build`, or a renamed name that collides with an existing file:
-  the existing collision diagnostic fires.
+- An archive holding both `BUILD` and `build` in one directory: on a case-sensitive file system each
+  gets its own safe name and keeps its original path (rename_test, Linux). On a case-insensitive
+  file system (macOS, Windows) the two names are one file once the archive is extracted, before the
+  ruleset sees it, so one of them is lost; this is not covered by a test (constitution II). A
+  renamed name that collides with a file the archive already holds fails the fetch with the
+  collision diagnostic (rename_test).
 - A root module that requests a version under the default name and a dependency that requests a
   higher one: the highest version is selected, as before; root precedence applies to integrity of
   the same version only.
