@@ -1,10 +1,10 @@
 """Implementation of the `npm` module extension (FR-005, FR-008, FR-009, research R3)."""
 
 load(":library.bzl", "SOURCE_EXTENSIONS")
-load(":lockfile.bzl", "read_lockfile")
+load(":lockfile.bzl", "DEPENDENCY_KINDS", "read_lockfile")
 load(":npm_names.bzl", "bin_targets", "target_name")
 load(":npm_repositories.bzl", "npm_hub_repository", "npm_package_repository")
-load(":npmrc.bzl", "package_url", "read_npmrc")
+load(":npmrc.bzl", "has_userinfo", "package_url", "read_npmrc")
 load(":resolve.bzl", "resolve")
 load(":workspaces.bzl", "compare_manifests", "match_members", "workspace_patterns")
 
@@ -15,8 +15,11 @@ Evaluation fails with an English error naming the file and the remedy when the l
 `bun.lockb`, when `lockfileVersion` is not 1, 2 or 3, when the file is not JSONC, when the root or
 a member `package.json` and the lockfile differ in dependencies, workspace members, catalogs or
 overrides ("run `bun install` and commit bun.lock"), when two entries of one `name@version` record
-different URLs or integrities, and when the root `package.json` uses an override form rules_bun
-does not compare. Overrides are compared as Bun reads them: `overrides` when present, else
+different URLs or integrities, when the root `package.json` uses an override form rules_bun
+does not compare, and when a URL in `bun.lock` (an entry's URL or resolution, a dependency
+specifier) or in a `package.json` holds user information, as a registry URL of `npmrc` does: the
+error names the file and the entry or dependency, never the URL, since credentials come only from
+Bazel's downloader (`--credential_helper`, `.netrc`). Overrides are compared as Bun reads them: `overrides` when present, else
 `resolutions`.""",
     attrs = {
         "name": attr.string(
@@ -117,6 +120,48 @@ _REMEDY = "run `bun install` and commit bun.lock"
 _LOCKB_REMEDY = ("run `bun install --save-text-lockfile --frozen-lockfile --lockfile-only` " +
                  "(bun.com pm/lockfile), delete bun.lockb and pass bun.lock as bun_lock")
 
+_USERINFO_REMEDY = "give credentials through Bazel's downloader (--credential_helper or .netrc) instead"
+
+# Bounds the walk of nested dependency maps; Starlark has no unbounded loop.
+_MAX_MAPS = 1 << 20
+
+def _url_with_userinfo(text):
+    """Whether a specifier or resolution is a URL whose authority holds user information."""
+    return type(text) == "string" and "://" in text and has_userinfo(text)
+
+def _check_lockfile_urls(file, lockfile):
+    """Fails naming the first entry whose URL holds user information (FR-002, research R2).
+
+    The URL is slot 1 of an npm entry and the resolution of slot 0 of any other entry. Neither the
+    URL nor slot 0 is printed; the key is a package path.
+    """
+    for key in sorted(lockfile.entries.keys()):
+        entry = lockfile.entries[key]
+        url = entry.url if entry.kind == "npm" else entry.resolution
+        if (entry.kind == "npm" and has_userinfo(url)) or _url_with_userinfo(url):
+            fail('rules_bun: {}: the packages entry "{}" records a URL that holds user information (credentials before an @); {}'.format(file, key, _USERINFO_REMEDY))
+
+def _check_specs(file, maps):
+    """Fails naming the first dependency whose specifier is a URL holding user information (FR-002).
+
+    Args:
+        file: The file the maps come from, for the error.
+        maps: Dependency name -> specifier maps; a value that is itself a map (nested overrides,
+            named catalogs) is walked too.
+    """
+    work = [m for m in maps if type(m) == "dict"]
+    for _ in range(_MAX_MAPS):
+        if not work:
+            return
+        current = work.pop(0)
+        for name in sorted(current.keys()):
+            value = current[name]
+            if type(value) == "dict":
+                work.append(value)
+            elif _url_with_userinfo(value):
+                fail('rules_bun: {}: the dependency "{}" is a URL that holds user information (credentials before an @); {}'.format(file, name, _USERINFO_REMEDY))
+    fail("rules_bun: {} nests more than {} dependency maps".format(file, _MAX_MAPS))
+
 def _read_json(module_ctx, path, file):
     if not path.exists:
         fail("rules_bun: {} does not exist; the npm extension reads the package.json next to bun.lock and in each workspace member".format(file))
@@ -180,6 +225,14 @@ def _translate(module_ctx, tag, replacements):
     lockfile = read_lockfile(module_ctx.read(tag.bun_lock), file)
     if lockfile.error:
         fail(lockfile.error)
+
+    # Before any check that prints a URL or a specifier (research R2).
+    _check_lockfile_urls(file, lockfile.value)
+    _check_specs(file, [getattr(w, kind) for w in lockfile.value.workspaces.values() for kind in DEPENDENCY_KINDS] + [
+        lockfile.value.overrides,
+        lockfile.value.catalog,
+        lockfile.value.catalogs,
+    ])
     npmrc = None
     if tag.npmrc:
         npmrc = read_npmrc(module_ctx.read(tag.npmrc), str(tag.npmrc))
@@ -187,6 +240,11 @@ def _translate(module_ctx, tag, replacements):
             fail("rules_bun: " + npmrc.error)
         npmrc = npmrc.value
     manifests = _manifests(module_ctx, tag, lockfile.value)
+    for path in sorted(manifests.keys()):
+        value = manifests[path].value
+        _check_specs(manifests[path].file, [value.get(kind) for kind in DEPENDENCY_KINDS + ["overrides", "resolutions", "catalog", "catalogs"]] + [
+            value.get("workspaces"),
+        ])
     _members(module_ctx, tag, manifests[""].file, manifests[""].value, lockfile.value)
     comparison = compare_manifests(lockfile.value, manifests)
     if comparison.error:
@@ -385,7 +443,10 @@ verified against the lockfile's integrity. The URL is the one the lockfile recor
 empty one, `<registry>/<name>/-/<basename>-<version>.tgz` with the registry from `npmrc`, else
 `https://registry.npmjs.org`. A `--downloader_config` rewrite redirects a download to a mirror
 without changing the integrity check. Credentials come only from Bazel: `--credential_helper` and
-the user's `.netrc`; no credential enters a repository attribute or a generated file. The
+the user's `.netrc`; no credential enters a repository attribute or a generated file. A URL holding
+user information (`https://user:token@host/`) fails evaluation naming the file and the entry or
+dependency, without the URL, whether `bun.lock` (an entry's URL or resolution, a dependency
+specifier), a `package.json` or the `.npmrc` records it. The
 extension is reproducible and not OS- or architecture-dependent, so it adds no entry to
 `MODULE.bazel.lock`.
 

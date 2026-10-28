@@ -148,3 +148,135 @@ for (const altered of [false, true]) {
     INNER_TIMEOUT,
   );
 }
+
+// FR-002, US3: a URL holding user information is rejected from every input,
+// bun.lock as .npmrc, during evaluation, and no diagnostic prints it.
+const USER = "u5er";
+const TOKEN = "t0ken-secret";
+const evaluation = (() => {
+  let session: Inner | undefined;
+  return () => {
+    if (!session) {
+      session = new Inner("registries");
+      cleanups.push(() => session!.close());
+    }
+    return session;
+  };
+})();
+
+const A = `"sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="`;
+const B = `"sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="`;
+
+function workspaceLock(dependencies: Record<string, string>, packages: string): string {
+  return `{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "registries",
+      "dependencies": ${JSON.stringify(dependencies)},
+    },
+  },
+  "packages": {
+${packages}
+  }
+}
+`;
+}
+
+interface UserinfoCase {
+  name: string;
+  manifest: Record<string, string>;
+  lock: (registry: string) => string;
+  npmrc?: string;
+  expected: string[];
+}
+
+const withUser = (registry: string) => registry.replace("http://", `http://${USER}:${TOKEN}@`);
+
+const USERINFO_CASES: UserinfoCase[] = [
+  {
+    name: "(a) an npm entry's URL",
+    manifest: { a: "1.0.0" },
+    lock: (r) =>
+      workspaceLock(
+        { a: "1.0.0" },
+        `    "a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, ${A}],
+    "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", {}, ${B}],`,
+      ),
+    expected: ["//:bun.lock", 'the packages entry "a" records a URL that holds user information'],
+  },
+  {
+    name: "(b) a tarball entry's resolution",
+    manifest: { t: "http://127.0.0.1:1/t.tgz" },
+    lock: (r) => workspaceLock({ t: "http://127.0.0.1:1/t.tgz" }, `    "t": ["t@${withUser(r)}/t.tgz", {}],`),
+    expected: ["//:bun.lock", 'the packages entry "t" records a URL that holds user information'],
+  },
+  {
+    name: "(c) a git+https entry's resolution",
+    manifest: { g: "git+https://host/r.git" },
+    lock: () =>
+      workspaceLock({ g: "git+https://host/r.git" }, `    "g": ["g@git+https://${USER}:${TOKEN}@host/r.git#abc", {}, "abc"],`),
+    expected: ["//:bun.lock", 'the packages entry "g" records a URL that holds user information'],
+  },
+  {
+    name: "(d) one of two entries of a package version with different URLs",
+    manifest: { a: "1.0.0", b: "1.0.0" },
+    lock: (r) =>
+      workspaceLock(
+        { a: "1.0.0", b: "1.0.0" },
+        `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],
+    "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", { "dependencies": { "a": "1.0.0" } }, ${B}],
+    "b/a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", {}, ${A}],`,
+      ),
+    expected: ["//:bun.lock", 'the packages entry "b/a" records a URL that holds user information'],
+  },
+  {
+    name: "(e) an .npmrc registry",
+    manifest: { a: "1.0.0" },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "", {}, ${A}],`),
+    npmrc: `registry=http://${USER}:${TOKEN}@127.0.0.1:1/\n`,
+    expected: ["//:.npmrc", "the registry URL holds user information"],
+  },
+  {
+    name: "(f) an .npmrc scope registry",
+    manifest: { a: "1.0.0" },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "", {}, ${A}],`),
+    npmrc: `@scope:registry=http://${USER}:${TOKEN}@127.0.0.1:1/\n`,
+    expected: ["//:.npmrc", "the @scope:registry URL holds user information"],
+  },
+  {
+    name: "(g) a dependency spec of a workspace package.json",
+    manifest: { a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
+    expected: ["//:package.json", 'the dependency "p" is a URL that holds user information'],
+  },
+  {
+    name: "(h) a dependency spec of bun.lock workspaces",
+    manifest: { a: "1.0.0" },
+    lock: (r) =>
+      workspaceLock({ a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
+    expected: ["//:bun.lock", 'the dependency "p" is a URL that holds user information'],
+  },
+];
+
+for (const c of USERINFO_CASES) {
+  test(
+    `FR-002: user information in ${c.name} fails evaluation without printing it`,
+    async () => {
+      const session = evaluation();
+      const before = session.log.length;
+      session.write("package.json", JSON.stringify({ name: "registries", private: true, dependencies: c.manifest }, null, 2));
+      session.write(".npmrc", c.npmrc ?? "");
+      session.write("bun.lock", c.lock(session.registry.url));
+      const result = await session.run(["build", "//..."]);
+      const output = result.stdout + result.stderr;
+      console.log(output.split("\n").filter((l) => /ERROR|Error/.test(l)).join("\n"));
+      expect(result.exitCode).not.toBe(0);
+      for (const text of [...c.expected, "--credential_helper", ".netrc"]) expect(output).toContain(text);
+      for (const secret of [USER, TOKEN]) expect(output).not.toContain(secret);
+      assertOffline(session.log.slice(before));
+    },
+    INNER_TIMEOUT,
+  );
+}

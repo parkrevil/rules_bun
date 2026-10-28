@@ -1,7 +1,7 @@
 """Unit tests of `//bun/private:npmrc.bzl` (research R11, FR-019, FR-020)."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//bun/private:npmrc.bzl", "package_url", "read_npmrc")
+load("//bun/private:npmrc.bzl", "has_userinfo", "package_url", "read_npmrc")
 
 _NPMRC = """\
 # a comment
@@ -70,9 +70,33 @@ def _userinfo_test_impl(ctx):
     asserts.equals(env, None, path.error)
     return unittest.end(env)
 
+def _has_userinfo_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # The authority (after `://`, before `/`, `?` or `#`) holds an @; an empty user counts (spec
+    # Edge Cases).
+    for url in [
+        "https://user:token@host/x",
+        "https://@host/x",
+        "https://user@host",
+        "git+https://user:token@host/r.git",
+    ]:
+        asserts.true(env, has_userinfo(url), "{} holds user information".format(url))
+
+    # An @ after the authority belongs to the path, query or fragment.
+    for url in [
+        "https://host/a@1.0.0.tgz",
+        "https://host?x=a@b",
+        "https://host#a@b",
+        "https://host:8080/x",
+    ]:
+        asserts.false(env, has_userinfo(url), "{} holds no user information".format(url))
+    return unittest.end(env)
+
 read_test = unittest.make(_read_test_impl)
+has_userinfo_test = unittest.make(_has_userinfo_test_impl)
 url_test = unittest.make(_url_test_impl)
 userinfo_test = unittest.make(_userinfo_test_impl)
 
 def npmrc_test_suite(name):
-    unittest.suite(name, read_test, url_test, userinfo_test)
+    unittest.suite(name, read_test, url_test, userinfo_test, has_userinfo_test)
