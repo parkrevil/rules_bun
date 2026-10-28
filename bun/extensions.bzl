@@ -38,13 +38,8 @@ left in the source tree:
 The documentation of `npm` lists the generated targets, their naming rules and the limits.
 """
 
-load(
-    "//bun/private:extensions.bzl",
-    _bun = "bun",
-    _bun_toolchain = "bun_toolchain",
-)
+load("//bun/private:extensions.bzl", _bun = "bun")
 load("//bun/private:npm_extension.bzl", _npm = "npm")
 
 bun = _bun
-bun_toolchain = _bun_toolchain
 npm = _npm

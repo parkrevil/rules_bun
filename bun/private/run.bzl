@@ -27,8 +27,9 @@ complete isolation: it does not cover modules loaded before it, code the program
 (Workers, child processes, `Bun.build`) or plain file reads (`Bun.file`, `fs`), and `tsconfig.json`
 and `package.json` in ancestor directories of `<name>.bun/` can still change how a declared import
 resolves. A guard error that the code catches itself (for example `try`/`catch` around a dynamic
-`import()`) does not fail the run. JSX needs the `react` package, which rules_bun does not provide
-yet; TSX without JSX, `.node` and `.wasm` files are not covered by a test.
+`import()`) does not fail the run. JSX needs the `react` package; a consumer gets it from its
+`bun.lock` through the `npm` extension (`:node_modules/react` in `deps`). TSX without JSX, `.node`
+and `.wasm` files are not covered by a test.
 
 Launching: on Linux and macOS the executable `<name>` is a shell launcher that finds Bun and the
 rule's files with the Bash runfiles library (`@rules_shell//shell/runfiles`), so running it needs
@@ -38,11 +39,19 @@ rule's files with the Bash runfiles library (`@rules_shell//shell/runfiles`), so
 finds its files through a runfiles manifest when no runfiles tree is staged, so `bazel run
 --noenable_runfiles` and `bazel test --noenable_runfiles` without a sandbox work.
 
-Platforms: the tests that run these rules' targets pass on Linux (WSL) and, in CI, on the GitHub
-Actions images `ubuntu-24.04`, `macos-26-arm64` and `windows-2025-vs2026`. On Windows they also pass
-with Bazel's shell set to a path that does not exist and no Bash directory on the `PATH` of
-actions, tests and `bazel run`. `bazel run` and `bazel test` with `--noenable_runfiles` and no
-sandbox, and `bazel coverage`, ran on Linux only.
+Platforms: the jobs of rules_bun's CI (`.github/workflows/ci.yaml`) that run these rules'
+targets. The root suite and the `e2e/smoke` suite pass on the GitHub Actions runners
+`ubuntu-latest`, `macos-latest` and `windows-latest` (job `test`). On `ubuntu-latest` only: with
+tests denied network access (`network-denied`), `bazel test` and `bazel run` with
+`--noenable_runfiles`, also without a sandbox (`manifest-only`), and `bazel coverage`
+(`coverage`). On `windows-latest` only: with Bazel's shell set to a path that does not exist and
+no Bash directory on the `PATH` of actions, tests and `bazel run` (`windows-without-bash`), with
+`--windows_enable_symlinks` (`windows-symlinks`), with an output user root holding a space
+(`output-root-with-space`), and the npm package tests built from a disk cache another output base
+filled (`windows-disk-cache`). `mod-compare` checks that `bazel mod` prints the same on the three
+runners. A Linux target or execution platform with `@rules_bun//bun/platforms/libc:musl` gets
+Bun's musl release, which is verified by toolchain resolution and its integrity only; no test runs
+it on a musl system (unverified).
 
 Limits: the guard's pattern may be at most 1,048,576 characters with Bun 1.4.4, and its length
 grows with the unique part of the declared files' real paths; beyond that the run fails naming
@@ -53,7 +62,7 @@ process that runs only the rule's launcher writes no transpiler-cache entry, and
 `BUN_OPTIONS` fails the run before Bun starts. Each of these is tested on the platforms named in
 Platforms, the Linux and macOS ones on Linux and macOS.
 
-Windows only, each tested on `windows-2025-vs2026` unless marked unverified: an argument containing
+Windows only, each tested on `windows-latest` unless marked unverified: an argument containing
 `"` does not arrive unchanged, and of 130 runtime arguments fewer arrive
 (https://github.com/hermeticbuild/hermetic-launcher/issues/80 reports the first split and arguments
 past 128 dropped); the Bun process that runs only the rule's launcher may read a `bunfig.toml` of
@@ -100,9 +109,8 @@ Windows needs long-path support enabled (`LongPathsEnabled`, Microsoft's "Maximu
 Limitation"); without it, packages are untested there. A file name Windows cannot hold, such as
 `aux.js` or `a:b.js`, is handled as Bazel's extractor handles it; rules_bun promises neither a
 failure nor a message. On Windows (one local run), Bazel 9.2.0's extraction of `a:b.js` fails with
-an internal error, so such a package cannot be fetched there. Packages ran on Linux (WSL) and, in
-one local run with `LongPathsEnabled` set and without `--windows_enable_symlinks`, on Windows;
-macOS is unverified.
+an internal error, so such a package cannot be fetched there. The package tests are part of the
+root suite, so they ran where Platforms says.
 """
 
 # hermetic-launcher limits each embedded stub argument to 256 bytes.

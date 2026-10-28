@@ -1,0 +1,9 @@
+load("//bun:defs.bzl", "bun_test")
+
+# A source in a subpackage of the package that calls npm_link_all_packages resolves its packages
+# (feature 005 FR-020).
+bun_test(
+    name = "scope_test",
+    srcs = ["scope.test.ts"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)

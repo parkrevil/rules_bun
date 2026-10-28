@@ -1,0 +1,18 @@
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+
+# A source outside the package that calls npm_link_all_packages, depending on its link: Bun's
+# node_modules lookup walks up from the importing file, so the package does not resolve
+# (feature 005 FR-020, as rules_js documents for its links).
+bun_binary(
+    name = "main",
+    entry_point = "main.ts",
+    tags = ["manual"],
+    deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
+)
+
+bun_test(
+    name = "scope_test",
+    srcs = ["scope.test.ts"],
+    data = [":main"],
+    deps = ["//bun/tests/support:spawn"],
+)
