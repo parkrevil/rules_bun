@@ -391,7 +391,7 @@ child's exit status (FR-009, FR-010, research R3, data-model "Canaries").
 
 ### Tests for User Story 7 (the canaries are the tests)
 
-- [ ] T045 [P] [US7] Create `bun/tests/canary/c17_leading_dashdash.test.ts`: write a script under
+- [X] T045 [P] [US7] Create `bun/tests/canary/c17_leading_dashdash.test.ts`: write a script under
   a new `TEST_TMPDIR` directory printing `JSON.stringify(process.argv.slice(2))`; run
   `Bun.spawnSync([process.execPath, "--no-env-file", <absolute script>, "--", "x"])`; assert
   stdout `["x"]` and exit 0, and in a second case that `[<script>, "a", "--", "b"]` prints
@@ -399,7 +399,7 @@ child's exit status (FR-009, FR-010, research R3, data-model "Canaries").
   (bun/private/launcher.js, bun_binary doc)". Under `RULES_BUN_CANARY_RED=1` alter the expectation.
   Add `bun_test(name = "c17_leading_dashdash_test", ...)` to `bun/tests/canary/BUILD.bazel`.
   Record green, and red with `--test_env=RULES_BUN_CANARY_RED=1`
-- [ ] T046 [US7] In `bun/tests/canary/c1_preserve_symlinks.test.ts`, replace the early return on a
+- [X] T046 [US7] In `bun/tests/canary/c1_preserve_symlinks.test.ts`, replace the early return on a
   `symlinkSync` failure with `throw new Error("C1 cannot assert: this runner cannot create a
   symbolic link: " + <error message>)`, and assert `result.exitCode === 0` with stdout and stderr
   in the failure message before comparing the output. Show red twice by uncommitted local edits,
@@ -408,10 +408,10 @@ child's exit status (FR-009, FR-010, research R3, data-model "Canaries").
 
 ### Implementation for User Story 7
 
-- [ ] T047 [US7] In `bun/private/launcher.js` (the leading-`--` check) and the `bun_binary` doc in
+- [X] T047 [US7] In `bun/private/launcher.js` (the leading-`--` check) and the `bun_binary` doc in
   `bun/private/run.bzl`, reference canary C17 as the pin of the Bun behavior the refusal works
   around
-- [ ] T048 [US7] Run `bazel test //bun/tests/canary:all`; record green; commit as
+- [X] T048 [US7] Run `bazel test //bun/tests/canary:all`; record green; commit as
   `test: pin Bun's leading -- and make C1 assert`
 
 **Checkpoint**: US7 holds; SC-008 covered (D3 settled from the PR's Windows jobs in T087).

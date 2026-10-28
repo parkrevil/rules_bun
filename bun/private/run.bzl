@@ -571,7 +571,8 @@ bun_binary = rule(
 `bazel run` runs `entry_point` as Bun's main module with the target's `args` and `env`;
 `process.argv.slice(2)` is exactly the program's arguments, and the exit code, standard input,
 standard output and standard error are Bun's. An argument list whose first argument is `--` fails
-with an English error, because Bun 1.4.4 drops a `--` directly after the entry point. A
+with an English error, because Bun 1.4.4 drops a `--` directly after the entry point (canary C17
+pins it). A
 `$(rlocationpath …)` in `args` names the original data file, which may be read through
 `RUNFILES_DIR` or `RUNFILES_MANIFEST_FILE`, but importing it fails the load guard. A data file of
 another repository has no stable path relative to `import.meta.dir`, because the path contains

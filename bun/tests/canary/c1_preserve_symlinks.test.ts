@@ -25,14 +25,17 @@ test("an import of a linked file resolves from the link target's directory", () 
   try {
     symlinkSync(join(target, "a.ts"), link);
   } catch (error) {
-    console.log(`C1 not asserted: this runner cannot create a symbolic link (${error})`);
-    return;
+    // A canary that cannot assert fails instead of passing (feature 005 FR-010).
+    throw new Error(`C1 cannot assert: this runner cannot create a symbolic link: ${error instanceof Error ? error.message : error}`);
   }
 
   const result = Bun.spawnSync([process.execPath, "--preserve-symlinks", "--preserve-symlinks-main", link], {
     cwd: root,
   });
   const output = result.stdout.toString().trim();
+  if (result.exitCode !== 0) {
+    throw new Error(`C1: Bun exited with ${result.exitCode}; stdout ${JSON.stringify(output)}, stderr ${JSON.stringify(result.stderr.toString())}`);
+  }
   if (output !== "target") {
     throw new Error(`${MESSAGE}; observed output ${JSON.stringify(output)}, exit ${result.exitCode}`);
   }
