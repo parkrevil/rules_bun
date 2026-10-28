@@ -169,6 +169,11 @@ bun_test(
         "//bun/tests/npm/fixtures/bins_clash:package.json",
         "//bun/tests/npm/fixtures/bins_dirbin:bun.lock",
         "//bun/tests/npm/fixtures/bins_dirbin:package.json",
+        "//bun/tests/npm/fixtures/bins_node:bun.lock",
+        "//bun/tests/npm/fixtures/bins_node:package.json",
+        "//bun/tests/npm/registry/archives:dirbin@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:node-bin@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:single-bin@1.0.0.tgz",
     ],
     tags = ["requires-network"],
     deps = [

@@ -1,0 +1,14 @@
+{
+  "name": "node-bin",
+  "version": "1.0.0",
+  "bin": {
+    "tsc": "bin/tsc",
+    "envs": "bin/envs",
+    "abs": "bin/abs",
+    "bunbin": "bin/bunbin",
+    "sh": "bin/sh",
+    "noline": "bin/noline",
+    "dir": "bin/dir",
+    "gone": "bin/gone"
+  }
+}
