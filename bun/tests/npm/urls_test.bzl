@@ -35,7 +35,15 @@ def _has_credentials_test_impl(ctx):
 
 def _is_download_url_test_impl(ctx):
     env = unittest.begin(ctx)
-    for text in ["https://registry.npmjs.org/a/-/a-1.0.0.tgz", "http://127.0.0.1:4873/a/-/a-1.0.0.tgz"]:
+    for text in [
+        "https://registry.npmjs.org/a/-/a-1.0.0.tgz",
+        "http://127.0.0.1:4873/a/-/a-1.0.0.tgz",
+        # RFC 3986 3.1: the scheme is case-insensitive.
+        "HTTPS://registry.npmjs.org/a",
+        "Http://host:8080/@scope%2fs/-/s-1.0.0.tgz",
+        "https://[::1]:4873/a.tgz",
+        "https://host",
+    ]:
         asserts.true(env, is_download_url(text), text)
     for text in [
         "u:SECRET@host/a",
@@ -46,6 +54,11 @@ def _is_download_url_test_impl(ctx):
         "https://host/a b",
         "ftp://host/a",
         "",
+        # RFC 3986 3.2.2, 3.2.3, 2.1: a host, digits for a port, two hex digits after %.
+        "https://:443/a.tgz",
+        "https://host:abc/a.tgz",
+        "https://host/%zz",
+        "https://ho st/a",
     ]:
         asserts.false(env, is_download_url(text), text)
     return unittest.end(env)

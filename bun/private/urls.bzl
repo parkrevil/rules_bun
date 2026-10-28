@@ -84,8 +84,33 @@ def has_credentials(text):
         return True
     return False
 
+_HEX = "0123456789abcdefABCDEF"
+_DIGITS = "0123456789"
+
+# RFC 3986 section 2: unreserved and sub-delims characters, and those a path also allows.
+_UNRESERVED = _ALPHA + _DIGITS + "-._~"
+_SUB_DELIMS = "!$&'()*+,;="
+_PATH_CHARS = _UNRESERVED + _SUB_DELIMS + ":@/?#%"
+
+def _percent_escapes_valid(text):
+    """Whether every `%` of a text starts a percent escape of two hex digits (RFC 3986 2.1)."""
+    for i in range(len(text)):
+        if text[i] == "%" and (i + 2 >= len(text) or text[i + 1] not in _HEX or text[i + 2] not in _HEX):
+            return False
+    return True
+
+def _host_valid(host):
+    """Whether a host is an IP literal (`[...]`) or a registered name or IPv4 address (RFC 3986 3.2.2)."""
+    if host.startswith("[") and host.endswith("]"):
+        return len(host) > 2 and not [c for c in host[1:-1].elems() if c not in _HEX + ":."]
+    return host != "" and not [c for c in host.elems() if c not in _UNRESERVED + _SUB_DELIMS + "%"]
+
 def is_download_url(text):
-    """Whether a text is exactly one `http` or `https` URL with a host and no user information.
+    """Whether a text is an `http` or `https` URL with a host and no user information.
+
+    The scheme is compared without case (RFC 3986 section 3.1); the authority is a host (a
+    registered name, an IPv4 address or an IP literal) and an optional port of digits (3.2.2,
+    3.2.3); the rest holds only URL characters and valid percent escapes (2.1).
 
     Args:
         text: Any text.
@@ -93,10 +118,26 @@ def is_download_url(text):
     Returns:
         Whether Bazel's downloader may be given it as a URL.
     """
-    for scheme in ["https://", "http://"]:
-        if text.startswith(scheme):
-            if [c for c in text.elems() if c in _ENDS]:
-                return False
-            authority = _authority_after(text, len(scheme))
-            return authority != "" and "@" not in authority
-    return False
+    scheme, separator, rest = text.partition("://")
+    if not separator or scheme.lower() not in ("http", "https"):
+        return False
+    authority = _authority_after(rest, 0)
+    tail = rest[len(authority):]
+    if "@" in authority:
+        return False
+    host, port = authority, ""
+    if authority.startswith("["):
+        close = authority.find("]")
+        if close < 0:
+            return False
+        host, port = authority[:close + 1], authority[close + 1:]
+        if port and not port.startswith(":"):
+            return False
+        port = port[1:]
+    elif ":" in authority:
+        host, _, port = authority.rpartition(":")
+    if not _host_valid(host) or [c for c in port.elems() if c not in _DIGITS]:
+        return False
+    if [c for c in tail.elems() if c not in _PATH_CHARS]:
+        return False
+    return _percent_escapes_valid(host + tail)
