@@ -101,6 +101,28 @@ def _exclusion_test_impl(ctx):
 # declared set, which admits the tree's store entry, holds them (FR-033).
 exclusion_test = analysistest.make(_exclusion_test_impl, extra_target_under_test_aspects = [tree_actions_aspect])
 
+_CASE_VARIANTS = ["lower/build", "lower/build.bazel", "mixed/Build", "mixed/Build.bazel"]
+
+def _renames_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    info = analysistest.target_under_test(env)[TreeActionsInfo]
+    asserts.equals(env, 1, len(info.actions), "one instance tree")
+    if info.actions:
+        _, inputs = info.actions[0]
+        files = [f.short_path.partition("/package/")[2] for f in inputs if "/package/" in f.short_path]
+        replace_prefixes = info.replace_prefixes[0]
+        for original in _CASE_VARIANTS:
+            asserts.false(env, original in files, "{} is stored under its own name, a Bazel package on a case-insensitive file system".format(original))
+            safe = [k for k, v in replace_prefixes.items() if v == original]
+            asserts.equals(env, 1, len(safe), "the path map maps {} to one safe name: {}".format(original, replace_prefixes))
+            if safe:
+                asserts.true(env, safe[0] in files and "/_rules_bun_" in "/" + safe[0], "{} is stored as {}: {}".format(original, safe[0], files))
+    return analysistest.end(env)
+
+# `build`, `Build`, `build.bazel` and `Build.bazel` are renamed as `BUILD` is, and mapped back
+# (feature 005 FR-017, research R7).
+renames_test = analysistest.make(_renames_test_impl, extra_target_under_test_aspects = [tree_actions_aspect])
+
 def layout_test_suite(name):
     """Checks the package layout in a target's copy tree.
 
@@ -131,4 +153,8 @@ def layout_test_suite(name):
         name = name + "_exclusion_test",
         target_under_test = "//bun/tests/npm/fixtures/basic:node_modules/excluded",
     )
-    native.test_suite(name = name, tests = [name + "_test", name + "_no_packages_test", name + "_exclusion_test"])
+    renames_test(
+        name = name + "_renames_test",
+        target_under_test = "//bun/tests/npm/fixtures/basic:node_modules/build-files",
+    )
+    native.test_suite(name = name, tests = [name + "_test", name + "_no_packages_test", name + "_exclusion_test", name + "_renames_test"])

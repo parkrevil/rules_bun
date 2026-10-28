@@ -1,11 +1,38 @@
 """Analysis tests of platform-specific optional dependencies (FR-016, US3, research R8; feature 004
 research R11 for libc, which Bun 1.4.4 writes)."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
+load("//bun/private:platforms.bzl", "check_list")
 
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
 _AIX = "//bun/tests/npm/fixtures/aix:node_modules/aix-user"
+_ANY = "//bun/tests/npm/fixtures/any_platform:node_modules/any-platform"
+
+# npm-install-checks `checkList` (v9.0.0, fcba600c2e4d) on each case, as feature 005 research E3
+# records it: (value, values) -> result.
+_CHECK_LIST = [
+    ("linux", ["any"], True),
+    ("linux", ["linux"], True),
+    ("darwin", ["linux"], False),
+    ("linux", ["!linux"], False),
+    ("darwin", ["!linux"], True),
+    ("darwin", ["linux", "!win32"], False),
+    ("linux", [], True),
+    ("linux", ["any", "!linux"], False),
+    ("darwin", ["any", "!linux"], False),
+    (None, ["linux"], False),
+    (None, ["!linux"], True),
+    (None, ["any"], True),
+]
+
+def _check_list_test_impl(ctx):
+    env = unittest.begin(ctx)
+    for value, values, expected in _CHECK_LIST:
+        asserts.equals(env, expected, check_list(value, values), "check_list({}, {})".format(repr(value), values))
+    return unittest.end(env)
+
+_check_list_test = unittest.make(_check_list_test_impl)
 
 _PLATFORMS = ["linux_x64", "linux_x64_glibc", "linux_x64_musl", "linux_aarch64", "darwin_x64", "darwin_aarch64", "windows_x64"]
 
@@ -119,6 +146,14 @@ def platforms_test_suite(name):
     aix_x64_test(name = name + "_aix_x64_test", target_under_test = _AIX, package = "aix-user", expected = ["native-aix-x64"])
     linux_x64_test(name = name + "_aix_linux_x64_test", target_under_test = _AIX, package = "aix-user", expected = [])
     tests += [name + "_aix_x64_test", name + "_aix_linux_x64_test"]
+
+    # A sole `any` matches every platform (npm-install-checks `checkList`, feature 005 FR-006).
+    for platform in ["linux_x64", "darwin_aarch64", "windows_x64"]:
+        _RULES[platform](name = "{}_any_{}_test".format(name, platform), target_under_test = _ANY, package = "", expected = ["any-platform"])
+        tests.append("{}_any_{}_test".format(name, platform))
+
+    _check_list_test(name = name + "_check_list_test")
+    tests.append(name + "_check_list_test")
 
     _exec_tool(name = name + "_exec_tool", tool = name + "_native_tool", tags = ["manual"])
     exec_test(name = name + "_exec_test", target_under_test = name + "_exec_tool")

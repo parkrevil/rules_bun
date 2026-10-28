@@ -408,6 +408,14 @@ const projects: Record<string, Project> = {
       assert(Object.keys(lock.packages["node-bin"][2].bin ?? {}).length === 8, "node-bin has not eight bin entries");
     },
   },
+  // FR-006 (platforms_test.bzl): an optional package whose os and cpu are a
+  // sole "any", which npm-install-checks' checkList matches everywhere.
+  any_platform: {
+    files: () => ({ "package.json": json({ name: "any-platform-user", private: true, optionalDependencies: { "any-platform": "1.0.0" } }) }),
+    check(lock) {
+      keys(lock, ["any-platform"]);
+    },
+  },
   bins_clash: {
     files: () => ({ "package.json": json({ name: "bins-clash", private: true, dependencies: { "clash-bin": "1.0.0" } }) }),
     check(lock) {

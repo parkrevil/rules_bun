@@ -492,19 +492,19 @@ is renamed (FR-006, FR-017, research R5, R7).
 
 ### Tests for User Story 6 (write first, see red)
 
-- [ ] T056 [P] [US6] In `bun/tests/npm/platforms_test.bzl`, add unit cases of
+- [X] T056 [P] [US6] In `bun/tests/npm/platforms_test.bzl`, add unit cases of
   `check_list(value, values)` loaded from `//bun/private:platforms.bzl`, each with npm-install-
   checks' result (research E3): `("linux", ["any"])` true; `("linux", ["linux"])` true;
   `("darwin", ["linux"])` false; `("linux", ["!linux"])` false; `("darwin", ["!linux"])` true;
   `("darwin", ["linux", "!win32"])` false; `("linux", [])` true; `("linux", ["any", "!linux"])`
   false; `("darwin", ["any", "!linux"])` false; `(None, ["linux"])` false; `(None, ["!linux"])`
   true; `(None, ["any"])` true. Run `bazel test //bun/tests/npm:platforms`; record red
-- [ ] T057 [US6] Add fixture package `bun/tests/npm/registry/packages/any-platform@1.0.0/`
+- [X] T057 [US6] Add fixture package `bun/tests/npm/registry/packages/any-platform@1.0.0/`
   with `"os": ["any"]` and `"cpu": ["any"]`, pack it, add it to a new `write_lockfiles.ts` project
   `any_platform`, register hub `npm_any_platform` in `MODULE.bazel` (dev) and `use_repo`, and add a
   `platforms_test.bzl` case that the package is linked for `linux_x64`, `darwin_aarch64` and
   `windows_x64`. Record red
-- [ ] T058 [P] [US6] Add to `bun/tests/npm/registry/packages/build-files@1.0.0/` the files
+- [X] T058 [P] [US6] Add to `bun/tests/npm/registry/packages/build-files@1.0.0/` the files
   `lower/build`, `lower/build.bazel`, `mixed/Build`, `mixed/Build.bazel` (each a one-line
   JavaScript module exporting its own path); re-pack with `pack.ts`; rewrite every lockfile that
   holds `build-files` with `write_lockfiles.ts`; in `bun/tests/npm/glob_test.bzl` (or the
@@ -518,17 +518,17 @@ is renamed (FR-006, FR-017, research R5, R7).
 
 ### Implementation for User Story 6
 
-- [ ] T059 [US6] In `bun/private/platforms.bzl`, add `check_list(value, values)`, a transcription
+- [X] T059 [US6] In `bun/private/platforms.bzl`, add `check_list(value, values)`, a transcription
   of npm-install-checks `checkList` (v9.0.0, `fcba600c2e4d`): a sole `any` → true; a `!v` equal to
   `value` → false; else true when a positive entry equals `value` or every entry is negated;
   `None` equals no entry. Cite the source in the docstring
-- [ ] T060 [US6] In `bun/private/npm_repositories.bzl`, replace `_matches` with `check_list` for
+- [X] T060 [US6] In `bun/private/npm_repositories.bzl`, replace `_matches` with `check_list` for
   `os` and `cpu`; keep `libc_matches` unchanged
-- [ ] T061 [US6] In `bun/private/npm_repositories.bzl` `_make_addressable`, rename a file when
+- [X] T061 [US6] In `bun/private/npm_repositories.bzl` `_make_addressable`, rename a file when
   `name.lower()` is `build` or `build.bazel`, as `BUILD` is renamed today (directories are not
   renamed); update the `BUILD` sentence of `_NPM_DOC` in `bun/private/npm_extension.bzl`
   ("`BUILD` and `BUILD.bazel` in any case")
-- [ ] T062 [US6] Run `bazel test //bun/tests/npm/...`; record green; commit as `fix: follow npm's
+- [X] T062 [US6] Run `bazel test //bun/tests/npm/...`; record green; commit as `fix: follow npm's
   checkList and rename BUILD files in any case`
 
 **Checkpoint**: US6 holds.
