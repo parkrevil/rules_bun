@@ -115,13 +115,13 @@ or repository attribute holds it (FR-002, research R2, data-model "URL check").
 
 ### Tests for User Story 3 (write first, see red)
 
-- [ ] T010 [P] [US3] In `bun/tests/npm/npmrc_test.bzl`, add unit cases for `has_userinfo(url)`
+- [X] T010 [P] [US3] In `bun/tests/npm/npmrc_test.bzl`, add unit cases for `has_userinfo(url)`
   loaded from `//bun/private:npmrc.bzl`: true for `https://user:token@host/x`,
   `https://@host/x` (empty user information, spec Edge Cases), `https://user@host`,
   `git+https://user:token@host/r.git`; false for `https://host/a@1.0.0.tgz` (`@` after `/`),
   `https://host?x=a@b`, `https://host#a@b`, `https://host:8080/x`. Run
   `bazel test //bun/tests/npm:npmrc`; record red (symbol not exported)
-- [ ] T011 [P] [US3] In `bun/tests/integration/credentials.test.ts`, add inner-workspace cases,
+- [X] T011 [P] [US3] In `bun/tests/integration/credentials.test.ts`, add inner-workspace cases,
   each asserting evaluation fails, the output names the `bun.lock` label and the lockfile entry
   key, contains `--credential_helper` and `.netrc`, and contains neither the user, the token
   (use the distinctive strings `u5er` and `t0ken-secret`) nor the URL: (a) an npm entry whose
@@ -139,11 +139,11 @@ or repository attribute holds it (FR-002, research R2, data-model "URL check").
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] In `bun/private/npmrc.bzl`, rename `_has_userinfo` to the module-level public
+- [X] T012 [US3] In `bun/private/npmrc.bzl`, rename `_has_userinfo` to the module-level public
   function `has_userinfo(url)` (the authority, after `://` and before the first `/`, `?` or `#`,
   holds `@`; without `://` the whole string up to `/`, `?` or `#` is the authority), with a
   docstring; `read_npmrc` uses it unchanged
-- [ ] T013 [US3] In `bun/private/npm_extension.bzl` `_translate`, before `first_entries` and every
+- [X] T013 [US3] In `bun/private/npm_extension.bzl` `_translate`, before `first_entries` and every
   other check that may print a URL, iterate every `packages` entry of the lockfile and call
   `has_userinfo` on slot 1 of an npm entry and on the slot 0 resolution of a `tarball` entry and of
   every unsupported entry whose resolution is a URL (read the slot layout from
@@ -154,10 +154,10 @@ or repository attribute holds it (FR-002, research R2, data-model "URL check").
   spec of every workspace `package.json` and of `bun.lock` `workspaces` (`bun/private/workspaces.bzl`),
   failing with `rules_bun: <file>: the dependency "<name>" is a URL that holds user information ...`
   without printing the spec
-- [ ] T014 [US3] In the `translate_lock` doc of `bun/private/npm_extension.bzl`, extend the
+- [X] T014 [US3] In the `translate_lock` doc of `bun/private/npm_extension.bzl`, extend the
   credentials sentence: a URL holding user information is rejected from `bun.lock` as from
   `.npmrc`; credentials come only from Bazel's downloader
-- [ ] T015 [US3] Run `bazel test //bun/tests/npm:npmrc //bun/tests/integration:credentials_test
+- [X] T015 [US3] Run `bazel test //bun/tests/npm:npmrc //bun/tests/integration:credentials_test
   //bun/tests/npm:all`; record green; commit as `fix: reject credentials in bun.lock URLs`
 
 **Checkpoint**: US3 holds; SC-004 covered.

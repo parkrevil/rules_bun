@@ -12,8 +12,18 @@ DEFAULT_REGISTRY = "https://registry.npmjs.org"
 
 _CREDENTIAL_KEYS = ["_auth", "_authToken", "_password", "username", "certfile", "keyfile"]
 
-def _has_userinfo(url):
-    """Whether the authority of `url` (RFC 3986 section 3.2) holds user information."""
+def has_userinfo(url):
+    """Whether the authority of a URL (RFC 3986 section 3.2) holds user information.
+
+    The authority is the text after `://` up to the first `/`, `?` or `#`; without `://` it is the
+    whole text up to the first of those. An empty user information (`https://@host/`) counts.
+
+    Args:
+        url: The URL.
+
+    Returns:
+        Whether the authority holds an `@`.
+    """
     authority = url.partition("://")[2] or url
     for end in ["/", "?", "#"]:
         authority = authority.partition(end)[0]
@@ -41,7 +51,7 @@ def read_npmrc(text, file):
         if not separator or key.startswith("//") or key in _CREDENTIAL_KEYS:
             continue
         value = value.strip()
-        if (key == "registry" or (key.startswith("@") and key.endswith(":registry"))) and _has_userinfo(value):
+        if (key == "registry" or (key.startswith("@") and key.endswith(":registry"))) and has_userinfo(value):
             return struct(value = None, error = "{}: the {} URL holds user information (credentials before an @); give credentials through Bazel's downloader (--credential_helper or .netrc) instead".format(file, key))
         if key == "registry":
             registry = value
