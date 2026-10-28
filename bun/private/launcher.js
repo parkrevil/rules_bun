@@ -279,6 +279,8 @@ async function main() {
   let cwd = process.cwd();
   let coverageDir;
   if (config.mode === "binary") {
+    // Canary C17 (bun/tests/canary/c17_leading_dashdash.test.ts) pins the Bun behavior this
+    // refusal works around.
     if (userArgs[0] === "--") {
       fail(
         `${config.label}: "--" as the first program argument is not supported, ` +

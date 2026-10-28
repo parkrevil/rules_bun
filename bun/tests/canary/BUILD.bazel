@@ -43,3 +43,8 @@ bun_test(
     name = "c18_extensionless_bin_test",
     srcs = ["c18_extensionless_bin.test.ts"],
 )
+
+bun_test(
+    name = "c17_leading_dashdash_test",
+    srcs = ["c17_leading_dashdash.test.ts"],
+)
