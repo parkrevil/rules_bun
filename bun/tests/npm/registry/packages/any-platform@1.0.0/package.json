@@ -1,0 +1,7 @@
+{
+  "name": "any-platform",
+  "version": "1.0.0",
+  "main": "index.js",
+  "os": ["any"],
+  "cpu": ["any"]
+}

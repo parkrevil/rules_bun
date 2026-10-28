@@ -457,7 +457,8 @@ Generated targets (public API, under these naming rules):
 Repositories named `<name>__...` and other targets of the hub are not public API.
 
 Packages: an optional dependency whose entry has `os` or `cpu` is carried only on target platforms
-that match (`select()` on `@platforms`, `!` negations included); a value with no `@platforms`
+that match, by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
+negations included; `select()` on `@platforms`); a value with no `@platforms`
 constraint, such as `sunos` or `ppc64`, matches no platform. An entry's `libc` (`glibc` or `musl`,
 which Bun 1.4.4 writes) is matched against the target platform's
 `@rules_bun//bun/platforms/libc:libc` constraint, by npm's rule: on a Linux platform with
@@ -472,7 +473,8 @@ and any other resolution, a patched package, an entry without integrity, an inte
 other than `sha256`, `sha384` and `sha512`) gets no download; a target that needs it fails analysis
 naming the package and the reason, and other targets are unaffected. A link that reaches such an
 entry, on any platform, is tagged `manual`, so `bazel build //...` skips it. An archive's files keep their
-names, `BUILD` files and names outside the target-name set included. An empty directory of an
+names, `BUILD` and `BUILD.bazel` files in any case (`build`, `Build.bazel`) and names outside the
+target-name set included. An empty directory of an
 archive is not carried. Archives holding symbolic links are not covered by a test (unverified).
 
 Fetching: only the packages a requested target needs are downloaded, by Bazel's downloader, and

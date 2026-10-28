@@ -48,7 +48,7 @@
 
     "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
 
-    "build-files": ["build-files@1.0.0", "http://127.0.0.1:28761/build-files/-/build-files-1.0.0.tgz", {}, "sha512-DwiNuH0ZDUxkBkkxOlecrMt5aGioIDGxaipVhMsrCve33cCTz++dkPkDpYyt+OK7uHfKmBxqSAtLflyfOIG2xA=="],
+    "build-files": ["build-files@1.0.0", "http://127.0.0.1:28761/build-files/-/build-files-1.0.0.tgz", {}, "sha512-KOJkZPdthKnydh70hBym6UyzSOpSk4W+tiy42GFpPseslId/M0MNBYD+xmHHMUBMoxjbTGVO7maxVTuh1OJ6sA=="],
 
     "c": ["c@1.0.0", "http://127.0.0.1:28761/c/-/c-1.0.0.tgz", { "dependencies": { "b": "^2.0.0" } }, "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw=="],
 

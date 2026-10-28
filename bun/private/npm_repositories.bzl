@@ -8,7 +8,7 @@ workspace package it is called in.
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "read_user_netrc", "use_netrc")
 load(":library.bzl", "SOURCE_EXTENSIONS")
-load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS")
+load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS", "check_list")
 
 _NPM_PACKAGE_BZL = str(Label("//bun/private:npm_package.bzl"))
 
@@ -75,7 +75,8 @@ def glob_matches(pattern, path):
 def _make_addressable(repository_ctx, package, exclude):
     """Renames the entries of `package/` that a `glob` would lose (research R4, FR-035).
 
-    A file named `BUILD` or `BUILD.bazel` would make its directory a subpackage, and a name with a
+    A file named `BUILD` or `BUILD.bazel`, in any case, would make its directory a subpackage (on a
+    case-insensitive file system `build` is `BUILD`), and a name with a
     character outside Bazel's target-name set is no valid label; each gets the safe name
     `_rules_bun_<n>_`. A file whose path changes is deleted instead when its archive path matches
     an `exclude` pattern, since the `glob` exclude only sees the safe names (FR-033).
@@ -98,7 +99,9 @@ def _make_addressable(repository_ctx, package, exclude):
         for entry in sorted(directory.readdir(), key = lambda e: e.basename):
             name = entry.basename
             safe = name
-            renamed = (not entry.is_dir and name in ("BUILD", "BUILD.bazel")) or not _addressable(name)
+
+            # Any case: on a case-insensitive file system `build` is a `BUILD` file (research R7).
+            renamed = (not entry.is_dir and name.lower() in ("build", "build.bazel")) or not _addressable(name)
             if not entry.is_dir and (renamed or safe_dir != original_dir) and [p for p in exclude if glob_matches(p, original_dir + name)]:
                 repository_ctx.delete(entry)
                 continue
@@ -255,15 +258,6 @@ npm_package_repository = repository_rule(
     },
 )
 
-def _matches(values, actual):
-    """npm's `os`/`cpu` rule: a listed value must match, a `!` value must not; `actual` may be `None`."""
-    if not values:
-        return True
-    if actual != None and "!" + actual in values:
-        return False
-    positives = [v for v in values if not v.startswith("!")]
-    return actual in positives if positives else True
-
 def libc_matches(values, os, libc):
     """npm's `libc` rule (npm-install-checks `checkPlatform`) for a target's npm `os` and `libc`.
 
@@ -285,12 +279,12 @@ def libc_matches(values, os, libc):
         return False
     if libc == None or values == ["any"]:
         return True
-    return _matches(values, libc)
+    return check_list(libc, values)
 
 def _holds(conditions, os, cpu, libc):
     """Whether one of `conditions` (each a list of `[os, cpu, libc]` requirements) holds for npm values."""
     for condition in conditions:
-        if all([_matches(r[0], os) and _matches(r[1], cpu) and libc_matches(r[2], os, libc) for r in condition]):
+        if all([check_list(os, r[0]) and check_list(cpu, r[1]) and libc_matches(r[2], os, libc) for r in condition]):
             return True
     return False
 

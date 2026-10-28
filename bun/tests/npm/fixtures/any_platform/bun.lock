@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "any-platform-user",
+      "optionalDependencies": {
+        "any-platform": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "any-platform": ["any-platform@1.0.0", "http://127.0.0.1:28761/any-platform/-/any-platform-1.0.0.tgz", {}, "sha512-onkxCAa47t2oW6v0MPAc2UyMWwp9tv6yN15+NFaZQ9E3sGj6L2smMqTabzRw+zB2SPgotDK2Q5g5p7VHbUAWCg=="],
+  }
+}

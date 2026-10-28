@@ -13,6 +13,13 @@ test("every file of an archive with BUILD files is carried under its own name (F
   expect(require("build-files").dir).toBe(dir);
 });
 
+test("files named BUILD or BUILD.bazel in another case are carried under their own names (feature 005 FR-017)", () => {
+  const dir = packageDir("build-files");
+  for (const path of ["lower/build", "lower/build.bazel", "mixed/Build", "mixed/Build.bazel"]) {
+    expect(readFileSync(join(dir, ...path.split("/")), "utf8")).toBe(`module.exports = "${path}";\n`);
+  }
+});
+
 test("a file whose name holds a space loads", () => {
   expect(require("spaced")).toBe("file with space");
   expect(existsSync(join(packageDir("spaced"), "file with space.js"))).toBe(true);

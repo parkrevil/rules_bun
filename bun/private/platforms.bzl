@@ -70,3 +70,30 @@ def archive_constraint_sets(archive):
     if meta.libc:
         return [struct(libc = None, constraints = base + [NPM_LIBC[meta.libc]])]
     return [struct(libc = None, constraints = base)]
+
+def check_list(value, values):
+    """npm's `os` and `cpu` rule: npm-install-checks `checkList` (v9.0.0, `lib/index.js` at fcba600c2e4d).
+
+    A sole `any` matches; a `!<v>` equal to `value` fails; otherwise a positive entry equal to
+    `value` matches, and a list of negated entries only (or no entry) matches everything else.
+
+    Args:
+        value: The target's npm value, or `None` for a platform without a mapped one, which equals
+            no entry.
+        values: The entry's list.
+
+    Returns:
+        Whether the entry may be carried on that target.
+    """
+    if values == ["any"]:
+        return True
+    negated = 0
+    match = False
+    for entry in values:
+        if entry.startswith("!"):
+            negated += 1
+            if value != None and entry[1:] == value:
+                return False
+        elif value != None and entry == value:
+            match = True
+    return match or negated == len(values)

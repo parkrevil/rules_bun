@@ -1,0 +1,12 @@
+load("@npm_any_platform//:defs.bzl", "npm_link_all_packages")
+
+# An optional package whose os and cpu are a sole "any" (feature 005 FR-006); platforms_test
+# inspects its link.
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()

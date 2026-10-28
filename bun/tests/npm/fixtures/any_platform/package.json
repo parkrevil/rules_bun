@@ -1,0 +1,7 @@
+{
+  "name": "any-platform-user",
+  "private": true,
+  "optionalDependencies": {
+    "any-platform": "1.0.0"
+  }
+}
