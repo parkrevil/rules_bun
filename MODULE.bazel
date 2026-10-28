@@ -233,6 +233,15 @@ npm.replace_package(
     replacement = "//bun/tests/npm/registry/archives:native-aix-x64@1.0.0.tgz",
 )
 npm.translate_lock(
+    name = "npm_bins_node",
+    bun_lock = "//bun/tests/npm/fixtures/bins_node:bun.lock",
+    exclude_package_contents = {"node-bin": ["bin/gone"]},
+)
+npm.replace_package(
+    package = "node-bin@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:node-bin@1.0.0.tgz",
+)
+npm.translate_lock(
     name = "npm_hoisted",
     bun_lock = "//bun/tests/npm/fixtures/hoisted:bun.lock",
 )
@@ -280,7 +289,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_basic", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_basic", "npm_bins_node", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.

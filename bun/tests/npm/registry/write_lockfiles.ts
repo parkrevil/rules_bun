@@ -398,6 +398,16 @@ const projects: Record<string, Project> = {
       keys(lock, ["dirbin", "single-bin"]);
     },
   },
+  // FR-012 (bins_test.bzl, bins.test.ts): node-bin's bins are a JavaScript
+  // program for Node or Bun by their #! line, a shell script, a file with no
+  // #! line, a directory and a file the hub excludes.
+  bins_node: {
+    files: () => ({ "package.json": json({ name: "bins-node", private: true, dependencies: { "node-bin": "1.0.0" } }) }),
+    check(lock) {
+      keys(lock, ["node-bin"]);
+      assert(Object.keys(lock.packages["node-bin"][2].bin ?? {}).length === 8, "node-bin has not eight bin entries");
+    },
+  },
   bins_clash: {
     files: () => ({ "package.json": json({ name: "bins-clash", private: true, dependencies: { "clash-bin": "1.0.0" } }) }),
     check(lock) {

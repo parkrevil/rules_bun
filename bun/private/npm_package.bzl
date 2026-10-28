@@ -2,7 +2,7 @@
 
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
 load(":library.bzl", "packages_of")
-load(":providers.bzl", "BunLibraryInfo", "NpmInstanceInfo", "NpmLinkInfo")
+load(":providers.bzl", "BunLibraryInfo", "NpmInstanceInfo", "NpmLinkInfo", "NpmPackageTreeInfo")
 
 _COPY_TO_DIRECTORY_TOOLCHAIN = "@bazel_lib//lib:copy_to_directory_toolchain_type"
 
@@ -25,12 +25,13 @@ def _npm_package_tree_impl(ctx):
         replace_prefixes = ctx.attr.replace_prefixes,
         hardlink = "auto",
     )
-    return [DefaultInfo(files = depset([tree]))]
+    return [DefaultInfo(files = depset([tree])), NpmPackageTreeInfo(bins = dict(ctx.attr.bins))]
 
 npm_package_tree = rule(
     implementation = _npm_package_tree_impl,
     doc = "Private: copies the extracted files of a package repository into one tree artifact.",
     attrs = {
+        "bins": attr.string_dict(doc = "Each `bin` path of the package -> `\"\"` when it is a JavaScript program for Node or Bun, else the reason it is not."),
         "check": attr.label(doc = "The replacement check of a replaced package, in the package `check`.", allow_single_file = True),
         "replace_prefixes": attr.string_dict(doc = "The safe path of each renamed entry -> its path in the archive."),
         "srcs": attr.label_list(doc = "The files under `package/`.", allow_files = True),
@@ -96,6 +97,7 @@ def _npm_instance_impl(ctx):
         exclude = list(ctx.attr.exclude),
         hub = ctx.attr.hub,
         lockfile = ctx.attr.lockfile,
+        bins = dict(ctx.attr.tree[NpmPackageTreeInfo].bins) if NpmPackageTreeInfo in ctx.attr.tree else {},
     )]
 
 npm_instance = rule(

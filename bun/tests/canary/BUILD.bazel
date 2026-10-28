@@ -38,3 +38,8 @@ bun_test(
     name = "c13_regexp_limit_test",
     srcs = ["c13_regexp_limit.test.ts"],
 )
+
+bun_test(
+    name = "c18_extensionless_bin_test",
+    srcs = ["c18_extensionless_bin.test.ts"],
+)

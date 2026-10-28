@@ -37,6 +37,14 @@ NpmInstanceInfo = provider(
         "exclude": "Content identity: the sorted, de-duplicated `exclude_package_contents` patterns of the package.",
         "hub": "The hub's name, as its `npm.translate_lock` tag gives it, for errors.",
         "lockfile": "The hub's `bun.lock` label text, for errors.",
+        "bins": "Dict from each `bin` path of the package to `\"\"` when it is a JavaScript program for Node or Bun, else the reason it is not (`NpmPackageTreeInfo`).",
+    },
+)
+
+NpmPackageTreeInfo = provider(
+    doc = "Private: what a package repository decided from the package's files (feature 005 research R4).",
+    fields = {
+        "bins": "Dict from each `bin` path of the package to `\"\"` when it is a JavaScript program for Node or Bun, else the reason it is not.",
     },
 )
 

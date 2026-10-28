@@ -7,6 +7,7 @@ workspace package it is called in.
 """
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "read_user_netrc", "use_netrc")
+load(":library.bzl", "SOURCE_EXTENSIONS")
 load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS")
 
 _NPM_PACKAGE_BZL = str(Label("//bun/private:npm_package.bzl"))
@@ -121,6 +122,66 @@ def _make_addressable(repository_ctx, package, exclude):
         fail("rules_bun: the package {} has more than {} directories".format(package, _MAX_DIRECTORIES))
     return renames
 
+# The commands a `#!` line may name for a bin rules_bun runs with Bun (research R4): npm's bin
+# convention is `#!/usr/bin/env node` (docs.npmjs.com, package.json `bin`).
+_BIN_COMMANDS = ["node", "bun"]
+
+_NO_PROGRAM = "it has none of the extensions {} and its first line is no #! line naming node or bun".format(", ".join(SOURCE_EXTENSIONS))
+
+def _names_node_or_bun(text):
+    """Whether the first line of `text` is a `#!` line whose command is `node` or `bun`.
+
+    The command is the basename of the first word, or for `env` the first following word that
+    neither starts with `-` nor holds `=` (`#!/usr/bin/env -S node --flag`).
+    """
+    line = text.partition("\n")[0].rstrip("\r")
+    if not line.startswith("#!"):
+        return False
+    words = [w for w in line[2:].replace("\t", " ").split(" ") if w]
+    command = words[0].rpartition("/")[2] if words else None
+    if command == "env":
+        command = None
+        for word in words[1:]:
+            if not word.startswith("-") and "=" not in word:
+                command = word.rpartition("/")[2]
+                break
+    return command in _BIN_COMMANDS
+
+def _bin_reasons(repository_ctx, bins, renames, exclude):
+    """Decides from the files whether each bin is a JavaScript program for Node or Bun (FR-012).
+
+    Only a bin without a source extension is read, through its safe name when it was renamed.
+
+    Args:
+        repository_ctx: The repository context, after extraction and `_make_addressable`.
+        bins: The entry's `bin` paths.
+        renames: Safe path -> original path, as `_make_addressable` returns it.
+        exclude: The `glob` exclude patterns, relative to the package root.
+
+    Returns:
+        Bin path -> `""` when runnable, else the reason it is not.
+    """
+    safe_names = {original: safe for safe, original in renames.items()}
+    reasons = {}
+    for path in bins:
+        original = "/".join([p for p in path.split("/") if p not in ("", ".")])
+        if [e for e in SOURCE_EXTENSIONS if original.endswith(e)]:
+            reasons[path] = ""
+            continue
+        safe = ""
+        prefix = ""
+        for segment in original.split("/"):
+            prefix = prefix + "/" + segment if prefix else segment
+            safe = safe_names.get(prefix, safe + "/" + segment if safe else segment)
+        file = repository_ctx.path("package/" + safe)
+        if not original or not file.exists or [p for p in exclude if glob_matches(p, original)]:
+            reasons[path] = "the package holds no such file"
+        elif file.is_dir:
+            reasons[path] = "it is a directory"
+        else:
+            reasons[path] = "" if _names_node_or_bun(repository_ctx.read(file)) else _NO_PROGRAM
+    return reasons
+
 def _npm_package_repository_impl(repository_ctx):
     attr = repository_ctx.attr
     if attr.replacement:
@@ -139,18 +200,21 @@ def _npm_package_repository_impl(repository_ctx):
         )
     package = "{}@{}".format(attr.package, attr.version)
     renames = _make_addressable(repository_ctx, package, attr.exclude)
+    bins = _bin_reasons(repository_ctx, attr.bins, renames, attr.exclude)
     build = """\
 load("{bzl}", "npm_package_tree")
 
 npm_package_tree(
     name = "tree",
     srcs = glob(["package/**"], exclude = {exclude}, allow_empty = True),
+    bins = {bins},
     check = {check},
     replace_prefixes = {replace_prefixes},
     visibility = ["//visibility:public"],
 )
 """.format(
         bzl = _NPM_PACKAGE_BZL,
+        bins = repr(bins),
         check = repr("//check") if attr.replacement else None,
         exclude = repr(["package/" + p for p in attr.exclude]),
         replace_prefixes = repr({_glob_escape(k): v for k, v in renames.items()}),
@@ -181,6 +245,7 @@ npm_package_repository = repository_rule(
     doc = "One npm package version: its archive, extracted, and the instance-tree target `:tree`.",
     attrs = {
         "url": attr.string(doc = "The tarball URL.", mandatory = True),
+        "bins": attr.string_list(doc = "The `bin` paths of the package's entry, as `npm_bin.path` names them."),
         "integrity": attr.string(doc = "The Subresource Integrity the lockfile records.", mandatory = True),
         "package": attr.string(doc = "The package name.", mandatory = True),
         "version": attr.string(doc = "The package version.", mandatory = True),
@@ -391,15 +456,17 @@ def npm_link_all_packages():
             tags = ["manual"] if unsupported else [],
             visibility = ["//visibility:public"],
         )
-        for bin, (path, runnable, entry) in link["bins"].items():
-            # A bin file Bun does not run gives a target whose analysis fails (research R10).
+        for bin, (path, entry) in link["bins"].items():
+            # The package repository decides whether the file is a JavaScript program for Node or
+            # Bun; this macro cannot, so every bin is `manual` and `bazel build //...` builds none
+            # (feature 005 research R4, D1). A bin that is not fails its analysis naming why.
             npm_bin(
                 name = "{{}}/bin/{{}}".format(name, bin),
                 package = ":" + name,
                 bin = bin,
                 entry = entry,
                 path = path,
-                tags = [] if runnable and not unsupported else ["manual"],
+                tags = ["manual"],
                 target_compatible_with = _compatible(link),
                 visibility = ["//visibility:public"],
             )

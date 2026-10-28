@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "bins-node",
+      "dependencies": {
+        "node-bin": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "node-bin": ["node-bin@1.0.0", "http://127.0.0.1:28761/node-bin/-/node-bin-1.0.0.tgz", { "bin": { "tsc": "bin/tsc", "envs": "bin/envs", "abs": "bin/abs", "bunbin": "bin/bunbin", "sh": "bin/sh", "noline": "bin/noline", "dir": "bin/dir", "gone": "bin/gone" } }, "sha512-MMApqFTLP4KijN5m8W97tP54cjSG45Y3o7LzS4xw32sBTvktz9KUbwa5n3YcRpQCwNir4hjNVc+xINzAEF/i2A=="],
+  }
+}

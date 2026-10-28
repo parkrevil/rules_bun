@@ -1,0 +1,11 @@
+load("@npm_bins_node//:defs.bzl", "npm_link_all_packages")
+
+# The bins of node-bin, for bins_test (FR-012). Every bin target is manual (research D1).
+package(default_visibility = ["//bun/tests:__subpackages__"])
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()

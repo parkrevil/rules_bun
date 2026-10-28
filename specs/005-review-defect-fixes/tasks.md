@@ -306,7 +306,7 @@ D1, data-model "Bin decision").
 
 ### Tests for User Story 1 (write first, see red)
 
-- [ ] T034 [P] [US1] Create `bun/tests/canary/c18_extensionless_bin.test.ts`: under a new
+- [X] T034 [P] [US1] Create `bun/tests/canary/c18_extensionless_bin.test.ts`: under a new
   `mkdtempSync(join(process.env.TEST_TMPDIR!, "c18-"))`, write `tsc` (no extension; first line
   `#!/usr/bin/env node`; `require("./lib.js")` of a sibling `lib.js` that prints
   `JSON.stringify(process.argv.slice(2))`) and `esm` (no extension; `#!/usr/bin/env node`;
@@ -317,7 +317,7 @@ D1, data-model "Bin decision").
   `RULES_BUN_CANARY_RED=1` alter the expected output so the canary fails (the convention of
   `bun/tests/canary/npm/support.ts`). Add `bun_test(name = "c18_extensionless_bin_test", ...)` to
   `bun/tests/canary/BUILD.bazel`. Record green, and red with `--test_env=RULES_BUN_CANARY_RED=1`
-- [ ] T035 [P] [US1] Add fixture package `bun/tests/npm/registry/packages/node-bin@1.0.0/` with
+- [X] T035 [P] [US1] Add fixture package `bun/tests/npm/registry/packages/node-bin@1.0.0/` with
   `package.json` `bin` entries `tsc` → `bin/tsc` (extensionless, `#!/usr/bin/env node`, CommonJS,
   `require("../lib/tsc.js")`, prints `tsc ` + its arguments), `envs` → `bin/envs`
   (`#!/usr/bin/env -S node --no-warnings`), `abs` → `bin/abs` (`#!/usr/local/bin/node`), `bunbin`
@@ -326,14 +326,14 @@ D1, data-model "Bin decision").
   `bins_node` to `write_lockfiles.ts` that depends on `node-bin` and write its lockfile; register
   the hub `npm_bins_node` in `MODULE.bazel` (dev) next to the other fixture hubs and add it to
   `use_repo`
-- [ ] T036 [US1] In `bun/tests/npm/bins_test.bzl`, add analysis tests: `npm_bin` for `tsc`,
+- [X] T036 [US1] In `bun/tests/npm/bins_test.bzl`, add analysis tests: `npm_bin` for `tsc`,
   `envs`, `abs`, `bunbin` of `node-bin` analyzes (launcher action present); `sh` fails with
   `the bin entry "sh" of the npm package node-bin@1.0.0 is the file bin/sh, which is not a
   JavaScript program for Node or Bun: it has none of the extensions`; `noline` fails the same
   way; the `nonjs-bin` fixture fails the same way; the `dirbin` fixture fails with `it is a
   directory`; a bin excluded by `exclude_package_contents` fails with `the package holds no such
   file`. Run `bazel test //bun/tests/npm:bins`; record red
-- [ ] T037 [US1] In `bun/tests/integration/bins.test.ts` and `workspaces/bins/`, add cases:
+- [X] T037 [US1] In `bun/tests/integration/bins.test.ts` and `workspaces/bins/`, add cases:
   `bazel run` of an `npm_bin` for `node-bin`'s `tsc` and of the generated
   `:node_modules/node-bin/bin/tsc` with arguments `x -- y` print `tsc x -- y` and exit 0;
   `bazel build` of the `sh` bin fails with the FR-012 text; `bazel build //...` of the workspace
@@ -343,10 +343,10 @@ D1, data-model "Bin decision").
 
 ### Implementation for User Story 1
 
-- [ ] T038 [US1] In `bun/private/providers.bzl`, add the private provider
+- [X] T038 [US1] In `bun/private/providers.bzl`, add the private provider
   `NpmPackageTreeInfo(bins)` (`bins`: dict bin path → `""` when runnable or the reason) and the
   field `bins` to `NpmInstanceInfo`
-- [ ] T039 [US1] In `bun/private/npm_repositories.bzl` `npm_package_repository`, add `bins =
+- [X] T039 [US1] In `bun/private/npm_repositories.bzl` `npm_package_repository`, add `bins =
   attr.string_list` (the entry's bin paths, normalized as `npm_bin.path`); after extraction and
   renaming, decide each path: runnable when it ends in one of `SOURCE_EXTENSIONS`; else read the
   file through its safe name (renamed files included) and runnable when its first line starts
@@ -356,24 +356,24 @@ D1, data-model "Bin decision").
   none of the extensions <SOURCE_EXTENSIONS joined by ", "> and its first line is no #! line
   naming node or bun`. Write the dict as the `bins` attribute of the `:tree` target. Read only
   bin files without a source extension (plan Performance Goals)
-- [ ] T040 [US1] In `bun/private/npm_package.bzl`, give `npm_package_tree` the attribute `bins`
+- [X] T040 [US1] In `bun/private/npm_package.bzl`, give `npm_package_tree` the attribute `bins`
   (`attr.string_dict`) and return `NpmPackageTreeInfo(bins = ...)`; `npm_instance` copies it from
   its `tree` into `NpmInstanceInfo.bins`
-- [ ] T041 [US1] In `bun/private/npm_extension.bzl`, delete `_runnable` and the `runnable` slot of
+- [X] T041 [US1] In `bun/private/npm_extension.bzl`, delete `_runnable` and the `runnable` slot of
   the hub's bin data, pass each entry's bin paths to its `npm_package_repository` as `bins`, and
   in the hub BUILD generation (`bun/private/npm_repositories.bzl`) tag every generated
   `:node_modules/<package>/bin/<bin>` target `manual` (D1)
-- [ ] T042 [US1] In `bun/private/run.bzl`, rewrite `_check_bin` to look up the bin path in
+- [X] T042 [US1] In `bun/private/run.bzl`, rewrite `_check_bin` to look up the bin path in
   `NpmInstanceInfo.bins` and fail analysis with `<label>: the bin entry "<entry>" of the npm
   package <name>@<version> is the file <path>, which is not a JavaScript program for Node or Bun:
   <reason>` when the reason is non-empty; remove the false "Bun runs only JavaScript and
   TypeScript files" text
-- [ ] T043 [US1] Update the bin text of `_NPM_DOC` in `bun/private/npm_extension.bzl` and of the
+- [X] T043 [US1] Update the bin text of `_NPM_DOC` in `bun/private/npm_extension.bzl` and of the
   `npm_bin` doc in `bun/private/run.bzl`: a bin runs with the toolchain's Bun when it has a source
   extension or its first line is a `#!` line naming `node` or `bun` (npm's bin convention);
   any other bin fails analysis with the reason; every generated bin target is `manual`, so
   `bazel build //...` builds none unless used or requested; reference canary C18
-- [ ] T044 [US1] Run `bazel test //bun/tests/canary:c18_extensionless_bin_test
+- [X] T044 [US1] Run `bazel test //bun/tests/canary:c18_extensionless_bin_test
   //bun/tests/npm:bins //bun/tests/integration:bins_test //bun/tests/npm:all`; record green; run
   `bazel test //...`; commit as `fix: run npm bins that are JavaScript programs for Node or Bun`
 

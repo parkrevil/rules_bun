@@ -411,14 +411,19 @@ def _bin_record(ctx):
     return record, root
 
 def _check_bin(ctx):
+    """Fails analysis unless the bin file is a JavaScript program for Node or Bun (FR-012).
+
+    The package repository decided it from the file (research R4); the reason names why not.
+    """
     _, root = _bin_record(ctx)
-    if not [e for e in SOURCE_EXTENSIONS if ctx.attr.path.endswith(e)]:
-        fail('{}: the bin entry "{}" of the npm package {} is the file {}, which has none of the extensions {}; Bun runs only JavaScript and TypeScript files'.format(
+    reason = root.bins.get(ctx.attr.path, "the package holds no such file")
+    if reason:
+        fail('{}: the bin entry "{}" of the npm package {} is the file {}, which is not a JavaScript program for Node or Bun: {}'.format(
             ctx.label,
             ctx.attr.entry,
             _name_version(root),
             ctx.attr.path,
-            " ".join(SOURCE_EXTENSIONS),
+            reason,
         ))
 
 def _bun_run_impl(ctx, mode):
@@ -653,7 +658,10 @@ npm_bin = rule(
     implementation = lambda ctx: _bun_run_impl(ctx, "bin"),
     doc = """Private: a `:node_modules/<package>/bin/<bin>` target: runs a `bin` file of a package as
 `bun_binary` runs its entry point (research R10). The copy tree is `_npm_bin/<package>/<bin>.bun/`
-in the target's package, outside any `node_modules` directory.""",
+in the target's package, outside any `node_modules` directory. The file must be a JavaScript
+program for Node or Bun: a source extension, or a first line that is a `#!` line naming `node` or
+`bun` (feature 005 FR-012, canary C18); otherwise analysis fails naming the reason. The hub tags
+every bin target `manual` (research D1).""",
     executable = True,
     fragments = ["platform"],
     attrs = {k: v for k, v in _COMMON_ATTRS.items() if k.startswith("_")} | {

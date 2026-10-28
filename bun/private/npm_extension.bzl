@@ -1,6 +1,5 @@
 """Implementation of the `npm` module extension (FR-005, FR-008, FR-009, research R3)."""
 
-load(":library.bzl", "SOURCE_EXTENSIONS")
 load(":lockfile.bzl", "DEPENDENCY_KINDS", "read_lockfile")
 load(":npm_names.bzl", "bin_targets", "target_name")
 load(":npm_repositories.bzl", "npm_hub_repository", "npm_package_repository")
@@ -88,10 +87,6 @@ def padded_integrity(integrity):
         return integrity
     base64 = digest.rstrip("=")
     return "{}-{}{}".format(algorithm, base64, "=" * ((size + 2) // 3 * 4 - len(base64)))
-
-def _runnable(path):
-    """Whether a `bin` file has an extension Bun runs (research R10)."""
-    return [e for e in SOURCE_EXTENSIONS if path.endswith(e)] != []
 
 def _label_text(label):
     """A label as a root-module tag writes it: `//pkg:name`, or with its canonical repository."""
@@ -304,6 +299,7 @@ def _translate(module_ctx, tag, replacements):
             exclude = tag.exclude_package_contents.get("*", []) + tag.exclude_package_contents.get(entry.name, []),
             package = entry.name,
             version = entry.version,
+            bins = sorted(entry.bin.values()),
             replacement = replacements.get(name_version),
             replacement_label = _label_text(replacements[name_version]) if name_version in replacements else "",
         )
@@ -340,7 +336,7 @@ def _translate(module_ctx, tag, replacements):
                 fail("rules_bun: {}: {}".format(file, bins.error))
             originals = {target_name(b): b for b in entry_bins}
             targets[alias] = {
-                "bins": {name: [bin_path, _runnable(bin_path), originals[name]] for name, bin_path in bins.value.items()},
+                "bins": {name: [bin_path, originals[name]] for name, bin_path in bins.value.items()},
                 "closure": link.closure,
                 "optional": link.optional,
                 "root": link.root,
@@ -424,10 +420,13 @@ Generated targets (public API, under these naming rules):
   the member's target named by `workspace_target_name`.
 - `:node_modules/<package>/bin/<bin>` for each `bin` entry of such a package (a string `bin` is
   named after the package name without its scope); it runs with `bazel run` or as a build action's
-  tool, and a file whose extension Bun does not run fails its analysis. The bins of a declared
-  optional package with `os`, `cpu` or `libc` are compatible only with the platforms it matches, so
-  `bazel build //...` skips them elsewhere. Executables declared only through `directories.bin`
-  get no target.
+  tool, with the toolchain's Bun. A bin runs when its file has a source extension or its first line
+  is a `#!` line naming `node` or `bun` (npm's bin convention, `#!/usr/bin/env node`; canary C18
+  pins that Bun runs such a file); any other bin, such as a shell script or a native executable,
+  fails its analysis naming the reason. Every bin target is `manual`, so `bazel build //...`
+  builds none; a bin a target uses or the command line names is built. The bins of a declared
+  optional package with `os`, `cpu` or `libc` are compatible only with the platforms it matches.
+  Executables declared only through `directories.bin` get no target.
 - Every character of `<package>` or `<bin>` outside Bazel's target-name set is written `_`; two
   names that become one fail evaluation naming both.
 

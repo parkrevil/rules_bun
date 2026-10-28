@@ -58,7 +58,9 @@ function fixtureArchives(names: string[] | undefined, algorithms: InstallOptions
   return rlocationList(ARCHIVES)
     .filter((path) => path.endsWith(".tgz"))
     .map((path) => ({ path, store: path.slice(ARCHIVES.length + 1, -".tgz".length) }))
-    .filter(({ store }) => names === undefined || names.includes(store))
+    // A variant archive (`<store name>+<variant>`, pack.ts) is a second archive of a package
+    // version, which the registry cannot publish next to the first.
+    .filter(({ store }) => (names === undefined ? !store.slice(store.lastIndexOf("@")).includes("+") : names.includes(store)))
     .map(({ path, store }) => ({ path: rlocation(path), algorithm: algorithms?.[store] ?? "sha512" }));
 }
 
