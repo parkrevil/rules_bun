@@ -1,7 +1,7 @@
 """Unit tests of `//bun/private:npmrc.bzl` (research R11, FR-019, FR-020)."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//bun/private:npmrc.bzl", "has_credentials", "has_userinfo", "package_url", "read_npmrc")
+load("//bun/private:npmrc.bzl", "package_url", "read_npmrc")
 
 _NPMRC = """\
 # a comment
@@ -68,62 +68,23 @@ def _userinfo_test_impl(ctx):
     # An @ after the host belongs to the path, not to the user information.
     path = read_npmrc("registry=https://mirror.example/npm/@scope/\n", "//:.npmrc")
     asserts.equals(env, None, path.error)
+
+    # Neither a key that is no valid scope key nor a value that is no http(s) URL is printed
+    # (feature 005 final review): either may hold a secret.
+    for text in [
+        "@https://u:SECRET@host/:registry=https://mirror.example/\n",
+        "registry=u:SECRET@host/npm/\n",
+        "@scope:registry=SECRET-TOKEN@host\n",
+    ]:
+        result = read_npmrc(text, "//:.npmrc")
+        asserts.equals(env, None, result.value, text)
+        asserts.true(env, result.error != None, text)
+        asserts.false(env, "SECRET" in (result.error or ""), "echoed: {}".format(result.error))
     return unittest.end(env)
 
-def _has_userinfo_test_impl(ctx):
-    env = unittest.begin(ctx)
-
-    # The authority (after `://`, before `/`, `?` or `#`) holds an @; an empty user counts (spec
-    # Edge Cases).
-    for url in [
-        "https://user:token@host/x",
-        "https://@host/x",
-        "https://user@host",
-        "git+https://user:token@host/r.git",
-    ]:
-        asserts.true(env, has_userinfo(url), "{} holds user information".format(url))
-
-    # An @ after the authority belongs to the path, query or fragment.
-    for url in [
-        "https://host/a@1.0.0.tgz",
-        "https://host?x=a@b",
-        "https://host#a@b",
-        "https://host:8080/x",
-    ]:
-        asserts.false(env, has_userinfo(url), "{} holds no user information".format(url))
-    return unittest.end(env)
-
-def _has_credentials_test_impl(ctx):
-    env = unittest.begin(ctx)
-
-    # Any user information of an http(s) URL may be a token; a password is a secret in any scheme.
-    for url in [
-        "https://user:token@host/x",
-        "https://token@host/x",
-        "https://@host/x",
-        "git+https://user:token@host/r.git",
-        "git+ssh://git:secret@host/r.git",
-        # A URL after a package name, as slot 0 and override selectors write it.
-        "a@https://user:token@host/a.tgz",
-    ]:
-        asserts.true(env, has_credentials(url), "{} holds credentials".format(url))
-
-    # An SSH user name is an identity; SSH authenticates with keys (feature 005, P1).
-    for url in [
-        "git+ssh://git@github.com/o/r.git",
-        "ssh://git@host/r.git",
-        "https://host/a@1.0.0.tgz",
-        "git+ssh://host/r.git",
-        "g@git+ssh://git@host/r.git#abc",
-    ]:
-        asserts.false(env, has_credentials(url), "{} holds no credentials".format(url))
-    return unittest.end(env)
-
-has_credentials_test = unittest.make(_has_credentials_test_impl)
 read_test = unittest.make(_read_test_impl)
-has_userinfo_test = unittest.make(_has_userinfo_test_impl)
 url_test = unittest.make(_url_test_impl)
 userinfo_test = unittest.make(_userinfo_test_impl)
 
 def npmrc_test_suite(name):
-    unittest.suite(name, read_test, url_test, userinfo_test, has_userinfo_test, has_credentials_test)
+    unittest.suite(name, read_test, url_test, userinfo_test)

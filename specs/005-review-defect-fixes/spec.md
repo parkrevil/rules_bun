@@ -414,12 +414,16 @@ audit finds is fixed under the same principle.
   archive, and exclusion policy) and the identities of the instances their dependencies resolve to
   are equal; otherwise the build MUST fail naming the package version, both hubs (by the name the
   `npm.translate_lock` tag gives) with their `bun.lock` labels, and the first property that differs. Every integrity check of every carried instance MUST run.
-- **FR-002**: A URL holding user information MUST NOT be accepted from any input the ruleset reads
-  (`bun.lock`, `.npmrc`, tag attributes); it MUST be rejected during evaluation, naming the file and
-  the package or key without echoing the URL, and pointing to Bazel's downloader for credentials.
-  Repository attributes and diagnostics MUST NOT contain URL user information; this covers URLs and
-  dependency specs in `bun.lock` `packages` and `workspaces`, workspace `package.json` files and
-  `.npmrc`.
+- **FR-002**: A URL holding credentials MUST NOT be accepted from any input the ruleset reads: all
+  of `bun.lock`, the fields of each `package.json` the ruleset reads, and `.npmrc`. A URL is
+  recognized by RFC 3986's syntax (a scheme, starting with a letter, directly before `://`),
+  wherever it stands in a string, every URL of a string; it holds credentials when its authority
+  holds user information, except the user name alone of an `ssh://` or `git+ssh://` URL. A download
+  URL handed to Bazel MUST be an `http` or `https` URL without user information (an allow rule, not
+  a deny rule). It MUST be rejected during evaluation, naming the file and where the string is,
+  printing neither the string nor any key or value not already checked, and pointing to Bazel's
+  downloader for credentials. A secret in a URL's path or query is not recognized, and the
+  documentation says so.
 - **FR-003** (audit): every place that compares, keys, merges or deduplicates package instances, and
   every place that reads or prints a URL.
 

@@ -1,11 +1,12 @@
 """Implementation of the `npm` module extension (FR-005, FR-008, FR-009, research R3)."""
 
 load(":jsonc.bzl", "jsonc_decode")
-load(":lockfile.bzl", "read_lockfile")
+load(":lockfile.bzl", "DEPENDENCY_KINDS", "read_lockfile")
 load(":npm_names.bzl", "bin_targets", "target_name")
 load(":npm_repositories.bzl", "npm_hub_repository", "npm_package_repository")
-load(":npmrc.bzl", "has_credentials", "package_url", "read_npmrc")
+load(":npmrc.bzl", "package_url", "read_npmrc")
 load(":resolve.bzl", "resolve")
+load(":urls.bzl", "has_credentials", "is_download_url")
 load(":workspaces.bzl", "compare_manifests", "match_members", "workspace_patterns")
 
 translate_lock = tag_class(
@@ -16,11 +17,15 @@ Evaluation fails with an English error naming the file and the remedy when the l
 a member `package.json` and the lockfile differ in dependencies, workspace members, catalogs or
 overrides ("run `bun install` and commit bun.lock"), when two entries of one `name@version` record
 different URLs or integrities, when the root `package.json` uses an override form rules_bun
-does not compare, and when a URL in `bun.lock` (an entry's URL or resolution, a dependency
-specifier) or in a `package.json` holds credentials (any user information, except the user name
-of an `ssh://` or `git+ssh://` URL, which is an identity), as a registry URL of `npmrc` does: the
-error names the file and the entry or dependency, never the URL, since credentials come only from
-Bazel's downloader (`--credential_helper`, `.netrc`). Overrides are compared as Bun reads them: `overrides` when present, else
+does not compare, and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
+(`name`, `workspaces`, the dependency fields, `overrides`, `resolutions`, `catalog`, `catalogs`),
+holds credentials, as a registry URL of `.npmrc` does. A URL is recognized by RFC 3986's syntax (a
+scheme before `://`), wherever it stands in a string; it holds credentials when its authority holds
+user information, except the user name alone of an `ssh://` or `git+ssh://` URL, which names an
+account. An entry's download URL must be an `http` or `https` URL without user information. The
+error names the file and where the string is, never the string, since credentials come only from
+Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path or query
+(`?token=...`) is not recognized. Overrides are compared as Bun reads them: `overrides` when present, else
 `resolutions`.""",
     attrs = {
         "name": attr.string(
@@ -122,20 +127,23 @@ _USERINFO_REMEDY = "give credentials through Bazel's downloader (--credential_he
 # Bounds the walk of a JSON document; Starlark has no unbounded loop.
 _MAX_NODES = 1 << 24
 
+# The fields of a package.json the npm extension reads (P4: what the ruleset reads is checked).
+_MANIFEST_FIELDS = ["name", "workspaces", "overrides", "resolutions", "catalog", "catalogs"] + DEPENDENCY_KINDS
+
 def _url_with_credentials(text):
-    """Whether a string is a URL, or holds one, that carries credentials (`has_credentials`)."""
-    return type(text) == "string" and "://" in text and has_credentials(text)
+    """Whether a string holds a URL that carries credentials (`urls.bzl` `has_credentials`)."""
+    return type(text) == "string" and has_credentials(text)
 
 def _path_text(path):
     return " ".join(path) if path else "the top level"
 
 def check_credentials(file, value):
-    """Fails when any key or string value of a decoded JSON document carries credentials (FR-002).
+    """Fails when any key or string value of a decoded JSON value holds a URL with credentials.
 
-    Every string of the document is checked as written, before anything parses it, so no reader,
-    repository attribute or diagnostic sees a credential (feature 005 P1). The error names the
-    file and where the string is, by the keys and indexes above it; a key that itself carries
-    credentials is named "a key", and neither the key nor the URL is printed.
+    Every string is checked as written, before anything parses it, so no reader, repository
+    attribute or diagnostic sees a credential (FR-002, feature 005 P1). The error names the file
+    and where the string is, by the keys and indexes above it, which were checked before; a key
+    that itself holds one is named "a key", and neither the key nor the URL is printed.
 
     Args:
         file: The file the document comes from, for the error.
@@ -165,7 +173,8 @@ def _read_json(module_ctx, path, file):
     if not text.strip():
         fail("rules_bun: {} is empty".format(file))
     value = json.decode(text)
-    check_credentials(file, value)
+    if type(value) == "dict":
+        check_credentials(file, {k: value[k] for k in _MANIFEST_FIELDS if k in value})
     return value
 
 def _descend(path, relative):
@@ -229,6 +238,12 @@ def _translate(module_ctx, tag, replacements):
     lockfile = read_lockfile(text, file)
     if lockfile.error:
         fail(lockfile.error)
+
+    # A download URL Bazel is given must be an http or https URL without user information.
+    for key in sorted(lockfile.value.entries.keys()):
+        entry = lockfile.value.entries[key]
+        if entry.kind == "npm" and entry.url and not is_download_url(entry.url):
+            fail('rules_bun: {}: the packages entry "{}" records a download URL that is no http or https URL without user information; {}'.format(file, key, _USERINFO_REMEDY))
     npmrc = None
     if tag.npmrc:
         npmrc = read_npmrc(module_ctx.read(tag.npmrc), str(tag.npmrc))

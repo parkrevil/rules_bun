@@ -13,6 +13,7 @@ load(":platforms_test.bzl", "platforms_test_suite")
 load(":resolve_test.bzl", "resolve_test_suite")
 load(":uniqueness_test.bzl", "uniqueness_test_suite")
 load(":unsupported_test.bzl", "unsupported_test_suite")
+load(":urls_test.bzl", "urls_test_suite")
 load(":workspaces_test.bzl", "workspaces_test_suite")
 
 bins_test_suite(name = "bins")
@@ -46,3 +47,5 @@ uniqueness_test_suite(name = "uniqueness")
 unsupported_test_suite(name = "unsupported")
 
 workspaces_test_suite(name = "workspaces")
+
+urls_test_suite(name = "urls")
