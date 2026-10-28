@@ -421,9 +421,11 @@ const projects: Record<string, Project> = {
   },
 };
 
+// A variant archive (`<store name>+<variant>.tgz`, pack.ts) is a second archive of
+// a package version, which the registry cannot publish next to the first.
 function archives(project: Project): ArchiveSpec[] {
   return readdirSync(archivesDir)
-    .filter((f) => f.endsWith(".tgz"))
+    .filter((f) => f.endsWith(".tgz") && !f.slice(f.lastIndexOf("@")).includes("+"))
     .sort()
     .map((f) => ({
       path: join(archivesDir, f),

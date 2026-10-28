@@ -284,12 +284,23 @@ def _translate(module_ctx, tag, replacements):
         packages.setdefault("{}@{}".format(entry.name, entry.version), entry)
     repo_names = _package_repo_names(tag.name, {nv: (e.name, e.version) for nv, e in packages.items()})
 
+    # The content identity of each package version (research R1): what its download or
+    # replacement check verifies, and which of its files are carried.
+    identities = {}
+    for name_version, entry in packages.items():
+        exclude = tag.exclude_package_contents.get("*", []) + tag.exclude_package_contents.get(entry.name, [])
+        identities[name_version] = struct(
+            integrity = padded_integrity(entry.integrity),
+            source = _label_text(replacements[name_version]) if name_version in replacements else package_url(npmrc, entry.name, entry.version, entry.url),
+            exclude = sorted({p: None for p in exclude}.keys()),
+        )
+
     for name_version, repo in repo_names.items():
         entry = packages[name_version]
         npm_package_repository(
             name = repo,
             url = package_url(npmrc, entry.name, entry.version, entry.url),
-            integrity = padded_integrity(entry.integrity),
+            integrity = identities[name_version].integrity,
             exclude = tag.exclude_package_contents.get("*", []) + tag.exclude_package_contents.get(entry.name, []),
             package = entry.name,
             version = entry.version,
@@ -306,10 +317,13 @@ def _translate(module_ctx, tag, replacements):
         instances[instance.id] = {
             "dependency_keys": instance.dependency_keys,
             "edges": instance.edges,
+            "exclude": identities[name_version].exclude,
+            "integrity": identities[name_version].integrity,
             "peers": instance.peers,
             "package": instance.name,
             "replaced": name_version in replacements,
             "repo": repo_names[name_version],
+            "source": identities[name_version].source,
             "status": "ok",
             "store_name": instance.store_name,
         }
@@ -453,8 +467,11 @@ extension is reproducible and not OS- or architecture-dependent, so it adds no e
 Several lockfiles: each `translate_lock` tag creates its own hub, in the root module and in any
 other module, so a module can use npm packages of its own lockfile. A target that depends on
 packages of several hubs carries one instance of each package version: instances from different
-lockfiles whose dependencies resolve to the same versions are carried once, and any other two fail
-analysis naming the dependency whose versions differ.
+lockfiles are carried once only when both lockfiles describe the same content (equal integrity,
+source, that is the download URL or the `replace_package` archive, and exclusion policy) and their
+dependencies resolve to the same versions. Any other two fail analysis, naming the package
+version, both hubs with their lockfiles and the first property that differs with both values, or
+else the dependency whose versions differ.
 
 Platforms: the tests of this extension and of the packages it creates ran on Linux (WSL) only;
 macOS and Windows are unverified until CI runs them. Evaluation of a 2,000-package lockfile took

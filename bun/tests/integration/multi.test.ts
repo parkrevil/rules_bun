@@ -7,7 +7,7 @@
 // research G3).
 
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
@@ -96,6 +96,87 @@ test(
     expect(result.exitCode).not.toBe(0);
     const line = errorLine(result.stderr);
     for (const part of ['"npm_user_npm"', "the root module", "npm_user@1.0.0"]) expect(line).toContain(part);
+  },
+  INNER_TIMEOUT,
+);
+
+// FR-001, US2: an instance from two hubs is carried once only when both
+// lockfiles describe the same content: integrity, source and exclusion policy.
+const B1 = "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w==";
+const BV = "sha512-OYXpEJ1x5jC3TFL1iOBcO3lPeAkL6/fEm92QJeQ5XMGh5v0hEOUVC4VbZ+ZemvrcaPCxuBSlqrEKIq1lozau9Q==";
+
+function identitySession(workspace: string): Inner {
+  const session = new Inner(workspace, {
+    npmArchives: [archive("b@1.0.0")],
+    registry: {
+      files: {
+        "/variant/b/-/b-1.0.0.tgz": archive("b@1.0.0+variant"),
+        "/mirror/b/-/b-1.0.0.tgz": archive("b@1.0.0"),
+      },
+    },
+  });
+  return session;
+}
+
+test(
+  "FR-001: b@1.0.0 of two hubs with one content identity is carried once",
+  async () => {
+    const session = identitySession("multi_alike");
+    try {
+      const result = await session.run(["run", "//one:main"]);
+      expect(result.exitCode, result.stderr).toBe(0);
+      expect(result.stdout.trim()).toBe(JSON.stringify({ name: "b", version: "1.0.0" }));
+      const bin = (await session.run(["info", "bazel-bin"])).stdout.trim();
+      expect(readdirSync(join(bin, "one", "main.bun", ".store"))).toEqual(["b@1.0.0"]);
+      assertOffline(session.log);
+    } finally {
+      await session.close();
+    }
+  },
+  INNER_TIMEOUT,
+);
+
+const IDENTITY_CASES: [string, string, string[]][] = [
+  ["multi_integrity", "integrity", ["integrity", B1, BV]],
+  ["multi_source", "source", ["source", "/b/-/b-1.0.0.tgz", "/mirror/b/-/b-1.0.0.tgz"]],
+  ["multi_exclude", "exclusion policy", ["exclusion policy", '[]', '["docs/**"]']],
+];
+
+for (const [workspace, property, expected] of IDENTITY_CASES) {
+  test(
+    `FR-001: b@1.0.0 of two hubs with different ${property} fails analysis naming it`,
+    async () => {
+      const session = identitySession(workspace);
+      try {
+        const result = await session.run(["build", "//one:main"]);
+        const line = errorLine(result.stderr);
+        console.log(line);
+        expect(result.exitCode).not.toBe(0);
+        for (const text of ["b@1.0.0", "npm_one", "//one:bun.lock", "npm_two", "//two:bun.lock", ...expected]) {
+          expect(line).toContain(text);
+        }
+        assertOffline(session.log);
+      } finally {
+        await session.close();
+      }
+    },
+    INNER_TIMEOUT,
+  );
+}
+
+test(
+  "FR-001: b@1.0.0 of two hubs, one recording no integrity, fails analysis through that instance",
+  async () => {
+    const session = identitySession("multi_nointegrity");
+    try {
+      const result = await session.run(["build", "//one:main"]);
+      console.log(result.stderr.split("\n").find((l) => l.includes("rules_bun:")));
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("bun.lock records no integrity");
+      assertOffline(session.log);
+    } finally {
+      await session.close();
+    }
   },
   INNER_TIMEOUT,
 );

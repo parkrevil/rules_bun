@@ -1,0 +1,16 @@
+load("@npm_one//:defs.bzl", "npm_link_all_packages")
+load("@rules_bun//bun:defs.bzl", "bun_binary")
+
+exports_files(["bun.lock"])
+
+npm_link_all_packages()
+
+# b@1.0.0 from both hubs.
+bun_binary(
+    name = "main",
+    entry_point = "main.js",
+    deps = [
+        ":node_modules/b",
+        "//two:node_modules/b",
+    ],
+)

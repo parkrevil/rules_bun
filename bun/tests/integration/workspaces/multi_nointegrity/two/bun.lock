@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "multi-nointegrity-two",
+      "dependencies": {
+        "b": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "b": ["b@1.0.0", "{REGISTRY}/b/-/b-1.0.0.tgz", {}, ""],
+  }
+}

@@ -115,6 +115,7 @@ bun_test(
     srcs = ["multi.test.ts"],
     data = [
         "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0+variant.tgz",
         "//bun/tests/npm/registry/archives:b@2.0.0.tgz",
         "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
     ],
