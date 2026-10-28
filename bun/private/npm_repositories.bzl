@@ -168,9 +168,6 @@ def _bin_reasons(repository_ctx, bins, renames, exclude):
     reasons = {}
     for path in bins:
         original = "/".join([p for p in path.split("/") if p not in ("", ".")])
-        if [e for e in SOURCE_EXTENSIONS if original.endswith(e)]:
-            reasons[path] = ""
-            continue
         safe = ""
         prefix = ""
         for segment in original.split("/"):
@@ -181,6 +178,8 @@ def _bin_reasons(repository_ctx, bins, renames, exclude):
             reasons[path] = "the package holds no such file"
         elif file.is_dir:
             reasons[path] = "it is a directory"
+        elif [e for e in SOURCE_EXTENSIONS if original.endswith(e)]:
+            reasons[path] = ""
         else:
             reasons[path] = "" if _names_node_or_bun(repository_ctx.read(file)) else _NO_PROGRAM
     return reasons

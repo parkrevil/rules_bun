@@ -71,6 +71,18 @@ test(
 );
 
 test(
+  "FR-012: a bin file the package repository renames is read through its safe name and runs",
+  async () => {
+    project("bins_node");
+    const result = await inner.run(["run", "//:node_modules/node-bin/bin/build", "--", "x", "--", "y"]);
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout.trim()).toBe("build x -- y");
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
   "FR-012: a #!/bin/sh bin fails analysis naming the reason",
   async () => {
     project("bins_node");

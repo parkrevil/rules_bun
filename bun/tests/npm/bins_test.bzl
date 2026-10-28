@@ -56,6 +56,9 @@ _dir_test = _make_failure_test([_not_runnable("node-bin@1.0.0", "dir", "bin/dir"
 # bin/gone is left out by the hub's exclude_package_contents.
 _gone_test = _make_failure_test([_not_runnable("node-bin@1.0.0", "gone", "bin/gone", "the package holds no such file")])
 
+# A bin with a source extension is checked for the file too: bin/missing.js is not in the archive.
+_missing_js_test = _make_failure_test([_not_runnable("node-bin@1.0.0", "missingjs", "bin/missing.js", "the package holds no such file")])
+
 def bins_test_suite(name):
     """Checks the `bin` targets the `npm` extension generates for packages.
 
@@ -72,6 +75,8 @@ def bins_test_suite(name):
         ("node-bin", "node-bin@1.0.0", "envs"),
         ("node-bin", "node-bin@1.0.0", "abs"),
         ("node-bin", "node-bin@1.0.0", "bunbin"),
+        # bin/Build is renamed in the package repository and read through its safe name (T089).
+        ("node-bin", "node-bin@1.0.0", "build"),
     ]:
         test = "{}_{}_test".format(name, bin)
         _bin_test(
@@ -88,6 +93,7 @@ def bins_test_suite(name):
         ("noline", _noline_test, _NODE_BIN + "noline"),
         ("dir", _dir_test, _NODE_BIN + "dir"),
         ("gone", _gone_test, _NODE_BIN + "gone"),
+        ("missing_js", _missing_js_test, _NODE_BIN + "missingjs"),
     ]:
         rule(name = "{}_{}_test".format(name, suffix), target_under_test = target)
         tests.append("{}_{}_test".format(name, suffix))

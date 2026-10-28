@@ -9,6 +9,8 @@
     "sh": "bin/sh",
     "noline": "bin/noline",
     "dir": "bin/dir",
-    "gone": "bin/gone"
+    "gone": "bin/gone",
+    "build": "bin/Build",
+    "missingjs": "bin/missing.js"
   }
 }

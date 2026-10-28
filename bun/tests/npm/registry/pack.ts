@@ -12,8 +12,12 @@
 // toplevel/ instead of package/ (FR-034), and winname@1.0.0 holding
 // package/aux.js and package/a:b.js (G2), names no Windows checkout can hold,
 // and emptydir@1.0.0 holding the empty directories package/empty/ and
-// package/nested/inner/, which neither git nor `bun pm pack` carries. All three
-// get fixed modes and mtimes. Each archive's sha512 SRI is printed.
+// package/nested/inner/, which neither git nor `bun pm pack` carries;
+// case-build@1.0.0 holding package/case/BUILD and package/case/build, names no
+// case-insensitive checkout can hold side by side; and rename-collision@1.0.0
+// holding package/BUILD next to package/_rules_bun_1_, the safe name BUILD is
+// renamed to (specs/005-review-defect-fixes T088). All five get fixed modes and
+// mtimes. Each archive's sha512 SRI is printed.
 
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -68,6 +72,28 @@ function directoryEntry(name: string): TarEntry {
 }
 
 const special: Record<string, (packed: Uint8Array) => Uint8Array> = {
+  "case-build@1.0.0": (packed) =>
+    writeTgz(
+      [
+        ...readTgz(packed)
+          .filter((e) => e.type === "file")
+          .map((e) => ({ ...e, mode: 0o644 })),
+        fileEntry("package/case/BUILD", 'module.exports = "case/BUILD";\n'),
+        fileEntry("package/case/build", 'module.exports = "case/build";\n'),
+      ],
+      MTIME,
+    ),
+  "rename-collision@1.0.0": (packed) =>
+    writeTgz(
+      [
+        ...readTgz(packed)
+          .filter((e) => e.type === "file")
+          .map((e) => ({ ...e, mode: 0o644 })),
+        fileEntry("package/BUILD", 'module.exports = "BUILD";\n'),
+        fileEntry("package/_rules_bun_1_", 'module.exports = "_rules_bun_1_";\n'),
+      ],
+      MTIME,
+    ),
   "emptydir@1.0.0": (packed) =>
     writeTgz(
       [

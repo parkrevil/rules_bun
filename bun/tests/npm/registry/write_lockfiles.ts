@@ -400,12 +400,13 @@ const projects: Record<string, Project> = {
   },
   // FR-012 (bins_test.bzl, bins.test.ts): node-bin's bins are a JavaScript
   // program for Node or Bun by their #! line, a shell script, a file with no
-  // #! line, a directory and a file the hub excludes.
+  // #! line, a directory, a file the hub excludes and bin/Build, a file the
+  // package repository renames (specs/005-review-defect-fixes T089).
   bins_node: {
     files: () => ({ "package.json": json({ name: "bins-node", private: true, dependencies: { "node-bin": "1.0.0" } }) }),
     check(lock) {
       keys(lock, ["node-bin"]);
-      assert(Object.keys(lock.packages["node-bin"][2].bin ?? {}).length === 8, "node-bin has not eight bin entries");
+      assert(Object.keys(lock.packages["node-bin"][2].bin ?? {}).length === 10, "node-bin has not ten bin entries");
     },
   },
   // FR-006 (platforms_test.bzl): an optional package whose os and cpu are a

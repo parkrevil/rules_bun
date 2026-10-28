@@ -1,7 +1,7 @@
 """Unit tests of `//bun/private:npmrc.bzl` (research R11, FR-019, FR-020)."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//bun/private:npmrc.bzl", "has_userinfo", "package_url", "read_npmrc")
+load("//bun/private:npmrc.bzl", "has_credentials", "has_userinfo", "package_url", "read_npmrc")
 
 _NPMRC = """\
 # a comment
@@ -93,10 +93,34 @@ def _has_userinfo_test_impl(ctx):
         asserts.false(env, has_userinfo(url), "{} holds no user information".format(url))
     return unittest.end(env)
 
+def _has_credentials_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Any user information of an http(s) URL may be a token; a password is a secret in any scheme.
+    for url in [
+        "https://user:token@host/x",
+        "https://token@host/x",
+        "https://@host/x",
+        "git+https://user:token@host/r.git",
+        "git+ssh://git:secret@host/r.git",
+    ]:
+        asserts.true(env, has_credentials(url), "{} holds credentials".format(url))
+
+    # An SSH user name is an identity; SSH authenticates with keys (feature 005, P1).
+    for url in [
+        "git+ssh://git@github.com/o/r.git",
+        "ssh://git@host/r.git",
+        "https://host/a@1.0.0.tgz",
+        "git+ssh://host/r.git",
+    ]:
+        asserts.false(env, has_credentials(url), "{} holds no credentials".format(url))
+    return unittest.end(env)
+
+has_credentials_test = unittest.make(_has_credentials_test_impl)
 read_test = unittest.make(_read_test_impl)
 has_userinfo_test = unittest.make(_has_userinfo_test_impl)
 url_test = unittest.make(_url_test_impl)
 userinfo_test = unittest.make(_userinfo_test_impl)
 
 def npmrc_test_suite(name):
-    unittest.suite(name, read_test, url_test, userinfo_test, has_userinfo_test)
+    unittest.suite(name, read_test, url_test, userinfo_test, has_userinfo_test, has_credentials_test)

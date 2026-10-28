@@ -362,8 +362,8 @@ decision).
 
 | Place | Name | Result |
 |---|---|---|
-| `npm_repositories.bzl` `_make_addressable` | archive file names: `BUILD`, `BUILD.bazel` | fixed (R7: any case). No test of the rename-collision diagnostic exists; it is unchanged (unverified) |
-| `npm_repositories.bzl` `_bin_reasons` (new) | `bin` paths read through their safe names | holds (R4). A renamed bin file is read through its safe name; no fixture holds a renamed bin (unverified) |
+| `npm_repositories.bzl` `_make_addressable` | archive file names: `BUILD`, `BUILD.bazel` | fixed (R7: any case). `BUILD` and `build` in one directory get two distinct safe names, each mapped back, and no diagnostic fires; the collision diagnostic fires when the archive already holds the safe name (`bun/tests/integration/rename.test.ts`, T088; Linux only) |
+| `npm_repositories.bzl` `_bin_reasons` (new) | `bin` paths read through their safe names | holds (R4). A renamed bin file is read through its safe name: `node-bin`'s `bin/Build` analyzes and runs (`bun/tests/npm/bins_test.bzl`, `bun/tests/integration/bins.test.ts`, T089; Linux) |
 | same | names outside the target-name set | holds |
 | same | Windows-reserved names (`aux.js`, `a:b.js`) | intended (documented as Bazel's extractor's behavior) |
 | `npm_extension.bzl` `_sanitize`, `_package_repo_names` | repository names, clash suffix | holds |

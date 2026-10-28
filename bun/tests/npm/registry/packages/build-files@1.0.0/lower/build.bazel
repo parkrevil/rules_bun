@@ -1,1 +1,1 @@
-module.exports = "lower/build.bazel"
+module.exports = "lower/build.bazel";
