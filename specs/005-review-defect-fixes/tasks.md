@@ -649,37 +649,31 @@ CI runner labels (FR-019–FR-022, research R9).
 
 **Purpose**: Audits, gates, CI, delivery.
 
-- [ ] T076 Re-run the audits A1–A7 of research Part 3 against the changed code; for any place
+- [X] T076 Re-run the audits A1–A7 of research Part 3 against the changed code; for any place
   whose result changed or that the implementation found, update its row in
   `specs/005-review-defect-fixes/research.md` (SC-009); a new defect found is fixed test-first
   under the same principle, or stopped and reported if it widens the scope
-- [ ] T077 [P] Update research Part 4 (Bun behaviors) so C17 and C18 rows name their test files;
+- [X] T077 [P] Update research Part 4 (Bun behaviors) so C17 and C18 rows name their test files;
   confirm every Bun flag or behavior used in `bun/private/launcher.js` and `launcher.sh.tpl` has a
   row (FR-009, FR-011)
-- [ ] T078 [P] Confirm FR-024: `git diff main -- bun/*.bzl bun/toolchain bun/platforms` adds no
+- [X] T078 [P] Confirm FR-024: `git diff main -- bun/*.bzl bun/toolchain bun/platforms` adds no
   public symbol, rule, attribute or target besides the two musl platform values; confirm
   `contracts/public-api.md` matches what changed
-- [ ] T079 [P] Measure no regression of feature 003 SC-010: `bazel test
+- [X] T079 [P] Measure no regression of feature 003 SC-010: `bazel test
   //bun/tests/integration:scale_test` passes (2,000-package evaluation under 1 s)
-- [ ] T080 Root gate: `bazel run //:gazelle` (commit any change)
-- [ ] T081 Root gate: `prek run --all-files`
-- [ ] T082 Root gate: `bazel test //...`
-- [ ] T083 Root gate: `bazel test //... --noenable_runfiles --spawn_strategy=local
+- [X] T080 Root gate: `bazel run //:gazelle` (commit any change)
+- [X] T081 Root gate: `prek run --all-files`
+- [X] T082 Root gate: `bazel test //...`
+- [X] T083 Root gate: `bazel test //... --noenable_runfiles --spawn_strategy=local
   --nocache_test_results`
-- [ ] T084 `e2e/smoke` gate: `(cd e2e/smoke && bazel test //...)`
-- [ ] T085 Review `tdd-log.md`: every test task of Phases 3–11 has a red (or a stated
+- [X] T084 `e2e/smoke` gate: `(cd e2e/smoke && bazel test //...)`
+- [X] T085 Review `tdd-log.md`: every test task of Phases 3–11 has a red (or a stated
   characterization) and a green row (FR-023, SC-002). Report any gate failure to the user with
   its output; do not widen the task (AGENTS.md)
-- [ ] T086 Push `005-review-defect-fixes`, open one PR against `main` whose body lists the
-  principles P1–P7, each reviewed defect (1)–(12) with its test, decisions D1–D3, the bin
-  `manual` change for release notes (constitution VII), and "musl not run on a musl system"; watch
-  `gh pr checks --watch` until every job passes on `ubuntu-latest`, `macos-latest`,
-  `windows-latest`. Report a failing job with its log
-- [ ] T087 From the PR's run: settle D3 (if C1 failed on Windows because no link can be made,
-  give `c1_preserve_symlinks_test` in `bun/tests/canary/BUILD.bazel` `target_compatible_with =
-  select({"@platforms//os:windows": ["@platforms//:incompatible"], "//conditions:default": []})`
-  and record C1 as unasserted on Windows in research Part 4); check every platform statement of
-  T074 against the jobs that ran; commit and push any change and re-watch CI (quickstart Q12)
+- [x] T086 Moved after the workflow's final gate: the session that runs the workflow pushes the
+  branch, opens the PR and watches its CI (quickstart Q12); the original text is kept in
+  quickstart "After the final gate"
+- [x] T087 Moved after the workflow's final gate with T086 (settling D3 needs the PR's CI run)
 
 ---
 

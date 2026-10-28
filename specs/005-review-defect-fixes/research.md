@@ -169,8 +169,11 @@ ran on Linux x64 (WSL) on 2026-10-28.
 - **No musl runner**: musl is verified by toolchain resolution (analysis tests on both CPUs, both
   toolchain types) and by `bazel fetch` of the two musl repositories, not by running Bun on musl
   (spec Assumptions); the documentation says so.
-- **Vendored archives**: no Bazel-in-Bazel test resolves a musl platform, so the loopback registry
-  vendors no musl archive.
+- **Vendored archives**: `restricted_test` analyzes an inner build for a Linux platform with
+  `:musl` (`--nobuild --platforms=//:linux_x64_musl`), which now resolves and fetches the musl Bun,
+  so the loopback registry vendors `bun-linux-x64-musl.zip` and `bun-linux-aarch64-musl.zip` of
+  1.4.4 (`registry/update.ts` `BUN_PLATFORMS`, `archives.bzl`, the generated `MODULE.bazel` block;
+  integrity from `versions.bzl`). Found during implementation (T033); the plan said none was needed.
 
 ### R6. P2: the Windows launcher's toolchains only for Windows targets (FR-007, US8)
 
@@ -279,13 +282,14 @@ decision).
 | `npm_extension.bzl` `_package_repo_names`: repository names per hub | holds |
 | `npm_extension.bzl` `replacements` keyed by `name@version`, applied to every hub | holds; R1 compares the source, so two hubs with different lockfile integrity for a replaced package fail |
 | `resolve.bzl` instance classes (`plain` + `status`): deduplication within one hub | holds (same lockfile, same entry) |
-| `run.bzl` `_equivalent` / `_check_unique`: across hubs | fixed (R1) |
+| `run.bzl` `_equivalent` / `_check_unique`: across hubs | fixed (R1). Two instances are from different hubs when their repository or their `hub` differs, so analysis tests can build instances of two hubs in one package. The hub-level uniqueness cases changed pairs: `npm_basic` leaves `test/**` out of every package, so its `a@1.0.0` now differs from `npm_workspace`'s by exclusion policy (new case `hubs_exclude`); `hubs_alike` uses `npm_hoisted`'s and `npm_workspace`'s `b@1.0.0`, `hubs` uses `npm_workspace` and `npm_overrides_top` |
 | `run.bzl` `_package_layout` `instances.setdefault(_key(...))` | holds (keys hold the hub) |
 | `run.bzl` `_copy_tree`: deduplicates the target's own files by runfiles path | holds (not package instances) |
 | `npmrc.bzl` `read_npmrc`: registry URLs | holds (rejects user information); its scheme error prints the URL, after the user-information check |
 | `npmrc.bzl` `package_url` | holds after R2 (inputs checked) |
 | `lockfile.bzl` slot 1 URL, slot 0 resolution | fixed (R2) |
-| `workspaces.bzl` `compare_manifests` / `_difference`: prints dependency specs of workspace `package.json` and `bun.lock` `workspaces` with `json.encode` | fixed (R2 extended: specs checked before comparison; found by the analysis step, G1) |
+| `workspaces.bzl` `compare_manifests` / `_difference`: prints dependency specs of workspace `package.json` and `bun.lock` `workspaces` with `json.encode` | fixed (R2 extended: specs checked before comparison; found by the analysis step, G1). The check also walks `overrides`, `resolutions`, `catalog` and `catalogs` of the root `package.json` and of `bun.lock`, which `_difference` prints too (found in implementation) |
+| `npm_extension.bzl` `_check_lockfile_urls`, `_check_specs` (new) | fixed (R2). A specifier or resolution counts as a URL only when it holds `://`, so `npm:@scope/x@1` is not mistaken for user information. Consequence: a `git+ssh://git@host/...` resolution holds the user information `git` and now fails evaluation of the whole lockfile, where it was an unsupported entry before (FR-002 applies to every URL with user information) |
 | `resolve.bzl` `unsupported_reason`: prints a tarball resolution | fixed (R2 rejects URLs with user information before) |
 | `npm_repositories.bzl` `url`, `canonical_id` attributes; `use_netrc` | holds after R2 |
 | `repositories.bzl` Bun release URL | holds (built from version and platform) |
@@ -335,7 +339,7 @@ decision).
 | `lockfile.bzl` `_entry` | `os`, `cpu`, `libc` (string or list) | holds |
 | `lockfile.bzl` `_bin` | `bin` (string or object; a string is named after the package without its scope, NPM-pkg) | holds |
 | `npm_extension.bzl` `_runnable` | bin runnability by extension | fixed (R4, removed) |
-| `npm_repositories.bzl` `_matches` | `os`, `cpu` | fixed (R5) |
+| `npm_repositories.bzl` `_matches` | `os`, `cpu` | fixed (R5: `platforms.bzl` `check_list`). Bun 1.4.4 writes no `os`/`cpu` for a sole `"any"` (E5), so the fixture `any_platform` characterizes and `check_list`'s unit cases carry the red |
 | `npm_repositories.bzl` `libc_matches` | `libc` | holds |
 | `workspaces.bzl` | `workspaces`, dependency fields, `catalog(s)`, `overrides`, `resolutions` of manifests | holds (compared with the lockfile only, features 003, 004) |
 | `main`, `exports`, `type`, `engines`, `directories.bin` | not read; Bun resolves `main`/`exports`/`type` at run time; `directories.bin` ignored as rules_js does (feature 003 R10) | intended |
@@ -345,7 +349,7 @@ decision).
 | Tag / attribute | Precedence and conflicts | Validation | Result |
 |---|---|---|---|
 | `bun.toolchain.name` | non-root may not change it | Bazel validates repository names | holds |
-| `bun.toolchain.bun_version` | highest per name | `version_key` fails without naming module | fixed (R8: module named) |
+| `bun.toolchain.bun_version` | highest per name | `version_key` fails without naming module | fixed (R8: module named, through `semver.bzl` `version_error`) |
 | `bun.toolchain.integrity` | last tag replaced the others | keys and values unchecked | fixed (R8) |
 | `npm.translate_lock.name` | duplicates across modules fail | not checked as a repository name | fixed (R8) |
 | `npm.translate_lock.bun_lock` | — | `.lockb`, missing file, version, JSONC | holds |
@@ -358,7 +362,8 @@ decision).
 
 | Place | Name | Result |
 |---|---|---|
-| `npm_repositories.bzl` `_make_addressable` | archive file names: `BUILD`, `BUILD.bazel` | fixed (R7: any case) |
+| `npm_repositories.bzl` `_make_addressable` | archive file names: `BUILD`, `BUILD.bazel` | fixed (R7: any case). No test of the rename-collision diagnostic exists; it is unchanged (unverified) |
+| `npm_repositories.bzl` `_bin_reasons` (new) | `bin` paths read through their safe names | holds (R4). A renamed bin file is read through its safe name; no fixture holds a renamed bin (unverified) |
 | same | names outside the target-name set | holds |
 | same | Windows-reserved names (`aux.js`, `a:b.js`) | intended (documented as Bazel's extractor's behavior) |
 | `npm_extension.bzl` `_sanitize`, `_package_repo_names` | repository names, clash suffix | holds |
@@ -373,6 +378,7 @@ decision).
 | `bun/extensions.bzl` module docstring and exports | fixed (R9: `bun_toolchain` removed) |
 | `bun/defs.bzl` docstring: platform statement | fixed (R9) |
 | `run.bzl` `_FILES_DOC`: JSX, Platforms, npm packages platforms, bin wording | fixed (R4, R9) |
+| `npm_extension.bzl` `_NPM_DOC` Platforms: "Evaluation of a 2,000-package lockfile took under 1 s" | fixed: `scale_test` asserts at most 10 s on Linux (`MAX_EVALUATION_MS`), and printed 1351 ms on Linux x64 (WSL) in this feature's run, so the doc states the asserted bound |
 | `run.bzl` `bun_binary` doc: leading `--` | holds; now pinned by C17 |
 | `npm_extension.bzl` `_NPM_DOC`: bins ("a file whose extension Bun does not run"), `BUILD` files kept, platforms, resolution scope, several lockfiles, `replace_package` visibility | fixed (R1, R4, R7, R9) |
 | `npm_extension.bzl` `translate_lock` doc: credential sentence covers `bun.lock` too | fixed (R2) |
@@ -392,9 +398,12 @@ decision).
 | snapshot files written next to the test | C2 |
 | guard pattern limit | C13 |
 | Windows argument splitting by the stub | C7 |
-| a `--` directly after the entry point is dropped | C17 (new) |
+| a `--` directly after the entry point is dropped | C17 (new, `bun/tests/canary/c17_leading_dashdash.test.ts`) |
 | an absolute path runs as a source file | BUN-run |
-| an extensionless file after a `#!/usr/bin/env node` line runs as JavaScript (CommonJS and ES module) | C18 (new) |
+| an extensionless file after a `#!/usr/bin/env node` line runs as JavaScript (CommonJS and ES module) | C18 (new, `bun/tests/canary/c18_extensionless_bin.test.ts`) |
+| `--no-install` in `launcher.js` binary mode | bun.com `cli/run` (feature 002 research) |
+| `bun test` flags the launcher passes: `--preload`, `--coverage`, `--coverage-reporter`, `--coverage-dir`, `--shard`, `--test-name-pattern`, `--reporter=junit`, `--reporter-outfile` | bun.com `cli/test` (feature 002 research) |
+| `bun test` flags a user passes through `args` unchanged (`--timeout`, `--rerun-each`, `--retry`, `--concurrent`, `--randomize`, `--seed`, `--bail`, `--max-concurrency`, `--todo`, `--isolate`, `--smol`, `--conditions`, `--prefer-offline`, `--frozen-lockfile`) | bun.com `cli/test`; their effect is Bun's, only `--timeout` and `--isolate` are covered by a test (`bun_test` doc) |
 | `bun.lock` fields read by `lockfile.bzl` | `canary/npm/c_*` (features 003, 004) |
 
 ## Part 5: Decisions for the user
@@ -430,6 +439,13 @@ decision).
 - **E3** (NPM-checks): `checkList` returns true for a sole `any`; for `["any", "!linux"]` it returns
   false for every value (`any` is then an ordinary positive value). The old `_matches` agrees with
   `checkList` on every case except the sole `any`.
+- **E5** (pinned Bun 1.4.4, `write_lockfiles.ts any_platform`, 2026-10-28): for a package whose
+  `package.json` has `"os": ["any"]` and `"cpu": ["any"]`, Bun writes the entry's metadata as `{}`.
+- **E6** (implementation deviations, 2026-10-28): T036's "it is a directory" case uses the bin
+  `dir` of the new `node-bin` fixture, since `dirbin` declares its executables only through
+  `directories.bin` and gets no bin target; `node-bin` also has the bin `gone`, which the hub
+  `npm_bins_node` excludes, for "the package holds no such file". T064 adds no case: the existing
+  `no_stub` case is the Windows target whose launcher toolchain has no template.
 - **E4** (output base of this repository, Linux x64): `external/` holds
   `hermetic_launcher++non_module_dependencies+runfiles_stub_x86_64_linux` and
   `+finalize_stub_x86_64_linux` among others after `bazel test //...`; hermetic_launcher 0.0.16
