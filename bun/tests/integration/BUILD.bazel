@@ -248,6 +248,14 @@ bun_test(
 )
 
 bun_test(
+    name = "toolchain_tags_test",
+    size = "enormous",
+    srcs = ["toolchain_tags.test.ts"],
+    tags = ["requires-network"],
+    deps = [":inner"],
+)
+
+bun_test(
     name = "manifest_mismatch_test",
     size = "enormous",
     srcs = ["manifest_mismatch.test.ts"],

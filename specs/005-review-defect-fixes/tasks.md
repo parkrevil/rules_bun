@@ -430,11 +430,11 @@ request").
 
 ### Tests for User Story 5 (write first, see red)
 
-- [ ] T049 [US5] Create the workspace `bun/tests/integration/workspaces/toolchain_tags/` with a
+- [X] T049 [US5] Create the workspace `bun/tests/integration/workspaces/toolchain_tags/` with a
   root `MODULE.bazel` and two local modules `dep_a/` and `dep_b/` (each with `MODULE.bazel`,
   reached through `bazel_dep` + `local_path_override`), each calling `bun.toolchain(bun_version =
   "1.4.4", integrity = {...})`; the test writes each case's `MODULE.bazel` contents
-- [ ] T050 [US5] Create `bun/tests/integration/toolchain_tags.test.ts` and its `bun_test` target
+- [X] T050 [US5] Create `bun/tests/integration/toolchain_tags.test.ts` and its `bun_test` target
   `toolchain_tags_test` in `bun/tests/integration/BUILD.bazel` (modeled on `lockfile_errors_test`)
   with cases, each using the key of the host's platform (`linux-x64`, `darwin-aarch64` or
   `windows-x64`, so the archive is actually fetched): (a) root gives the correct value, `dep_a` a
@@ -452,14 +452,14 @@ request").
   only → a glibc build analyzes (its fetch is not attempted offline), and `bazel fetch` of the
   musl repository fails with the "pass the integrity" diagnostic naming the musl key. Run; record
   red for the cases that fail today
-- [ ] T051 [P] [US5] In `bun/tests/integration/lockfile_errors.test.ts`, add cases:
+- [X] T051 [P] [US5] In `bun/tests/integration/lockfile_errors.test.ts`, add cases:
   `npm.translate_lock(name = "bad name", ...)` and `workspace_target_name = "a:b"` each fail
   naming the module, `translate_lock` and the value. Run `bazel test
   //bun/tests/integration:lockfile_errors_test`; record red
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] In `bun/private/extensions.bzl`, iterate `module_ctx.modules` (root first,
+- [X] T052 [US5] In `bun/private/extensions.bzl`, iterate `module_ctx.modules` (root first,
   BZ-modctx); per tag validate `bun_version` with `version_key` (error names `<module
   name>@<version>` and the tag), each integrity key against `BUN_ARCHIVES` (error names module,
   key and `sorted(BUN_ARCHIVES)`), each value as `sha256-`, `sha384-` or `sha512-` followed by
@@ -468,13 +468,13 @@ request").
   values fail naming the root module); with no root value, two different non-root values fail
   naming both modules, the version and the platform; merge values of several tags per platform;
   the highest version per name is selected as today
-- [ ] T053 [US5] Update the `integrity` attribute doc in `bun/private/extensions.bzl`: the seven
+- [X] T053 [US5] Update the `integrity` attribute doc in `bun/private/extensions.bzl`: the seven
   keys, root precedence per platform, the conflict failure
-- [ ] T054 [US5] In `bun/private/npm_extension.bzl`, validate `translate_lock.name` as an apparent
+- [X] T054 [US5] In `bun/private/npm_extension.bzl`, validate `translate_lock.name` as an apparent
   repository name (letters, digits, `_`, `-`, `.`, starting with a letter) and
   `workspace_target_name` as a target name (BZ-labels), each failing with `rules_bun: module
   <module>: npm.translate_lock: <attribute> "<value>" is not a valid <repository|target> name`
-- [ ] T055 [US5] Run `bazel test //bun/tests/integration:toolchain_tags_test
+- [X] T055 [US5] Run `bazel test //bun/tests/integration:toolchain_tags_test
   //bun/tests/integration:lockfile_errors_test`; record green; run `(cd e2e/smoke && bazel test
   //...)`; commit as `fix: give the root module's toolchain integrity precedence`
 
