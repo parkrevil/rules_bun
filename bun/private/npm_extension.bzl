@@ -363,6 +363,29 @@ def _translate(module_ctx, tag, replacements):
         links = json.encode(links),
     )
 
+_LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+_REPOSITORY_CHARACTERS = _LETTERS + "0123456789_-."
+
+def _valid_repository_name(name):
+    """Whether `name` is an apparent repository name (bazel.build concepts/labels)."""
+    return bool(name) and name[0] in _LETTERS and all([c in _REPOSITORY_CHARACTERS for c in name.elems()])
+
+def _valid_target_name(name):
+    """Whether `name` is a target name (bazel.build concepts/labels): characters, `/` segments."""
+    if not name or target_name(name) != name:
+        return False
+    return all([segment not in ("", ".", "..") for segment in name.split("/")])
+
+def _validate_translate_lock(who, tag):
+    """Fails naming the module, the tag and the value of an invalid name (FR-016, research R8)."""
+    for attribute, value, kind, valid in [
+        ("name", tag.name, "repository", _valid_repository_name(tag.name)),
+        ("workspace_target_name", tag.workspace_target_name, "target", _valid_target_name(tag.workspace_target_name)),
+    ]:
+        if not valid:
+            fail('rules_bun: {}: npm.translate_lock: {} "{}" is not a valid {} name'.format(who, attribute, value, kind))
+
 def _npm_extension_impl(module_ctx):
     replacements = {}
     for mod in module_ctx.modules:
@@ -386,6 +409,7 @@ def _npm_extension_impl(module_ctx):
     for mod in module_ctx.modules:
         for tag in mod.tags.translate_lock:
             who = "the root module" if mod.is_root else "the module {}@{}".format(mod.name, mod.version)
+            _validate_translate_lock(who, tag)
             hubs.setdefault(tag.name, []).append("{} for {}".format(who, _label_text(tag.bun_lock)))
     for name in sorted(hubs.keys()):
         if len(hubs[name]) > 1:

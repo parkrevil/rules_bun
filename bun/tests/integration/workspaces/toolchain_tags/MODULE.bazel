@@ -1,0 +1,2 @@
+# Written by each case of toolchain_tags.test.ts.
+bazel_dep(name = "rules_bun")

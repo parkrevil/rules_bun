@@ -2,16 +2,27 @@
 
 _MAX_SEGMENTS = 4
 
-def _parse_number(text, version):
-    if not text:
-        fail("Version \"{}\" has an empty segment.".format(version))
-    for ch in text.elems():
-        if not ch.isdigit():
-            fail(
-                "Version \"{}\" has a non-numeric segment \"{}\". ".format(version, text) +
-                "The supported format is `<number>(.<number>)*`, optionally followed by `-<prerelease>`.",
-            )
-    return int(text)
+def version_error(version):
+    """Why a version string cannot be ordered, or `None`.
+
+    Args:
+        version: Version string.
+
+    Returns:
+        An English error naming the version, or `None` when `version_key` accepts it.
+    """
+    if not version:
+        return "The version string is empty."
+    segments = version.split("-", 1)[0].split(".")
+    if len(segments) > _MAX_SEGMENTS:
+        return "Version \"{}\" has {} segments; at most {} are supported.".format(version, len(segments), _MAX_SEGMENTS)
+    for text in segments:
+        if not text:
+            return "Version \"{}\" has an empty segment.".format(version)
+        if not text.isdigit():
+            return ("Version \"{}\" has a non-numeric segment \"{}\". ".format(version, text) +
+                    "The supported format is `<number>(.<number>)*`, optionally followed by `-<prerelease>`.")
+    return None
 
 def version_key(version):
     """Returns the sort key of a version string.
@@ -22,24 +33,15 @@ def version_key(version):
     Returns:
         Sort key.
     """
-    if not version:
-        fail("The version string is empty.")
+    error = version_error(version)
+    if error:
+        fail(error)
 
     parts = version.split("-", 1)
     core = parts[0]
     prerelease = parts[1] if len(parts) > 1 else ""
 
-    segments = core.split(".")
-    if len(segments) > _MAX_SEGMENTS:
-        fail(
-            "Version \"{}\" has {} segments; at most {} are supported.".format(
-                version,
-                len(segments),
-                _MAX_SEGMENTS,
-            ),
-        )
-
-    release = [_parse_number(s, version) for s in segments]
+    release = [int(s) for s in core.split(".")]
     for _ in range(_MAX_SEGMENTS - len(release)):
         release.append(0)
 

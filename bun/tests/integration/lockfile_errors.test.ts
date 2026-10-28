@@ -58,3 +58,30 @@ for (const [name, file, content, expected] of CASES) {
     INNER_TIMEOUT,
   );
 }
+
+// FR-016, research R8: the hub name must be a repository name and
+// workspace_target_name a target name; each fails evaluation naming the module,
+// the tag and the value.
+for (const [attribute, value, kind] of [
+  ["name", "bad name", "repository"],
+  ["workspace_target_name", "a:b", "target"],
+]) {
+  test(
+    `npm.translate_lock(${attribute} = "${value}") fails evaluation naming it`,
+    async () => {
+      inner.write("bun.lock", lockfile(2));
+      inner.write(
+        "MODULE.bazel",
+        MODULE.replace("{LOCKFILE}", "bun.lock").replace('bun_lock = "//:bun.lock"', `bun_lock = "//:bun.lock", ${attribute} = "${value}"`),
+      );
+      const result = await inner.run(["build", "//..."]);
+      const line = result.stderr.split("\n").find((l) => l.startsWith("Error in fail:")) ?? result.stderr;
+      console.log(line);
+      expect(result.exitCode).not.toBe(0);
+      for (const text of ["the root module", "npm.translate_lock", `${attribute} "${value}" is not a valid ${kind} name`]) {
+        expect(line).toContain(text);
+      }
+    },
+    INNER_TIMEOUT,
+  );
+}

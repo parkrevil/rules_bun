@@ -1,0 +1,6 @@
+load("@rules_bun//bun:defs.bzl", "bun_binary")
+
+bun_binary(
+    name = "main",
+    entry_point = "main.js",
+)

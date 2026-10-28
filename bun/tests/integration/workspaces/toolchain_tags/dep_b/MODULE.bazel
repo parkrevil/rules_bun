@@ -1,0 +1,7 @@
+# Written by each case of toolchain_tags.test.ts.
+module(
+    name = "dep_b",
+    version = "1.0.0",
+)
+
+bazel_dep(name = "rules_bun")
