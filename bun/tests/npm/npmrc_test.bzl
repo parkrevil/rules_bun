@@ -103,6 +103,8 @@ def _has_credentials_test_impl(ctx):
         "https://@host/x",
         "git+https://user:token@host/r.git",
         "git+ssh://git:secret@host/r.git",
+        # A URL after a package name, as slot 0 and override selectors write it.
+        "a@https://user:token@host/a.tgz",
     ]:
         asserts.true(env, has_credentials(url), "{} holds credentials".format(url))
 
@@ -112,6 +114,7 @@ def _has_credentials_test_impl(ctx):
         "ssh://git@host/r.git",
         "https://host/a@1.0.0.tgz",
         "git+ssh://host/r.git",
+        "g@git+ssh://git@host/r.git#abc",
     ]:
         asserts.false(env, has_credentials(url), "{} holds no credentials".format(url))
     return unittest.end(env)

@@ -10,6 +10,7 @@ load(
     "test_rule_test_suite",
 )
 load(":semver_test.bzl", "semver_test_suite")
+load(":sri_test.bzl", "sri_test_suite")
 load(
     ":target_toolchain_test.bzl",
     "launcher_platform_test_suite",
@@ -32,6 +33,8 @@ load(":versions_test.bzl", "versions_test_suite")
 package(default_visibility = ["//visibility:private"])
 
 semver_test_suite(name = "semver")
+
+sri_test_suite(name = "sri")
 
 versions_test_suite(name = "versions")
 

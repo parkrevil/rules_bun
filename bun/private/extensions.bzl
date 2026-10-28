@@ -3,12 +3,9 @@
 load(":platforms.bzl", "BUN_ARCHIVES")
 load(":repositories.bzl", "bun_register_toolchains")
 load(":semver.bzl", "max_version", "version_error")
+load(":sri.bzl", "is_sri")
 
 _DEFAULT_NAME = "bun"
-
-_ALGORITHMS = ["sha256", "sha384", "sha512"]
-
-_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
 
 bun_toolchain = tag_class(
     doc = "Requests a Bun toolchain.",
@@ -39,10 +36,6 @@ evaluation naming the modules, the version and the platform.
 def _who(mod):
     return "the root module" if mod.is_root else "the module {}@{}".format(mod.name, mod.version)
 
-def _is_sri(value):
-    algorithm, separator, digest = value.partition("-")
-    return bool(separator) and algorithm in _ALGORITHMS and bool(digest) and all([c in _BASE64 for c in digest.elems()])
-
 def _validate(mod, toolchain):
     """Fails naming the module and the tag when a `bun.toolchain` tag is invalid (FR-016)."""
     tag = 'bun.toolchain(bun_version = "{}")'.format(toolchain.bun_version)
@@ -57,7 +50,7 @@ def _validate(mod, toolchain):
                 platform,
                 ", ".join(sorted(BUN_ARCHIVES)),
             ))
-        if not _is_sri(toolchain.integrity[platform]):
+        if not is_sri(toolchain.integrity[platform]):
             fail('rules_bun: {}: {}: the integrity of "{}" is no Subresource Integrity value; write sha256-, sha384- or sha512- followed by the base64 digest'.format(
                 _who(mod),
                 tag,

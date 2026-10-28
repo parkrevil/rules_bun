@@ -35,6 +35,30 @@ def _userinfo(url):
         return None
     return authority.rpartition("@")[0]
 
+_SCHEME_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
+
+def scheme_of(text):
+    """The scheme of the URL in a text.
+
+    The scheme is the scheme characters directly before `://` (RFC 3986 section 3.1), so that a URL
+    after a package name (`g@git+ssh://...`) has the scheme `git+ssh`.
+
+    Args:
+        text: A URL, or a text holding one.
+
+    Returns:
+        The scheme in lower case, or `""` without `://`.
+    """
+    if "://" not in text:
+        return ""
+    prefix = text.partition("://")[0]
+    start = len(prefix)
+    for i in range(len(prefix) - 1, -1, -1):
+        if prefix[i] not in _SCHEME_CHARS:
+            break
+        start = i
+    return prefix[start:].lower()
+
 def has_credentials(url):
     """Whether a URL carries a secret in its user information (feature 005, P1).
 
@@ -52,8 +76,7 @@ def has_credentials(url):
     userinfo = _userinfo(url)
     if userinfo == None:
         return False
-    scheme = url.partition("://")[0] if "://" in url else ""
-    if scheme in ("ssh", "git+ssh"):
+    if scheme_of(url) in ("ssh", "git+ssh"):
         return ":" in userinfo
     return True
 
