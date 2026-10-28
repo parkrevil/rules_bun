@@ -1,6 +1,7 @@
 """Implementation of the repository rules that fetch Bun releases."""
 
-load(":toolchains_repo.bzl", "PLATFORMS", "toolchains_repo")
+load(":platforms.bzl", "BUN_ARCHIVES")
+load(":toolchains_repo.bzl", "toolchains_repo")
 load(":versions.bzl", "TOOL_VERSIONS")
 
 _ATTRS = {
@@ -14,7 +15,7 @@ _ATTRS = {
     "platform": attr.string(
         doc = "Platform of the release archive, such as `linux-x64`.",
         mandatory = True,
-        values = PLATFORMS.keys(),
+        values = sorted(BUN_ARCHIVES),
     ),
 }
 
@@ -95,7 +96,7 @@ def bun_register_toolchains(name, integrity = {}, **kwargs):
             Missing platforms use the values rules_bun knows for the version.
         **kwargs: Passed to `bun_repositories`, such as `bun_version`.
     """
-    for platform in PLATFORMS.keys():
+    for platform in BUN_ARCHIVES:
         bun_repositories(
             name = name + "_" + platform,
             platform = platform,

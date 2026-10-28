@@ -1,44 +1,13 @@
 """Repository rule that declares a toolchain target for every Bun platform."""
 
-# Platforms that Bun publishes release archives for, with their Bazel constraints.
-PLATFORMS = {
-    "linux-x64": struct(
-        compatible_with = [
-            "@platforms//os:linux",
-            "@platforms//cpu:x86_64",
-        ],
-    ),
-    "linux-aarch64": struct(
-        compatible_with = [
-            "@platforms//os:linux",
-            "@platforms//cpu:aarch64",
-        ],
-    ),
-    "darwin-x64": struct(
-        compatible_with = [
-            "@platforms//os:macos",
-            "@platforms//cpu:x86_64",
-        ],
-    ),
-    "darwin-aarch64": struct(
-        compatible_with = [
-            "@platforms//os:macos",
-            "@platforms//cpu:aarch64",
-        ],
-    ),
-    "windows-x64": struct(
-        compatible_with = [
-            "@platforms//os:windows",
-            "@platforms//cpu:x86_64",
-        ],
-    ),
-}
+load(":platforms.bzl", "BUN_ARCHIVES", "archive_constraint_sets")
 
 def _toolchains_repo_impl(repository_ctx):
     build_content = ""
 
-    for platform, meta in PLATFORMS.items():
-        build_content += """
+    for platform in BUN_ARCHIVES:
+        for compatible_with in archive_constraint_sets(platform):
+            build_content += """
 toolchain(
     name = "{platform}_toolchain",
     exec_compatible_with = {compatible_with},
@@ -53,10 +22,10 @@ toolchain(
     toolchain_type = "@rules_bun//bun/toolchain:target_type",
 )
 """.format(
-            platform = platform,
-            user_repo = repository_ctx.attr.user_repository_name,
-            compatible_with = meta.compatible_with,
-        )
+                platform = platform,
+                user_repo = repository_ctx.attr.user_repository_name,
+                compatible_with = compatible_with,
+            )
 
     repository_ctx.file("BUILD.bazel", build_content)
 
