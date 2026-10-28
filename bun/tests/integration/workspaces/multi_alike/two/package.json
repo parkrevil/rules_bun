@@ -1,0 +1,7 @@
+{
+  "name": "multi-alike-two",
+  "private": true,
+  "dependencies": {
+    "b": "1.0.0"
+  }
+}

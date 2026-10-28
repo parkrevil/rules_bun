@@ -32,6 +32,11 @@ NpmInstanceInfo = provider(
         "dependency_keys": "Dict from ordinary dependency alias to the `bun.lock` key it resolves to.",
         "peers": "The aliases of `edges` that are peers.",
         "check": "The stamp `File` of the replacement integrity check, or `None`.",
+        "integrity": "Content identity (feature 005 research R1): the padded integrity the package's download or replacement is verified against.",
+        "source": "Content identity: the download URL, or the `npm.replace_package` archive's label text.",
+        "exclude": "Content identity: the sorted, de-duplicated `exclude_package_contents` patterns of the package.",
+        "hub": "The hub's name, as its `npm.translate_lock` tag gives it, for errors.",
+        "lockfile": "The hub's `bun.lock` label text, for errors.",
     },
 )
 

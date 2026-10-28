@@ -91,6 +91,11 @@ def _npm_instance_impl(ctx):
         dependency_keys = dict(ctx.attr.dependency_keys),
         peers = list(ctx.attr.peers),
         check = ctx.file.check,
+        integrity = ctx.attr.integrity,
+        source = ctx.attr.source,
+        exclude = list(ctx.attr.exclude),
+        hub = ctx.attr.hub,
+        lockfile = ctx.attr.lockfile,
     )]
 
 npm_instance = rule(
@@ -100,8 +105,13 @@ npm_instance = rule(
         "check": attr.label(doc = "The replacement check of a replaced package.", allow_single_file = True),
         "dependency_keys": attr.string_dict(doc = "Ordinary dependency alias -> the `bun.lock` key it resolves to."),
         "edges": attr.string_dict(doc = "Dependency alias -> instance ID."),
+        "exclude": attr.string_list(doc = "The sorted exclusion patterns of the package (content identity)."),
+        "hub": attr.string(doc = "The hub's name, for errors."),
+        "integrity": attr.string(doc = "The padded integrity the package is verified against (content identity)."),
+        "lockfile": attr.string(doc = "The hub's `bun.lock` label, for errors."),
         "package": attr.string(doc = "The package name.", mandatory = True),
         "peers": attr.string_list(doc = "The aliases of `edges` that are peers."),
+        "source": attr.string(doc = "The download URL or the replacement's label text (content identity)."),
         "store_name": attr.string(doc = "`name@version` with `/` written `+`.", mandatory = True),
         "tree": attr.label(doc = "The package's instance-tree target.", mandatory = True),
     },

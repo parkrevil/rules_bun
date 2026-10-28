@@ -186,13 +186,31 @@ def _resolved(instances, instance, alias):
     dependency_key = instance.dependency_keys.get(alias)
     return text if dependency_key == None else '{} (bun.lock key "{}")'.format(text, dependency_key)
 
+# The content identity of an instance (feature 005 research R1), in the order differences are
+# reported: field, name in the error.
+_IDENTITY = [("integrity", "integrity"), ("source", "source"), ("exclude", "exclusion policy")]
+
+def _identity_value(instance, field):
+    value = getattr(instance, field)
+    return json.encode(value) if type(value) == "list" else value
+
+def _identity_difference(first, second):
+    """The first content-identity property two instances differ in, or `None`."""
+    for field, what in _IDENTITY:
+        if _identity_value(first, field) != _identity_value(second, field):
+            return struct(field = field, what = what)
+    return None
+
 def _equivalent(instances, first, second):
     """Whether two instances of one package version come from different hubs and lay out alike.
 
-    They lay out alike when every edge reaches the same package version; the uniqueness check
-    holds the instances those edges reach to the same rule.
+    They lay out alike when their content identity (integrity, source, exclusion policy) is equal
+    and every edge reaches the same package version; the uniqueness check holds the instances
+    those edges reach to the same rule.
     """
-    if first.label.repo_name == second.label.repo_name:
+    if first.label.repo_name == second.label.repo_name and first.hub == second.hub:
+        return False
+    if _identity_difference(first, second):
         return False
     if sorted(first.edges.keys()) != sorted(second.edges.keys()) or sorted(first.peers) != sorted(second.peers):
         return False
@@ -207,9 +225,10 @@ def _check_unique(ctx, instances):
     """Picks one instance per package version and fails when two differ (FR-003, FR-017, US5-4).
 
     Instance IDs are unique within one hub only, so `instances` is keyed by `_key`. Instances of
-    different hubs (several lockfiles) whose edges reach the same package versions lay out alike
-    and are carried once; any other two instances of one package version fail. The error names
-    the first dependency whose resolutions differ in version or `bun.lock` key; when two instances
+    different hubs (several lockfiles) with one content identity whose edges reach the same
+    package versions lay out alike and are carried once; any other two instances of one package
+    version fail. The error names the first content-identity property that differs, else the
+    first dependency whose resolutions differ in version or `bun.lock` key; when two instances
     differ only through instances of one version below them, those are reported instead.
 
     Returns:
@@ -229,6 +248,20 @@ def _check_unique(ctx, instances):
             carried[key] = match[0] if match else key
         if len(classes) > 1:
             conflicts.append((instances[classes[0]], instances[classes[1]]))
+    for first, second in conflicts:
+        difference = _identity_difference(first, second)
+        if difference:
+            fail("{}: the npm package {} comes from the hubs {} ({}) and {} ({}) with different {}: {} and {}; one instance per package version is carried only when both hubs describe the same content".format(
+                ctx.label,
+                _name_version(first),
+                first.hub,
+                first.lockfile,
+                second.hub,
+                second.lockfile,
+                difference.what,
+                _identity_value(first, difference.field),
+                _identity_value(second, difference.field),
+            ))
     for first, second in conflicts:
         for alias in sorted({a: True for a in first.edges.keys() + second.edges.keys()}.keys()):
             if _resolved(instances, first, alias) == _resolved(instances, second, alias):

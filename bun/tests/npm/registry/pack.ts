@@ -4,7 +4,10 @@
 //   $(bazel info output_base)/external/+bun+bun_linux-x64/bun bun/tests/npm/registry/pack.ts
 //
 // Every source under packages/<name>@<version>/ is packed with `bun pm pack`
-// into archives/<store name>.tgz (a scope's "/" written "+"). Two archives are
+// into archives/<store name>.tgz (a scope's "/" written "+"). A source under
+// packages/<name>@<version>+<variant>/ is a second archive of that package
+// version with other content, packed into archives/<store name>+<variant>.tgz
+// (specs/005-review-defect-fixes US2). Two archives are
 // written by this script instead: toplevel@1.0.0 with the top-level directory
 // toplevel/ instead of package/ (FR-034), and winname@1.0.0 holding
 // package/aux.js and package/a:b.js (G2), names no Windows checkout can hold,
@@ -14,7 +17,7 @@
 
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { integrity } from "../../support/npm_registry.ts";
 import { readTgz, type TarEntry, writeTgz } from "../../support/tar.ts";
 
@@ -105,7 +108,8 @@ const bunVersion = Bun.spawnSync([process.execPath, "--version"]).stdout.toStrin
 console.log(`bun ${bunVersion}`);
 for (const dir of sourceDirs()) {
   const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
-  const name = storeName(manifest);
+  const variant = basename(dir).slice(`${manifest.name.split("/").pop()}@${manifest.version}`.length);
+  const name = storeName(manifest) + variant;
   let bytes = pack(dir);
   if (special[name]) bytes = special[name](bytes);
   writeFileSync(join(archives, `${name}.tgz`), bytes);

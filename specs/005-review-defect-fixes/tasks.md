@@ -176,7 +176,7 @@ data-model "Content identity").
 
 ### Tests for User Story 2 (write first, see red)
 
-- [ ] T016 [US2] Add Bazel-in-Bazel workspaces under `bun/tests/integration/workspaces/`, each
+- [X] T016 [US2] Add Bazel-in-Bazel workspaces under `bun/tests/integration/workspaces/`, each
   with two `npm.translate_lock` hubs and one `bun_binary` that depends on the shared package from
   both hubs, modeled on `multi_root/` and `multi_dep/`:
   `multi_integrity/` (one `name@version`, two different archives of it served under two loopback
@@ -190,7 +190,7 @@ data-model "Content identity").
   `multi_nointegrity/` (one hub's entry records no integrity),
   and `multi_alike/` (identical identity). Register the new files in
   `bun/tests/integration/BUILD.bazel` `workspace_files` if the glob does not already cover them
-- [ ] T017 [US2] In `bun/tests/integration/multi.test.ts`, add cases: `multi_alike` builds and
+- [X] T017 [US2] In `bun/tests/integration/multi.test.ts`, add cases: `multi_alike` builds and
   runs with one `.store/<name>@<version>` entry; `multi_integrity` fails naming
   `<name>@<version>`, both hub names with their `bun.lock` labels, `integrity` and both integrity
   values;
@@ -201,37 +201,37 @@ data-model "Content identity").
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] In `bun/private/providers.bzl`, add to `NpmInstanceInfo` the fields `integrity`
+- [X] T018 [US2] In `bun/private/providers.bzl`, add to `NpmInstanceInfo` the fields `integrity`
   (padded integrity string), `source` (download URL, or the `replace_package` label text),
   `exclude` (sorted, de-duplicated list of exclusion patterns), `hub` (the hub name the
   `npm.translate_lock` tag gives) and `lockfile` (the hub's `bun.lock` label text), the last two for
   diagnostics, each documented
-- [ ] T019 [US2] In `bun/private/npm_package.bzl`, add the attributes `integrity`
+- [X] T019 [US2] In `bun/private/npm_package.bzl`, add the attributes `integrity`
   (`attr.string`), `source` (`attr.string`), `exclude` (`attr.string_list`) and `lockfile`
   (`attr.string`) to `npm_instance` and put them into `NpmInstanceInfo`
-- [ ] T020 [US2] In `bun/private/npm_extension.bzl` (hub data) and the hub BUILD generation in
+- [X] T020 [US2] In `bun/private/npm_extension.bzl` (hub data) and the hub BUILD generation in
   `bun/private/npm_repositories.bzl`, write per `ok` instance: `integrity =
   padded_integrity(entry.integrity)`, `source = package_url(...)` or the replacement's
   `_label_text(...)`, `exclude = sorted(set(exclude_package_contents.get("*", []) +
   exclude_package_contents.get(<name>, [])))`, `lockfile = str(tag.bun_lock)`
-- [ ] T021 [US2] In `bun/tests/npm/uniqueness_test.bzl`, add analysis tests that build
+- [X] T021 [US2] In `bun/tests/npm/uniqueness_test.bzl`, add analysis tests that build
   `npm_instance` targets directly (as the file's existing helpers do) over one tree with
   different `lockfile` values and: equal identity → one store entry (`_hubs_alike_impl` style);
   different `integrity` → failure messages `["x@1.0.0", "<lockfile A>", "<lockfile B>",
   "integrity", "<value A>", "<value B>"]`; different `source`; different `exclude`; and
   identity equal but an edge different → the existing dependency message. Register them in the
   suite. Run `bazel test //bun/tests/npm:uniqueness`; record red (the instances are merged)
-- [ ] T022 [US2] In `bun/private/run.bzl`, make `_equivalent` compare `integrity`, `source`,
+- [X] T022 [US2] In `bun/private/run.bzl`, make `_equivalent` compare `integrity`, `source`,
   `exclude` before the edges, and make `_check_unique` fail, before it reports any dependency
   difference, with: `<label>: the npm package <name>@<version> comes from the hubs <hub A>
   (<lockfile A>) and <hub B> (<lockfile B>) with different <property>: <value A> and <value B>;
   one instance per package version is carried only when both hubs describe the same content`, `<property>` being the
   first difference in the order `integrity`, `source`, `exclusion policy`
-- [ ] T023 [US2] In `_NPM_DOC` of `bun/private/npm_extension.bzl`, state for several lockfiles:
+- [X] T023 [US2] In `_NPM_DOC` of `bun/private/npm_extension.bzl`, state for several lockfiles:
   a package version is carried once only when both lockfiles record equal integrity, source and
   exclusion policy and its dependencies resolve alike; otherwise analysis fails naming the
   difference
-- [ ] T024 [US2] Run `bazel test //bun/tests/npm:uniqueness //bun/tests/integration:multi_test
+- [X] T024 [US2] Run `bazel test //bun/tests/npm:uniqueness //bun/tests/integration:multi_test
   //bun/tests/npm:all`; record green; commit as `fix: compare content identity across npm hubs`
 
 **Checkpoint**: US2 holds; SC-005 covered.

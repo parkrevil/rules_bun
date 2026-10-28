@@ -1,0 +1,7 @@
+{
+  "name": "multi-exclude-one",
+  "private": true,
+  "dependencies": {
+    "b": "1.0.0"
+  }
+}
