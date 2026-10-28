@@ -41,6 +41,7 @@ filegroup(
     srcs = glob(["*"]) + [
         "//bun/platforms/libc:all_files",
         "//bun/private:all_files",
+        "//bun/private/windows_launcher:all_files",
         "//bun/toolchain:all_files",
     ],
     visibility = [

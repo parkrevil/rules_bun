@@ -1,0 +1,12 @@
+load("@rules_bun//bun:defs.bzl", "bun_binary", "bun_test")
+
+bun_binary(
+    name = "main",
+    entry_point = "main.js",
+)
+
+bun_test(
+    name = "pass_test",
+    srcs = ["pass.test.ts"],
+    data = [":main"],
+)

@@ -332,6 +332,10 @@ _NO_STUB_TOOLCHAIN = [str(Label("//bun/tests:platform_failure_no_stub_toolchain"
 
 no_bun_binary_test = _missing_toolchain_test("no_bun", str(Label("//bun/toolchain:target_type")), False)
 no_bun_test_test = _missing_toolchain_test("no_bun", str(Label("//bun/toolchain:target_type")), True)
+
+# no_stub is Windows on aarch64: rules_bun's Windows launcher toolchain matches it, and its
+# template is None, because hermetic_launcher 0.0.16 registers no template there (feature 005
+# research R6). The failure names hermetic-launcher's template type and the platform.
 no_stub_binary_test = _missing_toolchain_test("no_stub", "template_toolchain_type", False, _NO_STUB_TOOLCHAIN)
 
 # No no_stub case for bun_test: no_stub is a Windows platform, and a bun_test for

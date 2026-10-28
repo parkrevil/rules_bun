@@ -546,14 +546,14 @@ Windows CI keeps the `.exe` stub (quickstart Q8).
 
 ### Tests for User Story 8 (write first, see red)
 
-- [ ] T063 [US8] Create the workspace `bun/tests/integration/workspaces/launcher_fetch/` with one
+- [X] T063 [US8] Create the workspace `bun/tests/integration/workspaces/launcher_fetch/` with one
   `bun_binary` and one `bun_test`, and `bun/tests/integration/launcher_fetch.test.ts` with target
   `launcher_fetch_test` in `bun/tests/integration/BUILD.bazel` (`target_compatible_with` not
   Windows, via `select` on `@platforms//os:windows` → `@platforms//:incompatible`): run the inner
   `bazel test //...` with an empty repository cache and assert the loopback registry log
   (`inner.log`, `bun/tests/integration/support/inner.ts`) holds no request whose path contains
   `runfiles-stub-` or `finalize-stub-`. Run; record red (research E4)
-- [ ] T064 [P] [US8] In `bun/tests/run_test.bzl`, make the `no_stub` cases expect a failure naming
+- [X] T064 [P] [US8] In `bun/tests/run_test.bzl`, make the `no_stub` cases expect a failure naming
   the hermetic-launcher toolchain type that did not resolve and the target platform under the new
   type; add a case for a Windows target with the rules_bun launcher toolchain whose `template` is
   `None`. Adjust `bun/tests/platforms/BUILD.bazel` `no_stub` if needed. Run `bazel test
@@ -561,17 +561,17 @@ Windows CI keeps the `.exe` stub (quickstart Q8).
 
 ### Implementation for User Story 8
 
-- [ ] T065 [US8] Create `bun/private/windows_launcher.bzl` with the rule
+- [X] T065 [US8] Create `bun/private/windows_launcher.bzl` with the rule
   `windows_launcher_toolchain`: requests hermetic-launcher's template and finalizer toolchain types
   as optional (`config_common.toolchain_type(..., mandatory = False)`) and returns
   `platform_common.ToolchainInfo(template = <File or None>, finalizer = <File or None>)`
-- [ ] T066 [US8] Create `bun/private/windows_launcher/BUILD.bazel` with `toolchain_type(name =
+- [X] T066 [US8] Create `bun/private/windows_launcher/BUILD.bazel` with `toolchain_type(name =
   "toolchain_type", visibility = ["//visibility:public"])`, a `windows_launcher_toolchain` target
   and `toolchain(name = "windows_launcher", toolchain = ..., toolchain_type = ":toolchain_type",
   target_compatible_with = ["@platforms//os:windows"])`; add
   `register_toolchains("//bun/private/windows_launcher:all")` to `MODULE.bazel` (not
   `dev_dependency`)
-- [ ] T067 [US8] In `bun/private/run.bzl`, replace the hermetic-launcher toolchain requests of
+- [X] T067 [US8] In `bun/private/run.bzl`, replace the hermetic-launcher toolchain requests of
   `bun_binary`, `bun_test` and `npm_bin` with `config_common.toolchain_type(
   "//bun/private/windows_launcher:toolchain_type", mandatory = False)`; on a Windows target, build
   the embedded arguments with hermetic-launcher's `launcher.args_from_entrypoint`,
@@ -580,7 +580,7 @@ Windows CI keeps the `.exe` stub (quickstart Q8).
   template.path, "-o", stub.path, "--transform", <indices>, "--", <args>], toolchain =
   "//bun/private/windows_launcher:toolchain_type")`; a missing toolchain, template or finalizer
   fails analysis naming the hermetic-launcher type that did not resolve and the target platform
-- [ ] T068 [US8] Run `bazel run //:gazelle`, `bazel test //bun/tests:all
+- [X] T068 [US8] Run `bazel run //:gazelle`, `bazel test //bun/tests:all
   //bun/tests/integration:launcher_fetch_test`; record green; run `bazel test //...` and
   `(cd e2e/smoke && bazel test //...)`; commit as `fix: resolve the Windows launcher only for
   Windows targets`. Windows behavior is verified by the PR's Windows jobs (T086)
