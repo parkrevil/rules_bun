@@ -21,3 +21,18 @@ those of [contracts/public-api.md](contracts/public-api.md).
 
 Each test of Q1–Q10 must also be shown red before its fix (FR-023); `tdd-log.md` records both
 runs.
+
+## After the final gate
+
+Done by the session that runs the workflow, not by the implement step:
+
+- T086 Push `005-review-defect-fixes`, open one PR against `main` whose body lists the
+  principles P1–P7, each reviewed defect (1)–(12) with its test, decisions D1–D3, the bin
+  `manual` change for release notes (constitution VII), and "musl not run on a musl system"; watch
+  `gh pr checks --watch` until every job passes on `ubuntu-latest`, `macos-latest`,
+  `windows-latest`. Report a failing job with its log
+- T087 From the PR's run: settle D3 (if C1 failed on Windows because no link can be made,
+  give `c1_preserve_symlinks_test` in `bun/tests/canary/BUILD.bazel` `target_compatible_with =
+  select({"@platforms//os:windows": ["@platforms//:incompatible"], "//conditions:default": []})`
+  and record C1 as unasserted on Windows in research Part 4); check every platform statement of
+  T074 against the jobs that ran; commit and push any change and re-watch CI (quickstart Q12)
