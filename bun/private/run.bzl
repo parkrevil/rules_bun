@@ -8,6 +8,7 @@ load(":library.bzl", "SOURCE_EXTENSIONS", "check_no_directory", "library_info", 
 load(":providers.bzl", "BunLibraryInfo")
 
 _TARGET_TYPE = Label("//bun/toolchain:target_type")
+_WINDOWS_LAUNCHER_TYPE = Label("//bun/private/windows_launcher:toolchain_type")
 
 _COPY_DIRECTORY_TOOLCHAIN = "@bazel_lib//lib:copy_directory_toolchain_type"
 
@@ -375,15 +376,40 @@ def _required_toolchain(ctx, toolchain_type):
     return toolchain
 
 def _windows_stub(ctx, buninfo, launch_config):
-    """Compiles the hermetic-launcher stub `<name>.exe`, the Windows launcher (FR-001)."""
-    _required_toolchain(ctx, launcher.template_toolchain_type)
-    _required_toolchain(ctx, launcher.finalizer_toolchain_type)
+    """Compiles the hermetic-launcher stub `<name>.exe`, the Windows launcher (FR-001).
+
+    The template and the finalizer come from rules_bun's Windows launcher toolchain (feature 005
+    research R6); the embedded arguments are built with hermetic-launcher's helpers and the
+    finalizer runs with the command line its README documents.
+    """
+    toolchain = ctx.toolchains[_WINDOWS_LAUNCHER_TYPE]
+    for toolchain_type, field in [(launcher.template_toolchain_type, "template"), (launcher.finalizer_toolchain_type, "finalizer")]:
+        if toolchain == None or getattr(toolchain, field) == None:
+            fail("{}: no toolchain of type {} matches the target platform {}".format(
+                ctx.label,
+                toolchain_type,
+                ctx.fragments.platform.platform,
+            ))
     _check_embedded_arguments(ctx, [buninfo.bun, ctx.file._launcher, launch_config])
+    embedded, transformed = launcher.args_from_entrypoint(buninfo.bun)
+    launcher.append_embedded_arg(arg = "--no-env-file", embedded_args = embedded, transformed_args = transformed)
+    for file in [ctx.file._launcher, launch_config]:
+        launcher.append_runfile(file = file, embedded_args = embedded, transformed_args = transformed)
     stub = ctx.actions.declare_file(ctx.label.name + ".exe")
-    launcher.entrypoint(buninfo.bun).embedded_args("--no-env-file").runfiles(ctx.file._launcher, launch_config).compile(
-        ctx,
-        output_file = stub,
-        cfg = "target",
+    args = ctx.actions.args()
+    args.add("--template", toolchain.template)
+    args.add("-o", stub)
+    args.add_joined("--transform", transformed, join_with = ",")
+    args.add("--")
+    args.add_all(embedded)
+    ctx.actions.run(
+        executable = toolchain.finalizer,
+        arguments = [args],
+        inputs = [toolchain.template],
+        outputs = [stub],
+        mnemonic = "BunWindowsStub",
+        progress_message = "Compiling the Windows launcher %{output}",
+        toolchain = _WINDOWS_LAUNCHER_TYPE,
     )
     return stub
 
@@ -556,12 +582,12 @@ and other substitutions are not expanded. Locate data files through `import.meta
 }
 
 # A target platform without a Bun, or a Windows platform without a launcher stub,
-# fails analysis in English (_required_toolchain) instead of aborting toolchain
-# resolution. Linux and macOS targets need no hermetic-launcher toolchain.
+# fails analysis in English (_required_toolchain, _windows_stub) instead of aborting
+# toolchain resolution. The Windows launcher type has a toolchain for Windows targets
+# only, so Linux and macOS targets resolve and fetch nothing of hermetic-launcher.
 _TOOLCHAINS = [
     config_common.toolchain_type(_TARGET_TYPE, mandatory = False),
-    config_common.toolchain_type(launcher.template_toolchain_type, mandatory = False),
-    config_common.toolchain_type(launcher.finalizer_toolchain_type, mandatory = False),
+    config_common.toolchain_type(_WINDOWS_LAUNCHER_TYPE, mandatory = False),
 ] + COPY_FILE_TOOLCHAINS + [_COPY_DIRECTORY_TOOLCHAIN]
 
 bun_binary = rule(

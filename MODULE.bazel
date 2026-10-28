@@ -20,6 +20,10 @@ bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
 bun_dev.toolchain(bun_version = "1.4.4")
 use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-aarch64-musl", "bun_linux-x64", "bun_linux-x64-musl", "bun_toolchains", "bun_windows-x64")
 
+# rules_bun's own Windows launcher toolchain (specs/005-review-defect-fixes research R6), for
+# every module that uses rules_bun, as hermetic_launcher registers its own.
+register_toolchains("//bun/private/windows_launcher:all")
+
 register_toolchains(
     "@bun_toolchains//:all",
     dev_dependency = True,

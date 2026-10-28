@@ -373,3 +373,16 @@ bun_test(
     srcs = ["ci_tools.test.ts"],
     deps = [":ci_tools"],
 )
+
+bun_test(
+    name = "launcher_fetch_test",
+    size = "enormous",
+    srcs = ["launcher_fetch.test.ts"],
+    tags = ["requires-network"],
+    # The Windows launcher is the hermetic-launcher stub, so a Windows build fetches it.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":inner"],
+)

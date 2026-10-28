@@ -128,6 +128,12 @@ bzl_library(
 )
 
 bzl_library(
+    name = "windows_launcher",
+    srcs = ["windows_launcher.bzl"],
+    deps = ["@hermetic_launcher//launcher:lib_bzl"],
+)
+
+bzl_library(
     name = "jsonc",
     srcs = ["jsonc.bzl"],
 )

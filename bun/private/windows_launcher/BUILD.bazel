@@ -1,0 +1,24 @@
+load("//bun/private:windows_launcher.bzl", "windows_launcher_toolchain")
+
+# The Windows launcher toolchain (feature 005 research R6). rules_bun's MODULE.bazel registers
+# :all; nothing here is public API.
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+windows_launcher_toolchain(name = "windows_launcher_toolchain")
+
+toolchain(
+    name = "windows_launcher",
+    target_compatible_with = ["@platforms//os:windows"],
+    toolchain = ":windows_launcher_toolchain",
+    toolchain_type = ":toolchain_type",
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//bun:__pkg__"],
+)
