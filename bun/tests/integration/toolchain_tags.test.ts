@@ -172,3 +172,22 @@ test(
   },
   INNER_TIMEOUT,
 );
+
+test(
+  "FR-019: @rules_bun//bun:extensions.bzl exports bun and npm only",
+  async () => {
+    modules([tag("1.4.4")]);
+    inner.write("api/BUILD.bazel", 'load(":old.bzl", "OLD")\n');
+    inner.write("api/old.bzl", 'load("@rules_bun//bun:extensions.bzl", "bun_toolchain")\n\nOLD = bun_toolchain\n');
+    const old = await inner.run(["query", "//api:all"]);
+    console.log(old.stderr.split("\n").find((l) => l.includes("bun_toolchain")));
+    expect(old.exitCode).not.toBe(0);
+    expect(old.stderr).toContain("does not contain symbol 'bun_toolchain'");
+
+    inner.write("api/BUILD.bazel", 'load(":new.bzl", "EXTENSIONS")\n');
+    inner.write("api/new.bzl", 'load("@rules_bun//bun:extensions.bzl", "bun", "npm")\n\nEXTENSIONS = [bun, npm]\n');
+    const current = await inner.run(["query", "//api:all"]);
+    expect(current.exitCode, current.stderr).toBe(0);
+  },
+  INNER_TIMEOUT,
+);

@@ -36,11 +36,8 @@ with the Bash runfiles library (`@rules_shell//shell/runfiles`), and running it 
 `/usr/bin/env`, `bash` and the utilities that library calls (`grep`, `sed`, `cut`, `tr`, `wc`,
 `awk`, `tail`, `uname`, `dirname`, `basename`); for a Windows target platform it is
 `<name>.exe`, a hermetic-launcher stub, which runs without Bash. The shell launcher works from a
-runfiles manifest without a runfiles tree, under `bazel run` and `bazel test`. The tests that run
-these targets pass on Linux (WSL) and, in CI, on the GitHub Actions images `ubuntu-24.04`,
-`macos-26-arm64` and `windows-2025-vs2026`; on Windows also with Bazel's shell set to a path that
-does not exist and no Bash directory on the `PATH`. `bazel run` and `bazel test` with
-`--noenable_runfiles` and no sandbox ran on Linux only.
+runfiles manifest without a runfiles tree, under `bazel run` and `bazel test`. Where these
+targets are tested is the Platforms paragraph of the `bun_binary` documentation.
 
 Rules that run Bun declare `BUN_TOOLCHAIN_TYPE` in `toolchains` and read the
 executable from `ctx.toolchains[BUN_TOOLCHAIN_TYPE].buninfo`, a `BunInfo`.

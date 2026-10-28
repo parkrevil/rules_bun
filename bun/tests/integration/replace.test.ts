@@ -110,3 +110,19 @@ test(
   },
   INNER_TIMEOUT,
 );
+
+test(
+  "an archive that is not visible to the generated repository fails with Bazel's visibility error (feature 005 FR-020)",
+  async () => {
+    // A package that exports its archive to itself only (bazel.build concepts/visibility).
+    bad.write("hidden/BUILD.bazel", 'exports_files(["a@1.0.0.tgz"], visibility = ["//hidden:__pkg__"])\n');
+    bad.write("hidden/a@1.0.0.tgz", A);
+    bad.write("MODULE.bazel", moduleFile([replacement("a@1.0.0", "//hidden:a@1.0.0.tgz"), replacement("b@1.0.0", "//archives:b@1.0.0.tgz")]));
+    const result = await bad.run(["build", "//s512:node_modules/a"]);
+    console.log(result.stderr.split("\n").find((line) => line.includes("visib")));
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("//hidden:a@1.0.0.tgz");
+    expect(result.stderr).toContain("target '//hidden:a@1.0.0.tgz' is not visible from");
+  },
+  INNER_TIMEOUT,
+);

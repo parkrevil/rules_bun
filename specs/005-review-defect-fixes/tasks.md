@@ -599,35 +599,35 @@ CI runner labels (FR-019–FR-022, research R9).
 
 ### Tests for User Story 9 (write first, see red)
 
-- [ ] T069 [P] [US9] Add a resolution-scope case: a subpackage `bun/tests/npm/fixtures/basic/sub/`
+- [X] T069 [P] [US9] Add a resolution-scope case: a subpackage `bun/tests/npm/fixtures/basic/sub/`
   with a `bun_test` whose source imports a package from `//bun/tests/npm/fixtures/basic:node_modules/<pkg>`
   (passes), and a sibling package `bun/tests/npm/fixtures/scope_sibling/` with a `bun_binary`
   depending on the same `:node_modules/<pkg>` plus a `bun_test` that spawns it (data dependency)
   and asserts a non-zero exit and Bun's `Cannot find package` text. Record red if the failing case
   passes unexpectedly; otherwise record it as a characterization of today's behavior
-- [ ] T069a [P] [US9] Add a Bazel-in-Bazel case (in `bun/tests/integration/toolchain_tags.test.ts`
+- [X] T069a [P] [US9] Add a Bazel-in-Bazel case (in `bun/tests/integration/toolchain_tags.test.ts`
   of T050, its own inner workspace) whose `MODULE.bazel` or a `.bzl` file loads `bun_toolchain`
   from `@rules_bun//bun:extensions.bzl`; assert evaluation fails with Bazel's error that the file
   does not contain `bun_toolchain`, and that loading `bun` and `npm` still works (FR-019,
   constitution II). Run it; record red (today the load succeeds)
-- [ ] T070 [P] [US9] In `bun/tests/integration/replace.test.ts` and `workspaces/replace/`, add a
+- [X] T070 [P] [US9] In `bun/tests/integration/replace.test.ts` and `workspaces/replace/`, add a
   case whose `replace_package` archive has no `exports_files(..., visibility =
   ["//visibility:public"])`; assert the build fails with Bazel's visibility error naming the
   archive label. Run `bazel test //bun/tests/integration:replace_test`; record the result
 
 ### Implementation for User Story 9
 
-- [ ] T071 [US9] In `bun/extensions.bzl`, remove the `bun_toolchain` export and keep `bun` and
+- [X] T071 [US9] In `bun/extensions.bzl`, remove the `bun_toolchain` export and keep `bun` and
   `npm` (the tag class stays in `bun/private/extensions.bzl`); `grep -rn bun_toolchain bun e2e`
   shows no public use. No migration message: no version is published (FR-019)
-- [ ] T072 [US9] In `bun/private/run.bzl` `_FILES_DOC`, replace "rules_bun does not provide react"
+- [X] T072 [US9] In `bun/private/run.bzl` `_FILES_DOC`, replace "rules_bun does not provide react"
   with "JSX needs the `react` package; a consumer gets it from its `bun.lock` through the `npm`
   extension (`:node_modules/react` in `deps`)"
-- [ ] T073 [US9] In `bun/private/npm_extension.bzl` `_NPM_DOC`, state: `:node_modules/<package>`
+- [X] T073 [US9] In `bun/private/npm_extension.bzl` `_NPM_DOC`, state: `:node_modules/<package>`
   resolves only for files in and below the package that calls `npm_link_all_packages` (as rules_js
   documents); a `replace_package` archive must be visible to the generated repository
   (`exports_files([...], visibility = ["//visibility:public"])`)
-- [ ] T074 [US9] Write the platform statement once in `bun/private/run.bzl` naming CI's runner
+- [X] T074 [US9] Write the platform statement once in `bun/private/run.bzl` naming CI's runner
   labels and jobs from `.github/workflows/ci.yaml`: root and `e2e/smoke` suites on
   `ubuntu-latest`, `macos-latest`, `windows-latest` (job `test`); `--noenable_runfiles` without a
   sandbox and coverage on `ubuntu-latest` (`manifest-only`, `coverage`); Windows without Bash, with
@@ -637,7 +637,7 @@ CI runner labels (FR-019–FR-022, research R9).
   `windows-2025-vs2026`) and "Linux (WSL) only"; make `bun/defs.bzl` and `_NPM_DOC` in
   `bun/private/npm_extension.bzl` reference it and say only what differs. Re-read `ci.yaml` first;
   if a job or label differs from this list, follow `ci.yaml`
-- [ ] T075 [US9] Run `bazel test //bun/tests/npm:all //bun/tests/integration:replace_test
+- [X] T075 [US9] Run `bazel test //bun/tests/npm:all //bun/tests/integration:replace_test
   //bun/tests/integration:toolchain_tags_test` (T069a's case green), `(cd e2e/smoke && bazel test //...)`;
   record green; commit as `docs: state only tested facts and export bun and npm only`
 

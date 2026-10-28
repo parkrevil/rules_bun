@@ -498,9 +498,17 @@ dependencies resolve to the same versions. Any other two fail analysis, naming t
 version, both hubs with their lockfiles and the first property that differs with both values, or
 else the dependency whose versions differ.
 
-Platforms: the tests of this extension and of the packages it creates ran on Linux (WSL) only;
-macOS and Windows are unverified until CI runs them. Evaluation of a 2,000-package lockfile took
-under 1 s there.
+Resolution: `:node_modules/<package>` is linked into the `node_modules` directory of the package
+that calls `npm_link_all_packages`, and Bun's `node_modules` lookup walks up from the importing
+file, so it resolves for files in and below that package only; a file elsewhere that imports it
+fails with Bun's module-not-found error, as rules_js documents for its links. A `replace_package`
+archive must be visible to the generated repository, which names its label:
+`exports_files(["<archive>.tgz"], visibility = ["//visibility:public"])`; otherwise the build fails
+with Bazel's visibility error.
+
+Platforms: the tests of this extension and of the packages it creates are part of the root suite,
+so they ran where the Platforms paragraph of `bun_binary` says; only what differs is stated here.
+`scale_test` evaluates a 2,000-package lockfile and asserts, on Linux, that it takes at most 10 s.
 """
 
 npm = module_extension(
