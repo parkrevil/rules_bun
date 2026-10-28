@@ -2,83 +2,34 @@
 
 Only `registry` and `@<scope>:registry` are read. A key that starts with `//` (a value scoped to
 one registry, such as `//host/:_authToken`) and the keys `_auth`, `_authToken`, `_password`,
-`username`, `certfile` and `keyfile` are skipped without being kept, and a registry URL holding
-user information (`https://user:token@host/`) is an error that does not echo it (FR-020):
-credentials come only from Bazel's downloader (`--credential_helper`, `.netrc`). Errors are returned
-as values.
+`username`, `certfile` and `keyfile` are skipped without being kept. A registry value must be an
+`http` or `https` URL without user information, and a key of the form `@<scope>:registry` must name
+an npm scope (lower-case URL-safe characters); an error prints neither a value nor such a key
+(FR-020), since credentials come only from Bazel's downloader (`--credential_helper`, `.netrc`).
+Errors are returned as values.
 """
+
+load(":urls.bzl", "has_credentials", "is_download_url")
 
 DEFAULT_REGISTRY = "https://registry.npmjs.org"
 
 _CREDENTIAL_KEYS = ["_auth", "_authToken", "_password", "username", "certfile", "keyfile"]
 
-def has_userinfo(url):
-    """Whether the authority of a URL (RFC 3986 section 3.2) holds user information.
+# The characters of an npm scope name (validate-npm-package-name: lower case and URL-safe).
+_SCOPE_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789-._~"
 
-    The authority is the text after `://` up to the first `/`, `?` or `#`; without `://` it is the
-    whole text up to the first of those. An empty user information (`https://@host/`) counts.
+def _scope_key(key):
+    """The scope an `@<scope>:registry` key names.
 
-    Args:
-        url: The URL.
-
-    Returns:
-        Whether the authority holds an `@`.
+    Returns `@<scope>`, `""` for a key of that shape whose scope is no npm scope name, and `None` for
+    any other key.
     """
-    return _userinfo(url) != None
-
-def _userinfo(url):
-    """The user information of a URL's authority, or `None` when it has none."""
-    authority = url.partition("://")[2] or url
-    for end in ["/", "?", "#"]:
-        authority = authority.partition(end)[0]
-    if "@" not in authority:
+    if not (key.startswith("@") and key.endswith(":registry")):
         return None
-    return authority.rpartition("@")[0]
-
-_SCHEME_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
-
-def scheme_of(text):
-    """The scheme of the URL in a text.
-
-    The scheme is the scheme characters directly before `://` (RFC 3986 section 3.1), so that a URL
-    after a package name (`g@git+ssh://...`) has the scheme `git+ssh`.
-
-    Args:
-        text: A URL, or a text holding one.
-
-    Returns:
-        The scheme in lower case, or `""` without `://`.
-    """
-    if "://" not in text:
+    scope = key[1:-len(":registry")]
+    if not scope or scope[0] in "._" or [c for c in scope.elems() if c not in _SCOPE_CHARS]:
         return ""
-    prefix = text.partition("://")[0]
-    start = len(prefix)
-    for i in range(len(prefix) - 1, -1, -1):
-        if prefix[i] not in _SCHEME_CHARS:
-            break
-        start = i
-    return prefix[start:].lower()
-
-def has_credentials(url):
-    """Whether a URL carries a secret in its user information (feature 005, P1).
-
-    Any user information of a URL that is not SSH may be a token or a password, so it counts. An
-    SSH URL (`ssh://`, `git+ssh://`) authenticates with keys: its user name, such as `git` in
-    `git+ssh://git@github.com/o/r.git`, is an identity, and only a password (`user:password@`)
-    counts.
-
-    Args:
-        url: The URL.
-
-    Returns:
-        Whether the URL carries a secret.
-    """
-    userinfo = _userinfo(url)
-    if userinfo == None:
-        return False
-    if scheme_of(url) in ("ssh", "git+ssh"):
-        return ":" in userinfo
-    return True
+    return "@" + scope
 
 def read_npmrc(text, file):
     """Reads the registry keys of an `.npmrc`.
@@ -102,15 +53,22 @@ def read_npmrc(text, file):
         if not separator or key.startswith("//") or key in _CREDENTIAL_KEYS:
             continue
         value = value.strip()
-        if (key == "registry" or (key.startswith("@") and key.endswith(":registry"))) and has_userinfo(value):
+        scope = _scope_key(key)
+        if scope == "":
+            # The key is not printed: it is not a scope key, and it may hold anything.
+            return struct(value = None, error = "{}: a key of the form @<scope>:registry names no npm scope (lower-case URL-safe characters); the key is not printed, and credentials in it belong in Bazel's downloader (--credential_helper or .netrc)".format(file))
+        if key != "registry" and scope == None:
+            continue
+
+        # From here the key is `registry` or a valid scope key; the value is never printed.
+        if has_credentials(value):
             return struct(value = None, error = "{}: the {} URL holds user information (credentials before an @); give credentials through Bazel's downloader (--credential_helper or .netrc) instead".format(file, key))
+        if not is_download_url(value):
+            return struct(value = None, error = "{}: the {} value is no http or https URL".format(file, key))
         if key == "registry":
             registry = value
-        elif key.startswith("@") and key.endswith(":registry"):
-            scopes[key[:-len(":registry")]] = value
-    for url in [registry] + scopes.values():
-        if url != None and not (url.startswith("https://") or url.startswith("http://")):
-            return struct(value = None, error = "{}: the registry {} is no http or https URL".format(file, url))
+        else:
+            scopes[scope] = value
     return struct(value = struct(registry = registry, scopes = scopes), error = None)
 
 def package_url(npmrc, name, version, url):

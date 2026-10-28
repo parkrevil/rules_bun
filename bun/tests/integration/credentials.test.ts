@@ -276,7 +276,44 @@ const USERINFO_CASES: UserinfoCase[] = [
     lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
     expected: ["//:package.json", 'a key at "overrides" is a URL that holds credentials'],
   },
+  {
+    // Feature 005: a download URL must be an http(s) URL without user information, so a
+    // schemeless value with credentials is rejected without being printed.
+    name: "(k) a download URL without a scheme",
+    manifest: { a: "1.0.0" },
+    lock: () => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${USER}:${TOKEN}@host/a/-/a-1.0.0.tgz", {}, ${A}],`),
+    expected: ["//:bun.lock", 'the packages entry "a" records a download URL that is no http or https URL without user information'],
+  },
+  {
+    // Feature 005: a key of the form @<scope>:registry whose scope is no npm scope name is
+    // rejected without being printed.
+    name: "(l) an .npmrc key that is no scope",
+    manifest: { a: "1.0.0" },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "", {}, ${A}],`),
+    npmrc: `@https://${USER}:${TOKEN}@host/:registry=http://127.0.0.1:1/\n`,
+    expected: ["//:.npmrc", "a key of the form @<scope>:registry names no npm scope"],
+  },
 ];
+
+// A package.json field the ruleset does not read is not checked (feature 005 P4): a description
+// holding "://" and an e-mail address evaluates.
+test(
+  "FR-002: text in a field the ruleset does not read is not taken for credentials",
+  async () => {
+    const session = evaluation();
+    const before = session.log.length;
+    session.write(
+      "package.json",
+      JSON.stringify({ name: "registries", private: true, description: "literal :// contact alice@example.com", dependencies: { a: "1.0.0" } }, null, 2),
+    );
+    session.write(".npmrc", "");
+    session.write("bun.lock", workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${session.registry.url}/a/-/a-1.0.0.tgz", {}, ${A}],`));
+    const result = await session.run(["query", "//:node_modules/a"]);
+    expect(result.exitCode, result.stderr).toBe(0);
+    assertOffline(session.log.slice(before));
+  },
+  INNER_TIMEOUT,
+);
 
 // An SSH user name is an identity, not a secret (feature 005, P1): a git+ssh entry such as
 // `git+ssh://git@github.com/o/r.git` is only unsupported, so the lockfile evaluates and only a
