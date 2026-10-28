@@ -1,6 +1,7 @@
 """Implementation of the `npm` module extension (FR-005, FR-008, FR-009, research R3)."""
 
-load(":lockfile.bzl", "DEPENDENCY_KINDS", "read_lockfile")
+load(":jsonc.bzl", "jsonc_decode")
+load(":lockfile.bzl", "read_lockfile")
 load(":npm_names.bzl", "bin_targets", "target_name")
 load(":npm_repositories.bzl", "npm_hub_repository", "npm_package_repository")
 load(":npmrc.bzl", "has_credentials", "package_url", "read_npmrc")
@@ -118,45 +119,44 @@ _LOCKB_REMEDY = ("run `bun install --save-text-lockfile --frozen-lockfile --lock
 
 _USERINFO_REMEDY = "give credentials through Bazel's downloader (--credential_helper or .netrc) instead"
 
-# Bounds the walk of nested dependency maps; Starlark has no unbounded loop.
-_MAX_MAPS = 1 << 20
+# Bounds the walk of a JSON document; Starlark has no unbounded loop.
+_MAX_NODES = 1 << 24
 
 def _url_with_credentials(text):
-    """Whether a specifier or resolution is a URL that carries credentials (`has_credentials`)."""
+    """Whether a string is a URL, or holds one, that carries credentials (`has_credentials`)."""
     return type(text) == "string" and "://" in text and has_credentials(text)
 
-def _check_lockfile_urls(file, lockfile):
-    """Fails naming the first entry whose URL holds credentials (FR-002, research R2).
+def _path_text(path):
+    return " ".join(path) if path else "the top level"
 
-    The URL is slot 1 of an npm entry and the resolution of slot 0 of any other entry. Neither the
-    URL nor slot 0 is printed; the key is a package path.
-    """
-    for key in sorted(lockfile.entries.keys()):
-        entry = lockfile.entries[key]
-        url = entry.url if entry.kind == "npm" else entry.resolution
-        if (entry.kind == "npm" and has_credentials(url)) or _url_with_credentials(url):
-            fail('rules_bun: {}: the packages entry "{}" records a URL that holds credentials (user information other than an SSH user name); {}'.format(file, key, _USERINFO_REMEDY))
+def check_credentials(file, value):
+    """Fails when any key or string value of a decoded JSON document carries credentials (FR-002).
 
-def _check_specs(file, maps):
-    """Fails naming the first dependency whose specifier is a URL holding user information (FR-002).
+    Every string of the document is checked as written, before anything parses it, so no reader,
+    repository attribute or diagnostic sees a credential (feature 005 P1). The error names the
+    file and where the string is, by the keys and indexes above it; a key that itself carries
+    credentials is named "a key", and neither the key nor the URL is printed.
 
     Args:
-        file: The file the maps come from, for the error.
-        maps: Dependency name -> specifier maps; a value that is itself a map (nested overrides,
-            named catalogs) is walked too.
+        file: The file the document comes from, for the error.
+        value: The decoded document.
     """
-    work = [m for m in maps if type(m) == "dict"]
-    for _ in range(_MAX_MAPS):
+    work = [(value, [])]
+    for _ in range(_MAX_NODES):
         if not work:
             return
-        current = work.pop(0)
-        for name in sorted(current.keys()):
-            value = current[name]
-            if type(value) == "dict":
-                work.append(value)
-            elif _url_with_credentials(value):
-                fail('rules_bun: {}: the dependency "{}" is a URL that holds credentials (user information other than an SSH user name); {}'.format(file, name, _USERINFO_REMEDY))
-    fail("rules_bun: {} nests more than {} dependency maps".format(file, _MAX_MAPS))
+        current, path = work.pop()
+        if type(current) == "dict":
+            for key in sorted(current.keys()):
+                if _url_with_credentials(key):
+                    fail("rules_bun: {}: a key at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY))
+                work.append((current[key], path + [json.encode(key)]))
+        elif type(current) == "list":
+            for index in range(len(current)):
+                work.append((current[index], path + ["[{}]".format(index)]))
+        elif _url_with_credentials(current):
+            fail("rules_bun: {}: the value at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY))
+    fail("rules_bun: {} holds more than {} JSON values".format(file, _MAX_NODES))
 
 def _read_json(module_ctx, path, file):
     if not path.exists:
@@ -164,7 +164,9 @@ def _read_json(module_ctx, path, file):
     text = module_ctx.read(path)
     if not text.strip():
         fail("rules_bun: {} is empty".format(file))
-    return json.decode(text)
+    value = json.decode(text)
+    check_credentials(file, value)
+    return value
 
 def _descend(path, relative):
     for part in relative.split("/") if relative else []:
@@ -218,17 +220,15 @@ def _translate(module_ctx, tag, replacements):
     path = module_ctx.path(tag.bun_lock)
     if not path.exists and path.dirname.get_child(tag.bun_lock.name + "b").exists:
         fail("rules_bun: {} does not exist, only Bun's binary lockfile bun.lockb, which rules_bun does not read; {}".format(file, _LOCKB_REMEDY))
-    lockfile = read_lockfile(module_ctx.read(tag.bun_lock), file)
+    text = module_ctx.read(tag.bun_lock)
+
+    # Every string as written, before the reader parses or prints any of it (research R2).
+    decoded = jsonc_decode(text, file)
+    if decoded.error == None:
+        check_credentials(file, decoded.value)
+    lockfile = read_lockfile(text, file)
     if lockfile.error:
         fail(lockfile.error)
-
-    # Before any check that prints a URL or a specifier (research R2).
-    _check_lockfile_urls(file, lockfile.value)
-    _check_specs(file, [getattr(w, kind) for w in lockfile.value.workspaces.values() for kind in DEPENDENCY_KINDS] + [
-        lockfile.value.overrides,
-        lockfile.value.catalog,
-        lockfile.value.catalogs,
-    ])
     npmrc = None
     if tag.npmrc:
         npmrc = read_npmrc(module_ctx.read(tag.npmrc), str(tag.npmrc))
@@ -236,11 +236,6 @@ def _translate(module_ctx, tag, replacements):
             fail("rules_bun: " + npmrc.error)
         npmrc = npmrc.value
     manifests = _manifests(module_ctx, tag, lockfile.value)
-    for path in sorted(manifests.keys()):
-        value = manifests[path].value
-        _check_specs(manifests[path].file, [value.get(kind) for kind in DEPENDENCY_KINDS + ["overrides", "resolutions", "catalog", "catalogs"]] + [
-            value.get("workspaces"),
-        ])
     _members(module_ctx, tag, manifests[""].file, manifests[""].value, lockfile.value)
     comparison = compare_manifests(lockfile.value, manifests)
     if comparison.error:

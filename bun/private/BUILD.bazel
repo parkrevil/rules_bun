@@ -9,6 +9,7 @@ bzl_library(
         ":platforms",
         ":repositories",
         ":semver",
+        ":sri",
     ],
 )
 
@@ -77,6 +78,7 @@ bzl_library(
     name = "npm_extension",
     srcs = ["npm_extension.bzl"],
     deps = [
+        ":jsonc",
         ":lockfile",
         ":npm_names",
         ":npm_repositories",
@@ -161,6 +163,11 @@ bzl_library(
 bzl_library(
     name = "semver",
     srcs = ["semver.bzl"],
+)
+
+bzl_library(
+    name = "sri",
+    srcs = ["sri.bzl"],
 )
 
 bzl_library(

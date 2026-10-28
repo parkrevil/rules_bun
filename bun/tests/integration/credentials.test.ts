@@ -187,6 +187,8 @@ ${packages}
 interface UserinfoCase {
   name: string;
   manifest: Record<string, string>;
+  /** Fields of the root package.json besides dependencies. */
+  extra?: Record<string, unknown>;
   lock: (registry: string) => string;
   npmrc?: string;
   expected: string[];
@@ -204,20 +206,20 @@ const USERINFO_CASES: UserinfoCase[] = [
         `    "a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, ${A}],
     "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", {}, ${B}],`,
       ),
-    expected: ["//:bun.lock", 'the packages entry "a" records a URL that holds credentials'],
+    expected: ["//:bun.lock", 'the value at "packages" "a" [1] is a URL that holds credentials'],
   },
   {
     name: "(b) a tarball entry's resolution",
     manifest: { t: "http://127.0.0.1:1/t.tgz" },
     lock: (r) => workspaceLock({ t: "http://127.0.0.1:1/t.tgz" }, `    "t": ["t@${withUser(r)}/t.tgz", {}],`),
-    expected: ["//:bun.lock", 'the packages entry "t" records a URL that holds credentials'],
+    expected: ["//:bun.lock", 'the value at "packages" "t" [0] is a URL that holds credentials'],
   },
   {
     name: "(c) a git+https entry's resolution",
     manifest: { g: "git+https://host/r.git" },
     lock: () =>
       workspaceLock({ g: "git+https://host/r.git" }, `    "g": ["g@git+https://${USER}:${TOKEN}@host/r.git#abc", {}, "abc"],`),
-    expected: ["//:bun.lock", 'the packages entry "g" records a URL that holds credentials'],
+    expected: ["//:bun.lock", 'the value at "packages" "g" [0] is a URL that holds credentials'],
   },
   {
     name: "(d) one of two entries of a package version with different URLs",
@@ -229,7 +231,7 @@ const USERINFO_CASES: UserinfoCase[] = [
     "b": ["b@1.0.0", "${r}/b/-/b-1.0.0.tgz", { "dependencies": { "a": "1.0.0" } }, ${B}],
     "b/a": ["a@1.0.0", "${withUser(r)}/a/-/a-1.0.0.tgz", {}, ${A}],`,
       ),
-    expected: ["//:bun.lock", 'the packages entry "b/a" records a URL that holds credentials'],
+    expected: ["//:bun.lock", 'the value at "packages" "b/a" [1] is a URL that holds credentials'],
   },
   {
     name: "(e) an .npmrc registry",
@@ -249,14 +251,30 @@ const USERINFO_CASES: UserinfoCase[] = [
     name: "(g) a dependency spec of a workspace package.json",
     manifest: { a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` },
     lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
-    expected: ["//:package.json", 'the dependency "p" is a URL that holds credentials'],
+    expected: ["//:package.json", 'the value at "dependencies" "p" is a URL that holds credentials'],
   },
   {
     name: "(h) a dependency spec of bun.lock workspaces",
     manifest: { a: "1.0.0" },
     lock: (r) =>
       workspaceLock({ a: "1.0.0", p: `https://${USER}:${TOKEN}@host/p.tgz` }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
-    expected: ["//:bun.lock", 'the dependency "p" is a URL that holds credentials'],
+    expected: ["//:bun.lock", 'the value at "workspaces" "" "dependencies" "p" is a URL that holds credentials'],
+  },
+  {
+    // Feature 005 final review: checked as written, before the entry is parsed.
+    name: "(i) a slot 0 that is a URL with credentials",
+    manifest: { a: "1.0.0" },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],
+    "x": ["https://${USER}:${TOKEN}@host/a.tgz", {}],`),
+    expected: ["//:bun.lock", 'the value at "packages" "x" [0] is a URL that holds credentials'],
+  },
+  {
+    // Feature 005 final review: a key holding credentials is neither accepted nor printed.
+    name: "(j) an override selector holding credentials",
+    manifest: { a: "1.0.0" },
+    extra: { overrides: { [`a@https://${USER}:${TOKEN}@host/a.tgz`]: "1.0.0" } },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
+    expected: ["//:package.json", 'a key at "overrides" is a URL that holds credentials'],
   },
 ];
 
@@ -294,7 +312,7 @@ for (const c of USERINFO_CASES) {
     async () => {
       const session = evaluation();
       const before = session.log.length;
-      session.write("package.json", JSON.stringify({ name: "registries", private: true, dependencies: c.manifest }, null, 2));
+      session.write("package.json", JSON.stringify({ name: "registries", private: true, dependencies: c.manifest, ...c.extra }, null, 2));
       session.write(".npmrc", c.npmrc ?? "");
       session.write("bun.lock", c.lock(session.registry.url));
       const result = await session.run(["build", "//..."]);
