@@ -249,13 +249,13 @@ keep glibc (FR-005, research R5, data-model "Platform table", "Known version").
 
 ### Tests for User Story 4 (write first, see red)
 
-- [ ] T025 [P] [US4] In `bun/tests/platforms/BUILD.bazel`, add `linux_aarch64_glibc` and
+- [X] T025 [P] [US4] In `bun/tests/platforms/BUILD.bazel`, add `linux_aarch64_glibc` and
   `linux_aarch64_musl` platforms modeled on `linux_x64_glibc` and `linux_x64_musl`
-- [ ] T026 [P] [US4] In `bun/tests/versions_test.bzl`, assert that every version in
+- [X] T026 [P] [US4] In `bun/tests/versions_test.bzl`, assert that every version in
   `TOOL_VERSIONS` has exactly the keys `linux-x64`, `linux-aarch64`, `linux-x64-musl`,
   `linux-aarch64-musl`, `darwin-x64`, `darwin-aarch64`, `windows-x64` (data-model invariant);
   run `bazel test //bun/tests:versions`; record red
-- [ ] T027 [US4] In `bun/tests/toolchain_test.bzl` (execution toolchain) and
+- [X] T027 [US4] In `bun/tests/toolchain_test.bzl` (execution toolchain) and
   `bun/tests/target_toolchain_test.bzl` (target toolchain), add cases: `linux_x64_musl` →
   `bun_linux-x64-musl`, `linux_aarch64_musl` → `bun_linux-aarch64-musl`, `linux_x64_glibc` and
   `linux_x64` → `bun_linux-x64`, `linux_aarch64_glibc` and `linux_aarch64` →
@@ -264,28 +264,28 @@ keep glibc (FR-005, research R5, data-model "Platform table", "Known version").
 
 ### Implementation for User Story 4
 
-- [ ] T028 [US4] In `bun/private/versions.bzl`, add for `1.4.2`: `"linux-x64-musl":
+- [X] T028 [US4] In `bun/private/versions.bzl`, add for `1.4.2`: `"linux-x64-musl":
   "sha256-SDXspZ1tpw9GdPVkL25Fncrat3NpWy7Zki0TEFeYl0I="`, `"linux-aarch64-musl":
   "sha256-cXYLbI6jBiO4GkkHy4FdSOLqJm8uc+dRU0pEoGB5UN8="`; for `1.4.4`: `"linux-x64-musl":
   "sha256-pajMxedNy4g/6XTxJae9s7QeUZXtG4cOc/F+/9PrKy0="`, `"linux-aarch64-musl":
   "sha256-V/AbAqxxE8Yck18o84wuq4SePJcNqyH4tkCoex72UAk="` (research E1, re-verified in T004)
-- [ ] T029 [US4] In `bun/private/platforms.bzl`, add `linux-x64-musl` (linux, x64, musl) and
+- [X] T029 [US4] In `bun/private/platforms.bzl`, add `linux-x64-musl` (linux, x64, musl) and
   `linux-aarch64-musl` (linux, arm64, musl) to `BUN_ARCHIVES`, and make
   `archive_constraint_sets` return `[os, cpu, :glibc]` and `[os, cpu, :unconstrained]` for a
   glibc archive, `[os, cpu, :musl]` for a musl archive, `[os, cpu]` otherwise
-- [ ] T030 [US4] In `bun/private/toolchains_repo.bzl`, declare one execution and one target
+- [X] T030 [US4] In `bun/private/toolchains_repo.bzl`, declare one execution and one target
   `toolchain()` per constraint set, named `<archive>_toolchain` / `<archive>_target_toolchain` for
   non-Linux and musl archives and `<archive>_<libc>_toolchain` / `<archive>_<libc>_target_toolchain`
   (`libc` `glibc` or `unconstrained`) for glibc archives (research R5)
-- [ ] T031 [US4] In `bun/private/repositories.bzl`, update the `_ATTRS.platform` doc to list the
+- [X] T031 [US4] In `bun/private/repositories.bzl`, update the `_ATTRS.platform` doc to list the
   seven values and state that a musl archive serves `@rules_bun//bun/platforms/libc:musl`;
   `bun_register_toolchains` creates `<name>_linux-x64-musl` and `<name>_linux-aarch64-musl`
   (contracts/public-api.md). Add both repositories to the `use_repo(bun_dev, ...)` call in
   `MODULE.bazel`
-- [ ] T032 [P] [US4] In `bun/platforms/libc/BUILD.bazel`, extend the comment: the libc
+- [X] T032 [P] [US4] In `bun/platforms/libc/BUILD.bazel`, extend the comment: the libc
   constraint also selects the Bun archive (musl for `:musl`, glibc for `:glibc` and
   `:unconstrained`)
-- [ ] T033 [US4] Run `bazel test //bun/tests:selection //bun/tests:target_selection
+- [X] T033 [US4] Run `bazel test //bun/tests:selection //bun/tests:target_selection
   //bun/tests:versions`, then `bazel fetch @bun_linux-x64-musl//... @bun_linux-aarch64-musl//...`
   (both verify the integrity; on a mismatch stop and report); record green and the fetch output;
   run `bazel test //...`; commit as `feat: select the musl Bun for musl platforms`

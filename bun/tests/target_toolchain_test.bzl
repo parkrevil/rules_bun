@@ -24,7 +24,11 @@ _EXPECTED_BUN = {
     "darwin_aarch64": Label("@bun_darwin-aarch64//:bun"),
     "darwin_x64": Label("@bun_darwin-x64//:bun"),
     "linux_aarch64": Label("@bun_linux-aarch64//:bun"),
+    "linux_aarch64_glibc": Label("@bun_linux-aarch64//:bun"),
+    "linux_aarch64_musl": Label("@bun_linux-aarch64-musl//:bun"),
     "linux_x64": Label("@bun_linux-x64//:bun"),
+    "linux_x64_glibc": Label("@bun_linux-x64//:bun"),
+    "linux_x64_musl": Label("@bun_linux-x64-musl//:bun"),
     "windows_x64": Label("@bun_windows-x64//:bun.exe"),
 }
 
@@ -56,14 +60,22 @@ def _target_selection_test(platform):
 target_selection_darwin_aarch64_test = _target_selection_test("darwin_aarch64")
 target_selection_darwin_x64_test = _target_selection_test("darwin_x64")
 target_selection_linux_aarch64_test = _target_selection_test("linux_aarch64")
+target_selection_linux_aarch64_glibc_test = _target_selection_test("linux_aarch64_glibc")
+target_selection_linux_aarch64_musl_test = _target_selection_test("linux_aarch64_musl")
 target_selection_linux_x64_test = _target_selection_test("linux_x64")
+target_selection_linux_x64_glibc_test = _target_selection_test("linux_x64_glibc")
+target_selection_linux_x64_musl_test = _target_selection_test("linux_x64_musl")
 target_selection_windows_x64_test = _target_selection_test("windows_x64")
 
 _TARGET_SELECTION_TESTS = {
     "darwin_aarch64": target_selection_darwin_aarch64_test,
     "darwin_x64": target_selection_darwin_x64_test,
     "linux_aarch64": target_selection_linux_aarch64_test,
+    "linux_aarch64_glibc": target_selection_linux_aarch64_glibc_test,
+    "linux_aarch64_musl": target_selection_linux_aarch64_musl_test,
     "linux_x64": target_selection_linux_x64_test,
+    "linux_x64_glibc": target_selection_linux_x64_glibc_test,
+    "linux_x64_musl": target_selection_linux_x64_musl_test,
     "windows_x64": target_selection_windows_x64_test,
 }
 
@@ -143,7 +155,8 @@ def target_cfg_test_suite(name):
 def _bun_owners(files):
     """Returns the labels of the Bun releases among `files`."""
     owners = [f.owner for f in files]
-    return [label for label in _EXPECTED_BUN.values() if label in owners]
+    releases = {label: None for label in _EXPECTED_BUN.values()}.keys()
+    return [label for label in releases if label in owners]
 
 def _rule_platform_test_impl(ctx):
     env = analysistest.begin(ctx)

@@ -1,7 +1,9 @@
 # The C library of a Linux target platform, for npm packages that declare `libc` (research R11 of
 # specs/004-bun-1-4-4-upgrade). Laid out as rules_js's public @aspect_rules_js//platforms/libc,
 # because @platforms has no libc constraint. A platform without it is `unconstrained`: every libc
-# variant of a package is linked there.
+# variant of a package is linked there. The constraint also selects the Bun release archive
+# (specs/005-review-defect-fixes research R5): the musl Bun for `:musl`, the glibc Bun for `:glibc`
+# and `:unconstrained`.
 
 constraint_setting(
     name = "libc",
