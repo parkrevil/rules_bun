@@ -13,7 +13,10 @@ _ATTRS = {
         doc = "Subresource Integrity of the release archive. Defaults to the value rules_bun knows for `bun_version`.",
     ),
     "platform": attr.string(
-        doc = "Platform of the release archive, such as `linux-x64`.",
+        doc = """Platform of the release archive: `linux-x64`, `linux-aarch64`, `linux-x64-musl`,
+`linux-aarch64-musl`, `darwin-x64`, `darwin-aarch64` or `windows-x64`. A musl archive serves Linux
+platforms with `@rules_bun//bun/platforms/libc:musl`; the other Linux archives serve `:glibc` and
+platforms without the libc constraint.""",
         mandatory = True,
         values = sorted(BUN_ARCHIVES),
     ),
@@ -87,8 +90,9 @@ bun_repositories = repository_rule(
 def bun_register_toolchains(name, integrity = {}, **kwargs):
     """Creates Bun repositories for every supported platform and a repository of toolchains.
 
-    Creates `<name>_<platform>` for each platform and `<name>_toolchains`,
-    whose `:all` target can be passed to `register_toolchains`.
+    Creates `<name>_<platform>` for each platform (`linux-x64`, `linux-aarch64`,
+    `linux-x64-musl`, `linux-aarch64-musl`, `darwin-x64`, `darwin-aarch64`, `windows-x64`) and
+    `<name>_toolchains`, whose `:all` target can be passed to `register_toolchains`.
 
     Args:
         name: Base name of the generated repositories.

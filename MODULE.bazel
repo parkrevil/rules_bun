@@ -18,7 +18,7 @@ bazel_dep(name = "gazelle", version = "0.54.0", dev_dependency = True, repo_name
 
 bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
 bun_dev.toolchain(bun_version = "1.4.4")
-use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-x64", "bun_toolchains", "bun_windows-x64")
+use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-aarch64-musl", "bun_linux-x64", "bun_linux-x64-musl", "bun_toolchains", "bun_windows-x64")
 
 register_toolchains(
     "@bun_toolchains//:all",
@@ -623,10 +623,24 @@ http_file(
 )
 
 http_file(
+    name = "integration_bun-linux-aarch64-musl.zip",
+    dev_dependency = True,
+    integrity = "sha256-V/AbAqxxE8Yck18o84wuq4SePJcNqyH4tkCoex72UAk=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-aarch64-musl.zip"],
+)
+
+http_file(
     name = "integration_bun-linux-aarch64.zip",
     dev_dependency = True,
     integrity = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=",
     urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-aarch64.zip"],
+)
+
+http_file(
+    name = "integration_bun-linux-x64-musl.zip",
+    dev_dependency = True,
+    integrity = "sha256-pajMxedNy4g/6XTxJae9s7QeUZXtG4cOc/F+/9PrKy0=",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-linux-x64-musl.zip"],
 )
 
 http_file(

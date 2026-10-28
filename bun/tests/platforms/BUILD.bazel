@@ -61,6 +61,24 @@ platform(
     ],
 )
 
+platform(
+    name = "linux_aarch64_glibc",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "//bun/platforms/libc:glibc",
+    ],
+)
+
+platform(
+    name = "linux_aarch64_musl",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+        "//bun/platforms/libc:musl",
+    ],
+)
+
 # An optional package whose os is aix is selected here (T128).
 platform(
     name = "aix_x64",

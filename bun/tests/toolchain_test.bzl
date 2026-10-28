@@ -23,7 +23,11 @@ _EXPECTED_BUN = {
     "darwin_aarch64": Label("@bun_darwin-aarch64//:bun"),
     "darwin_x64": Label("@bun_darwin-x64//:bun"),
     "linux_aarch64": Label("@bun_linux-aarch64//:bun"),
+    "linux_aarch64_glibc": Label("@bun_linux-aarch64//:bun"),
+    "linux_aarch64_musl": Label("@bun_linux-aarch64-musl//:bun"),
     "linux_x64": Label("@bun_linux-x64//:bun"),
+    "linux_x64_glibc": Label("@bun_linux-x64//:bun"),
+    "linux_x64_musl": Label("@bun_linux-x64-musl//:bun"),
     "windows_x64": Label("@bun_windows-x64//:bun.exe"),
 }
 
@@ -54,14 +58,22 @@ def _selection_test(platform):
 selection_darwin_aarch64_test = _selection_test("darwin_aarch64")
 selection_darwin_x64_test = _selection_test("darwin_x64")
 selection_linux_aarch64_test = _selection_test("linux_aarch64")
+selection_linux_aarch64_glibc_test = _selection_test("linux_aarch64_glibc")
+selection_linux_aarch64_musl_test = _selection_test("linux_aarch64_musl")
 selection_linux_x64_test = _selection_test("linux_x64")
+selection_linux_x64_glibc_test = _selection_test("linux_x64_glibc")
+selection_linux_x64_musl_test = _selection_test("linux_x64_musl")
 selection_windows_x64_test = _selection_test("windows_x64")
 
 _SELECTION_TESTS = {
     "darwin_aarch64": selection_darwin_aarch64_test,
     "darwin_x64": selection_darwin_x64_test,
     "linux_aarch64": selection_linux_aarch64_test,
+    "linux_aarch64_glibc": selection_linux_aarch64_glibc_test,
+    "linux_aarch64_musl": selection_linux_aarch64_musl_test,
     "linux_x64": selection_linux_x64_test,
+    "linux_x64_glibc": selection_linux_x64_glibc_test,
+    "linux_x64_musl": selection_linux_x64_musl_test,
     "windows_x64": selection_windows_x64_test,
 }
 

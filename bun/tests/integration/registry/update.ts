@@ -33,7 +33,7 @@ const END = "# END integration archives";
 const BAZEL_VERSION = "9.2.0";
 // The Bun version the nested workspaces request.
 const BUN_VERSION = "1.4.4";
-const BUN_PLATFORMS = ["linux-x64", "linux-aarch64", "darwin-x64", "darwin-aarch64", "windows-x64"];
+const BUN_PLATFORMS = ["linux-x64", "linux-aarch64", "linux-x64-musl", "linux-aarch64-musl", "darwin-x64", "darwin-aarch64", "windows-x64"];
 const BAZEL_PLATFORMS = ["linux-x86_64", "linux-arm64", "darwin-x86_64", "darwin-arm64", "windows-x86_64"];
 const BCR = "https://bcr.bazel.build";
 
