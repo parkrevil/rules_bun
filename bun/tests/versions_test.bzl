@@ -1,7 +1,7 @@
 """Unit tests for `//bun/private:versions.bzl`."""
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//bun/private:toolchains_repo.bzl", "PLATFORMS")
+load("//bun/private:platforms.bzl", "BUN_ARCHIVES")
 load("//bun/private:versions.bzl", "TOOL_VERSIONS")
 
 def _platforms_test_impl(ctx):
@@ -10,7 +10,7 @@ def _platforms_test_impl(ctx):
     for version, integrity in TOOL_VERSIONS.items():
         asserts.equals(
             env,
-            sorted(PLATFORMS.keys()),
+            sorted(BUN_ARCHIVES),
             sorted(integrity.keys()),
             "The integrity entries of Bun {} do not match the supported platforms exactly".format(version),
         )

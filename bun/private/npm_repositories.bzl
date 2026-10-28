@@ -7,6 +7,7 @@ workspace package it is called in.
 """
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "read_user_netrc", "use_netrc")
+load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS")
 
 _NPM_PACKAGE_BZL = str(Label("//bun/private:npm_package.bzl"))
 
@@ -189,27 +190,6 @@ npm_package_repository = repository_rule(
     },
 )
 
-# npm `os` and `cpu` values -> `@platforms` constraint names (research R8; @platforms 1.1.0
-# `os/BUILD` and `cpu/BUILD`). A value not listed, such as `sunos`, matches no Bazel platform.
-_OS = {
-    "aix": "aix",
-    "android": "android",
-    "darwin": "macos",
-    "freebsd": "freebsd",
-    "linux": "linux",
-    "netbsd": "netbsd",
-    "openbsd": "openbsd",
-    "win32": "windows",
-}
-_CPU = {
-    "arm": "arm",
-    "arm64": "aarch64",
-    "ia32": "x86_32",
-    "riscv64": "riscv64",
-    "s390x": "s390x",
-    "x64": "x86_64",
-}
-
 def _matches(values, actual):
     """npm's `os`/`cpu` rule: a listed value must match, a `!` value must not; `actual` may be `None`."""
     if not values:
@@ -218,12 +198,6 @@ def _matches(values, actual):
         return False
     positives = [v for v in values if not v.startswith("!")]
     return actual in positives if positives else True
-
-# npm `libc` values -> constraint values of //bun/platforms/libc (feature 004 research R11).
-_LIBC = {
-    "glibc": str(Label("//bun/platforms/libc:glibc")),
-    "musl": str(Label("//bun/platforms/libc:musl")),
-}
 
 def libc_matches(values, os, libc):
     """npm's `libc` rule (npm-install-checks `checkPlatform`) for a target's npm `os` and `libc`.
@@ -261,14 +235,14 @@ def _settings():
     One per OS and per OS and CPU, and for Linux also each of those with a libc.
     """
     settings = {}
-    for os, os_constraint in _OS.items():
+    for os, os_constraint in NPM_OS.items():
         os_label = "@platforms//os:" + os_constraint
-        libcs = [(None, None)] + (sorted(_LIBC.items()) if os == "linux" else [])
+        libcs = [(None, None)] + (sorted(NPM_LIBC.items()) if os == "linux" else [])
         for libc, libc_label in libcs:
             libc_suffix = "__libc_" + libc if libc else ""
             libc_labels = [libc_label] if libc else []
             settings["_os_" + os_constraint + libc_suffix] = (os, None, libc, [os_label] + libc_labels)
-            for cpu, cpu_constraint in _CPU.items():
+            for cpu, cpu_constraint in NPM_CPU.items():
                 settings["_os_{}__cpu_{}{}".format(os_constraint, cpu_constraint, libc_suffix)] = (
                     os,
                     cpu,

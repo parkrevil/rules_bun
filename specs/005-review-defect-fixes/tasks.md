@@ -49,25 +49,25 @@ relative to the repository root.
 
 **Purpose**: Branch, user decisions, evidence the plan rests on, a green baseline.
 
-- [ ] T001 Confirm `git branch --show-current` prints `005-review-defect-fixes`, `git merge-base
+- [X] T001 Confirm `git branch --show-current` prints `005-review-defect-fixes`, `git merge-base
   HEAD main` is `aca8c13`, and `git status --short` shows only `specs/005-review-defect-fixes/`;
   commit that directory as `docs: specify feature 005, the ruleset's design principles` (plan
   step 1)
-- [ ] T002 Check that research Part 5 records the user's approval of D1 (every generated bin target
+- [X] T002 Check that research Part 5 records the user's approval of D1 (every generated bin target
   `manual`), D2 (FR-007 and SC-007 read as "no hermetic-launcher stub repository is fetched") and
   D3 (C1 stays Windows-compatible unless the PR's Windows jobs cannot create a link), given at the
   plan gate on 2026-10-28. T041 (D1), T063–T068 (D2) and T087 (D3) depend on it
-- [ ] T003 [P] Create `specs/005-review-defect-fixes/tdd-log.md` with a title, one paragraph
+- [X] T003 [P] Create `specs/005-review-defect-fixes/tdd-log.md` with a title, one paragraph
   stating FR-023, and a table with the columns `Task`, `Target`, `Command`, `Platform`, `Result`,
   `Excerpt`
-- [ ] T004 [P] Re-verify research E1: in a new empty `/tmp/bun005-shasums-1.4.2/` and
+- [X] T004 [P] Re-verify research E1: in a new empty `/tmp/bun005-shasums-1.4.2/` and
   `/tmp/bun005-shasums-1.4.4/`, download only `SHASUMS256.txt` of `bun-v1.4.2` and `bun-v1.4.4`
   (`gh release download bun-v<v> -R oven-sh/bun -p SHASUMS256.txt`); for the lines of
   `bun-linux-x64-musl.zip`, `bun-linux-aarch64-musl.zip` and `bun-linux-x64.zip` compute
   `echo -n <hex> | xxd -r -p | base64`; confirm the musl values equal research E1 and the
   `linux-x64` values equal those in `bun/private/versions.bzl`. On any difference or missing line,
   stop and report
-- [ ] T005 [P] Baseline: run `bazel test //...` in the root and in `e2e/smoke/` and record the
+- [X] T005 [P] Baseline: run `bazel test //...` in the root and in `e2e/smoke/` and record the
   result in `tdd-log.md` as the baseline; if anything fails, stop and report (AGENTS.md: do not
   widen the task)
 
@@ -80,7 +80,7 @@ change one place.
 
 **⚠️ CRITICAL**: US4 and US6 cannot start until this phase is complete.
 
-- [ ] T006 Create `bun/private/platforms.bzl` holding: `NPM_OS` and `NPM_CPU` moved verbatim from
+- [X] T006 Create `bun/private/platforms.bzl` holding: `NPM_OS` and `NPM_CPU` moved verbatim from
   `bun/private/npm_repositories.bzl` (npm `os` → `@platforms//os:<v>`: aix, android,
   darwin→macos, freebsd, linux, netbsd, openbsd, win32→windows; npm `cpu` →
   `@platforms//cpu:<v>`: arm, arm64→aarch64, ia32→x86_32, riscv64, s390x, x64→x86_64);
@@ -89,15 +89,15 @@ change one place.
   `linux-aarch64` linux/arm64/glibc, `darwin-x64`, `darwin-aarch64`, `windows-x64` with
   `libc = None`); and `archive_constraint_sets(archive)` returning, for now, today's single
   `[os, cpu]` constraint list per archive. Module docstring names research R5
-- [ ] T007 In `bun/private/npm_repositories.bzl`, load `NPM_OS`, `NPM_CPU`, `NPM_LIBC` from
+- [X] T007 In `bun/private/npm_repositories.bzl`, load `NPM_OS`, `NPM_CPU`, `NPM_LIBC` from
   `//bun/private:platforms.bzl`, delete the local copies, and derive `_settings` and the hub's
   `config_setting`s from them (same names, same constraints)
-- [ ] T008 In `bun/private/toolchains_repo.bzl` and `bun/private/repositories.bzl`, derive the
+- [X] T008 In `bun/private/toolchains_repo.bzl` and `bun/private/repositories.bzl`, derive the
   platform list and each toolchain's constraints from `BUN_ARCHIVES` and
   `archive_constraint_sets`; `_ATTRS.platform` `values` becomes `sorted(BUN_ARCHIVES)`. The
   generated `@<name>_toolchains` BUILD file must be byte-identical to today's (compare
   `cat $(bazel info output_base)/external/+bun+bun_toolchains/BUILD.bazel` before and after)
-- [ ] T009 Run `bazel run //:gazelle` (adds the `bzl_library` for `platforms.bzl` in
+- [X] T009 Run `bazel run //:gazelle` (adds the `bzl_library` for `platforms.bzl` in
   `bun/private/BUILD.bazel`), then `bazel test //bun/tests:all //bun/tests/npm:all`; all pass
   unchanged. Commit as `refactor: derive platforms from one table`
 
