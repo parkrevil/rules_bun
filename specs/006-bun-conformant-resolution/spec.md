@@ -327,6 +327,10 @@ conformance test excludes:
 - **ID-2 Selection by target platform**: platform-specific optional packages are selected for the
   Bazel target platform, not the host; the conformance test therefore compares only with target
   equal to host.
+- **ID-3 No hoisting**: `node_modules/.bun/node_modules` and the root `node_modules` fallback, through
+  which Bun lets a store package import what it does not declare, are not reproduced; the ruleset
+  links only declared dependencies, as Bazel's declared dependencies require. The compared graph is
+  FR-008's (user, 2026-10-29, plan gate D1).
 
 ### Behavior Changes
 
@@ -341,6 +345,15 @@ the test that shows it:
   the build; it is not linked.
 - **BC-4**: a registry package's dependency on a workspace member is linked to that member.
 - **BC-5**: a peer nothing provides no longer fails the build; it is not linked.
+- **BC-6**: one package per `name@version`: two keys holding one `name@version` are one package,
+  whose dependencies are bound once, as Bun's row evidence decides, not one instance per key with
+  each key's own walk (user, 2026-10-29, plan gate D2).
+- **BC-7**: a non-optional dependency whose package's `os`/`cpu` exclude the target platform is not
+  carried on that platform, as Bun skips a disabled package whether or not it is optional (user,
+  2026-10-29, plan gate D2).
+- **BC-8**: the dependencies of an unfetched entry (`unsupported_reason`) get instances, as Bun
+  installs them; the entry itself still fails analysis and no generated target name changes (user,
+  2026-10-29, plan gate D3).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

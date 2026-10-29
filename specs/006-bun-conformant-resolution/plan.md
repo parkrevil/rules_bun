@@ -22,8 +22,9 @@ the integration lockfiles and a new edge-case corpus, reads the linked graph fro
 class, compared by partition refinement so entry counts and peer contexts count (R6–R9, R11). A
 second run uses Bun 1.4.2 as the oracle through a dev-only registered toolchain and also checks that
 1.4.2 and 1.4.4 agree, since the ruleset cannot tell them apart from a lockfile (R10). Planning
-found two differences beyond the spec's five (BC-6 per-key instances, BC-7 non-optional platform
-packages) and one spec question (hidden hoisting, D1).
+found three differences beyond the spec's five (BC-6 per-key instances, BC-7 non-optional platform
+packages, BC-8 unfetched entries' dependencies) and one Intentional Difference (ID-3 no hoisting);
+the user approved all of them at the plan gate on 2026-10-29, so the Behavior Changes are BC-1…BC-8.
 
 ## Technical Context
 
@@ -90,7 +91,7 @@ specs/006-bun-conformant-resolution/
 ├── data-model.md        # Phase 1: Bun's lockfile/tree/store model as carried over
 ├── quickstart.md        # Phase 1: validation runs Q1–Q9
 ├── contracts/
-│   ├── public-api.md         # what consumers observe (BC-1…BC-7)
+│   ├── public-api.md         # what consumers observe (BC-1…BC-8)
 │   └── conformance-graph.md  # graph JSON, oracle procedure, test interface
 ├── tdd-log.md           # implementation: each BC's difference before the fix
 └── tasks.md             # /speckit-tasks
@@ -135,19 +136,20 @@ next to the fixtures they read.
 ## Phases after this plan
 
 1. Conformance test, oracle, corpus, canaries and the ruleset-side graph export, on `main`'s
-   resolver: Q1 must fail exactly with BC-1…BC-7 (and any further difference, added to the spec
+   resolver: Q1 must fail exactly with BC-1…BC-8 (and any further difference, added to the spec
    before it is fixed); recorded in `tdd-log.md`.
 2. Carry-over in Bun's order: semver → install types → loader → resolve/hoist → clean → store →
    adapter; each step unit-tested and cited.
 3. Q1–Q9 green; docs; PR with the BC table and measured times.
 
-## Open decisions for the user (research Part 6)
+## Decisions of the user (research Part 6), answered 2026-10-29
 
-- **D1**: add **ID-3 No hoisting** (`node_modules/.bun/node_modules` and the root fallback are not
-  reproduced) to the spec's Intentional Differences.
-- **D2**: add **BC-6** (one package per `name@version`, bound by Bun's row evidence) and **BC-7**
-  (non-optional dependencies of another platform not carried) to Behavior Changes.
-- **D3**: confirm that following the dependencies of unfetched entries (R4) needs no BC entry.
+- **D1** (answered: approved): **ID-3 No hoisting** (`node_modules/.bun/node_modules` and the root
+  fallback are not reproduced) is in the spec's Intentional Differences.
+- **D2** (answered: approved): **BC-6** (one package per `name@version`, bound by Bun's row
+  evidence) and **BC-7** (non-optional dependencies of another platform not carried) are in Behavior
+  Changes.
+- **D3** (answered: list it): following the dependencies of unfetched entries (R4) is **BC-8**.
 
 ## Complexity Tracking
 

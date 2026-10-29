@@ -24,8 +24,9 @@ the conformance test (a difference before, none after) and listed in the PR.
 | An optional or peer dependency of the root or a workspace without a key | evaluation fails ("declares …, which bun.lock lists no entry for") | not linked; no failure | BC-3 |
 | A registry package's dependency on a workspace member | not linked | linked to the member | BC-4 |
 | A package's peer nothing provides and the lockfile does not resolve | evaluation fails (`missing_peer`) | not linked; no failure | BC-5 |
-| Two keys holding one `name@version` whose walks find different versions | one instance per key, each with its walk's version | one package, bound as Bun's row evidence decides | BC-6 (pending D2) |
-| A non-optional dependency whose package's `os`/`cpu` exclude the target platform | carried on every platform | not carried on that platform | BC-7 (pending D2) |
+| Two keys holding one `name@version` whose walks find different versions | one instance per key, each with its walk's version | one package, bound as Bun's row evidence decides | BC-6 |
+| A non-optional dependency whose package's `os`/`cpu` exclude the target platform | carried on every platform | not carried on that platform | BC-7 |
+| The dependencies of an unfetched entry (`unsupported_reason`) | not followed | followed: they get instances; the entry still fails analysis, no target name changes | BC-8 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences, and the CI runner labels the tests ran on | — |
 
 Diagnostics added: a lockfile Bun 1.4.4 refuses to load fails evaluation with an English message
