@@ -1,0 +1,6 @@
+load(":graph_test.bzl", "graph_test_suite")
+
+# The differential conformance test of feature 006: the pinned Bun's isolated install is the oracle
+# for the links the ruleset resolves from every bun.lock the tests hold.
+
+graph_test_suite(name = "graph")

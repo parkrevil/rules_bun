@@ -69,11 +69,11 @@ repository root.
 **Purpose**: Branch, the user's plan-gate answers in the spec, Bun's source at the tags, a green
 baseline.
 
-- [ ] T001 Confirm `git branch --show-current` prints `006-bun-conformant-resolution`,
+- [X] T001 Confirm `git branch --show-current` prints `006-bun-conformant-resolution`,
   `git merge-base HEAD main` is `c485a75`, and `git status --short` shows only
   `specs/006-bun-conformant-resolution/`; commit that directory as
   `docs: specify feature 006, link what the pinned Bun links`
-- [ ] T002 Write the plan-gate answers of research Part 6 (user, 2026-10-29) into the spec and
+- [X] T002 Write the plan-gate answers of research Part 6 (user, 2026-10-29) into the spec and
   contracts: in `specs/006-bun-conformant-resolution/spec.md` add **ID-3 No hoisting**
   (`node_modules/.bun/node_modules` and the root `node_modules` fallback are not reproduced; the
   graph is FR-008's) to "Intentional Differences", and **BC-6** (one package per `name@version`,
@@ -85,17 +85,17 @@ baseline.
   `quickstart.md` Q1 list ID-1–ID-3; in `plan.md` make the Summary and Phases say BC-1…BC-8 and
   mark the Open decisions answered. Commit
   as `docs: record the plan-gate answers of feature 006`
-- [ ] T003 [P] Create `specs/006-bun-conformant-resolution/tdd-log.md` with a title, one paragraph
+- [X] T003 [P] Create `specs/006-bun-conformant-resolution/tdd-log.md` with a title, one paragraph
   stating the test-first rule (plan Constraints, SC-003), and a table with the columns `Task`,
   `Target`, `Command`, `Platform`, `Result`, `Excerpt`
-- [ ] T004 [P] Fetch Bun's source into new empty directories `/tmp/bun006-src/bun-v1.4.4/` and
+- [X] T004 [P] Fetch Bun's source into new empty directories `/tmp/bun006-src/bun-v1.4.4/` and
   `/tmp/bun006-src/bun-v1.4.2/`: every file of research Part 1 (LOCK, LOCKFILE, TREE, REACH, PRUNED,
   META, ISO, STORE, HOOKS, SEMVER's `Version.rs`, `SemverQuery.rs`, `SemverRange.rs`, `lib.rs`,
   INSTALL) and `test/cli/install/semver.test.ts`, each with
   `curl -fsSL https://raw.githubusercontent.com/oven-sh/bun/<tag>/<path> -o <dir>/<path>`. Confirm
   `wc -l` at `bun-v1.4.4` gives `bun.lock.rs` 3,543, `lockfile.rs` 3,914, `Tree.rs` 2,242,
   `isolated_install.rs` 2,714 (research Part 1); on any difference stop and report
-- [ ] T005 [P] Baseline: run `bazel test //...` in the root and in `e2e/smoke/`, and
+- [X] T005 [P] Baseline: run `bazel test //...` in the root and in `e2e/smoke/`, and
   `bazel test //bun/tests/integration:scale_test --test_output=all`; record each in `tdd-log.md` as
   the baseline, including the evaluation time `scale_test` prints (research R13, "on `main`"). If
   anything fails, stop and report (AGENTS.md: do not widen the task)
@@ -110,7 +110,7 @@ baseline.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 [P] Archives for the corpus: for each project of research R11's table, list the packages
+- [X] T006 [P] Archives for the corpus: for each project of research R11's table, list the packages
   its layout needs; reuse an archive under `bun/tests/npm/registry/archives/` where one fits; add
   each missing package's sources under `bun/tests/npm/registry/packages/<name>@<version>/` (at least
   `opt-user@1.0.0`, research R11, a package whose optional dependency Bun lists under `unresolved`;
@@ -120,7 +120,7 @@ baseline.
   project `conformance_bundled` (a package with `bundleDependencies`) and, if the carry-over reads
   `packageExtensions`, one that uses it, so conformance checks every field the loader reads. Never
   alter a packument to serve an archive (research R11)
-- [ ] T007 Add the corpus to `projects` in `bun/tests/npm/registry/write_lockfiles.ts`, one entry
+- [X] T007 Add the corpus to `projects` in `bun/tests/npm/registry/write_lockfiles.ts`, one entry
   per row of research R11 (`conformance_alias_workspace` with an unscoped `lib` and a scoped
   `@scope/lib` workspace, root aliasing `lib: npm:a@1.0.0` and `@scope/lib: npm:c@1.0.0`;
   `conformance_unresolved` in a package and in a workspace; `conformance_unbound` with an optional
@@ -133,7 +133,7 @@ baseline.
   dependency). Run `$B bun/tests/npm/registry/write_lockfiles.ts <each conformance_ project>` to
   write `bun/tests/npm/fixtures/conformance_<case>/` with a `BUILD.bazel` like the other fixtures'.
   If the pinned Bun cannot produce a layout (its `check` fails), stop and report (depends on T006)
-- [ ] T008 [P] Write `bun/tests/npm/conformance/graph_test.bzl` (skylib `unittest`) for a function
+- [X] T008 [P] Write `bun/tests/npm/conformance/graph_test.bzl` (skylib `unittest`) for a function
   `conformance_graphs(resolution, tuples)` in `bun/tests/npm/conformance/graph.bzl`, on hand-built
   `resolve.bzl` outputs of the shape of data-model "Ruleset output": a `closure` link appears for
   every tuple; an `optional` link only for the tuples its `[os, cpu, libc]` requirements match, the
@@ -142,11 +142,11 @@ baseline.
   with equal graphs are one class; an `error` resolution yields `{"error": <message>}`; the output is
   the contract's Graph JSON (`holders`, `entries`, targets `e:<index>` / `w:<path>`). Register it in
   `bun/tests/npm/conformance/BUILD.bazel`; record red
-- [ ] T009 Implement `conformance_graphs` in `bun/tests/npm/conformance/graph.bzl`, with the tuples
+- [X] T009 Implement `conformance_graphs` in `bun/tests/npm/conformance/graph.bzl`, with the tuples
   of research R3 taken from `bun/private/platforms.bzl` (every `NPM_OS` × `NPM_CPU`, `libc` ∈
   {`glibc`, `musl`, unconstrained} on Linux, none elsewhere); it reads only `resolve.bzl`'s output,
   so it serves `main`'s resolver and the adapter of T047 unchanged; record green (depends on T008)
-- [ ] T010 Extend `bun/tests/npm/fixture_results.bzl`: enumerate the projects of research R9
+- [X] T010 Extend `bun/tests/npm/fixture_results.bzl`: enumerate the projects of research R9
   (every directory under `bun/tests/npm/fixtures/` with a `bun.lock`, `bun/tests/npm/scale/`, every
   `bun.lock` under `bun/tests/integration/workspaces/`, and every directory under
   `bun/tests/npm/conformance/bun_1_4_2/`, which may not exist yet); keep `RESULTS` keyed as today
@@ -154,7 +154,7 @@ baseline.
   write `graphs.json` (repository-relative project directory → `{"classes": [{"platforms": …,
   "graph": …}]}` or `{"error": …}`, contract "Ruleset side") from `conformance_graphs`, and
   `exports_files(["graphs.json"])` in its `BUILD.bazel` (depends on T009)
-- [ ] T011 Run `bazel run //:gazelle` and `bazel test //bun/tests/npm/...`; existing suites must
+- [X] T011 Run `bazel run //:gazelle` and `bazel test //bun/tests/npm/...`; existing suites must
   pass as at T005, except a suite that iterates over every fixture and now meets a corpus project
   showing a BC (for example `conformance_unbound` failing resolution, BC-3): record such a failure in
   `tdd-log.md` with its BC as an expected red, change nothing to hide it; any other failure: stop and

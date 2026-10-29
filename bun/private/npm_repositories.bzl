@@ -280,8 +280,19 @@ def libc_matches(values, os, libc):
         return True
     return check_list(libc, values)
 
-def _holds(conditions, os, cpu, libc):
-    """Whether one of `conditions` (each a list of `[os, cpu, libc]` requirements) holds for npm values."""
+def conditions_hold(conditions, os, cpu, libc):
+    """Whether one of `conditions` holds for a target's npm values.
+
+    Args:
+        conditions: List of conditions, each a list of `[os, cpu, libc]` requirements that must all
+            hold.
+        os: The target's npm `os`, or `None`.
+        cpu: The target's npm `cpu`, or `None`.
+        libc: The target's npm `libc`, or `None`.
+
+    Returns:
+        Whether one condition holds.
+    """
     for condition in conditions:
         if all([check_list(os, r[0]) and check_list(cpu, r[1]) and libc_matches(r[2], os, libc) for r in condition]):
             return True
@@ -313,8 +324,8 @@ def _selections(optional):
     """Setting name (or `//conditions:default`) -> the optional instance IDs carried there."""
     selections = {}
     for name, (os, cpu, libc, _) in _settings().items():
-        selections[name] = sorted([i for i, conditions in optional.items() if _holds(conditions, os, cpu, libc)])
-    selections["//conditions:default"] = sorted([i for i, conditions in optional.items() if _holds(conditions, None, None, None)])
+        selections[name] = sorted([i for i, conditions in optional.items() if conditions_hold(conditions, os, cpu, libc)])
+    selections["//conditions:default"] = sorted([i for i, conditions in optional.items() if conditions_hold(conditions, None, None, None)])
     return selections
 
 def _npm_hub_repository_impl(repository_ctx):
