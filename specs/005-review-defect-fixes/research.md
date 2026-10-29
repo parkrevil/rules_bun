@@ -419,6 +419,9 @@ decision).
   as "no hermetic-launcher stub repository is fetched".
 - **D3** (R3): C1 stays compatible with Windows unless the PR's Windows jobs cannot create a
   symbolic link; then it is declared incompatible there and reported unasserted on Windows.
+  **Settled (2026-10-29)**: PR #6's CI run 40789049266 passed every job, including the Windows
+  jobs, where C1 is compatible and ran (`test (windows-latest, .)`: 315 pass, 5 skipped, the
+  Linux-only tests); C1 stays compatible with Windows.
 
 ## Part 6: Evidence log
 
