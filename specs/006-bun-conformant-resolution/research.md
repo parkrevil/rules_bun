@@ -405,6 +405,13 @@ BC-1 to BC-5 are the spec's. Found while planning:
 dependencies). D2 approved (BC-6, BC-7). D3: list it as a Behavior Change as well, so every
 difference from `main` is stated.
 
+**T017 findings (2026-10-30)**: the conformance test found BC-9 and BC-10 (spec, Behavior Changes),
+both consequences of principle P1 the user approved (link what the pinned Bun links), so they are
+listed and fixed under it. BC-5 shows on `conformance_unprovided_peer` and not on `missing_peer`
+(the graph does not carry `main`'s analysis failure); `missing_peer` is covered by its FR-016 test
+change at T048. BC-8 gets a corpus project `conformance_unfetched` (a patched package with a
+dependency) so it is red before its fix.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on

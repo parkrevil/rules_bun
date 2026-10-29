@@ -640,6 +640,25 @@ const projects: Record<string, Project> = {
       assert(lock.packages["bundler/b"]?.[2]?.bundled === true, "bundler/b is not bundled");
     },
   },
+  // BC-8: a patched package (unfetched, unsupported_reason) with a dependency, which Bun installs
+  // and links: a@1.0.0 depends on b ^1.0.0.
+  conformance_unfetched: {
+    files: () => ({
+      "package.json": json({ name: "conformance-unfetched", private: true, dependencies: { a: "1.0.0" } }),
+    }),
+    async run({ dir, bun }) {
+      await bun("install");
+      await bun("patch", "a");
+      writeFileSync(join(dir, "node_modules", "a", "index.js"), 'module.exports = { name: "a", version: "patched" };\n');
+      await bun("patch", "--commit", "node_modules/a");
+    },
+    keep: ["package.json", "patches"],
+    check(lock) {
+      assert(lock.patchedDependencies?.["a@1.0.0"], "patchedDependencies has no a@1.0.0");
+      assert(lock.packages.a?.[2]?.dependencies?.b === "^1.0.0", "a does not depend on b");
+      assert(slot0(lock, "b") === "b@1.0.0", "b is not b@1.0.0");
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

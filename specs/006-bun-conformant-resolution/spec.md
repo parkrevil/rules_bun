@@ -354,6 +354,13 @@ the test that shows it:
 - **BC-8**: the dependencies of an unfetched entry (`unsupported_reason`) get instances, as Bun
   installs them; the entry itself still fails analysis and no generated target name changes (user,
   2026-10-29, plan gate D3).
+- **BC-9**: an optional peer is linked where the pinned Bun's isolated install links it (from an
+  ancestor's dependencies or the lockfile's own entry of that name); `main` leaves it unlinked
+  (`conformance_peer_contexts`, `integration/workspaces/fetch`). Found by the conformance test at
+  T017.
+- **BC-10**: a dependency listed in a package's `bundleDependencies` is not linked, because the
+  package carries its own copy, as Bun links nothing for it; `main` links it from the
+  `<package>/<dep>` key (`conformance_bundled`). Found at T017.
 
 Any further difference the conformance test finds is added here before it is fixed.
 

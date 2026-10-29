@@ -1,0 +1,10 @@
+{
+  "name": "conformance-unfetched",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "patchedDependencies": {
+    "a@1.0.0": "patches/a@1.0.0.patch"
+  }
+}

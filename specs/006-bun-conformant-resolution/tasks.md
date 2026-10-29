@@ -658,3 +658,22 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 - A difference is fixed only by following Bun's cited lines; a case rule fitted to a fixture is the
   approach this feature replaces (P1).
 - Commit after each task or logical group, in English, with the session's attribution line.
+
+---
+
+## Phase 9: Convergence
+
+- [ ] T068 Ask the user to approve BC-9 (optional peers linked as Bun links them:
+  `conformance_peer_contexts`, `bun/tests/integration/workspaces/fetch`) and BC-10
+  (`bundleDependencies` not linked: `conformance_bundled`), which spec "Behavior Changes" now lists
+  under P1 without a recorded approval; after approval add both rows to `contracts/public-api.md`
+  and name them in T017's `tdd-log.md` rows, before any carry-over task fixes them, per spec P3 /
+  "Any further difference … is added here before it is fixed" (partial)
+- [X] T069 Add the corpus project `conformance_unfetched` (research "T017 findings": a patched
+  package with a dependency) to `bun/tests/npm/registry/write_lockfiles.ts` with a `check` asserting
+  that form, write it with `$B` into `bun/tests/npm/fixtures/conformance_unfetched/` (archives only by
+  `pack.ts`), and record its BC-8 difference red in `tdd-log.md` on `main`'s resolver before T047,
+  per SC-003 / BC-8 (missing)
+- [X] T070 Keep the red mode on `workspace`, not T018's `basic` (which shows BC-6): record the
+  deviation and its reason in `tdd-log.md`; T018's second Q2 run after T051 uses `workspace`, per
+  FR-011 (partial)
