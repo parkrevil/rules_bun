@@ -677,3 +677,16 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 - [X] T070 Keep the red mode on `workspace`, not T018's `basic` (which shows BC-6): record the
   deviation and its reason in `tdd-log.md`; T018's second Q2 run after T051 uses `workspace`, per
   FR-011 (partial)
+
+---
+
+## Phase 10: Convergence
+
+- [X] T071 Make an instance whose `status` fails analysis visible to the conformance test: in
+  `bun/tests/npm/conformance/graph.bzl` carry each reached instance's non-`ok` `status` into the
+  Graph JSON (and `bun/tests/npm/conformance/graph.ts`'s `compare` report it as a difference, with
+  a `graph_test`/`graph_test_ts` case written red first), so `missing_peer`, whose evaluation fails
+  on `main` while Bun installs it, shows BC-5 instead of passing (T017 row "`missing_peer` shows no
+  graph difference"); the unfetched status BC-8 keeps is not one of ID-1–ID-3, so stop and report
+  for the user to decide whether it becomes a listed Intentional Difference before excluding it;
+  record red on `main`'s resolver before T047, per FR-007 / FR-011 / US1/AC5 (partial)

@@ -4,7 +4,8 @@ It reads only `resolve.bzl`'s output, `struct(instances, links, members)`, so it
 that produces it. For each platform tuple (research R3) the graph holds what the hub links there:
 a link's root and its closure on every platform, an optional instance where its conditions hold, as
 `npm_repositories.bzl` selects them, and an instance's edge where its target is carried in a link
-that carries the instance, as `run.bzl` links them.
+that carries the instance, as `run.bzl` links them; and an instance's `status` when it is not
+`ok`, since the hub fails analysis of that instance.
 """
 
 load("//bun/private:npm_repositories.bzl", "conditions_hold")
@@ -69,7 +70,11 @@ def _graph(value, os, cpu, libc):
                 links[alias] = target(edge)
         for alias, member in sorted(getattr(instance, "members", {}).items()):
             links[alias] = "w:" + member
-        entries.append({"name": instance.name, "version": instance.version, "links": links})
+        entry = {"name": instance.name, "version": instance.version, "links": links}
+        if instance.status != "ok":
+            # The hub fails analysis of this instance, so the consumer's build cannot use it.
+            entry["status"] = instance.status
+        entries.append(entry)
     return {
         "holders": {path: {alias: target(t) for alias, t in holder.items()} for path, holder in holders.items()},
         "entries": entries,

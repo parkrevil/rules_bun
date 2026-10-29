@@ -84,3 +84,14 @@ test("a package at no registry version is identified by its name", () => {
   const ruleset: Graph = { holders: { "": { local: "e:0" } }, entries: [entry("local", "file:local")] };
   expect(compare("p", ruleset, bun)).toBeUndefined();
 });
+
+test("an entry whose status fails analysis in the ruleset differs", () => {
+  const bun: Graph = { holders: { "": { "ident-a": "e:0" } }, entries: [entry("ident-a", "1.0.0")] };
+  const ruleset: Graph = {
+    holders: { "": { "ident-a": "e:0" } },
+    entries: [{ ...entry("ident-a", "1.0.0"), status: 'it needs the peer "state", which nothing provides' }],
+  };
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: ident-a@1.0.0 fails analysis in the ruleset (it needs the peer "state", which nothing provides), Bun installs it',
+  );
+});

@@ -162,6 +162,22 @@ def _unfetched_test_impl(ctx):
 
 unfetched_test = unittest.make(_unfetched_test_impl)
 
+def _status_test_impl(ctx):
+    env = unittest.begin(ctx)
+    reason = "it needs the peer \"state\", which nothing provides"
+    a = _instance("a", "1.0.0", status = reason)
+    b = _instance("b", "1.0.0")
+    links = {"": {"a": _link("a", a.id, [a.id]), "b": _link("b", b.id, [b.id])}}
+    graph = conformance_graphs(_resolution([a, b], links), [_LINUX_GLIBC])[0]["graph"]
+
+    # A reached instance whose status fails analysis carries that status; an `ok` one carries none.
+    by_name = {e["name"]: e for e in graph["entries"]}
+    asserts.equals(env, reason, by_name["a"].get("status"))
+    asserts.false(env, "status" in by_name["b"])
+    return unittest.end(env)
+
+status_test = unittest.make(_status_test_impl)
+
 def graph_test_suite(name):
     unittest.suite(
         name,
@@ -171,4 +187,5 @@ def graph_test_suite(name):
         members_test,
         error_test,
         unfetched_test,
+        status_test,
     )

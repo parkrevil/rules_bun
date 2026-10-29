@@ -12,6 +12,8 @@ export interface Entry {
   name: string;
   version: string;
   links: Record<string, Target>;
+  /** Ruleset side only: why the hub fails analysis of this instance (`status` other than `ok`). */
+  status?: string;
 }
 
 export interface Graph {
@@ -216,6 +218,10 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   }
   for (const { ruleset: r, bun: b, node } of counts.values()) {
     if (r !== b) return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}`;
+  }
+  // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it.
+  for (const node of all.values()) {
+    if (node.entry?.status !== undefined) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
   }
   return undefined;
 }
