@@ -1,5 +1,6 @@
 load("@npm_hoisted//:defs.bzl", "npm_link_all_packages")
 load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # A lockfile that the pinned Bun re-saved with `"configVersion": 0`, the setting of a hoisted
 # install (Edge Cases, T127). Its packages get the isolated layout all the same.
@@ -30,3 +31,5 @@ bun_test(
     data = [":phantom"],
     deps = ["//bun/tests/support:spawn"],
 )
+
+conformance_files()

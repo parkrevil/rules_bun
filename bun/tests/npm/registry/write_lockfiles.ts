@@ -121,7 +121,10 @@ const BASIC_DEPS: Record<string, string> = {
   z: "1.0.0",
 };
 
-const STUB_BUILD = "# A workspace member of the fixture project.\n";
+const CONFORMANCE_LOAD = 'load("//bun/tests/npm/conformance:files.bzl", "conformance_files")\n';
+
+// The conformance test copies every file of a project (bun/tests/npm/conformance/files.bzl).
+const STUB_BUILD = `${CONFORMANCE_LOAD}\n# A workspace member of the fixture project.\n\nconformance_files()\n`;
 
 function overridesProject(manifest: Record<string, unknown>, check: (lock: Lockfile) => void): Project {
   return {
@@ -709,7 +712,7 @@ async function generate(name: string, project: Project) {
       cpSync(join(dir, kept), join(out, kept), { recursive: true });
     }
     if (!existsSync(join(out, "BUILD.bazel"))) {
-      writeFileSync(join(out, "BUILD.bazel"), 'exports_files([\n    "bun.lock",\n    "package.json",\n])\n');
+      writeFileSync(join(out, "BUILD.bazel"), `${CONFORMANCE_LOAD}\nexports_files([\n    "bun.lock",\n    "package.json",\n])\n\nconformance_files()\n`);
     }
     console.log(`${name}: lockfileVersion ${lock().lockfileVersion}`);
   } finally {

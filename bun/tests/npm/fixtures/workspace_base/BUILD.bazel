@@ -1,1 +1,5 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
 exports_files(glob(["**/package.json"]) + ["bun.lock"])
+
+conformance_files()

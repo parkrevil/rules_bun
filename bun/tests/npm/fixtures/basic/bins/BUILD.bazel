@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("//bun:defs.bzl", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # US6-1: package executables run with their arguments.
 bun_test(
@@ -29,3 +30,5 @@ bun_test(
     srcs = ["tool.test.ts"],
     data = [":written"],
 )
+
+conformance_files()

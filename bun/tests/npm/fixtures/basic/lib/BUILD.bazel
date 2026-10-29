@@ -1,4 +1,5 @@
 load("//bun:defs.bzl", "bun_library", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 bun_library(
     name = "lib",
@@ -11,3 +12,5 @@ bun_test(
     srcs = ["lib.test.ts"],
     deps = [":lib"],
 )
+
+conformance_files()

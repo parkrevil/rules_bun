@@ -1,4 +1,5 @@
 load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # FR-022 with packages: a target carrying packages reads no bunfig.toml or .env
 # of its working directory and installs no missing package; isolation_test
@@ -46,3 +47,5 @@ bun_test(
         "//bun/tests/support:spawn",
     ],
 )
+
+conformance_files()

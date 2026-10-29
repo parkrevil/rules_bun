@@ -48,6 +48,8 @@ the project, empty cache, then the graph is read from the file system (research 
 | Projects | every `bun.lock` under `bun/tests/npm/fixtures/`, `bun/tests/npm/scale/`, `bun/tests/integration/workspaces/`, `bun/tests/npm/conformance/bun_1_4_2/`; a fixed, asserted list of not-applicable projects with reasons |
 | Exclusions | `ID-1` (`--ignore-scripts`), `ID-2` (host class only), `ID-3` (`node_modules/.bun/node_modules` and root fallbacks not read). Named in the test; nothing else excluded. |
 | Red mode | `RULES_BUN_CONFORMANCE_RED=1`: one ruleset edge is redirected; the test must fail naming it |
-| Failure text | `<project>: <holder or name@version (peer bindings)> links "<dep>" to <ruleset target>, Bun links it to <oracle target>` (or "no link") |
+| Failure text | `<project>: <holder or name@version (its other bindings)> links "<dep>" to <ruleset target>, Bun links it to <oracle target>` (a target: `name@version (its bindings)`, `workspace "<path>"`, or "no link"), for the first link, walking down from the holders, whose targets differ in `name@version`; when every holder agrees all the way down, `<project>: <name@version (bindings)> is <n> entries in the ruleset, Bun installs it as <m>` (entry counts, research R8); `<project>: the ruleset fails (<error>), Bun installs the lockfile` |
+| Identity | an entry is its `name@version`; a package the ruleset holds at no registry version (`file:`, a URL: bun.lock records no version for it) is identified by its name on both sides |
+| Oracle files | a project's own `archives/`; tarballs a lockfile names at another URL are served as the integration test owning the project serves them (`EXTRA_FILES`) |
 | 1.4.2 lockfiles | compared by both targets, each with its own toolchain's Bun |
 | 1.4.2 extra failure | `<project>: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (<first difference>); the ruleset cannot follow both (constitution V)` |

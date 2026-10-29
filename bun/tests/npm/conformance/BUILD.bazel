@@ -1,6 +1,46 @@
+load("//bun:defs.bzl", "bun_library", "bun_test")
 load(":graph_test.bzl", "graph_test_suite")
 
 # The differential conformance test of feature 006: the pinned Bun's isolated install is the oracle
 # for the links the ruleset resolves from every bun.lock the tests hold.
 
 graph_test_suite(name = "graph")
+
+bun_test(
+    name = "graph_test_ts",
+    srcs = ["graph.test.ts"],
+    deps = [":graph_ts"],
+)
+
+bun_library(
+    name = "graph_ts",
+    srcs = ["graph.ts"],
+)
+
+bun_library(
+    name = "oracle",
+    srcs = ["oracle.ts"],
+    deps = [
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
+    name = "conformance_test",
+    size = "enormous",
+    srcs = ["conformance.test.ts"],
+    data = [
+        "//bun/tests/integration:workspace_files",
+        "//bun/tests/npm/fixtures:conformance_files",
+        "//bun/tests/npm/registry/archives",
+        "//bun/tests/npm/scale:conformance_files",
+        "@npm_fixture_results//:graphs.json",
+    ],
+    deps = [
+        ":graph_ts",
+        ":oracle",
+        "//bun/tests/npm/scale:generate",
+        "//bun/tests/support:spawn",
+    ],
+)

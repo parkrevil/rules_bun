@@ -3,6 +3,7 @@
 # resolves to two versions, which the ruleset must reject (specs/004-bun-1-4-4-upgrade research R12).
 
 load("@npm_dependency_conflict//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 exports_files([
     "bun.lock",
@@ -10,3 +11,5 @@ exports_files([
 ])
 
 npm_link_all_packages()
+
+conformance_files()

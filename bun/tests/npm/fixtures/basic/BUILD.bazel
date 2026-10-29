@@ -1,5 +1,6 @@
 load("@npm_basic//:defs.bzl", "npm_link_all_packages")
 load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # The analysis tests in //bun/tests/npm inspect these targets.
 package(default_visibility = ["//bun/tests:__subpackages__"])
@@ -68,3 +69,5 @@ bun_test(
     srcs = ["native.test.ts"],
     deps = [":node_modules/native"],
 )
+
+conformance_files()

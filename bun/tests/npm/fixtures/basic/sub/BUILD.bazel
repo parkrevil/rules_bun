@@ -1,4 +1,5 @@
 load("//bun:defs.bzl", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # A source in a subpackage of the package that calls npm_link_all_packages resolves its packages
 # (feature 005 FR-020).
@@ -7,3 +8,5 @@ bun_test(
     srcs = ["scope.test.ts"],
     deps = ["//bun/tests/npm/fixtures/basic:node_modules/a"],
 )
+
+conformance_files()

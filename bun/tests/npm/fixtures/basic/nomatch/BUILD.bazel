@@ -1,4 +1,5 @@
 load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # Imports nomatch, whose optional packages match no Bazel platform (US3-3);
 # started by nomatch_test.
@@ -15,3 +16,5 @@ bun_test(
     data = [":nomatch"],
     deps = ["//bun/tests/support:spawn"],
 )
+
+conformance_files()

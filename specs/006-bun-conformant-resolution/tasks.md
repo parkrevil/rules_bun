@@ -175,7 +175,7 @@ naming the injected binding (Q2).
 
 ### Tests for User Story 2 (write first, see red)
 
-- [ ] T012 [P] [US2] Write `bun/tests/npm/conformance/graph.test.ts` (`bun:test`) for `compare` of
+- [X] T012 [P] [US2] Write `bun/tests/npm/conformance/graph.test.ts` (`bun:test`) for `compare` of
   `graph.ts`: two graphs equal up to entry order and indices are equal; one entry versus two entries
   of one `name@version` with different peer bindings differ (entry counts count, research R8); a
   holder linking a different target, a missing link and an extra link each differ; the failure text
@@ -184,7 +184,7 @@ naming the injected binding (Q2).
 
 ### Implementation for User Story 2
 
-- [ ] T013 [P] [US2] Write `bun/tests/npm/conformance/oracle.ts`: `installWithBun(project)` copies
+- [X] T013 [P] [US2] Write `bun/tests/npm/conformance/oracle.ts`: `installWithBun(project)` copies
   the whole project directory except `BUILD.bazel` and `node_modules` (so `file:` folders,
   `patches/` and workspace members come along) into a new directory under `TEST_TMPDIR`, starts the loopback registry of `bun/tests/support/npm_registry.ts` on
   `FIXTURE_PORT` serving `bun/tests/npm/registry/archives/` and the project's own `archives/` (for
@@ -193,7 +193,7 @@ naming the injected binding (Q2).
   `bun/tests/support/spawn.ts` with an empty `BUN_INSTALL_CACHE_DIR` (research R6); a failing
   install throws with Bun's output. Bun is the test's own toolchain Bun; nothing is fetched from the
   network and no host tool runs (constitution III)
-- [ ] T014 [P] [US2] Write `bun/tests/npm/conformance/graph.ts`: `readBunGraph(dir, workspaces)` per
+- [X] T014 [P] [US2] Write `bun/tests/npm/conformance/graph.ts`: `readBunGraph(dir, workspaces)` per
   research R7 (holders: the root and each workspace path of the lockfile's `workspaces`, and each
   `node_modules/.bun/<dir>` except `node_modules/.bun/node_modules` (ID-3); links: each symlink or
   junction in a holder's `node_modules`, scoped names one level down, `.bin` and dot entries
@@ -202,7 +202,7 @@ naming the injected binding (Q2).
   refinement (research R8) returning the first difference in the contract's failure text;
   `hostTuple()` from `process.platform`, `process.arch` and, on Linux, the C library detected as
   `bun/tests/canary/npm/c_libc.test.ts` detects it; `classFor(tuple, classes)` (depends on T012)
-- [ ] T015 [US2] Write `bun/tests/npm/conformance/conformance.test.ts`: read
+- [X] T015 [US2] Write `bun/tests/npm/conformance/conformance.test.ts`: read
   `@npm_fixture_results//:graphs.json` and enumerate the projects of research R9 from its runfiles;
   a project present on one side only fails (FR-009, US2-4); a fixed `NOT_APPLICABLE` map (project →
   reason; only projects whose `package.json` disagrees with the lockfile on purpose, as
@@ -213,14 +213,14 @@ naming the injected binding (Q2).
   `ID-2`, `ID-3` by name and `0 differences`; with `RULES_BUN_CONFORMANCE_RED=1` redirect one edge
   of `dependency_conflict`'s ruleset graph to another entry before comparing (FR-011) (depends on
   T013, T014)
-- [ ] T016 [US2] In `bun/tests/npm/conformance/BUILD.bazel` add `bun_test` targets `graph_test_ts`
+- [X] T016 [US2] In `bun/tests/npm/conformance/BUILD.bazel` add `bun_test` targets `graph_test_ts`
   (for `graph.test.ts`) and `conformance_test` (for `conformance.test.ts`, `data` = every file of
   every compared project except `BUILD.bazel` (lockfile, manifests, `file:` folders, `patches/`,
   `archives/`) through filegroups,
   `bun/tests/npm/registry/archives`, `bun/tests/support` sources, `@npm_fixture_results//:graphs.json`;
   timeout sized for the scale project), so both run under `bazel test //...`; run
   `bazel run //:gazelle`
-- [ ] T017 [US2] Run `bazel test //bun/tests/npm/conformance:graph_test_ts` (record green) and
+- [X] T017 [US2] Run `bazel test //bun/tests/npm/conformance:graph_test_ts` (record green) and
   `bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors` on `main`'s
   resolver (record red, Q3): each failing project's first difference is recorded with the BC it
   shows (BC-1 `conformance_unresolved`, BC-2 `conformance_alias_workspace`, BC-3

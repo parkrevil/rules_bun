@@ -39,6 +39,7 @@ alias(
 filegroup(
     name = "workspace_files",
     srcs = glob(["workspaces/**"]),
+    visibility = ["//bun/tests/npm/conformance:__pkg__"],
 )
 
 inner_inputs(

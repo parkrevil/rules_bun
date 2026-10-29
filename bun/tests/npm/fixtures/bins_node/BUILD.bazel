@@ -1,4 +1,5 @@
 load("@npm_bins_node//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # The bins of node-bin, for bins_test (FR-012). Every bin target is manual (research D1).
 package(default_visibility = ["//bun/tests:__subpackages__"])
@@ -9,3 +10,5 @@ exports_files([
 ])
 
 npm_link_all_packages()
+
+conformance_files()

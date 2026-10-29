@@ -1,4 +1,5 @@
 load("//bun:defs.bzl", "bun_library")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 exports_files([
     "bun.lock",
@@ -14,3 +15,5 @@ bun_library(
         "//bun/tests/support:tar",
     ],
 )
+
+conformance_files()

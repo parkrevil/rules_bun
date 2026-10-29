@@ -1,0 +1,5 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# The npm fixture projects; each is a package of its own.
+
+conformance_files()

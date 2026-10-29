@@ -1,5 +1,6 @@
 load("@npm_workspace//:defs.bzl", "npm_link_all_packages")
 load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 npm_link_all_packages()
 
@@ -32,3 +33,5 @@ bun_test(
     data = [":optional"],
     deps = ["//bun/tests/support:spawn"],
 )
+
+conformance_files()
