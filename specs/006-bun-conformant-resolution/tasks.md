@@ -255,33 +255,33 @@ Each canary uses `bun/tests/canary/npm/support.ts` (`runInstall`, `red`, `canary
 protects as the `bun/private/bun_lockfile.bzl` (or `lockfile.bzl`) function of research R1 that
 reads it.
 
-- [ ] T019 [P] [US4] `bun/tests/canary/npm/c_unresolved.test.ts` (C-UNRESOLVED, L23 info
+- [X] T019 [P] [US4] `bun/tests/canary/npm/c_unresolved.test.ts` (C-UNRESOLVED, L23 info
   `unresolved` and L24 workspace `unresolved`): a list of strings naming the optional dependency on
   a package entry and on a workspace; reader `parse_append_dependencies`
-- [ ] T020 [P] [US4] `bun/tests/canary/npm/c_unlinked.test.ts` (C-UNLINKED, L25): a workspace named
+- [X] T020 [P] [US4] `bun/tests/canary/npm/c_unlinked.test.ts` (C-UNLINKED, L25): a workspace named
   like a package the root aliases gets keys `./<name>/<dep>` (unscoped and scoped); reader of
   workspace dependencies' resolutions (S2)
-- [ ] T021 [P] [US4] `bun/tests/canary/npm/c_bundled.test.ts` (C-BUNDLED, L26): an entry of a
+- [X] T021 [P] [US4] `bun/tests/canary/npm/c_bundled.test.ts` (C-BUNDLED, L26): an entry of a
   bundled dependency carries info `bundled: true`; record the lockfile it observed as research Part
   7 evidence
-- [ ] T022 [P] [US4] `bun/tests/canary/npm/c_pkgext.test.ts` (C-PKGEXT, L27): whether the package
+- [X] T022 [P] [US4] `bun/tests/canary/npm/c_pkgext.test.ts` (C-PKGEXT, L27): whether the package
   rows already carry the dependencies a top-level `packageExtensions` adds; if they do, the canary
   asserts that and research Part 4 records L27 as not read, with the evidence
-- [ ] T023 [P] [US4] `bun/tests/canary/npm/c_wsversion.test.ts` (C-WSVERSION, L28): a workspace's
+- [X] T023 [P] [US4] `bun/tests/canary/npm/c_wsversion.test.ts` (C-WSVERSION, L28): a workspace's
   `version` is written in `workspaces` and a peer on that name with a matching range binds to the
   workspace
-- [ ] T024 [P] [US4] `bun/tests/canary/npm/c_roworder.test.ts` (C-ROWORDER, L29): the pinned Bun
+- [X] T024 [P] [US4] `bun/tests/canary/npm/c_roworder.test.ts` (C-ROWORDER, L29): the pinned Bun
   writes `packages` keys sorted as the loader's "later row wins" (LOCK L2993) assumes
-- [ ] T025 [P] [US4] Extend `bun/tests/canary/npm/c_infodeps.test.ts` and
+- [X] T025 [P] [US4] Extend `bun/tests/canary/npm/c_infodeps.test.ts` and
   `bun/tests/canary/npm/c_peers.test.ts` (L30): the `dependencies`, `optionalDependencies` and
   `peerDependencies` values are npm range strings as written in `package.json` (`^`, `~`, `||`,
   hyphen, x-range), the form `bun_semver.bzl` parses
-- [ ] T026 [US4] Add a `bun_test` target for each new canary in
+- [X] T026 [US4] Add a `bun_test` target for each new canary in
   `bun/tests/canary/npm/BUILD.bazel` as the existing ones are declared; run `bazel run //:gazelle`
 
 ### Evidence for User Story 4
 
-- [ ] T027 [US4] Run `bazel test //bun/tests/canary/npm/...` (record green) and each new or extended
+- [X] T027 [US4] Run `bazel test //bun/tests/canary/npm/...` (record green) and each new or extended
   canary with `--test_env=RULES_BUN_CANARY_RED=1` (record that each fails naming its reader); fill
   research Part 4's "Evidence" and "Canary" columns for L23–L30 and add the Part 7 evidence rows
   (`E5`…) for what each canary observed

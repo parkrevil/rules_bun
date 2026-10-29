@@ -1,6 +1,7 @@
-// Canary C-PEERS (FR-024, research L14, E1): slot 2 holds `peerDependencies`
-// and `optionalPeers` (an array of names), and a package installed with two
-// peer resolutions has one entry.
+// Canary C-PEERS (FR-024, research L14, E1; feature 006 L30): slot 2 holds
+// `peerDependencies` (npm ranges as the manifest writes them) and `optionalPeers`
+// (an array of names), and a package installed with two peer resolutions has one
+// entry.
 
 import { test } from "bun:test";
 import { canaryFail, keysOf, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
@@ -32,4 +33,20 @@ test("peers, optional peers, and one entry for two peer resolutions", async () =
   }
   const entries = keysOf(lock, "p@1.0.0");
   if (entries.length !== 1) canaryFail("C-PEERS", "one entry per peer-resolved package", READER, LOCKFILE_SOURCE, entries);
+});
+
+test("info peer ranges are written as the manifest writes them", async () => {
+  const { lock } = await runInstall({ "package.json": manifest({ name: "c-peers-ranges", dependencies: { q: "1.0.0", "range-user": "1.0.0" } }) }, {
+    // Red: the registry publishes range-user's peer ranges as exact versions.
+    alter: red({
+      packument: (name, doc) => {
+        if (name === "range-user") doc.versions["1.0.0"].peerDependencies = { q: "1.0.0", state: "1.0.0" };
+        return doc;
+      },
+    }),
+  });
+  const info = lock.packages["range-user"]?.[2];
+  if (JSON.stringify(info?.peerDependencies) !== JSON.stringify({ q: ">=1.0.0 <3.0.0", state: "1.0.x" })) {
+    canaryFail("C-PEERS", "info peerDependencies ranges", "the npm range parser in bun/private/bun_semver.bzl", LOCKFILE_SOURCE, info);
+  }
 });

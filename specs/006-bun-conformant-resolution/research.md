@@ -363,15 +363,15 @@ New accesses:
 
 | ID | Field or key form | Bun reads at | Evidence | Canary |
 |---|---|---|---|---|
-| L23 | info `unresolved` (list of strings) | LOCK L3372–3400, L3531–3537, L3027–3031 | PRIOR E1, E8 | C-UNRESOLVED |
-| L24 | workspace `unresolved` | same, via L2225/L2284 | PRIOR E2, E7 | C-UNRESOLVED |
-| L25 | key `./<name>/<dep>` of an unlinked workspace | LOCK L2864–2895, TREE L379–388 | PRIOR E4, E5, U4 | C-UNLINKED |
-| L26 | info `bundled: true` | LOCK L2351, L1575–1621 | to record when the corpus writes one | C-BUNDLED |
-| L27 | top-level `packageExtensions` | LOCK L1928–1931 | to record: whether package rows already carry the extended dependencies | C-PKGEXT, or recorded as not read with evidence |
-| L28 | workspace `version` (peer → workspace by range) | LOCK L2162, L2793–2807 | to record | C-WSVERSION |
+| L23 | info `unresolved` (list of strings) | LOCK L3372–3400, L3531–3537, L3027–3031 | PRIOR E1, E8; E5 (written only while the tree holds a package of the name, LOCK L302–L320) | C-UNRESOLVED |
+| L24 | workspace `unresolved` | same, via L2225/L2284 | PRIOR E2, E7; E5 | C-UNRESOLVED |
+| L25 | key `./<name>/<dep>` of an unlinked workspace | LOCK L2864–2895, TREE L379–388 | PRIOR E4, E5, U4; E6 | C-UNLINKED |
+| L26 | info `bundled: true` | LOCK L2351, L1575–1621 | E7 (`conformance_bundled`) | C-BUNDLED |
+| L27 | top-level `packageExtensions` | LOCK L1928–1931 | E8: the package rows already carry the extended dependencies; the top-level field lists only their names, so the carry-over does not read it | C-PKGEXT (pins that the rows carry them) |
+| L28 | workspace `version` (peer → workspace by range) | LOCK L2162, L2793–2807 | E9 | C-WSVERSION |
 | — | top-level `patchedDependencies` | LOCK L1899 | read by Bun but decides no binding (a patch changes a package's files, not which package a dependency binds); rules_bun keeps treating a patched package as unsupported (feature 003 FR-010, canary C-PATCHED) | C-PATCHED (existing) |
-| L29 | order of `packages` rows (equal evidence: later row wins) | LOCK L2929, L2993 | Bun writes keys sorted | C-ROWORDER |
-| L30 | `dependencies`, `optionalDependencies`, `peerDependencies` ranges (read as npm ranges, R5) | LOCK L3347–3543, L3174–3208 | existing fixtures | C-INFODEPS / C-PEERS gain range assertions |
+| L29 | order of `packages` rows (equal evidence: later row wins) | LOCK L2929, L2993 | E10: sorted by the parent path's depth, the parent path, then the name (writer LOCK L506–L508, L646) | C-ROWORDER |
+| L30 | `dependencies`, `optionalDependencies`, `peerDependencies` ranges (read as npm ranges, R5) | LOCK L3347–3543, L3174–3208 | existing fixtures; E11 (`range-user@1.0.0`) | C-INFODEPS / C-PEERS (range tests) |
 
 The list is closed when the loader is carried over: every `root.get(...)`/`info.get(...)` of LOCK
 L1797–3543 is either an access above or recorded as read by Bun and not affecting a binding
@@ -431,3 +431,29 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   L1934, `catalog` L2037, `catalogs` L2056, `workspaces` L2100, `name` L2137, `version` L2162,
   `packages` L2308, `bundled` L2351, `os`/`cpu`/`libc` L2594–2602, `hasInstallScript` L2606,
   `optionalPeers`/`unresolved` L3372.
+- **E5** (C-UNRESOLVED, T019): `opt-user@1.0.0` (optional `state ^3.0.0`) gets info
+  `"unresolved": ["state"]`; the root (optional `b ^3.0.0`) and workspace `w` (optional `q ^3.0.0`)
+  get `"unresolved": ["b"]` and `["q"]` only while the tree holds a `b` and a `q` (from `a` and the
+  root's `q`); without them Bun writes no `unresolved` (LOCK L302–L320 `unresolved_names` filters by
+  a placed row of the same name).
+- **E6** (C-UNLINKED, T020): root aliases `lib: npm:a@1.0.0`, `@scope/lib: npm:c@1.0.0`; workspaces
+  `lib` and `@scope/lib` depending on `b@2.0.0` get keys `./lib/b` and `./@scope/lib/b` (`b@2.0.0`);
+  without the aliases the keys are `lib/b` and `@scope/lib/b`.
+- **E7** (C-BUNDLED, T021): `bundler@1.0.0` (`bundleDependencies: ["b"]`) gets the row
+  `"bundler/b": ["b@1.0.0", "<registry>/b/-/b-1.0.0.tgz", { "bundled": true }, "sha512-…"]`, the
+  info holding only `bundled`; published without `bundleDependencies`, the row's info is `{}`.
+- **E8** (C-PKGEXT, T022): `packageExtensions: { "a@1.0.0": { dependencies: { c: "1.0.0" } } }` gives
+  the row `a` the info `{ "dependencies": { "b": "^1.0.0", "c": "1.0.0" } }` and the top-level
+  `"packageExtensions": { "a@1.0.0": { "dependencies": ["c"] } }` (names only).
+- **E9** (C-WSVERSION, T023): workspace `q` with `version: "1.5.0"` is written as
+  `"packages/q": { "name": "q", "version": "1.5.0" }`; member `w` with peer `q ^1.0.0` links
+  `packages/w/node_modules/q` to `packages/q` (isolated linker). With `q` at `3.0.0` the link is the
+  same (the key `q` binds it by name), so the canary pins the field and the link, not the version
+  match alone.
+- **E10** (C-ROWORDER, T024): the `conformance_alias_workspace` layout is written as `@scope/lib, app,
+  b, lib, q, x, y, ./@scope/lib/b, ./lib/b, ./lib/y, @scope/lib/b, app/@scope/lib, app/lib,
+  ./lib/y/x, app/@scope/lib/b, app/lib/b, app/lib/y, app/lib/y/x`, and a `--frozen-lockfile` install
+  keeps the text.
+- **E11** (C-INFODEPS, C-PEERS, T025): `range-user@1.0.0`'s row holds `dependencies { a: "~1.0.0", b:
+  "1.0.0 - 1.9.9", c: "1.x" }`, `optionalDependencies { ident-a: "^1.0.0 || ^2.0.0" }`,
+  `peerDependencies { q: ">=1.0.0 <3.0.0", state: "1.0.x" }`, as its `package.json` writes them.

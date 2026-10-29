@@ -1,0 +1,17 @@
+{
+  "name": "range-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "a": "~1.0.0",
+    "b": "1.0.0 - 1.9.9",
+    "c": "1.x"
+  },
+  "optionalDependencies": {
+    "ident-a": "^1.0.0 || ^2.0.0"
+  },
+  "peerDependencies": {
+    "q": ">=1.0.0 <3.0.0",
+    "state": "1.0.x"
+  }
+}

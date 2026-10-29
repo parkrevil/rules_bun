@@ -178,11 +178,60 @@ bun_test(
     ],
 )
 
+bun_test(
+    name = "c_unresolved_test",
+    srcs = ["c_unresolved.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_unlinked_test",
+    srcs = ["c_unlinked.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_bundled_test",
+    srcs = ["c_bundled.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_pkgext_test",
+    srcs = ["c_pkgext.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_wsversion_test",
+    srcs = ["c_wsversion.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_roworder_test",
+    srcs = ["c_roworder.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
 test_suite(
     name = "canaries",
     tests = [
         ":c_alias_test",
         ":c_bin_test",
+        ":c_bundled_test",
         ":c_catalog_test",
         ":c_info_test",
         ":c_infodeps_test",
@@ -193,7 +242,11 @@ test_suite(
         ":c_overrides_test",
         ":c_patched_test",
         ":c_peers_test",
+        ":c_pkgext_test",
+        ":c_roworder_test",
         ":c_slot0_test",
+        ":c_unlinked_test",
+        ":c_unresolved_test",
         ":c_url1_test",
         ":c_url2_test",
         ":c_ver1_test",
@@ -202,6 +255,7 @@ test_suite(
         ":c_wsdeps_test",
         ":c_wskey_test",
         ":c_wsname_test",
+        ":c_wsversion_test",
     ],
 )
 
