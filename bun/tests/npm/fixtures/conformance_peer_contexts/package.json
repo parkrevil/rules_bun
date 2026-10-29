@@ -1,0 +1,12 @@
+{
+  "name": "conformance-peer-contexts",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "p-user": "1.0.0",
+    "q": "1.0.0",
+    "q2-user": "1.0.0"
+  }
+}

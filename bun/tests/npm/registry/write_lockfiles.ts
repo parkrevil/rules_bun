@@ -431,6 +431,212 @@ const projects: Record<string, Project> = {
       assert(String(lock.packages.a[3]).startsWith("sha256-"), `a integrity ${lock.packages.a[3]}`);
     },
   },
+  // The edge-case corpus of feature 006 (research R11): each project is a layout the conformance
+  // test compares with the pinned Bun's isolated install.
+  // FR-009, BC-2: workspaces named like packages the root aliases, unscoped and scoped
+  // (prior-research U4); their own dependencies are written under "./<name>/".
+  conformance_alias_workspace: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-alias-workspace",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { lib: "npm:a@1.0.0", "@scope/lib": "npm:c@1.0.0", b: "1.0.0", x: "2.0.0", y: "npm:q@2.0.0" },
+      }),
+      "packages/lib/package.json": json({ name: "lib", version: "1.0.0", dependencies: { b: "2.0.0", x: "2.0.0", y: "1.0.0" } }),
+      "packages/lib/BUILD.bazel": STUB_BUILD,
+      "packages/scoped/package.json": json({ name: "@scope/lib", version: "1.0.0", dependencies: { b: "2.0.0", q: "1.0.0" } }),
+      "packages/scoped/BUILD.bazel": STUB_BUILD,
+      "packages/app/package.json": json({ name: "app", version: "1.0.0", dependencies: { lib: "workspace:*", "@scope/lib": "workspace:*" } }),
+      "packages/app/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "lib") === "a@1.0.0", "lib is not a@1.0.0");
+      assert(slot0(lock, "@scope/lib") === "c@1.0.0", "@scope/lib is not c@1.0.0");
+      assert(Object.keys(lock.packages).some((k) => k.startsWith("./lib/")), "bun.lock has no key ./lib/<dep>");
+      assert(Object.keys(lock.packages).some((k) => k.startsWith("./@scope/lib/")), "bun.lock has no key ./@scope/lib/<dep>");
+    },
+  },
+  // FR-009, BC-1: optional dependencies listed under "unresolved", in a package and in workspaces.
+  conformance_unresolved: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-unresolved",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { a: "1.0.0", "opt-user": "1.0.0", q: "1.0.0", state: "1.0.0" },
+        optionalDependencies: { b: "^3.0.0" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { a: "1.0.0" }, optionalDependencies: { q: "^3.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(JSON.stringify(lock.packages["opt-user"]?.[2]?.unresolved) === '["state"]', "opt-user's unresolved is not [state]");
+      assert(JSON.stringify(lock.workspaces[""].unresolved) === '["b"]', "the root's unresolved is not [b]");
+      assert(JSON.stringify(lock.workspaces["packages/w"].unresolved) === '["q"]', "w's unresolved is not [q]");
+    },
+  },
+  // FR-009, BC-3: optional and peer dependencies without a key, of the root and of a workspace.
+  conformance_unbound: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-unbound",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { a: "1.0.0" },
+        optionalDependencies: { state: "^3.0.0" },
+        peerDependencies: { r: "^9.0.0" },
+      }),
+      "packages/w/package.json": json({
+        name: "w",
+        version: "1.0.0",
+        dependencies: { a: "1.0.0" },
+        optionalDependencies: { x: "^9.0.0" },
+        peerDependencies: { q: "^9.0.0" },
+      }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      for (const name of ["state", "r", "x", "q"]) assert(!(name in lock.packages), `bun.lock has a key ${name}`);
+      for (const ws of Object.values(lock.workspaces)) assert(!("unresolved" in ws), "a workspace lists unresolved names");
+    },
+  },
+  // FR-009, BC-4: a registry package depending on a workspace member's name.
+  conformance_registry_to_workspace: {
+    files: () => ({
+      "package.json": json({ name: "conformance-registry-to-workspace", private: true, workspaces: ["packages/*"], dependencies: { "member-user": "1.0.0" } }),
+      "packages/member-lib/package.json": json({ name: "member-lib", version: "1.0.0", dependencies: { b: "2.0.0" } }),
+      "packages/member-lib/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "member-lib") === "member-lib@workspace:packages/member-lib", "member-lib is not the workspace");
+      assert(lock.packages["member-user"][2].dependencies?.["member-lib"] === "^1.0.0", "member-user does not depend on member-lib");
+    },
+  },
+  // FR-009, BC-5: a non-optional and an optional peer nothing provides (no version of state
+  // matches ^3.0.0), in the root's and a workspace's tree.
+  conformance_unprovided_peer: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-unprovided-peer",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { "peer-unprovided": "1.0.0", "peer-unprovided-opt": "1.0.0" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { "peer-unprovided": "1.0.0", "peer-unprovided-opt": "1.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(!("state" in lock.packages), "bun.lock has a key state");
+      assert(JSON.stringify(lock.packages["peer-unprovided-opt"][2].optionalPeers) === '["state"]', "peer-unprovided-opt's state is not an optional peer");
+    },
+  },
+  // FR-009, BC-6: one name@version at nested and hoisted keys (dependency_conflict's shape as Bun
+  // writes it, one level deeper through nest).
+  conformance_nested: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-nested",
+        private: true,
+        dependencies: { a: "1.0.0", b: "1.0.0", nest: "1.0.0", x: "2.0.0", y: "1.0.0", z: "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(slot0(lock, "y/x") === "x@1.0.0" && slot0(lock, "z/x") === "x@1.0.0", "y/x and z/x are not both x@1.0.0");
+      keys(lock, ["y/x/b", "y/b"]);
+    },
+  },
+  // One package reached under two peer providers (two store entries) and under one (deduplicated).
+  conformance_peer_contexts: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-peer-contexts",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { "p-user": "1.0.0", q: "1.0.0", "q2-user": "1.0.0" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { "p-user": "1.0.0", q: "1.0.0", r: "1.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "q2-user/q") === "q@2.0.0", "q2-user/q is not q@2.0.0");
+      keys(lock, ["p", "r"]);
+    },
+  },
+  // Two packages with a peer on one name that no ancestor declares, two versions of it in the
+  // tree (S5, shared peer versions).
+  conformance_shared_peer: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-shared-peer",
+        private: true,
+        dependencies: { "ident-a": "1.0.0", "state-peer-any": "1.0.0", "state2-user": "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(slot0(lock, "state") === "state@1.0.0", "state is not state@1.0.0");
+      assert(slot0(lock, "state2-user/state") === "state@2.0.0", "state2-user/state is not state@2.0.0");
+    },
+  },
+  // FR-009, BC-7: non-optional and optional dependencies restricted to other operating systems,
+  // of the root and of a package.
+  conformance_platform: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-platform",
+        private: true,
+        dependencies: { "nomatch-aix-ppc64": "1.0.0", "plat-user": "1.0.0" },
+        optionalDependencies: { "native-darwin-arm64": "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(lock.packages["native-aix-x64"]?.[2]?.os === "aix", "native-aix-x64 is not restricted to aix");
+      assert(lock.packages["plat-user"][2].dependencies?.["native-aix-x64"] === "1.0.0", "plat-user does not depend on native-aix-x64");
+      keys(lock, ["nomatch-aix-ppc64", "nomatch-sunos-x64", "native-darwin-arm64"]);
+    },
+  },
+  // FR-009: overrides of the ranges of a peer (state) and of a peer a dependency provides (q).
+  conformance_overrides: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-overrides",
+        private: true,
+        dependencies: { "ident-a": "1.0.0", "p-user": "1.0.0" },
+        overrides: { q: "2.0.0", state: "2.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(slot0(lock, "state") === "state@2.0.0", "state is not overridden to 2.0.0");
+      assert(slot0(lock, "q") === "q@2.0.0", "q is not overridden to 2.0.0");
+    },
+  },
+  // FR-009: a catalog: dependency and a workspace's catalog: peer.
+  conformance_catalog: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog",
+        private: true,
+        workspaces: { packages: ["packages/*"], catalog: { q: "1.0.0", state: "2.0.0" } },
+        dependencies: { "ident-a": "1.0.0", state: "catalog:" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { "p-user": "1.0.0" }, peerDependencies: { q: "catalog:" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(lock.workspaces["packages/w"].peerDependencies?.q === "catalog:", "w's peer q is not catalog:");
+      assert(slot0(lock, "q") === "q@1.0.0", "q is not q@1.0.0");
+      assert(slot0(lock, "state") === "state@2.0.0", "state is not state@2.0.0");
+    },
+  },
+  // A package with bundleDependencies: its bundled dependency's entry carries "bundled": true.
+  conformance_bundled: {
+    files: () => ({
+      "package.json": json({ name: "conformance-bundled", private: true, dependencies: { b: "2.0.0", bundler: "1.0.0" } }),
+    }),
+    check(lock) {
+      assert(lock.packages["bundler/b"]?.[2]?.bundled === true, "bundler/b is not bundled");
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

@@ -1,0 +1,13 @@
+{
+  "name": "peer-unprovided-opt",
+  "version": "1.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "state": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "state": {
+      "optional": true
+    }
+  }
+}

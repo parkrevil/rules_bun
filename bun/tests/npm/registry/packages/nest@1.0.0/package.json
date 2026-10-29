@@ -1,0 +1,9 @@
+{
+  "name": "nest",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "y": "1.0.0",
+    "b": "1.0.0"
+  }
+}

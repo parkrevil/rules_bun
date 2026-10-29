@@ -1,0 +1,11 @@
+{
+  "name": "plat-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "native-aix-x64": "1.0.0"
+  },
+  "optionalDependencies": {
+    "nomatch-sunos-x64": "1.0.0"
+  }
+}

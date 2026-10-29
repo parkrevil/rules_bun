@@ -1,0 +1,78 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-alias-workspace",
+      "dependencies": {
+        "@scope/lib": "npm:c@1.0.0",
+        "b": "1.0.0",
+        "lib": "npm:a@1.0.0",
+        "x": "2.0.0",
+        "y": "npm:q@2.0.0",
+      },
+    },
+    "packages/app": {
+      "name": "app",
+      "version": "1.0.0",
+      "dependencies": {
+        "@scope/lib": "workspace:*",
+        "lib": "workspace:*",
+      },
+    },
+    "packages/lib": {
+      "name": "lib",
+      "version": "1.0.0",
+      "dependencies": {
+        "b": "2.0.0",
+        "x": "2.0.0",
+        "y": "1.0.0",
+      },
+    },
+    "packages/scoped": {
+      "name": "@scope/lib",
+      "version": "1.0.0",
+      "dependencies": {
+        "b": "2.0.0",
+        "q": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "@scope/lib": ["c@1.0.0", "http://127.0.0.1:28761/c/-/c-1.0.0.tgz", { "dependencies": { "b": "^2.0.0" } }, "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw=="],
+
+    "app": ["app@workspace:packages/app"],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "lib": ["a@1.0.0", "http://127.0.0.1:28761/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "x": ["x@2.0.0", "http://127.0.0.1:28761/x/-/x-2.0.0.tgz", {}, "sha512-pGDAzj99S0HP0UgJCX3mjCofTa2S9qchnFLu2VWGKKr4RWB14R3hXZSlfMpUdltTIe/tdh+mpxjh39xsOtH8Lw=="],
+
+    "y": ["q@2.0.0", "http://127.0.0.1:28761/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+
+    "./@scope/lib/b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "./lib/b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "./lib/y": ["y@1.0.0", "http://127.0.0.1:28761/y/-/y-1.0.0.tgz", { "dependencies": { "b": "2.0.0", "x": "1.0.0" } }, "sha512-nt0qbLEyZckgeIUpSkVYOIwrIqHhH9EMoEWXJq4LuTGw6FkrpE/Qa8cQBJBVQXdDV13xrqYW8wWYqDmI3T+qAQ=="],
+
+    "@scope/lib/b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "app/@scope/lib": ["@scope/lib@workspace:packages/scoped"],
+
+    "app/lib": ["lib@workspace:packages/lib"],
+
+    "./lib/y/x": ["x@1.0.0", "http://127.0.0.1:28761/x/-/x-1.0.0.tgz", { "dependencies": { "b": ">=1.0.0" } }, "sha512-/b1IpgijxGDDhzGXLX7uNz9MRXh4yXD6Q1sra8gGGFlmw+Q3L2mluSOUR/3lGLlPYW8IPVPyIvK1A8IeK/wO+w=="],
+
+    "app/@scope/lib/b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "app/lib/b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "app/lib/y": ["y@1.0.0", "http://127.0.0.1:28761/y/-/y-1.0.0.tgz", { "dependencies": { "b": "2.0.0", "x": "1.0.0" } }, "sha512-nt0qbLEyZckgeIUpSkVYOIwrIqHhH9EMoEWXJq4LuTGw6FkrpE/Qa8cQBJBVQXdDV13xrqYW8wWYqDmI3T+qAQ=="],
+
+    "app/lib/y/x": ["x@1.0.0", "http://127.0.0.1:28761/x/-/x-1.0.0.tgz", { "dependencies": { "b": ">=1.0.0" } }, "sha512-/b1IpgijxGDDhzGXLX7uNz9MRXh4yXD6Q1sra8gGGFlmw+Q3L2mluSOUR/3lGLlPYW8IPVPyIvK1A8IeK/wO+w=="],
+  }
+}

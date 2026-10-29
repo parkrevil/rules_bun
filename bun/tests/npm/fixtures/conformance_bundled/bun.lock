@@ -1,0 +1,20 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-bundled",
+      "dependencies": {
+        "b": "2.0.0",
+        "bundler": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "bundler": ["bundler@1.0.0", "http://127.0.0.1:28761/bundler/-/bundler-1.0.0.tgz", { "dependencies": { "b": "1.0.0" } }, "sha512-BMmprpBjMdaCifdyp4HfMGDAhoidn47EBIhz9seXpksyaVWlFQIEltRvMM7pl9IAdYHNgLOeOtKAQUg0VEZESQ=="],
+
+    "bundler/b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", { "bundled": true }, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+  }
+}

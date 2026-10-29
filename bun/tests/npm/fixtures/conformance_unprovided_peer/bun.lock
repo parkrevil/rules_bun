@@ -1,0 +1,28 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-unprovided-peer",
+      "dependencies": {
+        "peer-unprovided": "1.0.0",
+        "peer-unprovided-opt": "1.0.0",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "peer-unprovided": "1.0.0",
+        "peer-unprovided-opt": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "peer-unprovided": ["peer-unprovided@1.0.0", "http://127.0.0.1:28761/peer-unprovided/-/peer-unprovided-1.0.0.tgz", { "peerDependencies": { "state": "^3.0.0" } }, "sha512-j7cQOKHDVspC7CUxHK/Bh0ZcuPOAnIUbVQ27QTMSPiECvwJc7SRFntuKA2UY7XA9F3YJYSycm6sf1M4Cl9NSgA=="],
+
+    "peer-unprovided-opt": ["peer-unprovided-opt@1.0.0", "http://127.0.0.1:28761/peer-unprovided-opt/-/peer-unprovided-opt-1.0.0.tgz", { "peerDependencies": { "state": "^3.0.0" }, "optionalPeers": ["state"] }, "sha512-43j7D1JpSKQn3mj7L4aT3SK5EpLafxZq5JrFCHkzfVAKpsou+CYgP3dbe0661yvFA+YpAP2Yv6mjPai/tTsRKQ=="],
+
+    "w": ["w@workspace:packages/w"],
+  }
+}

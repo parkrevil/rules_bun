@@ -1,0 +1,14 @@
+{
+  "name": "conformance-alias-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "lib": "npm:a@1.0.0",
+    "@scope/lib": "npm:c@1.0.0",
+    "b": "1.0.0",
+    "x": "2.0.0",
+    "y": "npm:q@2.0.0"
+  }
+}

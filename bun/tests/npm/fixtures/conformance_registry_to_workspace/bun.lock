@@ -1,0 +1,26 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-registry-to-workspace",
+      "dependencies": {
+        "member-user": "1.0.0",
+      },
+    },
+    "packages/member-lib": {
+      "name": "member-lib",
+      "version": "1.0.0",
+      "dependencies": {
+        "b": "2.0.0",
+      },
+    },
+  },
+  "packages": {
+    "b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+
+    "member-lib": ["member-lib@workspace:packages/member-lib"],
+
+    "member-user": ["member-user@1.0.0", "http://127.0.0.1:28761/member-user/-/member-user-1.0.0.tgz", { "dependencies": { "member-lib": "^1.0.0" } }, "sha512-IUwGEP8jTeoim6CG++bEhpsXGzrMigAziugiptpax/Q9As2Eb1dafR76Oebmisl1EMgBIv4m2hXk1jgHnvFQWQ=="],
+  }
+}

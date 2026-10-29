@@ -1,0 +1,1 @@
+module.exports = { name: "nest", version: "1.0.0" };

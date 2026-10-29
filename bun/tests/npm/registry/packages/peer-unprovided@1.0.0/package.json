@@ -1,0 +1,8 @@
+{
+  "name": "peer-unprovided",
+  "version": "1.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "state": "^3.0.0"
+  }
+}

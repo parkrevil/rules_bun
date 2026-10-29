@@ -1,0 +1,11 @@
+{
+  "name": "conformance-unprovided-peer",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "peer-unprovided": "1.0.0",
+    "peer-unprovided-opt": "1.0.0"
+  }
+}

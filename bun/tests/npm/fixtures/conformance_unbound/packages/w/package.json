@@ -1,0 +1,13 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "optionalDependencies": {
+    "x": "^9.0.0"
+  },
+  "peerDependencies": {
+    "q": "^9.0.0"
+  }
+}
