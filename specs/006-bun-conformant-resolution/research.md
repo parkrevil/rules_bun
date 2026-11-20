@@ -426,9 +426,10 @@ store for each **platform class**: the tuples `(os, cpu, libc)` of `platforms.bz
 × `NPM_CPU`, `libc` ∈ {glibc, musl, unconstrained} on Linux, none elsewhere, plus "unmapped") are
 grouped by the set of packages `is_disabled` leaves out; `build_store` runs once per group. Linux
 with `:unconstrained` uses Bun's `Libc::ALL` (every variant matches). Matching uses Bun's
-`OperatingSystem`/`Architecture`/`Libc` `is_match`, not npm-install-checks (`platforms.bzl`
-`check_list` stays for the toolchain only, or is replaced where the two agree; the canary C-OSCPU
-and C-LIBC stay).
+`OperatingSystem`/`Architecture`/`Libc` `is_match`, not npm-install-checks; `main`'s npm-rule
+matchers (`platforms.bzl` `check_list`, `npm_repositories.bzl` `libc_matches`) are removed with their
+tests (T086), since the hub selects by the resolver's platform tuples (`conditions_hold`) and no
+toolchain file calls them; the canaries C-OSCPU and C-LIBC stay.
 
 **Rationale**: the only way to have Bun's result for every target platform, including peers bound
 differently where a disabled package was the provider. A lockfile with no restricted package has one

@@ -865,7 +865,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   that is not an object of strings), and remove "No other diagnostic changes text, except those of
   BC-3 and BC-5" (once T076 lands, also BC-11's removed "a target holds one instance of each package
   version"), per spec BC-4 / FR-015 / P4 (partial)
-- [ ] T086 Review `libc_matches` (`bun/private/npm_repositories.bzl` L260) and `check_list`
+- [X] T086 Review `libc_matches` (`bun/private/npm_repositories.bzl` L260) and `check_list`
   (`bun/private/platforms.bzl` L80), `main`'s npm-rule package selection: since T046/T047 the hub
   selects by the resolver's platform tuples (`conditions_hold`), and only
   `bun/tests/npm/libc_test.bzl` and `bun/tests/npm/platforms_test.bzl` `_check_list_test` call them

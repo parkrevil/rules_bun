@@ -8,36 +8,11 @@ load("//bun/private:bun_install_types.bzl", "LIBC_ALL", "platform_value")
 load("//bun/private:bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load("//bun/private:bun_tree.bzl", "hoist")
 load("//bun/private:lockfile.bzl", "read_lockfile")
-load("//bun/private:platforms.bzl", "check_list", "platform_bits", "platform_classes", "platform_tuples")
+load("//bun/private:platforms.bzl", "platform_bits", "platform_classes", "platform_tuples")
 
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
 _AIX = "//bun/tests/npm/fixtures/aix:node_modules/aix-user"
 _ANY = "//bun/tests/npm/fixtures/any_platform:node_modules/any-platform"
-
-# npm-install-checks `checkList` (v9.0.0, fcba600c2e4d) on each case, as feature 005 research E3
-# records it: (value, values) -> result.
-_CHECK_LIST = [
-    ("linux", ["any"], True),
-    ("linux", ["linux"], True),
-    ("darwin", ["linux"], False),
-    ("linux", ["!linux"], False),
-    ("darwin", ["!linux"], True),
-    ("darwin", ["linux", "!win32"], False),
-    ("linux", [], True),
-    ("linux", ["any", "!linux"], False),
-    ("darwin", ["any", "!linux"], False),
-    (None, ["linux"], False),
-    (None, ["!linux"], True),
-    (None, ["any"], True),
-]
-
-def _check_list_test_impl(ctx):
-    env = unittest.begin(ctx)
-    for value, values, expected in _CHECK_LIST:
-        asserts.equals(env, expected, check_list(value, values), "check_list({}, {})".format(repr(value), values))
-    return unittest.end(env)
-
-_check_list_test = unittest.make(_check_list_test_impl)
 
 def _cleaned(env, project):
     file = "bun/tests/npm/fixtures/{}/bun.lock".format(project)
@@ -191,8 +166,6 @@ def platforms_test_suite(name):
         _RULES[platform](name = "{}_any_{}_test".format(name, platform), target_under_test = _ANY, package = "", expected = ["any-platform"])
         tests.append("{}_any_{}_test".format(name, platform))
 
-    _check_list_test(name = name + "_check_list_test")
-    tests.append(name + "_check_list_test")
     _platform_classes_test(name = name + "_platform_classes_test")
     tests.append(name + "_platform_classes_test")
 

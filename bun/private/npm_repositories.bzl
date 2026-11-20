@@ -8,7 +8,7 @@ workspace package it is called in.
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "read_user_netrc", "use_netrc")
 load(":library.bzl", "SOURCE_EXTENSIONS")
-load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS", "check_list")
+load(":platforms.bzl", "NPM_CPU", "NPM_LIBC", "NPM_OS")
 
 _NPM_PACKAGE_BZL = str(Label("//bun/private:npm_package.bzl"))
 
@@ -256,29 +256,6 @@ npm_package_repository = repository_rule(
         "replacement_label": attr.string(doc = "The replacement's label as its tag writes it, for errors."),
     },
 )
-
-def libc_matches(values, os, libc):
-    """npm's `libc` rule (npm-install-checks `checkPlatform`) for a target's npm `os` and `libc`.
-
-    npm defines libc only on Linux, so a package with `libc` matches no other OS. A Linux platform
-    without the libc constraint (`libc` is `None`) does not say which libc it has, so it matches,
-    and every libc variant is carried there.
-
-    Args:
-        values: The entry's `libc` list.
-        os: The target's npm `os`, or `None` for an OS without a mapping.
-        libc: The target's npm `libc`, or `None` when the platform does not set it.
-
-    Returns:
-        Whether the entry may be carried on that target.
-    """
-    if not values:
-        return True
-    if os != "linux":
-        return False
-    if libc == None or values == ["any"]:
-        return True
-    return check_list(libc, values)
 
 def conditions_hold(conditions, os, cpu, libc):
     """Whether a target's npm values are one of the platform tuples an instance is reached on.
