@@ -331,6 +331,11 @@ conformance test excludes:
   which Bun lets a store package import what it does not declare, are not reproduced; the ruleset
   links only declared dependencies, as Bazel's declared dependencies require. The compared graph is
   FR-008's (user, 2026-10-29, plan gate D1).
+- **ID-4 Unfetched entries fail analysis**: an entry rules_bun does not fetch (a tarball URL or
+  another unsupported resolution, an entry without integrity, a patched package) fails analysis of
+  a target that needs it, while Bun installs it, because constitution III allows only downloads
+  verified with an integrity the lockfile records. The conformance test excludes only that status,
+  by this name, and still compares the entry's links (user, 2026-11-21).
 
 ### Behavior Changes
 
@@ -343,7 +348,10 @@ the test that shows it:
   (`./<name>/<dep>`), not the root's or the aliased package's.
 - **BC-3**: an optional or peer dependency of the root or a workspace without a key no longer fails
   the build; it is not linked.
-- **BC-4**: a registry package's dependency on a workspace member is linked to that member.
+- **BC-4**: a registry package's dependency on a workspace member is linked to that member, by
+  path; a target whose closure holds such a link must declare the member's target in its `deps`
+  (transitively), or analysis fails naming the package, the dependency and the member's target, as
+  Bazel requires everything a target uses to be declared (user, 2026-11-21).
 - **BC-5**: a peer nothing provides no longer fails the build; it is not linked.
 - **BC-6**: one package per `name@version`: two keys holding one `name@version` are one package,
   whose dependencies are bound once, as Bun's row evidence decides, not one instance per key with

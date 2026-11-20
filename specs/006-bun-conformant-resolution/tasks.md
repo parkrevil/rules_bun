@@ -436,7 +436,10 @@ projects without a BC are unchanged (Q7, T064).
 - [ ] T050 [US1] Close research Part 4: every `root.get(...)`/`info.get(...)` of LOCK L1797–3543 in
   `SRC` is an access L1–L30 or listed as read by Bun and deciding no binding
   (`trustedDependencies` L1872, `hasInstallScript` L2606, `configVersion` L1861, …); any access the
-  carry-over reads without a canary: stop and report (constitution V) (depends on T044)
+  carry-over reads without a canary: stop and report (constitution V). The user approved canaries
+  with red modes for L31 (the info object of a non-npm row), L32 (a row's `devDependencies`) and
+  L33 (a workspace's `optionalPeers`) on 2026-11-21: add them, red first, as T019–T027 added theirs
+  (depends on T044)
 - [ ] T051 [US1] Run `bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors`
   (Q1: `0 differences`), `//bun/tests/npm/...`, `//bun/tests/canary/npm/...`,
   `//bun/tests/integration/...` and `//...`; record green, and for each BC-n of T017 one row
@@ -694,7 +697,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 11: Convergence
 
-- [ ] T072 Ask the user to decide how to treat the differences T071 reported with no ID or BC: an
+- [ ] T072 The user approved ID-4 on 2026-11-21 (research Part 6). Treat the differences T071 reported with no ID or BC: an
   unfetched entry fails analysis in the ruleset while Bun installs it (`unsupported`: tarball URL;
   `restricted` and `integration/workspaces/multi_nointegrity/two`: no integrity, constitution III;
   `conformance_unfetched`'s patched entry once BC-8 lands). Until decided, T051's `0 differences`
@@ -724,3 +727,54 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   if none explains it) or that it shows none, so the oracle, not T031's hand-reasoned case, decides
   the binding; if the pinned Bun cannot write the layout, stop and report, per spec Edge Cases / P2
   / FR-009 (partial)
+
+---
+
+## Phase 13: Convergence
+
+- [ ] T075 CRITICAL: pin with canaries the three `bun.lock` accesses the carry-over already reads
+  without one (research Part 4 "none yet"): L31 the info object in slot 1 of a row that is not an
+  npm version (`bun/private/lockfile.bzl` `# L31`), L32 a row's `devDependencies` (`# L32`), L33 a
+  workspace's `optionalPeers` (`# L33`). Add `bun/tests/canary/npm/c_rowinfo.test.ts` (C-ROWINFO: a
+  `file:` and a tarball-URL row carry their `dependencies` in slot 1),
+  `bun/tests/canary/npm/c_rowdevdeps.test.ts` (C-ROWDEVDEPS: a folder package's row carries
+  `devDependencies`) and `bun/tests/canary/npm/c_wsoptpeers.test.ts` (C-WSOPTPEERS: a workspace
+  with an optional peer carries `optionalPeers`), each through `support.ts` with a red mode and a
+  `canaryFail` naming its reader in `bun/private/lockfile.bzl` / `bun/private/bun_lockfile.bzl`;
+  register them in `bun/tests/canary/npm/BUILD.bazel`, run `bazel run //:gazelle`, record green and
+  `RULES_BUN_CANARY_RED=1` red in `tdd-log.md`, and fill research Part 4's Evidence and Canary
+  columns with Part 7 evidence rows. If the pinned Bun does not write a form, stop and report
+  (the read is then removed or the user decides), per Constitution V (contradicts)
+- [ ] T076 Ask the user to decide how to treat a target that reaches two store entries of one
+  `name@version` with different peer bindings. Bun's isolated install links both (spec Edge Cases;
+  `conformance_peer_contexts`: `p@1.0.0` with the root's `q@1.0.0` and through `q2-user` with
+  `q@2.0.0`), but `bun/private/run.bzl` `_check_unique` fails analysis of such a target ("a target
+  holds one instance of each package version"), and `bun/tests/npm/uniqueness_test.bzl`
+  `_peer_test` and `_peer_chain_test` assert that failure. `bun/tests/npm/conformance/graph.bzl`
+  does not model it, so `conformance_test` cannot see it. Before anything changes, make the
+  conformance test report it: a `graph_test` / `graph_test_ts` case, red first, for a holder whose
+  links reach two entries of one `name@version`, recorded red in `tdd-log.md`. Then, as the user
+  decides, either list it as a new Intentional Difference (spec, the Exclusions of
+  `contracts/conformance-graph.md`, `data-model.md`, `quickstart.md` Q1, `conformance.test.ts`'s
+  "excluded by name" line, `_NPM_DOC`), or lay out each entry by its peer bindings in `run.bzl` and
+  change the two tests as FR-016 changes; record green, per spec P3 / FR-016 / US1 (contradicts)
+- [ ] T077 Settle the adapter's two failures that neither the spec lists nor a test covers:
+  `bun/private/resolve.bzl` "the store links \"<alias>\" of <package> to different packages on
+  different platforms" and "\"<alias>\" of the workspace \"<path>\" links different packages on
+  different platforms, which rules_bun cannot express". Determine from Bun's cited lines (S7, S8)
+  whether the pinned Bun can write a lockfile whose store binds one alias of an entry or holder
+  to different packages on different platform classes. If it can, add a corpus project through
+  `bun/tests/npm/registry/write_lockfiles.ts` with a `check`, record its difference red, and either
+  express it (a per-class binding the hub turns into `select()`) or stop and report so the user can
+  list it as an Intentional Difference. If it cannot, record why in research R4 with the Bun
+  lines. In either case add a `bun/tests/npm/resolve_test.bzl` case for each error path, per spec
+  P3 / FR-015 / Constitution II (partial)
+- [ ] T073 BC-4 in builds (user decision 2026-11-21, research Part 6): the hub links a registry
+  package's dependency on a workspace member by path only (no target dependency, so no Bazel
+  dependency cycle), and the rule that builds the copy tree (`bun/private/run.bzl`) fails analysis
+  when a target's closure holds such an edge and the member's target is not among the target's
+  transitive deps, naming the package, the dependency and the member's target and telling the user
+  to add it to `deps`. Write the failing analysis tests first (member declared: the link resolves
+  and a program imports the member through the package; member not declared: the failure text),
+  then implement; record red and green in `tdd-log.md`; update US1 scenario 4 and the `_NPM_DOC`
+  text to this behavior

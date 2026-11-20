@@ -635,6 +635,12 @@ change at T048. BC-8 gets a corpus project `conformance_unfetched` (a patched pa
 dependency) so it is red before its fix.
 **BC-9 and BC-10 approved by the user (2026-10-30)**, at T068.
 
+**T072, T050 and BC-4 decided by the user (2026-11-21)**: ID-4 (unfetched entries fail analysis,
+constitution III) is an intentional difference; L31–L33 get canaries with red modes; BC-4 links by
+path, and a target that reaches such a link without declaring the member fails analysis naming it
+(T073), rather than a target dependency (a member that depends on the package would form a Bazel
+cycle) or a silent run-time failure.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on
