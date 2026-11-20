@@ -1,0 +1,31 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-platform-peer-workspace",
+      "dependencies": {
+        "q": "1.0.0",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "p": "1.0.0",
+      },
+      "optionalDependencies": {
+        "q": "npm:q-darwin@1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "p": ["p@1.0.0", "http://127.0.0.1:28761/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "w": ["w@workspace:packages/w"],
+
+    "w/q": ["q-darwin@1.0.0", "http://127.0.0.1:28761/q-darwin/-/q-darwin-1.0.0.tgz", { "os": "darwin" }, "sha512-Kwgeo7iGN0pN3FJrfEYJ3B81nNVJBYW6gjqV1sJCGZD701RniP8gMyYuhhQNIbzY0fssUaJUaXlAUGbRYgyCRQ=="],
+  }
+}

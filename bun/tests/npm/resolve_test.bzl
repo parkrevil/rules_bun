@@ -239,6 +239,37 @@ def _unfetched_test_impl(ctx):
     asserts.true(env, any([i.get("unfetched") for i in resolution["instances"].values()]))
     return unittest.end(env)
 
+def _platform_holder_error_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # w's p binds its peer q to w's own q (q-darwin@1.0.0) on darwin and to the root's q@1.0.0
+    # elsewhere, so the workspace's "p" links two store entries by platform (T077).
+    error = RESULTS["conformance_platform_peer_workspace"]["resolution"]["error"]
+    asserts.true(env, error != None and '"p" of the workspace "packages/w" links different packages on different platforms' in error, error)
+    return unittest.end(env)
+
+def _platform_entry_error_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # host@1.0.0's p binds its optional peer r to host's r-darwin@1.0.0 on darwin; elsewhere that
+    # dependency is disabled and no row resolves the peer, so p links no r, while host's own entry
+    # (no peers) is one entry on every platform (T077). The pinned Bun hoists such an r to the root,
+    # so it writes no such lockfile; this one is written by hand.
+    text = json.encode({
+        "lockfileVersion": 2,
+        "workspaces": {"": {"name": "inline", "dependencies": {"host": "1.0.0"}}},
+        "packages": {
+            "host": ["host@1.0.0", "", {"dependencies": {"p": "1.0.0"}, "optionalDependencies": {"r": "npm:r-darwin@1.0.0"}}, "sha512-AAAA"],
+            "host/r": ["r-darwin@1.0.0", "", {"os": "darwin"}, "sha512-AAAA"],
+            "p": ["p@1.0.0", "", {"peerDependencies": {"r": "^1.0.0"}, "optionalPeers": ["r"]}, "sha512-AAAA"],
+        },
+    })
+    lock = read_lockfile(text, "inline/bun.lock")
+    asserts.equals(env, None, lock.error)
+    result = resolve(lock.value, "inline/bun.lock")
+    asserts.true(env, result.error != None and 'the store links "p" of host@1.0.0 to different packages on different platforms' in result.error, result.error)
+    return unittest.end(env)
+
 basic_links_test = unittest.make(_basic_links_test_impl)
 workspace_test = unittest.make(_workspace_test_impl)
 alias_edge_test = unittest.make(_alias_edge_test_impl)
@@ -253,6 +284,8 @@ missing_peer_test = unittest.make(_missing_peer_test_impl)
 peer_cycle_test = unittest.make(_peer_cycle_test_impl)
 peer_instances_test = unittest.make(_peer_instances_test_impl)
 unfetched_test = unittest.make(_unfetched_test_impl)
+platform_holder_error_test = unittest.make(_platform_holder_error_test_impl)
+platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
 
 def resolve_test_suite(name):
     unittest.suite(
@@ -271,4 +304,6 @@ def resolve_test_suite(name):
         peer_cycle_test,
         peer_instances_test,
         unfetched_test,
+        platform_holder_error_test,
+        platform_entry_error_test,
     )

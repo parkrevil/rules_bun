@@ -1,0 +1,10 @@
+{
+  "name": "conformance-platform-peer-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "q": "1.0.0"
+  }
+}

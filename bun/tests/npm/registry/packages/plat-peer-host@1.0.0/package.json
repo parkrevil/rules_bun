@@ -1,0 +1,11 @@
+{
+  "name": "plat-peer-host",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "p": "^1.0.0"
+  },
+  "optionalDependencies": {
+    "q": "npm:q-darwin@1.0.0"
+  }
+}

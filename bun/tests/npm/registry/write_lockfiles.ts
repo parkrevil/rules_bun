@@ -599,6 +599,32 @@ const projects: Record<string, Project> = {
       keys(lock, ["nomatch-aix-ppc64", "nomatch-sunos-x64", "native-darwin-arm64"]);
     },
   },
+  // T077: a peer whose provider up the node chain is an optional dependency restricted to another
+  // OS (q: npm:q-darwin@1.0.0), so the store binds p's peer q per platform: to q-darwin@1.0.0 on
+  // darwin, to the root's q@1.0.0 elsewhere (ISO L1032-L1047, L1074-L1170); through a registry
+  // package (plat-peer-host's p) and through a workspace (w's p).
+  conformance_platform_peer: {
+    files: () => ({
+      "package.json": json({ name: "conformance-platform-peer", private: true, dependencies: { "plat-peer-host": "1.0.0", q: "1.0.0" } }),
+    }),
+    check(lock) {
+      assert(slot0(lock, "plat-peer-host/q") === "q-darwin@1.0.0", "plat-peer-host's q is not q-darwin@1.0.0");
+      assert(lock.packages["plat-peer-host/q"][2]?.os === "darwin", "q-darwin is not restricted to darwin");
+      assert(slot0(lock, "q") === "q@1.0.0", "the root's q is not q@1.0.0");
+      assert(slot0(lock, "p") === "p@1.0.0", "p is not hoisted to the root");
+    },
+  },
+  conformance_platform_peer_workspace: {
+    files: () => ({
+      "package.json": json({ name: "conformance-platform-peer-workspace", private: true, workspaces: ["packages/*"], dependencies: { q: "1.0.0" } }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { p: "1.0.0" }, optionalDependencies: { q: "npm:q-darwin@1.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "w/q") === "q-darwin@1.0.0", "w's q is not q-darwin@1.0.0");
+      assert(slot0(lock, "q") === "q@1.0.0", "the root's q is not q@1.0.0");
+    },
+  },
   // FR-009: overrides of the ranges of a peer (state) and of a peer a dependency provides (q).
   conformance_overrides: {
     files: () => ({

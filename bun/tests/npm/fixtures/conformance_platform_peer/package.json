@@ -1,0 +1,8 @@
+{
+  "name": "conformance-platform-peer",
+  "private": true,
+  "dependencies": {
+    "plat-peer-host": "1.0.0",
+    "q": "1.0.0"
+  }
+}

@@ -443,6 +443,34 @@ other (Bun installs them); the reason still makes the instance's target fail ana
 links `manual`, as today. Today their dependencies are not followed; that becomes a non-difference
 in the graph and changes no generated target name.
 
+**Bindings that differ by platform class (T077)**. The store's first pass skips a dependency whose
+package `is_disabled` for the platform (ISO L1032–L1047, through TREE L1313–L1405), so a skipped
+package is no node dependency, and a peer looked up the node chain (ISO L1074–L1170) can find a
+provider on one class and not on another. An entry's key holds its transitive peers, which every
+node the lookup passes is marked with (ISO L1097–L1176, L1198–L1210), so the bindings of one entry key differ by
+class only when the lookup ends without a provider (`best_version` invalid, ISO L1084–L1090, then
+`continue` at L1183–L1186, marking nothing).
+
+- **A holder's alias** (`"<alias>" of the workspace "<path>" links different packages on different
+  platforms`): reachable. `conformance_platform_peer` (the root's `plat-peer-host`, whose `p`'s peer
+  `q` is `plat-peer-host`'s own `q: npm:q-darwin@1.0.0` on darwin and the root's `q@1.0.0`
+  elsewhere) and `conformance_platform_peer_workspace` (the same through workspace `w`): the pinned
+  Bun writes both lockfiles and installs them; the adapter fails. `resolve_test.bzl`
+  `platform_holder_error_test`.
+- **An entry's alias** (`the store links "<alias>" of <package> to different packages on different
+  platforms`): needs an optional peer that no row on the peer's key path resolves (LOCK L1580–L1662)
+  while the parent's own platform-restricted dependency provides it. The pinned Bun hoists that
+  dependency's row to the root when nothing there conflicts (experiment: `plat-r-host` with
+  `r: npm:r-darwin@1.0.0` and `p`'s optional peer `r` is written with the key `r`, not
+  `plat-r-host/r`), so the row is on the peer's key path, the peer resolves, and the lookup marks
+  the parent; a conflicting root `r` would provide the peer on every class. No Bun-written lockfile
+  reaching it was found; `resolve_test.bzl` `platform_entry_error_test` reaches it with a
+  hand-written lockfile.
+
+Expressing a per-class binding needs the hub to `select()` a link's root and an instance's edges by
+platform; until the user decides between that and an Intentional Difference, the two corpus projects
+fail the conformance test (T077).
+
 ### R5. npm ranges: carry over Bun's semver
 
 S3, S5 and the hoister compare versions with ranges (`satisfies_dependency_version`; TREE L659,
