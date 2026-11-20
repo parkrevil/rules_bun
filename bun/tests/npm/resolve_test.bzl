@@ -228,6 +228,17 @@ def _peer_instances_test_impl(ctx):
     asserts.true(env, p_root != p_q2, "p with q@1.0.0 and p with q@2.0.0 are distinct instances")
     return unittest.end(env)
 
+def _unfetched_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # An entry rules_bun does not fetch is marked so, the status ID-4 (feature 006) lets fail
+    # analysis; any other instance is not.
+    resolution = _resolution(env, "unsupported")
+    for instance in resolution["instances"].values():
+        asserts.equals(env, instance["status"] != "ok", instance.get("unfetched"), instance["id"])
+    asserts.true(env, any([i.get("unfetched") for i in resolution["instances"].values()]))
+    return unittest.end(env)
+
 basic_links_test = unittest.make(_basic_links_test_impl)
 workspace_test = unittest.make(_workspace_test_impl)
 alias_edge_test = unittest.make(_alias_edge_test_impl)
@@ -241,6 +252,7 @@ optional_peer_test = unittest.make(_optional_peer_test_impl)
 missing_peer_test = unittest.make(_missing_peer_test_impl)
 peer_cycle_test = unittest.make(_peer_cycle_test_impl)
 peer_instances_test = unittest.make(_peer_instances_test_impl)
+unfetched_test = unittest.make(_unfetched_test_impl)
 
 def resolve_test_suite(name):
     unittest.suite(
@@ -258,4 +270,5 @@ def resolve_test_suite(name):
         missing_peer_test,
         peer_cycle_test,
         peer_instances_test,
+        unfetched_test,
     )

@@ -7,6 +7,8 @@
 //   ID-1 No lifecycle scripts: the oracle installs with --ignore-scripts.
 //   ID-2 Selection by target platform: only the ruleset's class of the host is compared.
 //   ID-3 No hoisting: node_modules/.bun/node_modules is not read (graph.ts, readBunGraph).
+//   ID-4 Unfetched entries fail analysis: only that status is skipped (graph.ts, compare); the
+//        entry's links are compared.
 //
 // RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `workspace`'s ruleset graph (FR-011, red mode).
 
@@ -150,6 +152,8 @@ afterAll(() => {
   console.log(`host platform: ${JSON.stringify(host)}`);
   console.log(`compared ${compared.length} projects:\n  ${compared.join("\n  ")}`);
   console.log(`not applicable:\n${Object.entries(NOT_APPLICABLE).map(([p, r]) => `  ${p}: ${r}`).join("\n")}`);
-  console.log("excluded by name: ID-1 (no lifecycle scripts), ID-2 (selection by target platform), ID-3 (no hoisting)");
+  console.log(
+    "excluded by name: ID-1 (no lifecycle scripts), ID-2 (selection by target platform), ID-3 (no hoisting), ID-4 (unfetched entries fail analysis)",
+  );
   console.log(`${differences.length} differences${differences.length ? `:\n  ${differences.join("\n  ")}` : ""}`);
 });

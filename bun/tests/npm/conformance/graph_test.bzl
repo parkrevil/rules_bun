@@ -9,7 +9,7 @@ _LINUX_UNCONSTRAINED = ("linux", "x64", "unconstrained")
 _DARWIN = ("darwin", "arm64", None)
 _TUPLES = [_LINUX_GLIBC, _LINUX_MUSL, _LINUX_UNCONSTRAINED, _DARWIN]
 
-def _instance(name, version, edges = {}, status = "ok"):
+def _instance(name, version, edges = {}, status = "ok", unfetched = False):
     return struct(
         id = "{}@{}__1".format(name, version),
         name = name,
@@ -20,6 +20,7 @@ def _instance(name, version, edges = {}, status = "ok"):
         dependency_keys = {},
         peers = [],
         status = status,
+        unfetched = unfetched,
     )
 
 def _link(alias, root, closure, optional = {}):
@@ -155,12 +156,16 @@ error_test = unittest.make(_error_test_impl)
 
 def _unfetched_test_impl(ctx):
     env = unittest.begin(ctx)
-    local = _instance("local", "1.0.0", status = "it is a file: dependency, which rules_bun does not fetch")
+    reason = "it is a file: dependency, which rules_bun does not fetch"
+    local = _instance("local", "1.0.0", status = reason, unfetched = True)
     resolution = _resolution([local], {"": {"local": _link("local", local.id, [local.id])}})
     graph = conformance_graphs(resolution, [_LINUX_GLIBC])[0]["graph"]
 
-    # An unfetched instance is still an entry: Bun installs it.
+    # An unfetched instance is still an entry: Bun installs it. Its status is marked unfetched, the
+    # status ID-4 lets fail analysis.
     asserts.equals(env, ["local@1.0.0"], _entry_names(graph))
+    asserts.equals(env, reason, graph["entries"][0].get("status"))
+    asserts.equals(env, True, graph["entries"][0].get("unfetched"))
     return unittest.end(env)
 
 unfetched_test = unittest.make(_unfetched_test_impl)
@@ -176,6 +181,7 @@ def _status_test_impl(ctx):
     # A reached instance whose status fails analysis carries that status; an `ok` one carries none.
     by_name = {e["name"]: e for e in graph["entries"]}
     asserts.equals(env, reason, by_name["a"].get("status"))
+    asserts.false(env, "unfetched" in by_name["a"])
     asserts.false(env, "status" in by_name["b"])
     return unittest.end(env)
 

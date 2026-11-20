@@ -95,3 +95,15 @@ test("an entry whose status fails analysis in the ruleset differs", () => {
     'p: ident-a@1.0.0 fails analysis in the ruleset (it needs the peer "state", which nothing provides), Bun installs it',
   );
 });
+
+test("an unfetched entry's status is excluded by ID-4, its links still compared", () => {
+  const reason = "bun.lock records no integrity for it, so its download cannot be verified";
+  const bun: Graph = { holders: { "": { a: "e:0" } }, entries: [entry("a", "1.0.0", { b: "e:1" }), entry("b", "1.0.0")] };
+  const ruleset: Graph = {
+    holders: { "": { a: "e:0" } },
+    entries: [{ ...entry("a", "1.0.0", { b: "e:1" }), status: reason, unfetched: true }, entry("b", "1.0.0")],
+  };
+  expect(compare("p", ruleset, bun)).toBeUndefined();
+  const unlinked: Graph = { holders: { "": { a: "e:0" } }, entries: [{ ...entry("a", "1.0.0"), status: reason, unfetched: true }] };
+  expect(compare("p", unlinked, bun)).toBe('p: a@1.0.0 links "b" to no link, Bun links it to b@1.0.0');
+});

@@ -14,7 +14,7 @@ hub has consumed since feature 003, `struct(instances, links, members)`:
 - `members` are the links to workspaces, which the hub links as the members' targets.
 
 An entry rules_bun does not fetch (FR-010) is linked like any other, so its dependencies get
-instances (BC-8); its `status` makes the hub fail analysis of it. Errors are returned as values.
+instances (BC-8); its `status` makes the hub fail analysis of it (ID-4). Errors are returned as values.
 """
 
 load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_peer")
@@ -168,10 +168,11 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     Returns:
         `struct(value, error)`; `value` is `struct(instances, links, members)`: `instances` maps an
         instance ID to `struct(id, name, version, store_name, key, edges, dependency_keys, peers,
-        members, status)` (`edges`: alias -> instance ID; `dependency_keys`: alias -> the
-        `bun.lock` key of the package an ordinary dependency links; `peers`: the aliases of `edges`
-        that are peers; `members`: alias -> the path of a workspace it links; `status`: `ok`, or
-        why the instance cannot be used), `links` maps a workspace path (`""` for the root) to
+        members, status, unfetched)` (`edges`: alias -> instance ID; `dependency_keys`: alias ->
+        the `bun.lock` key of the package an ordinary dependency links; `peers`: the aliases of
+        `edges` that are peers; `members`: alias -> the path of a workspace it links; `status`:
+        `ok`, or why the instance cannot be used; `unfetched`: whether that is because rules_bun
+        does not fetch it, feature 006 ID-4), `links` maps a workspace path (`""` for the root) to
         alias -> `struct(alias, root, closure, optional)`, and `members` maps a workspace path to
         alias -> the path of each workspace it links.
     """
@@ -223,6 +224,8 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             peers = sorted([alias for alias in node.edges.keys() if alias in node.peers]),
             members = dict(node.members),
             status = statuses[key],
+            # Every status this adapter sets is an entry rules_bun does not fetch (ID-4).
+            unfetched = statuses[key] != "ok",
         )
 
     # Links: each holder's dependencies, with what they reach on each platform.

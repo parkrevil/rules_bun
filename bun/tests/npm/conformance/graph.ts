@@ -14,6 +14,8 @@ export interface Entry {
   links: Record<string, Target>;
   /** Ruleset side only: why the hub fails analysis of this instance (`status` other than `ok`). */
   status?: string;
+  /** Ruleset side only: `status` is because rules_bun does not fetch the entry (ID-4). */
+  unfetched?: boolean;
 }
 
 export interface Graph {
@@ -219,9 +221,11 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   for (const { ruleset: r, bun: b, node } of counts.values()) {
     if (r !== b) return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}`;
   }
-  // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it.
+  // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it;
+  // except an entry rules_bun does not fetch, which ID-4 lets fail analysis (its links are compared
+  // above like any other's).
   for (const node of all.values()) {
-    if (node.entry?.status !== undefined) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
+    if (node.entry?.status !== undefined && !node.entry.unfetched) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
   }
   return undefined;
 }

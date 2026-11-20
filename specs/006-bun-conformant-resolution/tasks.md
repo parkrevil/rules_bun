@@ -410,7 +410,7 @@ projects without a BC are unchanged (Q7, T064).
 - [X] T046 [US1] In `bun/private/platforms.bzl` add the platform tuples and their grouping into
   classes by the set of packages `bun_install_types.bzl`'s `is_disabled` leaves out (research R3);
   `check_list` stays for the toolchain; record green for `platforms_test` (depends on T038)
-- [ ] T047 [US1] Rewrite `bun/private/resolve.bzl` as the adapter of research R4, keeping
+- [X] T047 [US1] Rewrite `bun/private/resolve.bzl` as the adapter of research R4, keeping
   `resolve(lockfile, file = "bun.lock", hash_fn = hash)` and its output
   `struct(instances, links, members)` as consumed by `npm_extension.bzl`, `npm_repositories.bzl` and
   `run.bzl`: load (T040–T042) → `resolve` and `clean` (T044) → `build_store` per platform class
@@ -697,7 +697,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 11: Convergence
 
-- [ ] T072 The user approved ID-4 on 2026-11-21 (research Part 6). Treat the differences T071 reported with no ID or BC: an
+- [X] T072 The user approved ID-4 on 2026-11-21 (research Part 6). Treat the differences T071 reported with no ID or BC: an
   unfetched entry fails analysis in the ruleset while Bun installs it (`unsupported`: tarball URL;
   `restricted` and `integration/workspaces/multi_nointegrity/two`: no integrity, constitution III;
   `conformance_unfetched`'s patched entry once BC-8 lands). Until decided, T051's `0 differences`
