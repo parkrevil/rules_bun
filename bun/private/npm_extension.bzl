@@ -493,14 +493,27 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 (`bun/tests/npm/conformance`) compares, for every lockfile of rules_bun's tests, each link with the
 one Bun's install makes on the test's platform. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
-package per set of peers; a peer resolves to the version a dependent above it provides, else to the
-version the lockfile lists; a peer nothing provides, and an optional or peer dependency the lockfile
-does not resolve, is not linked; a dependency a package bundles (`bundleDependencies`) is not
-linked. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
+store entry per set of peers, and a target that reaches several holds each in its own directory
+(`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a
+dependency of the root or a workspace to a different entry on different target platforms (a
+package providing a peer is excluded on some), the link selects that entry by target platform; a
+peer resolves to the version a dependent above it provides, else to the version the lockfile lists;
+a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
+linked; a dependency a package bundles (`bundleDependencies`) is not linked. A package whose own
+dependency the store would bind to different packages on different target platforms fails
+evaluation naming the package and the dependency; no lockfile the pinned Bun writes is known to
+reach that. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
 selected by the target platform, not by the machine that runs Bun (ID-2); Bun's hoisted
 `node_modules/.bun/node_modules` and the root fallback, through which a package can import what it
-does not declare, are not reproduced, so only declared dependencies resolve (ID-3); and an entry
-rules_bun does not fetch fails analysis of a target that needs it (ID-4, below).
+does not declare, are not reproduced, so only declared dependencies resolve (ID-3); an entry
+rules_bun does not fetch fails analysis of a target that needs it (ID-4, below); a lockfile Bun
+refuses because an npm entry's URL lies outside Bun's configured registry and the entry records no
+integrity is loaded, since rules_bun reads no `bunfig.toml` or environment to know that registry,
+and a target that needs the entry fails analysis as under ID-4 (ID-5); and dependencies bind as
+under Bun's default `[install] linkWorkspacePackages = true`, since rules_bun reads no
+`bunfig.toml`: where a project sets it to `false`, Bun links an npm range on a workspace's name to
+a registry package, rules_bun to the workspace (ID-6). The conformance test exercises ID-1 to ID-4;
+no lockfile it compares reaches ID-5 or ID-6.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
 platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's

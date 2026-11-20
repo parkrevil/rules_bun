@@ -53,7 +53,7 @@ alike. Only fields that decide a link are carried.
 | **Holder** | `path` (`""` root, else workspace path), `links` (name → node) | One per root and workspace. |
 | **Entry node** | `name`, `version`, `links` (name → node) | One per Bun store directory / ruleset instance in the host's class. |
 | **Equality** | partition refinement on the union of both graphs | Equal iff every class has as many nodes of each side and each holder matches its counterpart (research R8). |
-| **Intentional difference** | `id` (`ID-1`, `ID-2`, `ID-3`, `ID-4`), what it excludes | The test's only exclusions; ID-1 by `--ignore-scripts`, ID-2 by comparing the host class only, ID-3 by not reading `node_modules/.bun/node_modules`, ID-4 by skipping only the `status` of an entry marked `unfetched` (its links are compared). |
+| **Intentional difference** | `id` (`ID-1` … `ID-6`), what it excludes | ID-1 to ID-4 are the test's only exclusions; ID-1 by `--ignore-scripts`, ID-2 by comparing the host class only, ID-3 by not reading `node_modules/.bun/node_modules`, ID-4 by skipping only the `status` of an entry marked `unfetched` (its links are compared). ID-5 (Bun's registry-dependent integrity refusal) and ID-6 (Bun's default `linkWorkspacePackages`) exclude nothing: no compared lockfile reaches them (the oracle refuses ID-5's lockfile; the corpus uses Bun's default). |
 
 ## State transitions
 

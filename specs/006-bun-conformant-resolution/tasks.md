@@ -787,7 +787,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 14: Convergence
 
-- [ ] T078 CRITICAL: make the documentation claim only what `conformance_test` passes on. Today
+- [X] T078 CRITICAL: make the documentation claim only what `conformance_test` passes on. Today
   `_NPM_DOC`'s Resolution paragraph in `bun/private/npm_extension.bzl` ("the hub links what the
   pinned Bun 1.4.4's isolated install links … a package reached under different peers is one package
   per set of peers") and `bun_binary`'s doc in `bun/private/run.bzl` ("Peers resolve as the pinned
@@ -856,7 +856,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   off Linux), add a `bun/tests/npm/bun_install_types_test.bzl` or `bun/tests/npm/platforms_test.bzl`
   case on `meta_is_disabled` / `platform_classes`, written red first where it covers new behavior;
   record in `tdd-log.md`, per Constitution II / FR-017 / P1 (contradicts)
-- [ ] T085 Bring `specs/006-bun-conformant-resolution/contracts/public-api.md` in line with spec BC-4
+- [X] T085 Bring `specs/006-bun-conformant-resolution/contracts/public-api.md` in line with spec BC-4
   (user, 2026-11-21): its BC-4 row still reads "not linked → linked to the member". Make it state the
   link by path, the analysis failure of a target whose closure holds such a link without the
   member's target among its transitive `deps` (naming the package, the dependency and the member's

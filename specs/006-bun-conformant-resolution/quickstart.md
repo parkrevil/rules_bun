@@ -15,6 +15,8 @@ bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors
 Expected: PASS, with the test log listing every project compared (all of `bun/tests/npm/fixtures/`,
 the `conformance_*` corpus, `scale`, `bun/tests/integration/workspaces/*`), the not-applicable
 projects with their reasons, the exclusions `ID-1`, `ID-2`, `ID-3`, `ID-4` by name, and `0 differences`.
+ID-5 and ID-6 exclude nothing (no compared lockfile reaches them; spec "Intentional Differences").
+Every BC-1…BC-12 difference recorded red in `tdd-log.md` is gone.
 
 ## Q2. Red mode (FR-011, SC-003)
 
