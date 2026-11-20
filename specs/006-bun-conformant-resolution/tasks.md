@@ -429,7 +429,7 @@ projects without a BC are unchanged (Q7, T064).
   `grep -rn "lists no entry for\|missing_peer\|whatever its" bun/tests e2e` finds asserting BC-3,
   BC-5 or BC-7's old behavior (for example `bun/tests/integration/restricted.test.ts`); no other
   assertion changes (depends on T047)
-- [ ] T049 [US1] Audit the key walks of `bun/private/lockfile.bzl`, `bun/private/workspaces.bzl`
+- [X] T049 [US1] Audit the key walks of `bun/private/lockfile.bzl`, `bun/private/workspaces.bzl`
   and `bun/private/npm_extension.bzl` (PRIOR's audit of key walks, research Part 1): each walk or
   binding decision made outside the carry-over is replaced by `resolve.bzl`'s output or recorded in
   research Part 2 with its lines and the reason it decides no link (depends on T047)

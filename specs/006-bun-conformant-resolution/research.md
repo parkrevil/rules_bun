@@ -160,6 +160,217 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | the `.bun-tag` of a git or GitHub row | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); not read |
 | a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists; the adapter (ID-2) gives it a value no package names, npm's rule for an unknown value (`bun_install_types.bzl` `platform_value`) |
 
+### Walks outside the carry-over (T049)
+
+The audit of PRIOR's key walks, re-done on the branch: no code outside `bun/private/bun_*.bzl` and
+the adapter `resolve.bzl` decides which package a dependency links.
+
+| Code | Lines | What it decides |
+|---|---|---|
+| `lockfile.bzl` `split_key`, an entry's `segments` and `alias` | `lockfile.bzl` `split_key`, `_entry` | read for each key and kept for the lockfile tests; no resolver reads them (the loader binds by `find_resolution`, LOCK L1580–L1662) |
+| `workspaces.bzl` member patterns, `compare_manifests`, `match_members` | `workspaces.bzl` | that `package.json` and `bun.lock` agree (the frozen-lockfile check, INSTALL L826–L891); no link |
+| `npm_extension.bzl` first entry of each `name@version`, `packages`, `identities` | `npm_extension.bzl` `_npm_impl` | which archive is downloaded and verified for a package version; no link |
+| `run.bzl` `_check_unique`, `_package_layout` | `run.bzl` | that a program gets one copy per package version, and the store and link paths of the instances and links `resolve.bzl` gives; no binding |
+
+### Function-level map (T055)
+
+Each function of the rebuilt resolver and the Bun lines it carries over, as its docstring cites them
+(`citations_test` checks every docstring; T054 re-read each range at the tag).
+
+| Ruleset function | Carries over (bun-v1.4.4) |
+|---|---|
+| `bun_semver.bzl` `_version` | `src/semver/Version.rs` L56–L66 |
+| `bun_semver.bzl` `_parse_ascii` | `src/semver/Version.rs` L27–L38 |
+| `bun_semver.bzl` `_length_of_leading_whitespace_ascii` | `src/semver/SemverQuery.rs` L912–L942; `src/bun_core/string/immutable.rs` L1956–L1971 |
+| `bun_semver.bzl` `parse_tag` | `src/semver/Version.rs` L1140–L1252 |
+| `bun_semver.bzl` `parse_version` | `src/semver/Version.rs` L520–L728; `src/semver/Version.rs` L963–L983 |
+| `bun_semver.bzl` `_parse_result` | `src/semver/Version.rs` L1264–L1286; `src/semver/Version.rs` L963–L972 |
+| `bun_semver.bzl` `_cmp` | `src/semver/Version.rs` L469–L500 |
+| `bun_semver.bzl` `_order_pre` | `src/semver/Version.rs` L1014–L1075 |
+| `bun_semver.bzl` `_tag_order` | `src/semver/Version.rs` L1077–L1088 |
+| `bun_semver.bzl` `_tag_order_without_build` | `src/semver/Version.rs` L1090–L1096 |
+| `bun_semver.bzl` `_order_without_tag` | `src/semver/Version.rs` L469–L500 |
+| `bun_semver.bzl` `version_order` | `src/semver/Version.rs` L502–L509 |
+| `bun_semver.bzl` `version_order_without_build` | `src/semver/Version.rs` L511–L518 |
+| `bun_semver.bzl` `version_eql` | `src/semver/Version.rs` L275–L280; `src/semver/Version.rs` L1136–L1138 |
+| `bun_semver.bzl` `_is_zero` | `src/semver/Version.rs` L158–L160 |
+| `bun_semver.bzl` `_comparator` | `src/semver/SemverRange.rs` L184–L188 |
+| `bun_semver.bzl` `_range` | `src/semver/SemverRange.rs` L20–L24 |
+| `bun_semver.bzl` `_null_set` | `src/semver/SemverRange.rs` L191–L200 |
+| `bun_semver.bzl` `_lt_next_major` | `src/semver/SemverRange.rs` L202–L224 |
+| `bun_semver.bzl` `_lt_next_minor` | `src/semver/SemverRange.rs` L226–L248 |
+| `bun_semver.bzl` `_lt_next_patch` | `src/semver/SemverRange.rs` L250–L273 |
+| `bun_semver.bzl` `_gte_next_major` | `src/semver/SemverRange.rs` L275–L289 |
+| `bun_semver.bzl` `_gte_next_minor` | `src/semver/SemverRange.rs` L291–L306 |
+| `bun_semver.bzl` `_comparator_satisfies` | `src/semver/SemverRange.rs` L320–L337 |
+| `bun_semver.bzl` `_init_wildcard` | `src/semver/SemverRange.rs` L26–L75 |
+| `bun_semver.bzl` `_range_satisfies` | `src/semver/SemverRange.rs` L101–L118 |
+| `bun_semver.bzl` `_range_satisfies_pre` | `src/semver/SemverRange.rs` L120–L157 |
+| `bun_semver.bzl` `_to_range` | `src/semver/SemverQuery.rs` L602–L743 |
+| `bun_semver.bzl` `_or_range` | `src/semver/SemverQuery.rs` L519–L538 |
+| `bun_semver.bzl` `_and_range` | `src/semver/SemverQuery.rs` L510–L517; `src/semver/SemverQuery.rs` L324–L345 |
+| `bun_semver.bzl` `_null_set_group` | `src/semver/SemverQuery.rs` L480–L486 |
+| `bun_semver.bzl` `parse_query` | `src/semver/SemverQuery.rs` L767–L769; `src/semver/SemverQuery.rs` L777–L1030 |
+| `bun_semver.bzl` `query_satisfies` | `src/semver/SemverQuery.rs` L540–L547; `src/semver/SemverQuery.rs` L259–L300; `src/semver/SemverQuery.rs` L122–L156 |
+| `bun_semver.bzl` `query_is_star` | `src/semver/SemverQuery.rs` L495–L503 |
+| `bun_semver.bzl` `_raise` | `src/semver/intersects.rs` L22–L34 |
+| `bun_semver.bzl` `_cap` | `src/semver/intersects.rs` L36–L48 |
+| `bun_semver.bzl` `_narrow` | `src/semver/intersects.rs` L50–L67 |
+| `bun_semver.bzl` `_and_query` | `src/semver/intersects.rs` L69–L76 |
+| `bun_semver.bzl` `_is_non_empty` | `src/semver/intersects.rs` L78–L93 |
+| `bun_semver.bzl` `_exact_version` | `src/semver/SemverQuery.rs` L93–L98 |
+| `bun_semver.bzl` `_query_is_star` | `src/semver/intersects.rs` L213–L220 |
+| `bun_semver.bzl` `_admits` | `src/semver/intersects.rs` L230–L233 |
+| `bun_semver.bzl` `_admits_an_exact_version_of` | `src/semver/intersects.rs` L235–L242 |
+| `bun_semver.bzl` `query_intersects` | `src/semver/intersects.rs` L244–L266 |
+| `bun_install_types.bzl` `_has` | `src/install_types/resolver_hooks.rs` L171–L188 |
+| `bun_install_types.bzl` `behavior_is_prod` | `src/install_types/resolver_hooks.rs` L204–L207 |
+| `bun_install_types.bzl` `behavior_is_optional` | `src/install_types/resolver_hooks.rs` L208–L212 |
+| `bun_install_types.bzl` `behavior_is_optional_peer` | `src/install_types/resolver_hooks.rs` L213–L216 |
+| `bun_install_types.bzl` `behavior_is_dev` | `src/install_types/resolver_hooks.rs` L217–L220 |
+| `bun_install_types.bzl` `behavior_is_peer` | `src/install_types/resolver_hooks.rs` L221–L224 |
+| `bun_install_types.bzl` `behavior_is_workspace` | `src/install_types/resolver_hooks.rs` L225–L228 |
+| `bun_install_types.bzl` `behavior_is_bundled` | `src/install_types/resolver_hooks.rs` L229–L232 |
+| `bun_install_types.bzl` `behavior_is_enabled` | `src/install_types/resolver_hooks.rs` L261–L267 |
+| `bun_install_types.bzl` `behavior_is_placed` | `src/install_types/resolver_hooks.rs` L269–L273 |
+| `bun_install_types.bzl` `behavior_cmp` | `src/install_types/resolver_hooks.rs` L275–L297 |
+| `bun_install_types.bzl` `dependency_sort_key` | `src/install_types/resolver_hooks.rs` L552–L558; `src/install/lockfile.rs` L320–L341 |
+| `bun_install_types.bzl` `_features` | `src/install_types/resolver_hooks.rs` L1183–L1215 |
+| `bun_install_types.bzl` `tag_is_local_package` | `src/install/resolution.rs` L1047–L1049 |
+| `bun_install_types.bzl` `tag_can_enqueue_install_task` | `src/install/resolution.rs` L1074–L1080 |
+| `bun_install_types.bzl` `dependency_features` | `src/install/PackageManager/PackageManagerOptions.rs` L276–L282; `src/install/PackageManager/PackageManagerOptions.rs` L150–L159 |
+| `bun_install_types.bzl` `_all` | `src/install_types/resolver_hooks.rs` L810–L817 |
+| `bun_install_types.bzl` `platform_names` | `src/install_types/resolver_hooks.rs` L847–L850; `src/install_types/resolver_hooks.rs` L904–L904; `src/install_types/resolver_hooks.rs` L961–L965 |
+| `bun_install_types.bzl` `platform_value` | `src/install/PackageManager/CommandLineArguments.rs` L37–L64 |
+| `bun_install_types.bzl` `negatable_from_json_value` | `src/install/npm.rs` L850–L865; `src/install_types/resolver_hooks.rs` L610–L687 |
+| `bun_install_types.bzl` `_is_match` | `src/install_types/resolver_hooks.rs` L833–L836; `src/install_types/resolver_hooks.rs` L876–L880; `src/install_types/resolver_hooks.rs` L947–L950 |
+| `bun_install_types.bzl` `libc_for_dependency` | `src/install_types/resolver_hooks.rs` L882–L890 |
+| `bun_install_types.bzl` `meta_is_disabled` | `src/install/lockfile/Package/Meta.rs` L70–L74 |
+| `bun_install_types.bzl` `_resolution` | `src/install/resolution.rs` L66–L72 |
+| `bun_install_types.bzl` `_parse_repository_git` | `src/install/repository.rs` L152–L168 |
+| `bun_install_types.bzl` `_parse_repository_github` | `src/install/repository.rs` L170–L198 |
+| `bun_install_types.bzl` `repository_with_resolved` | `src/install/lockfile/bun.lock.rs` L2714–L2719 |
+| `bun_install_types.bzl` `_repository_eql` | `src/install_types/resolver_hooks.rs` L1035–L1046 |
+| `bun_install_types.bzl` `_repository_order` | `src/install_types/resolver_hooks.rs` L996–L1012 |
+| `bun_install_types.bzl` `resolution_from_text_lockfile` | `src/install/resolution.rs` L161–L252 |
+| `bun_install_types.bzl` `resolution_order` | `src/install/resolution.rs` L358–L383; `src/install_types/resolver_hooks.rs` L1089–L1092 |
+| `bun_install_types.bzl` `resolution_eql` | `src/install/resolution.rs` L497–L534; `src/install_types/resolver_hooks.rs` L1085–L1087 |
+| `bun_install_types.bzl` `resolution_satisfies_dependency_version` | `src/install/resolution.rs` L25–L52 |
+| `bun_install_types.bzl` `_has_suffix_ignore_ascii_case` | `src/install/dependency.rs` L429–L432 |
+| `bun_install_types.bzl` `is_tarball` | `src/install/dependency.rs` L420–L432 |
+| `bun_install_types.bzl` `is_remote_tarball` | `src/install/dependency.rs` L434–L438 |
+| `bun_install_types.bzl` `_is_scp_like_path` | `src/install/dependency.rs` L354–L391 |
+| `bun_install_types.bzl` `_is_github_tarball_path` | `src/install/dependency.rs` L393–L418 |
+| `bun_install_types.bzl` `_is_github_shorthand` | `src/install/hosted_git_info.rs` L544–L601 |
+| `bun_install_types.bzl` `_hosted_git_tag` | `src/install/hosted_git_info.rs` L231–L326; `src/install/dependency.rs` L1635–L1649 |
+| `bun_install_types.bzl` `_is_dist_tag_with_leading_digit` | `src/install/dependency.rs` L440–L469 |
+| `bun_install_types.bzl` `_split_npm_alias` | `src/install/dependency.rs` L1191–L1199 |
+| `bun_install_types.bzl` `version_tag_infer` | `src/install/dependency.rs` L794–L1113 |
+| `bun_install_types.bzl` `_infer` | `src/install/dependency.rs` L794–L1113 |
+| `bun_install_types.bzl` `_is_range_after_npm_protocol` | `src/install/dependency.rs` L1201–L1208 |
+| `bun_install_types.bzl` `_trim` | `src/semver/Version.rs` L166–L174; `src/install/dependency.rs` L1610–L1623 |
+| `bun_install_types.bzl` `_trim_literal` | `src/install/dependency.rs` L1140–L1145 |
+| `bun_install_types.bzl` `_version_value` | `src/install_types/resolver_hooks.rs` L439–L444 |
+| `bun_install_types.bzl` `dependency_version` | `src/install_types/resolver_hooks.rs` L405–L444 |
+| `bun_install_types.bzl` `dependency_parse` | `src/install/dependency.rs` L1147–L1189; `src/install/dependency.rs` L1229–L1625 |
+| `bun_install_types.bzl` `split_name_and_maybe_version` | `src/install/dependency.rs` L485–L516 |
+| `bun_install_types.bzl` `split_name_and_version` | `src/install/dependency.rs` L529–L532 |
+| `bun_install_types.bzl` `is_safe_install_folder_name` | `src/install/dependency.rs` L570–L596 |
+| `bun_lockfile.bzl` `_refusal` | `src/install/lockfile/bun.lock.rs` L1806–L1811 |
+| `bun_lockfile.bzl` `_failure` | `src/install/lockfile/bun.lock.rs` L3302–L3345 |
+| `bun_lockfile.bzl` `is_valid` | `src/install/lockfile/bun.lock.rs` L3269–L3270 |
+| `bun_lockfile.bzl` `_meta` | `src/install/lockfile/bun.lock.rs` L2593–L2604; `src/install/lockfile/Package/Meta.rs` L51–L66 |
+| `bun_lockfile.bzl` `_package` | `src/install/lockfile/Package.rs` L244–L282 |
+| `bun_lockfile.bzl` `_dependency` | `src/install_types/resolver_hooks.rs` L517–L528 |
+| `bun_lockfile.bzl` `dependency_ids` | `src/install_types/resolver_hooks.rs` L133–L140 |
+| `bun_lockfile.bzl` `_parse_catalog` | `src/install/lockfile/bun.lock.rs` L1727–L1795 |
+| `bun_lockfile.bzl` `_catalog_find` | `src/install/lockfile/CatalogMap.rs` L54–L115 |
+| `bun_lockfile.bzl` `catalogs_resolve_range` | `src/install/lockfile/CatalogMap.rs` L195–L207 |
+| `bun_lockfile.bzl` `_strip_reference` | `src/install/lockfile/CatalogMap.rs` L209–L237 |
+| `bun_lockfile.bzl` `_parse_package_segment` | `src/install/lockfile/override_selector.rs` L25–L52 |
+| `bun_lockfile.bzl` `_lockfile_range` | `src/install/lockfile/OverrideMap.rs` L1081–L1116 |
+| `bun_lockfile.bzl` `_put_lockfile_rule` | `src/install/lockfile/OverrideMap.rs` L671–L737; `src/install/lockfile/OverrideMap.rs` L644–L668 |
+| `bun_lockfile.bzl` `_parse_overrides` | `src/install/lockfile/bun.lock.rs` L1934–L2035 |
+| `bun_lockfile.bzl` `overrides_has_rule_for_name` | `src/install/lockfile/OverrideMap.rs` L446–L449 |
+| `bun_lockfile.bzl` `overrides_contains_name` | `src/install/lockfile/OverrideMap.rs` L422–L434 |
+| `bun_lockfile.bzl` `_is_npm_alias` | `src/install/lockfile/OverrideMap.rs` L74–L77 |
+| `bun_lockfile.bzl` `_range_selects` | `src/install/lockfile/OverrideMap.rs` L88–L114 |
+| `bun_lockfile.bzl` `_cmp_range_text` | `src/install/lockfile/OverrideMap.rs` L116–L128 |
+| `bun_lockfile.bzl` `package_version` | `src/install/lockfile.rs` L831–L843 |
+| `bun_lockfile.bzl` `_owner_package_id` | `src/install/lockfile/OverrideMap.rs` L395–L419 |
+| `bun_lockfile.bzl` `_scoped_rule_for` | `src/install/lockfile/OverrideMap.rs` L307–L369 |
+| `bun_lockfile.bzl` `is_overridden_dependency` | `src/install/lockfile.rs` L1145–L1148; `src/install/lockfile/OverrideMap.rs` L234–L297 |
+| `bun_lockfile.bzl` `_index_insert` | `src/install/lockfile.rs` L3205–L3226; `src/install/lockfile.rs` L2713–L2729 |
+| `bun_lockfile.bzl` `_append_package_dedupe` | `src/install/lockfile.rs` L2684–L2711 |
+| `bun_lockfile.bzl` `_parse_append_dependencies` | `src/install/lockfile/bun.lock.rs` L3347–L3543 |
+| `bun_lockfile.bzl` `_workspace_obj` | `src/install/lockfile/bun.lock.rs` L2225–L2235; `src/install/lockfile/bun.lock.rs` L2284–L2294 |
+| `bun_lockfile.bzl` `_row_obj` | `src/install/lockfile/bun.lock.rs` L2565–L2587 |
+| `bun_lockfile.bzl` `_find_resolution` | `src/install/lockfile/bun.lock.rs` L1573–L1662 |
+| `bun_lockfile.bzl` `_peer_candidate_name` | `src/install/lockfile/bun.lock.rs` L3208–L3223 |
+| `bun_lockfile.bzl` `version_based_peer_range` | `src/install/lockfile/bun.lock.rs` L3172–L3206 |
+| `bun_lockfile.bzl` `resolve_peer_dep_by_range` | `src/install/lockfile/bun.lock.rs` L3225–L3241 |
+| `bun_lockfile.bzl` `resolve_peer_dep_version_based` | `src/install/lockfile/bun.lock.rs` L3045–L3085 |
+| `bun_lockfile.bzl` `linked_workspace_path` | `src/install/lockfile.rs` L2218–L2256 |
+| `bun_lockfile.bzl` `may_stay_unresolved` | `src/install/lockfile/bun.lock.rs` L3297–L3300 |
+| `bun_lockfile.bzl` `_dependency_resolution_failure` | `src/install/lockfile/bun.lock.rs` L3302–L3345 |
+| `bun_lockfile.bzl` `_integrity_is_supported` | `src/install/integrity.rs` L88–L120; `src/install/integrity.rs` L291–L324 |
+| `bun_lockfile.bzl` `load_lockfile` | `src/install/lockfile/bun.lock.rs` L1797–L3034 |
+| `bun_lockfile.bzl` `_resolve_rows` | `src/install/lockfile/bun.lock.rs` L2765–L3025 |
+| `bun_lockfile.bzl` `tag_workspace_links` | `src/install/lockfile.rs` L2313–L2429 |
+| `bun_lockfile.bzl` `rebind_peers_to_printed_packages` | `src/install/lockfile/bun.lock.rs` L3243–L3295 |
+| `bun_lockfile.bzl` `lockfile_resolve` | `src/install/lockfile.rs` L1615–L1625 |
+| `bun_lockfile.bzl` `_peer_provider` | `src/install/lockfile/reachable.rs` L190–L221 |
+| `bun_lockfile.bzl` `_packages_without_peer_provider` | `src/install/lockfile/reachable.rs` L223–L254 |
+| `bun_lockfile.bzl` `_packages_reached_without_peer_provider` | `src/install/lockfile/reachable.rs` L256–L284 |
+| `bun_lockfile.bzl` `_collect` | `src/install/lockfile/bun.lock.rs` L3135–L3169 |
+| `bun_lockfile.bzl` `shared_version` | `src/install/lockfile/bun.lock.rs` L3102–L3133 |
+| `bun_lockfile.bzl` `is_weak_peer` | `src/install/lockfile.rs` L845–L858 |
+| `bun_lockfile.bzl` `_held_at_load` | `src/install/lockfile.rs` L2296–L2311 |
+| `bun_lockfile.bzl` `_clone_dependency` | `src/install/dependency.rs` L185–L239 |
+| `bun_lockfile.bzl` `_clone_package` | `src/install/lockfile/Package.rs` L423–L566 |
+| `bun_lockfile.bzl` `_peer_on_last_copy` | `src/install/lockfile.rs` L1540–L1555 |
+| `bun_lockfile.bzl` `lockfile_clean` | `src/install/PackageManager/install_with_manager.rs` L2378–L2410; `src/install/lockfile.rs` L1236–L1436; `src/install/lockfile.rs` L1557–L1608 |
+| `bun_tree.bzl` `_result` | `src/install/lockfile/Tree.rs` L148–L171 |
+| `bun_tree.bzl` `_in_slice` | `src/install_types/resolver_hooks.rs` L105–L110 |
+| `bun_tree.bzl` `_name_is_single_path_entry` | `src/install/PackageInstaller.rs` L564–L574 |
+| `bun_tree.bzl` `_alias_is_safe_install_target` | `src/install/PackageInstaller.rs` L576–L589; `src/install/lockfile/Tree.rs` L1727–L1745 |
+| `bun_tree.bzl` `is_unlinked_member` | `src/install/lockfile/Tree.rs` L95–L112 |
+| `bun_tree.bzl` `bind_served_peers` | `src/install/lockfile/Tree.rs` L814–L834 |
+| `bun_tree.bzl` `_builder` | `src/install/lockfile/Tree.rs` L501–L565; `src/install/lockfile.rs` L1657–L1699 |
+| `bun_tree.bzl` `_with_peers` | `src/install/lockfile/Tree.rs` L606–L618 |
+| `bun_tree.bzl` `_regular_targets` | `src/install/lockfile/Tree.rs` L745–L758 |
+| `bun_tree.bzl` `_probes_begin` | `src/install/lockfile/Tree.rs` L590–L683 |
+| `bun_tree.bzl` `_is_hidden_by` | `src/install/lockfile/Tree.rs` L685–L742 |
+| `bun_tree.bzl` `_repeating_period` | `src/install/lockfile/Tree.rs` L777–L812 |
+| `bun_tree.bzl` `_peer_by_version` | `src/install/lockfile/Tree.rs` L855–L869 |
+| `bun_tree.bzl` `_bind_peer` | `src/install/lockfile/Tree.rs` L871–L883 |
+| `bun_tree.bzl` `_bind_pending_peers` | `src/install/lockfile/Tree.rs` L843–L849 |
+| `bun_tree.bzl` `_hoist_root_resolves_elsewhere` | `src/install/lockfile/Tree.rs` L2053–L2143 |
+| `bun_tree.bzl` `_hoist_level` | `src/install/lockfile/Tree.rs` L1782–L2016 |
+| `bun_tree.bzl` `_hoist_bottom` | `src/install/lockfile/Tree.rs` L2018–L2050 |
+| `bun_tree.bzl` `_hoist_dependency` | `src/install/lockfile/Tree.rs` L1778–L2051 |
+| `bun_tree.bzl` `_process_subtree` | `src/install/lockfile/Tree.rs` L1411–L1776 |
+| `bun_tree.bzl` `hoist` | `src/install/lockfile.rs` L1645–L1725; `src/install/lockfile/Tree.rs` L1250–L1303 |
+| `bun_tree.bzl` `is_filtered_dependency_or_workspace` | `src/install/lockfile/Tree.rs` L1313–L1405 |
+| `bun_isolated_store.bzl` `_dependency_is_contained_folder` | `src/install/isolated_install.rs` L392–L405 |
+| `bun_isolated_store.bzl` `contained_folders` | `src/install/isolated_install.rs` L407–L451 |
+| `bun_isolated_store.bzl` `_leaking_peers` | `src/install/isolated_install.rs` L561–L672 |
+| `bun_isolated_store.bzl` `_sorted_peers` | `src/install/isolated_install/Store.rs` L209–L211 |
+| `bun_isolated_store.bzl` `_insert_peer` | `src/install/isolated_install/Store.rs` L234–L245; `src/install/isolated_install/Store.rs` L635–L656 |
+| `bun_isolated_store.bzl` `_peers_eql` | `src/install/isolated_install/Store.rs` L218–L232 |
+| `bun_isolated_store.bzl` `_named` | `src/install/isolated_install.rs` L471–L492 |
+| `bun_isolated_store.bzl` `build_store` | `src/install/isolated_install.rs` L510–L1470; `src/install/isolated_install.rs` L494–L508 |
+| `resolve.bzl` `_error` | the adapter (research R4) |
+| `resolve.bzl` `unsupported_reason` | the adapter (research R4) |
+| `resolve.bzl` `_target_safe` | the adapter (research R4) |
+| `resolve.bzl` `_holder_path` | the adapter (research R4) |
+| `resolve.bzl` `_entry_key` | the adapter (research R4) |
+| `resolve.bzl` `_class_graph` | the adapter (research R4) |
+| `resolve.bzl` `_reached` | the adapter (research R4) |
+| `resolve.bzl` `_ids` | the adapter (research R4) |
+| `resolve.bzl` `_label` | the adapter (research R4) |
+| `resolve.bzl` `resolve` | the adapter (research R4) |
+
 ## Part 3: Decisions
 
 ### R1. Structure: one Starlark file per Bun stage

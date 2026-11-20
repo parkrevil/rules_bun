@@ -79,7 +79,7 @@ def _failure(file, message):
 def is_valid(pkg_id):
     """Whether a package ID is one, not `invalid_package_id`.
 
-    Bun: src/install/lockfile/bun.lock.rs L3269–L3270 @ bun-v1.4.4
+    Bun: src/install_types/resolver_hooks.rs L32–L32 @ bun-v1.4.4
 
     Args:
         pkg_id: A package ID or `INVALID`.
@@ -407,7 +407,7 @@ def package_version(lockfile, pkg_id):
 def _owner_package_id(lockfile, dep_id):
     """`OverrideMap::owner_package_id`: the package whose dependencies hold `dep_id`.
 
-    Bun: src/install/lockfile/OverrideMap.rs L395–L419 @ bun-v1.4.4
+    Bun: src/install/lockfile/OverrideMap.rs L392–L419 @ bun-v1.4.4
     """
     owners = lockfile.cache.get("owners")
     if owners == None:
