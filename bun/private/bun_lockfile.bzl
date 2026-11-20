@@ -1274,3 +1274,171 @@ def shared_version(lockfile, cache, owner, dep_id):
         if all([resolution_satisfies_dependency_version(resolution, catalogs_resolve_range(lockfile, lockfile.dependencies[row])) for row in rows]):
             return pkg_id
     return INVALID
+
+def is_weak_peer(lockfile, dep_id, target):
+    """`Lockfile::is_weak_peer`: an optional peer, or a peer bound outside its range, not overridden.
+
+    Bun: src/install/lockfile.rs L845–L858 @ bun-v1.4.4
+
+    Args:
+        lockfile: A loaded lockfile.
+        dep_id: A dependency ID.
+        target: The package it is bound to.
+
+    Returns:
+        Whether the dependency must not keep its target alive.
+    """
+    dependency = lockfile.dependencies[dep_id]
+    if not behavior_is_peer(dependency.behavior) or behavior_is_optional_peer(dependency.behavior):
+        return behavior_is_peer(dependency.behavior)
+    version = catalogs_resolve_range(lockfile, dependency)
+    if version.tag != VERSION_TAG.NPM:
+        return False
+    target_version = package_version(lockfile, target)
+    if target_version == None or query_satisfies(version.npm.version, target_version):
+        return False
+    return not is_overridden_dependency(lockfile, dep_id)
+
+def _held_at_load(lockfile):
+    """`Lockfile::mark_loaded_packages`: the packages a dependency other than a weak peer holds.
+
+    Bun: src/install/lockfile.rs L2296–L2311 @ bun-v1.4.4
+    """
+    held = {}
+    for dep_id in range(len(lockfile.dependencies)):
+        target = lockfile.resolutions[dep_id]
+        if is_valid(target) and not is_weak_peer(lockfile, dep_id, target):
+            held[target] = True
+    return held
+
+def _clone_dependency(dependency):
+    """`Dependency::clone_in`: a workspace edge keeps its path; any other literal is parsed again.
+
+    Bun: src/install/dependency.rs L185–L239 @ bun-v1.4.4
+    """
+    if dependency.version.tag == VERSION_TAG.WORKSPACE:
+        return dependency
+    version = dependency_parse(dependency.name, dependency.version.literal, dependency.version.tag)
+    if version == None:
+        version = dependency_version(VERSION_TAG.UNINITIALIZED, dependency.version.literal)
+    return _dependency(dependency.name, version, dependency.behavior)
+
+def _clone_package(old, new, cloner, old_id):
+    """`Package::clone`: copy one package and its dependencies; queue the targets not yet copied.
+
+    Bun: src/install/lockfile/Package.rs L423–L566 @ bun-v1.4.4
+    """
+    package = old.packages[old_id]
+    prev_len = len(new.dependencies)
+    old_ids = dependency_ids(old, old_id)
+    for dep_id in old_ids:
+        new.dependencies.append(_clone_dependency(old.dependencies[dep_id]))
+        new.resolutions.append(INVALID)
+    new_id = len(new.packages)
+    new.packages.append(_package(package.name, package.resolution, prev_len, len(old_ids), package.meta, package.key, package.entry))
+    _index_insert(new, package.name, new_id)
+    cloner.mapping[old_id] = new_id
+    for i, dep_id in enumerate(old_ids):
+        old_resolution = old.resolutions[dep_id]
+        if not is_valid(old_resolution):
+            continue
+        pending = (old_resolution, prev_len + i)
+
+        # A weak peer must not keep its target alive. It's bound in `flush`.
+        if is_weak_peer(old, dep_id, old_resolution) and old_resolution in cloner.held_at_load:
+            cloner.weak_peers.append(pending)
+            continue
+        mapped = cloner.mapping.get(old_resolution, INVALID)
+        if is_valid(mapped):
+            new.resolutions[prev_len + i] = mapped
+        else:
+            cloner.clone_queue.append(pending)
+    return new_id
+
+def _peer_on_last_copy(old, new, cloner):
+    """`Cloner::peer_on_last_copy`: a required weak peer whose target was the last of its name.
+
+    Bun: src/install/lockfile.rs L1540–L1555 @ bun-v1.4.4
+    """
+    for i, (old_resolution, resolve_id) in enumerate(cloner.weak_peers):
+        if (not is_valid(cloner.mapping.get(old_resolution, INVALID)) and
+            not behavior_is_optional_peer(new.dependencies[resolve_id].behavior) and
+            not new.package_index.get(old.packages[old_resolution].name)):
+            last = cloner.weak_peers.pop()
+            if i < len(cloner.weak_peers):
+                cloner.weak_peers[i] = last
+            return (old_resolution, resolve_id)
+    return None
+
+def lockfile_clean(lockfile, hoist):
+    """`clean_lockfile`: `tag_workspace_links`, then `clean_with_logger` of a frozen install.
+
+    Bun: src/install/PackageManager/install_with_manager.rs L2378–L2410 @ bun-v1.4.4
+    Bun: src/install/lockfile.rs L1236–L1436 @ bun-v1.4.4
+    Bun: src/install/lockfile.rs L1557–L1608 @ bun-v1.4.4
+
+    The copy keeps the overrides, catalogs and workspaces; trusted dependencies, scripts and
+    patched dependencies decide no link. With a frozen lockfile `flush` reports no moved row, so
+    no second clean runs (L1409-L1421).
+
+    Args:
+        lockfile: A loaded and resolved lockfile.
+        hoist: `bun_tree.bzl`'s `hoist`.
+
+    Returns:
+        `struct(value, error)`; `value` is the new lockfile.
+    """
+    held_at_load = _held_at_load(lockfile)
+    tag_workspace_links(lockfile)
+    new = struct(
+        file = lockfile.file,
+        version = lockfile.version,
+        packages = [],
+        dependencies = [],
+        resolutions = [],
+        package_index = {},
+        workspace_paths = dict(lockfile.workspace_paths),
+        workspace_versions = dict(lockfile.workspace_versions),
+        overrides = lockfile.overrides,
+        catalogs = lockfile.catalogs,
+        pkg_map = {},
+        trees = [],
+        hoisted_dependencies = [],
+        patched = lockfile.patched,
+        cache = {},
+    )
+    cloner = struct(mapping = {}, clone_queue = [], weak_peers = [], held_at_load = held_at_load)
+
+    # Step 1. Recreate the lockfile with only the packages that are still alive.
+    if not lockfile.packages:
+        return struct(value = new, error = None)
+    _clone_package(lockfile, new, cloner, 0)
+
+    # `Cloner::flush` (L1559-L1580).
+    for _ in range(_LIMIT):
+        if cloner.clone_queue:
+            to_clone = cloner.clone_queue.pop()
+        else:
+            to_clone = _peer_on_last_copy(lockfile, new, cloner)
+            if to_clone == None:
+                break
+        old_resolution, resolve_id = to_clone
+        mapped = cloner.mapping.get(old_resolution, INVALID)
+        if is_valid(mapped):
+            new.resolutions[resolve_id] = mapped
+            continue
+        new.resolutions[resolve_id] = _clone_package(lockfile, new, cloner, old_resolution)
+    for old_resolution, resolve_id in cloner.weak_peers:
+        mapped = cloner.mapping.get(old_resolution, INVALID)
+        if is_valid(mapped):
+            new.resolutions[resolve_id] = mapped
+    cloner.weak_peers.clear()
+
+    for key, old_id in lockfile.pkg_map.items():
+        mapped = cloner.mapping.get(old_id, INVALID)
+        if is_valid(mapped):
+            new.pkg_map[key] = mapped
+    error = lockfile_resolve(new, hoist)
+    if error:
+        return struct(value = None, error = error)
+    return struct(value = new, error = None)

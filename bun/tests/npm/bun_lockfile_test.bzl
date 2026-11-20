@@ -7,7 +7,8 @@ assert; the conformance test checks the same against the pinned Bun itself.
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
-load("//bun/private:bun_lockfile.bzl", "INVALID", "load_lockfile", "shared_version")
+load("//bun/private:bun_lockfile.bzl", "INVALID", "load_lockfile", "lockfile_clean", "lockfile_resolve", "shared_version")
+load("//bun/private:bun_tree.bzl", "hoist")
 load("//bun/private:lockfile.bzl", "read_lockfile")
 
 def _load_text(text, file = "inline/bun.lock"):
@@ -183,6 +184,30 @@ def _version_peers_test_impl(ctx):
         asserts.equals(env, "state@1.0.0", _describe(lockfile, shared_version(lockfile, cache, owner, peer)), key)
     return unittest.end(env)
 
+def _clean_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # `clean_with_logger` (LOCKFILE L1236-L1436) copies the packages the root reaches, in the order
+    # `Package::clone` and `Cloner::flush` visit them, and hoists again: `orphan` is dropped, and
+    # every binding of the reached packages is kept.
+    loaded = _load_text(
+        '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {' +
+        '"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}}, "sha512-a"], "b": ["b@1.0.0", "", {}, "sha512-b"], ' +
+        '"orphan": ["orphan@1.0.0", "", {}, "sha512-c"]}}',
+    ).value
+    asserts.equals(env, None, lockfile_resolve(loaded, hoist))
+    cleaned = lockfile_clean(loaded, hoist)
+    asserts.equals(env, None, cleaned.error)
+    asserts.equals(env, ["a", "b", "x"], sorted([p.name for p in cleaned.value.packages]))
+    asserts.equals(env, "b@1.0.0", _bound(cleaned.value, "a", "b"))
+
+    conflict = _load(env, "dependency_conflict")
+    asserts.equals(env, None, lockfile_resolve(conflict, hoist))
+    cleaned = lockfile_clean(conflict, hoist).value
+    asserts.equals(env, "b@1.0.0", _bound(cleaned, "y/x", "b"))
+    asserts.equals(env, "b@2.0.0", _bound(cleaned, "y", "b"))
+    return unittest.end(env)
+
 dedupe_test = unittest.make(_dedupe_test_impl)
 row_evidence_test = unittest.make(_row_evidence_test_impl)
 workspaces_test = unittest.make(_workspaces_test_impl)
@@ -191,6 +216,7 @@ unbound_test = unittest.make(_unbound_test_impl)
 duplicate_path_test = unittest.make(_duplicate_path_test_impl)
 unlinked_key_test = unittest.make(_unlinked_key_test_impl)
 version_peers_test = unittest.make(_version_peers_test_impl)
+clean_test = unittest.make(_clean_test_impl)
 
 def bun_lockfile_test_suite(name):
     unittest.suite(
@@ -203,4 +229,5 @@ def bun_lockfile_test_suite(name):
         duplicate_path_test,
         unlinked_key_test,
         version_peers_test,
+        clean_test,
     )

@@ -952,21 +952,23 @@ def dependency_version(tag, literal, **fields):
     """
     return _version_value(tag, literal, **fields)
 
-def dependency_parse(alias, literal):
+def dependency_parse(alias, literal, tag = None):
     """`Dependency::parse`: `Tag::infer`, then `parse_with_tag`.
 
-    Bun: src/install/dependency.rs L1147–L1166 @ bun-v1.4.4
+    Bun: src/install/dependency.rs L1147–L1189 @ bun-v1.4.4
     Bun: src/install/dependency.rs L1229–L1625 @ bun-v1.4.4
 
     Args:
         alias: The dependency's name (its key in package.json).
         literal: The version as written.
+        tag: The `VERSION_TAG` to parse it as (`parse_with_optional_tag`); inferred when `None`.
 
     Returns:
         The version, or `None` where Bun's parse returns none (an unsupported protocol).
     """
     dependency = _trim_literal(literal)
-    tag = version_tag_infer(dependency)
+    if tag == None:
+        tag = version_tag_infer(dependency)
     if tag == VERSION_TAG.NPM:
         text = dependency
         is_alias = False

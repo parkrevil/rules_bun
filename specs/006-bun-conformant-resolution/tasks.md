@@ -391,7 +391,7 @@ projects without a BC are unchanged (Q7, T064).
   `is_unlinked_member` (L379–388 for unlinked workspaces), and PRUNED
   `skips_link_to_pruned_workspace`; Trees and served peers as data-model "Hoisted trees"; cite each
   function; record green for `bun_tree_test` (depends on T042)
-- [ ] T044 [US1] Carry over LOCKFILE `Lockfile::resolve` L1618–1625 (hoist repeated while a peer is
+- [X] T044 [US1] Carry over LOCKFILE `Lockfile::resolve` L1618–1625 (hoist repeated while a peer is
   bound late, then LOCK `rebind_peers_to_printed_packages` L3244) and `clean_with_logger` L1236
   (`Package::clone` resetting optional peers, hoisting again) into `bun/private/bun_lockfile.bzl`,
   after reading S6 in full in `SRC`; if a step of `clean` provably changes no binding of a frozen,
