@@ -333,7 +333,7 @@ projects without a BC are unchanged (Q7, T064).
   rebinds a peer unless it is placed; `is_filtered_dependency_or_workspace` skips a disabled package
   whether or not optional (BC-7), an unplaced behavior, an omitted optional peer, a pruned workspace,
   an unresolved non-peer; `is_unlinked_member`
-- [ ] T033 [P] [US1] Write `bun/tests/npm/bun_isolated_store_test.bzl`: `leaking_peers` fixpoint;
+- [X] T033 [P] [US1] Write `bun/tests/npm/bun_isolated_store_test.bzl`: `leaking_peers` fixpoint;
   one entry for one package reached under one peer provider, two under two
   (`conformance_peer_contexts`); a peer nothing provides and without resolution is not linked
   (`conformance_unprovided_peer`, BC-5); workspace dependencies owned once; cycles; an entry's
@@ -397,7 +397,7 @@ projects without a BC are unchanged (Q7, T064).
   after reading S6 in full in `SRC`; if a step of `clean` provably changes no binding of a frozen,
   unchanged lockfile, record that in research Part 2 "Not carried over" with its lines instead of
   carrying it (R2); cite each function; record green for `bun_lockfile_test` (depends on T043)
-- [ ] T045 [US1] Carry over ISO `build_store` L510–1470 into `bun/private/bun_isolated_store.bzl`:
+- [X] T045 [US1] Carry over ISO `build_store` L510–1470 into `bun/private/bun_isolated_store.bzl`:
   `leaking_peers` L573–672; the first pass L728–1240 (cycles L730–776, workspace dependencies owned
   once L779–799, early dedupe by `(pkg_id, ctx)` L801–937 with `ctx` the exact list of
   `(peer name, ancestor resolution)` instead of its `Wyhash`, non-peer dependencies queued
