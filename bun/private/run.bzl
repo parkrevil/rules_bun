@@ -86,11 +86,10 @@ workspace package's `node_modules` holds only that package's direct links; impor
 fails with Bun's module-not-found error, or with the load guard's error when a copy is reachable.
 rules_bun does not read the lockfile's `configVersion`, so a lockfile written for Bun's hoisted
 installs gets this layout too, and code that relies on a hoisted, undeclared package fails. Peers
-resolve as npm 7 and later resolve them: to the version the dependent package provides, else
-to the version the lockfile lists in the dependent's workspace; an optional peer that is not
-provided is absent, and a missing non-optional peer makes the package fail analysis of a target
-that needs it. A target in which one package version would need two versions of one dependency or
-peer fails analysis naming the package, that dependency or peer and both versions.
+resolve as the pinned Bun's isolated install resolves them (the `npm` extension's Resolution): to
+the version a dependent above the package provides, else to the version the lockfile lists; a peer
+nothing provides is absent. A target in which one package version would need two versions of one
+dependency or peer fails analysis naming the package, that dependency or peer and both versions.
 
 The load guard admits every file under the target's store entries and nothing else; its limits
 above apply unchanged, and Bun's resolver may still read a `package.json` outside the declared set

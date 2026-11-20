@@ -482,11 +482,26 @@ Generated targets (public API, under these naming rules):
 
 Repositories named `<name>__...` and other targets of the hub are not public API.
 
-Packages: an optional dependency whose entry has `os` or `cpu` is carried only on target platforms
-that match, by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
+Resolution: the hub links what the pinned Bun 1.4.4's isolated install (`bun install
+--frozen-lockfile --linker isolated`) links from the same `bun.lock`: rules_bun carries over Bun's own
+lockfile loader, hoister, lockfile clean and isolated store, and a conformance test
+(`bun/tests/npm/conformance`) compares, for every lockfile of rules_bun's tests, each link with the
+one Bun's install makes on the test's platform. So one package version is one
+package, its dependencies bound as Bun binds them; a package reached under different peers is one
+package per set of peers; a peer resolves to the version a dependent above it provides, else to the
+version the lockfile lists; a peer nothing provides, and an optional or peer dependency the lockfile
+does not resolve, is not linked; a dependency a package bundles (`bundleDependencies`) is not
+linked. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
+selected by the target platform, not by the machine that runs Bun (ID-2); Bun's hoisted
+`node_modules/.bun/node_modules` and the root fallback, through which a package can import what it
+does not declare, are not reproduced, so only declared dependencies resolve (ID-3); and an entry
+rules_bun does not fetch fails analysis of a target that needs it (ID-4, below).
+
+Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
+platforms that match, by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
 negations included; `select()` on `@platforms`); a value with no `@platforms`
-constraint, such as `sunos` or `ppc64`, matches no platform. An entry's `libc` (`glibc` or `musl`,
-which Bun 1.4.4 writes) is matched against the target platform's
+constraint, such as `sunos` or `ppc64`, matches no platform. An optional dependency's `libc` (`glibc` or
+`musl`, which Bun 1.4.4 writes) is matched against the target platform's
 `@rules_bun//bun/platforms/libc:libc` constraint, by npm's rule: on a Linux platform with
 `@rules_bun//bun/platforms/libc:glibc` or `:musl`, only the entries whose `libc` allows that C
 library are carried; on a Linux platform without the constraint (its default,
@@ -494,7 +509,7 @@ library are carried; on a Linux platform without the constraint (its default,
 library it has; an entry with `libc` matches no other OS. To get only one variant, add the C
 library to the Linux platform: `constraint_values = ["@platforms//os:linux",
 "@platforms//cpu:x86_64", "@rules_bun//bun/platforms/libc:glibc"]`. A non-optional dependency is
-carried whatever its `os`, `cpu` and `libc` say. An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
+carried whatever its `libc` says, as Bun carries it. An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
 and any other resolution, a patched package, an entry without integrity, an integrity algorithm
 other than `sha256`, `sha384` and `sha512`) gets no download; a target that needs it fails analysis
 naming the package and the reason, and other targets are unaffected. A link that reaches such an
