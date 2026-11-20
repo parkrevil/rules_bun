@@ -2,6 +2,36 @@ id: "rules-bun"
 extends: "speckit"
 priority: 10
 edits:
+  # Models (user decision 2026-11-21): design, judgment and review run on Opus; work that follows a
+  # pattern already in the repository runs on Sonnet subagents in parallel (see implement-pass).
+  # Shell steps run no model.
+  - replace: specify
+    step:
+      id: specify
+      command: speckit.specify
+      integration: "{{ inputs.integration }}"
+      model: "claude-opus-5-5"
+      input:
+        args: "{{ inputs.spec }}"
+
+  - replace: plan
+    step:
+      id: plan
+      command: speckit.plan
+      integration: "{{ inputs.integration }}"
+      model: "claude-opus-5-5"
+      input:
+        args: "{{ inputs.spec }}"
+
+  - replace: tasks
+    step:
+      id: tasks
+      command: speckit.tasks
+      integration: "{{ inputs.integration }}"
+      model: "claude-opus-5-5"
+      input:
+        args: "{{ inputs.spec }}"
+
   # speckit.specify writes specs/<NNN>-<name>/ and .specify/feature.json but never
   # touches git. The start point is explicit: without it the branch is cut from
   # whatever HEAD happens to be, folding the previous feature's commits into this
@@ -53,6 +83,7 @@ edits:
       id: analyze
       command: speckit.analyze
       integration: "{{ inputs.integration }}"
+      model: "claude-opus-5-5"
 
   - insert_before: implement
     step:
@@ -96,6 +127,7 @@ edits:
       id: review-claude
       type: prompt
       integration: claude
+      model: "claude-opus-5-5"
       timeout: 1800
       prompt: |
         Adversarially review this branch against
@@ -115,6 +147,7 @@ edits:
       id: review-codex
       type: prompt
       integration: claude
+      model: "claude-sonnet-5-5"
       timeout: 1800
       continue_on_error: true
       prompt: "/codex:adversarial-review --wait"
@@ -139,13 +172,29 @@ edits:
       max_iterations: 4
       condition: '{{ steps.remaining-tasks.output.stdout != "0" }}'
       steps:
+        # The lead pass runs on Opus and keeps the work whose quality decides the result; it
+        # hands pattern-following [P] tasks to Sonnet subagents in their own worktrees, several
+        # at once, and reviews each before merging (user decision 2026-11-21).
         - id: implement-pass
           command: speckit.implement
           integration: "{{ inputs.integration }}"
+          model: "claude-opus-5-5"
+          input:
+            args: |
+              Execution policy (rules_bun, user decision 2026-11-21). Do yourself, in order: the
+              core logic, every task whose result depends on a research decision or on Bun's or
+              Bazel's semantics, fixes of review findings, and the gates. Delegate each task marked
+              [P] that follows a pattern already in the repository (a canary, a fixture, a test
+              modeled on an existing one, documentation text) to a subagent with model "sonnet"
+              and isolation "worktree", and run independent ones in parallel. Give each subagent
+              the task text, the files it may touch and the pattern to follow; review its diff
+              before merging its commits in task order, and keep its red and green runs in the TDD
+              log. Take a delegated task back as soon as it needs a design decision.
 
         - id: converge
           command: speckit.converge
           integration: "{{ inputs.integration }}"
+          model: "claude-opus-5-5"
 
         # An interpolated value lands in the script as shell syntax, so the
         # feature directory is quoted and feature-branch refuses a path holding
