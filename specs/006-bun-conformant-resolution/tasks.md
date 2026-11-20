@@ -473,7 +473,7 @@ mode, and research Part 2 lists 0 unaccounted Bun steps (Q6).
 - [ ] T054 [US3] Re-read every cited range in `SRC` against its Starlark function (same steps, same
   order); correct any citation or carry-over that differs, then re-run T051's conformance test;
   record the review in `tdd-log.md` (one row per `bun/private/bun_*.bzl` file)
-- [ ] T055 [US3] Write research Part 2's function-level map: each Bun function of S1–S8 → the
+- [X] T055 [US3] Write research Part 2's function-level map: each Bun function of S1–S8 → the
   ruleset function that carries it over; complete "Not carried over" with T044's `clean` decision
   and T049's audit; state that 0 binding-relevant Bun steps are unaccounted (SC-004) in
   `specs/006-bun-conformant-resolution/research.md`

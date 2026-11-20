@@ -114,7 +114,10 @@ on that name (pnpm's rule), when the name has at least two packages.
 LOCKFILE `clean_with_logger` L1236: copies the reachable packages into a new lockfile
 (`Package::clone`, which resets optional peers) and hoists again. Whether a clean of a frozen,
 unchanged lockfile can change a binding is settled when it is carried over (R2): it is carried over
-unless Part 2 records, with lines, that it cannot.
+unless Part 2 records, with lines, that it cannot. **Decided at T044: carried over in full**
+(`lockfile_clean`): it drops the packages no root reaches, which can change the version a
+version-based peer binds to (S3, S5), and binds weak peers after copying, so no step of it is
+recorded as deciding no link.
 
 ### S7. Which dependencies a node follows
 
@@ -175,7 +178,12 @@ the adapter `resolve.bzl` decides which package a dependency links.
 ### Function-level map (T055)
 
 Each function of the rebuilt resolver and the Bun lines it carries over, as its docstring cites them
-(`citations_test` checks every docstring; T054 re-read each range at the tag).
+(`citations_test` checks every docstring; T054 re-reads each range at the tag, `tdd-log.md`).
+
+**Accounting (SC-004)**: every binding-relevant step of S1–S8 is carried over by a function below,
+recorded in "Not carried over" with its lines and why it decides no link (S6's `clean` is carried
+over, T044), or, outside the carry-over, recorded in "Walks outside the carry-over" (T049), so 0
+binding-relevant Bun steps are unaccounted.
 
 | Ruleset function | Carries over (bun-v1.4.4) |
 |---|---|
