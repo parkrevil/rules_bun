@@ -850,3 +850,139 @@ def query_is_star(group):
         return False
     r = group.lists[0][0]
     return r.right.op == "unset" and r.left.op == "gte" and _is_zero(r.left.version) and not group.flags.build
+
+def _raise(interval, version, inclusive):
+    """`Interval::raise`: the higher lower bound wins; an exclusive one wins a tie.
+
+    Bun: src/semver/intersects.rs L22–L34 @ bun-v1.4.4
+    """
+    current = interval.get("lower")
+    if current == None:
+        replace = True
+    else:
+        order = version_order_without_build(version, current[0])
+        replace = order > 0 or (order == 0 and not inclusive)
+    if replace:
+        interval["lower"] = (version, inclusive)
+
+def _cap(interval, version, inclusive):
+    """`Interval::cap`: the lower upper bound wins; an exclusive one wins a tie.
+
+    Bun: src/semver/intersects.rs L36–L48 @ bun-v1.4.4
+    """
+    current = interval.get("upper")
+    if current == None:
+        replace = True
+    else:
+        order = version_order_without_build(version, current[0])
+        replace = order < 0 or (order == 0 and not inclusive)
+    if replace:
+        interval["upper"] = (version, inclusive)
+
+def _narrow(interval, comparator):
+    """`Interval::narrow`.
+
+    Bun: src/semver/intersects.rs L50–L67 @ bun-v1.4.4
+    """
+    op, version = comparator.op, comparator.version
+    if op == "eql":
+        _raise(interval, version, True)
+        _cap(interval, version, True)
+    elif op == "gt":
+        _raise(interval, version, False)
+    elif op == "gte":
+        _raise(interval, version, True)
+    elif op == "lt":
+        _cap(interval, version, False)
+    elif op == "lte":
+        _cap(interval, version, True)
+
+def _and_query(interval, ranges):
+    """`Interval::and_query`: every comparator of an AND chain.
+
+    Bun: src/semver/intersects.rs L69–L76 @ bun-v1.4.4
+    """
+    for r in ranges:
+        _narrow(interval, r.left)
+        _narrow(interval, r.right)
+
+def _is_non_empty(interval):
+    """`Interval::is_non_empty`.
+
+    Bun: src/semver/intersects.rs L78–L93 @ bun-v1.4.4
+    """
+    upper = interval.get("upper")
+    if upper == None:
+        return True
+    lower = interval.get("lower") or (_null_set().version, True)
+    order = version_order_without_build(lower[0], upper[0])
+    if order < 0:
+        return True
+    if order == 0:
+        return lower[1] and upper[1]
+    return False
+
+def _exact_version(ranges):
+    """`Query::exact_version`: the version of a chain that is one `=version` comparator.
+
+    Bun: src/semver/SemverQuery.rs L93–L98 @ bun-v1.4.4
+    """
+    if len(ranges) == 1 and ranges[0].left.op == "eql" and ranges[0].right.op == "unset":
+        return ranges[0].left.version
+    return None
+
+def _query_is_star(ranges):
+    """`Query::is_star` of intersects.rs.
+
+    Bun: src/semver/intersects.rs L213–L220 @ bun-v1.4.4
+    """
+    r = ranges[0]
+    return len(ranges) == 1 and r.left.op == "gte" and _is_zero(r.left.version) and not r.left.version.pre and r.right.op == "unset"
+
+def _admits(group, version):
+    """`Group::admits`: `satisfies`, or a prerelease against a `*` alternative.
+
+    Bun: src/semver/intersects.rs L230–L233 @ bun-v1.4.4
+    """
+    return query_satisfies(group, version) or (version.pre != "" and any([_query_is_star(ranges) for ranges in group.lists]))
+
+def _admits_an_exact_version_of(group, other):
+    """`Group::admits_an_exact_version_of`.
+
+    Bun: src/semver/intersects.rs L235–L242 @ bun-v1.4.4
+    """
+    for ranges in other.lists:
+        version = _exact_version(ranges)
+        if version != None and _admits(group, version):
+            return True
+    return False
+
+def query_intersects(group, other):
+    """`Group::intersects`: whether some version could satisfy both ranges.
+
+    Bun: src/semver/intersects.rs L244–L266 @ bun-v1.4.4
+
+    Args:
+        group: A `parse_query` result.
+        other: A `parse_query` result.
+
+    Returns:
+        Whether the two ranges overlap.
+    """
+    if _admits_an_exact_version_of(group, other) or _admits_an_exact_version_of(other, group):
+        return True
+    for a in group.lists:
+        if _exact_version(a) != None:
+            continue
+        base = {}
+        _and_query(base, a)
+        if not _is_non_empty(base):
+            continue
+        for b in other.lists:
+            if _exact_version(b) != None:
+                continue
+            interval = dict(base)
+            _and_query(interval, b)
+            if _is_non_empty(interval):
+                return True
+    return False

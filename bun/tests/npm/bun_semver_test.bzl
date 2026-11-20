@@ -11,6 +11,7 @@ load(
     "//bun/private:bun_semver.bzl",
     "parse_query",
     "parse_version",
+    "query_intersects",
     "query_is_star",
     "query_satisfies",
     "version_eql",
@@ -157,6 +158,28 @@ _SATISFIES = [
     (">=1.6.0-beta <1.6.0-0", "1.6.0-beta.2", False),  # L590
 ]
 
+# semver.test.ts L1915- ("range intersection"): `(left, right, intersects)`, checked both ways.
+_INTERSECTS = [
+    ("1.0.0", "1.0.0", True),  # L1918
+    ("1.0.0", "1.0.1", False),  # L1919
+    ("1.0.0", "^1.0.0", True),  # L1920
+    ("2.0.0", "^1.0.0", False),  # L1922
+    ("1.0.0", ">1.0.0", False),  # L1924
+    ("3.0.0", "1.0.0 || 2.0.0", False),  # L1928
+    ("1.2.3", "1.3", False),  # L1931
+    ("1.2.3", "*", True),  # L1935
+    ("2.0.1", "1.0.0 - 2.0.0", False),  # L1938
+    ("^1.0.0", "^1.2.0", True),  # L1942
+    ("^1.0.0", "^2.0.0", False),  # L1943
+    ("^0.1.0", "^0.2.0", False),  # L1945
+    ("^0.1.0", "^0.1.5", True),  # L1946
+    ("^0.0.1", "^0.0.2", False),  # L1947
+    ("^1.2.3", "1.2.2", False),  # L1950
+    ("~1.2.0", "~1.3.0", False),  # L1955
+    ("~1.2.0", "^1.0.0", True),  # L1957
+    ("~1.2", "~1.3", False),  # L1960
+]
+
 def _order_test_impl(ctx):
     env = unittest.begin(ctx)
     for left, right in _GREATER:
@@ -224,11 +247,19 @@ def _star_test_impl(ctx):
     asserts.false(env, query_satisfies(parse_query("^18446744073709551616"), _version("1.0.0")))
     return unittest.end(env)
 
+def _intersects_test_impl(ctx):
+    env = unittest.begin(ctx)
+    for left, right, expected in _INTERSECTS:
+        asserts.equals(env, expected, query_intersects(parse_query(left), parse_query(right)), "{} and {}".format(left, right))
+        asserts.equals(env, expected, query_intersects(parse_query(right), parse_query(left)), "{} and {}".format(right, left))
+    return unittest.end(env)
+
 order_test = unittest.make(_order_test_impl)
 equality_test = unittest.make(_equality_test_impl)
 parse_test = unittest.make(_parse_test_impl)
 satisfies_test = unittest.make(_satisfies_test_impl)
 star_test = unittest.make(_star_test_impl)
+intersects_test = unittest.make(_intersects_test_impl)
 
 def bun_semver_test_suite(name):
     unittest.suite(
@@ -238,4 +269,5 @@ def bun_semver_test_suite(name):
         parse_test,
         satisfies_test,
         star_test,
+        intersects_test,
     )
