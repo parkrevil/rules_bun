@@ -2,8 +2,13 @@
 research R11 for libc, which Bun 1.4.4 writes)."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
+load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
-load("//bun/private:platforms.bzl", "check_list")
+load("//bun/private:bun_install_types.bzl", "LIBC_ALL", "platform_value")
+load("//bun/private:bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
+load("//bun/private:bun_tree.bzl", "hoist")
+load("//bun/private:lockfile.bzl", "read_lockfile")
+load("//bun/private:platforms.bzl", "check_list", "platform_bits", "platform_classes", "platform_tuples")
 
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
 _AIX = "//bun/tests/npm/fixtures/aix:node_modules/aix-user"
@@ -33,6 +38,40 @@ def _check_list_test_impl(ctx):
     return unittest.end(env)
 
 _check_list_test = unittest.make(_check_list_test_impl)
+
+def _cleaned(env, project):
+    file = "bun/tests/npm/fixtures/{}/bun.lock".format(project)
+    loaded = load_lockfile(read_lockfile(RESULTS[project]["text"], file).value, file)
+    asserts.equals(env, None, loaded.error)
+    asserts.equals(env, None, lockfile_resolve(loaded.value, hoist))
+    return lockfile_clean(loaded.value, hoist).value
+
+def _platform_classes_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # The tuples are the hub's `select()` branches: every OS alone and with each CPU, on Linux each
+    # also with each libc, and the default branch of an unmapped platform (research R3).
+    tuples = platform_tuples()
+    asserts.equals(env, 71, len(tuples))
+    asserts.true(env, (None, None, None) in tuples, "the unmapped platform")
+    asserts.true(env, ("linux", "x64", "musl") in tuples and ("linux", "x64", None) in tuples and ("darwin", None, None) in tuples)
+
+    # Linux without the libc constraint is every libc (`Libc::ALL`); off Linux, too.
+    asserts.equals(env, LIBC_ALL, platform_bits(("linux", "x64", None)).libc)
+    asserts.equals(env, LIBC_ALL, platform_bits(("darwin", "arm64", None)).libc)
+    asserts.equals(env, platform_value("libc", "musl"), platform_bits(("linux", "x64", "musl")).libc)
+
+    # A lockfile without a restricted package has one class.
+    asserts.equals(env, [tuples], platform_classes(_cleaned(env, "dependency_conflict")))
+
+    # Tuples group by the packages `is_disabled` leaves out: `native-aix-x64` only on aix/x64,
+    # `native-darwin-arm64` only on darwin/arm64, the `nomatch` packages nowhere.
+    classes = platform_classes(_cleaned(env, "conformance_platform"))
+    asserts.equals(env, [1, 1, 69], sorted([len(c) for c in classes]))
+    asserts.true(env, [("aix", "x64", None)] in classes and [("darwin", "arm64", None)] in classes)
+    return unittest.end(env)
+
+_platform_classes_test = unittest.make(_platform_classes_test_impl)
 
 _PLATFORMS = ["linux_x64", "linux_x64_glibc", "linux_x64_musl", "linux_aarch64", "darwin_x64", "darwin_aarch64", "windows_x64"]
 
@@ -154,6 +193,8 @@ def platforms_test_suite(name):
 
     _check_list_test(name = name + "_check_list_test")
     tests.append(name + "_check_list_test")
+    _platform_classes_test(name = name + "_platform_classes_test")
+    tests.append(name + "_platform_classes_test")
 
     _exec_tool(name = name + "_exec_tool", tool = name + "_native_tool", tags = ["manual"])
     exec_test(name = name + "_exec_test", target_under_test = name + "_exec_tool")

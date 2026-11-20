@@ -303,7 +303,13 @@ def _all(names):
     return value
 
 _NAMES = {"cpu": _CPU_NAMES, "libc": _LIBC_NAMES, "os": _OS_NAMES}
-_ALL = {kind: _all(names) for kind, names in _NAMES.items()}
+
+# A target `os` or `cpu` that Bun does not name (an unmapped Bazel platform, `netbsd`, `riscv64`):
+# Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists for it. It gets a bit that no
+# package names and that "every value" includes, which is npm's rule for an unknown value, as on
+# `main`: a package without the field, with `any`, or with negations only matches it.
+_UNNAMED = 1 << 15
+_ALL = {kind: _all(names) | (_UNNAMED if kind != "libc" else 0) for kind, names in _NAMES.items()}
 
 # `Libc::ALL`, the target "every libc" (resolver_hooks.rs L859-L866).
 LIBC_ALL = _ALL["libc"]
@@ -330,14 +336,16 @@ def platform_value(kind, name):
 
     Args:
         kind: `os`, `cpu` or `libc`.
-        name: A value Bun names, or `None` for the libc of a target that has none.
+        name: An npm value, or `None` when the target has none.
 
     Returns:
-        The value's bit; `LIBC_ALL` for a `None` libc (`Libc::CURRENT` off Linux).
+        The value's bit; `LIBC_ALL` for a `None` libc (`Libc::CURRENT` off Linux, and a Linux
+        platform without the libc constraint); for an `os` or `cpu` Bun does not name, the bit no
+        package names.
     """
-    if name == None:
-        return LIBC_ALL if kind == "libc" else 0
-    return _NAMES[kind][name]
+    if kind == "libc":
+        return LIBC_ALL if name == None else _NAMES[kind][name]
+    return _NAMES[kind].get(name, _UNNAMED) if name != None else _UNNAMED
 
 def negatable_from_json_value(kind, value):
     """`negatable_from_json_value` with `Negatable::apply` and `Negatable::combine`.

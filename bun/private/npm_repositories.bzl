@@ -281,22 +281,23 @@ def libc_matches(values, os, libc):
     return check_list(libc, values)
 
 def conditions_hold(conditions, os, cpu, libc):
-    """Whether one of `conditions` holds for a target's npm values.
+    """Whether a target's npm values are one of the platform tuples an instance is reached on.
+
+    The resolver computes Bun's store for each class of the platforms the hub's `select()` tells
+    apart (`platforms.bzl` `platform_tuples`, feature 006 research R3), so a condition is one such
+    tuple, matched exactly.
 
     Args:
-        conditions: List of conditions, each a list of `[os, cpu, libc]` requirements that must all
-            hold.
+        conditions: List of `[os, cpu, libc]` platform tuples (`None` for a value the platform
+            does not set).
         os: The target's npm `os`, or `None`.
         cpu: The target's npm `cpu`, or `None`.
         libc: The target's npm `libc`, or `None`.
 
     Returns:
-        Whether one condition holds.
+        Whether the target is one of them.
     """
-    for condition in conditions:
-        if all([check_list(os, r[0]) and check_list(cpu, r[1]) and libc_matches(r[2], os, libc) for r in condition]):
-            return True
-    return False
+    return [os, cpu, libc] in conditions
 
 def _settings():
     """Config setting name -> (npm os, npm cpu, npm libc, constraint labels).

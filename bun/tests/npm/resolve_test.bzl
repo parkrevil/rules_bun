@@ -3,7 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun/private:lockfile.bzl", "read_lockfile")
-load("//bun/private:resolve.bzl", "resolve", "walk_key")
+load("//bun/private:resolve.bzl", "resolve")
 
 def _plain(value):
     return json.decode(json.encode(value))
@@ -41,24 +41,6 @@ def _nv(resolution, instance_id):
 
 def _closure_nvs(resolution, link):
     return sorted([_nv(resolution, i) for i in link["closure"]])
-
-def _walk_test_impl(ctx):
-    env = unittest.begin(ctx)
-    basic = RESULTS["basic"]["lockfile"]["value"]["entries"]
-    asserts.equals(env, "c/b", walk_key(basic, ["c"], "b"))
-    asserts.equals(env, "b", walk_key(basic, ["a"], "b"))
-    asserts.equals(env, "y/x/b", walk_key(basic, ["y", "x"], "b"))
-    asserts.equals(env, "b", walk_key(basic, ["z", "x"], "b"))
-    asserts.equals(env, None, walk_key(basic, ["a"], "missing"))
-
-    # The nearest parent's entry wins over the root's.
-    asserts.equals(env, "y/b", walk_key({"b": 1, "y": 1, "y/b": 1, "y/x": 1}, ["y", "x"], "b"))
-
-    # `@s/a/b`'s parent is `@s/a`, never `@s`: splitting the scope would find `@s/c`.
-    scoped = {"@s/a": 1, "@s/a/b": 1, "@s/c": 1, "c": 1, "@s/a/@s/d": 1, "@s/d": 1}
-    asserts.equals(env, "c", walk_key(scoped, ["@s/a", "b"], "c"))
-    asserts.equals(env, "@s/a/@s/d", walk_key(scoped, ["@s/a", "b"], "@s/d"))
-    return unittest.end(env)
 
 def _basic_links_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -106,13 +88,16 @@ def _cycle_test_impl(ctx):
 
 def _distinct_test_impl(ctx):
     env = unittest.begin(ctx)
+
+    # One package per `name@version` (BC-6, feature 006): `y/x` and `z/x` are one `x@1.0.0`, whose
+    # `b` the loader binds once, by row evidence (research E2).
     resolution = _resolution(env, "basic")
     instances = resolution["instances"]
     y_x = instances[resolution["links"][""]["y"]["root"]]["edges"]["x"]
     z_x = instances[resolution["links"][""]["z"]["root"]]["edges"]["x"]
     asserts.equals(env, "x@1.0.0", _nv(resolution, y_x))
-    asserts.equals(env, "x@1.0.0", _nv(resolution, z_x))
-    asserts.true(env, y_x != z_x, "y/x and z/x resolve b to different keys: " + y_x)
+    asserts.equals(env, y_x, z_x)
+    asserts.equals(env, "b@1.0.0", _nv(resolution, instances[y_x]["edges"]["b"]))
     return unittest.end(env)
 
 def _ids_test_impl(ctx):
@@ -127,27 +112,14 @@ def _ids_test_impl(ctx):
     def constant(_text):
         return 7
 
-    resolution = _resolve_inline(
-        env,
-        {
-            "y": _npm("y@1.0.0", {"x": "1.0.0"}),
-            "z": _npm("z@1.0.0", {"x": "1.0.0"}),
-            "y/x": _npm("x@1.0.0", {"b": "*"}),
-            "z/x": _npm("x@1.0.0", {"b": "*"}),
-            "y/b": _npm("b@2.0.0"),
-            "z/x/b": _npm("b@2.0.0"),
-        },
-        {"y": "1.0.0", "z": "1.0.0"},
-        hash_fn = constant,
-    )
-    instances = resolution["instances"]
+    # Two instances of one `name@version` differ by their peers; when their hashes collide, the
+    # sorted peer bindings number them (`p` with `q@1.0.0`, then `p` with `q@2.0.0`).
+    file = "bun/tests/npm/fixtures/basic/bun.lock"
+    lock = read_lockfile(RESULTS["basic"]["text"], file)
+    resolution = _plain(resolve(lock.value, file, hash_fn = constant))["value"]
     root = resolution["links"][""]
-
-    # The edge maps sort as `b` -> `y/b` before `b` -> `z/x/b`.
-    asserts.equals(env, "x@1.0.0__7__0", instances[root["y"]["root"]]["edges"]["x"])
-    asserts.equals(env, "x@1.0.0__7__1", instances[root["z"]["root"]]["edges"]["x"])
-    asserts.equals(env, "b@2.0.0__7", instances["x@1.0.0__7__0"]["edges"]["b"])
-    asserts.equals(env, "b@2.0.0__7", instances["x@1.0.0__7__1"]["edges"]["b"])
+    asserts.equals(env, "p@1.0.0__7__0", root["p"]["root"])
+    asserts.equals(env, "p@1.0.0__7__1", resolution["instances"][root["q2-user"]["root"]]["edges"]["p"])
     return unittest.end(env)
 
 def _store_name_test_impl(ctx):
@@ -203,6 +175,9 @@ def _optional_peer_test_impl(ctx):
 
 def _missing_peer_test_impl(ctx):
     env = unittest.begin(ctx)
+
+    # A peer nothing provides and the lockfile does not resolve is not linked, and the package is
+    # usable (BC-5, feature 006), as the pinned Bun installs it.
     resolution = _resolve_inline(
         env,
         {
@@ -214,9 +189,9 @@ def _missing_peer_test_impl(ctx):
     user = resolution["instances"][resolution["links"][""]["user"]["root"]]
     asserts.equals(env, "ok", user["status"])
     needs = resolution["instances"][user["edges"]["needs"]]
-    asserts.true(env, needs["status"] != "ok", "a missing non-optional peer makes the instance unusable")
+    asserts.equals(env, "ok", needs["status"])
     asserts.equals(env, "needs", needs["name"])
-    asserts.true(env, '"gone"' in needs["status"], needs["status"])
+    asserts.equals(env, {}, needs["edges"])
     return unittest.end(env)
 
 def _peer_cycle_test_impl(ctx):
@@ -253,7 +228,6 @@ def _peer_instances_test_impl(ctx):
     asserts.true(env, p_root != p_q2, "p with q@1.0.0 and p with q@2.0.0 are distinct instances")
     return unittest.end(env)
 
-walk_test = unittest.make(_walk_test_impl)
 basic_links_test = unittest.make(_basic_links_test_impl)
 workspace_test = unittest.make(_workspace_test_impl)
 alias_edge_test = unittest.make(_alias_edge_test_impl)
@@ -271,7 +245,6 @@ peer_instances_test = unittest.make(_peer_instances_test_impl)
 def resolve_test_suite(name):
     unittest.suite(
         name,
-        walk_test,
         basic_links_test,
         workspace_test,
         alias_edge_test,

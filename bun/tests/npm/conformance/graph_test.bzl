@@ -76,10 +76,13 @@ def _optional_test_impl(ctx):
     musl = _instance("native-musl", "1.0.0")
     mac = _instance("native-darwin", "1.0.0")
     native = _instance("native", "1.0.0", edges = {"native-darwin": mac.id, "native-glibc": glibc.id, "native-musl": musl.id})
+
+    # The resolver writes the platform tuples an instance is reached on; Linux without the libc
+    # constraint reaches every libc variant (`Libc::ALL`).
     optional = {
-        glibc.id: [[[["linux"], ["x64"], ["glibc"]]]],
-        musl.id: [[[["linux"], ["x64"], ["musl"]]]],
-        mac.id: [[[["darwin"], ["arm64"], []]]],
+        glibc.id: [["linux", "x64", "glibc"], ["linux", "x64", None]],
+        musl.id: [["linux", "x64", "musl"], ["linux", "x64", None]],
+        mac.id: [["darwin", "arm64", None]],
     }
     resolution = _resolution([native, glibc, musl, mac], {"": {"native": _link("native", native.id, [native.id], optional)}})
     classes = conformance_graphs(resolution, _TUPLES)
@@ -109,7 +112,7 @@ def _optional_root_test_impl(ctx):
     b = _instance("b", "1.0.0")
     links = {"": {
         "b": _link("b", b.id, [b.id]),
-        "native-darwin": _link("native-darwin", mac.id, [], {mac.id: [[[["darwin"], ["arm64"], []]]]}),
+        "native-darwin": _link("native-darwin", mac.id, [], {mac.id: [["darwin", "arm64", None]]}),
     }}
     classes = conformance_graphs(_resolution([b, mac], links), _TUPLES)
     asserts.equals(env, 2, len(classes))

@@ -338,7 +338,7 @@ projects without a BC are unchanged (Q7, T064).
   (`conformance_peer_contexts`); a peer nothing provides and without resolution is not linked
   (`conformance_unprovided_peer`, BC-5); workspace dependencies owned once; cycles; an entry's
   dependencies are its children's entries
-- [ ] T034 [P] [US1] Add cases to `bun/tests/npm/platforms_test.bzl` for platform classes
+- [X] T034 [P] [US1] Add cases to `bun/tests/npm/platforms_test.bzl` for platform classes
   (research R3): a lockfile without a restricted package has one class; `conformance_platform`'s
   tuples group by the set of packages `is_disabled` leaves out; Linux `unconstrained` uses
   `Libc::ALL`; "unmapped" is a class
@@ -407,7 +407,7 @@ projects without a BC are unchanged (Q7, T064).
   `contained_folders`; Nodes and Entries as data-model "Isolated store"; skip only the steps of
   research Part 2 "Not carried over"; cite each function; record green for
   `bun_isolated_store_test` (depends on T044)
-- [ ] T046 [US1] In `bun/private/platforms.bzl` add the platform tuples and their grouping into
+- [X] T046 [US1] In `bun/private/platforms.bzl` add the platform tuples and their grouping into
   classes by the set of packages `bun_install_types.bzl`'s `is_disabled` leaves out (research R3);
   `check_list` stays for the toolchain; record green for `platforms_test` (depends on T038)
 - [ ] T047 [US1] Rewrite `bun/private/resolve.bzl` as the adapter of research R4, keeping

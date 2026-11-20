@@ -17,14 +17,26 @@ def _make_failure_test(messages):
 
     return analysistest.make(impl, expect_failure = True)
 
-# y/x and z/x are x@1.0.0 entries whose dependency b resolves to b@2.0.0 under y and b@1.0.0 under
-# z (the dependency_conflict fixture, feature 004 research R12).
-_dependency_test = _make_failure_test(["x@1.0.0", 'dependency "b"', "b@2.0.0"])
+def _copies_impl(entries):
+    def impl(ctx):
+        env = analysistest.begin(ctx)
+        outputs = [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
+        for entry in entries:
+            asserts.equals(env, 1, len([o for o in outputs if o.endswith(entry)]), "copies of " + entry)
+        return analysistest.end(env)
+
+    return impl
+
+# y/x and z/x of the dependency_conflict fixture are one x@1.0.0, whose b the loader binds once by
+# row evidence (feature 006 BC-6, research E2), so y and z link one copy of it.
+_dependency_test = analysistest.make(_copies_impl([".store/x@1.0.0/node_modules/x", ".store/b@1.0.0/node_modules/b"]))
 
 # p with the root's q@1.0.0, and p through q2-user, which provides q@2.0.0.
 _peer_test = _make_failure_test(["p@1.0.0", 'peer "q"', "q@1.0.0", "q@2.0.0"])
 
-_missing_peer_test = _make_failure_test(["ident-a@1.0.0 cannot be used", 'its peer dependency "state"'])
+# A peer nothing provides is not linked, and the package is usable (feature 006 BC-5), as the pinned
+# Bun installs it.
+_missing_peer_test = analysistest.make(_copies_impl([".store/ident-a@1.0.0/node_modules/ident-a"]))
 
 # a@1.0.0 at the key "a" of two lockfiles with one content identity: npm_workspace resolves its b to
 # b@1.0.0, npm_overrides_top to b@2.0.0. One instance ID names both, so only hub-qualified
