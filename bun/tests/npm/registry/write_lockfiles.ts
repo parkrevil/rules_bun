@@ -659,6 +659,26 @@ const projects: Record<string, Project> = {
       assert(slot0(lock, "b") === "b@1.0.0", "b is not b@1.0.0");
     },
   },
+  // A peer whose only provider on its ancestor chain is an optional dependency
+  // the lockfile lists under `unresolved` (spec Edge Cases): ident-a's peer
+  // `state` under opt-user, whose optional `state ^3.0.0` is unresolved while
+  // the tree holds state@2.0.0 through state2-user, which the root does not
+  // declare `state` beside.
+  conformance_unresolved_peer: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-unresolved-peer",
+        private: true,
+        dependencies: { "opt-user": "1.0.0", "state2-user": "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(JSON.stringify(lock.packages["opt-user"]?.[2]?.unresolved) === '["state"]', "opt-user's unresolved is not [state]");
+      assert(!("state" in (lock.workspaces[""].dependencies ?? {})), "the root declares state");
+      assert(lock.packages["ident-a"]?.[2]?.peerDependencies?.state === "^1.0.0", "ident-a has no peer state");
+      assert(Object.values(lock.packages).some((row) => row[0] === "state@2.0.0"), "the tree holds no state@2.0.0");
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

@@ -663,7 +663,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 9: Convergence
 
-- [ ] T068 The user approved BC-9 (optional peers linked as Bun links them:
+- [X] T068 The user approved BC-9 (optional peers linked as Bun links them:
   `conformance_peer_contexts`, `bun/tests/integration/workspaces/fetch`) and BC-10
   (`bundleDependencies` not linked: `conformance_bundled`) on 2026-10-30 (research Part 6). Add both
   rows to `contracts/public-api.md` and name them in T017's `tdd-log.md` rows, before any carry-over
@@ -714,7 +714,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 12: Convergence
 
-- [ ] T074 Add the corpus project `conformance_unresolved_peer` for the spec edge case "a peer that
+- [X] T074 Add the corpus project `conformance_unresolved_peer` for the spec edge case "a peer that
   some package provides only through an `unresolved` optional edge": a package whose peer's only
   provider in the tree is an optional dependency another package lists under `unresolved`; add it to
   `projects` in `bun/tests/npm/registry/write_lockfiles.ts` with a `check` asserting that form
