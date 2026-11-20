@@ -1,0 +1,23 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-shared-peer",
+      "dependencies": {
+        "ident-a": "1.0.0",
+        "state-peer-any": "1.0.0",
+        "state2-user": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "ident-a": ["ident-a@1.0.0", "http://127.0.0.1:28761/ident-a/-/ident-a-1.0.0.tgz", { "peerDependencies": { "state": "^1.0.0" } }, "sha512-iqTJkNIBqNe6tZZKox5bRM2fWYFzA1Kd/CYqwk33OERgOFK47WB7FkYTxdf/f+crjy5lyHNrduerd4Z5V50z8g=="],
+
+    "state": ["state@2.0.0", "http://127.0.0.1:28761/state/-/state-2.0.0.tgz", {}, "sha512-5oYgfIJ4VV7KgpvYFom82dqshLROyj5341TAsd6B2JotwyjZZPFKkcUZgvwu9XqMt/0M8ObDe4zorf90CIhnDw=="],
+
+    "state-peer-any": ["state-peer-any@1.0.0", "http://127.0.0.1:28761/state-peer-any/-/state-peer-any-1.0.0.tgz", { "peerDependencies": { "state": ">=1.0.0" } }, "sha512-wabwKbiRdpOl+oYT1/0sj/mtp9CJBprgfbuzcVbwk7sZaHAb2iAYZyINlXXbXtBQw8uzE8U4PMnLOm0X+lidOw=="],
+
+    "state2-user": ["state2-user@1.0.0", "http://127.0.0.1:28761/state2-user/-/state2-user-1.0.0.tgz", { "dependencies": { "state": "2.0.0" } }, "sha512-cegMRUQX2sMPSkMiVlKtR6fPhw3NK9vMwZHE0GRl9A6W+uydVjJHGswT5f7DL3Kx55wZnWydJUOhw94VXiTmQQ=="],
+  }
+}

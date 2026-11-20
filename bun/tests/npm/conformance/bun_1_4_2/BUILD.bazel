@@ -1,0 +1,6 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# The corpus projects' lockfiles as Bun 1.4.2 writes them (feature 006 US5), written by
+# bun/tests/npm/registry/write_lockfiles.ts --bun-1-4-2; each project is a package of its own.
+
+conformance_files()

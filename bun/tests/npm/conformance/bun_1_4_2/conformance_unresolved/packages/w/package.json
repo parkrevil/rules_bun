@@ -1,0 +1,10 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "optionalDependencies": {
+    "q": "^3.0.0"
+  }
+}

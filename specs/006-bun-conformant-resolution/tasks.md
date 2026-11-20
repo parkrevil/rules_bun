@@ -491,18 +491,18 @@ oracle being a registered 1.4.2 toolchain (FR-013, research R10).
 --platforms=//bun/tests/npm/conformance:host_bun_1_4_2` passes and lists the not-applicable projects
 with reasons (Q4).
 
-- [ ] T056 [P] [US5] In `MODULE.bazel` add `bun_dev.toolchain(name = "bun_1_4_2", bun_version =
+- [X] T056 [P] [US5] In `MODULE.bazel` add `bun_dev.toolchain(name = "bun_1_4_2", bun_version =
   "1.4.2")` (fetched with `bun/private/versions.bzl`'s integrity), `use_repo` its archive
   repositories, and `register_toolchains("//bun/tests/npm/conformance:all", dev_dependency = True)`
   **before** the `@bun_toolchains//:all` registration; if the `bun` extension does not accept a
   second dev toolchain tag of another version, stop and report
-- [ ] T057 [US5] In `bun/tests/npm/conformance/BUILD.bazel` add `constraint_setting(name =
+- [X] T057 [US5] In `bun/tests/npm/conformance/BUILD.bazel` add `constraint_setting(name =
   "bun_version")`, `constraint_value(name = "bun_1_4_2")`, `platform(name = "host_bun_1_4_2",
   parents = ["@platforms//host"], constraint_values = [":bun_1_4_2"])`, and one `toolchain()` per
   1.4.2 archive for `//bun/toolchain:target_type` with that archive's OS/CPU (and libc) constraints
   plus `:bun_1_4_2` in `target_compatible_with`, as `@bun_toolchains` declares its own (depends on
   T056)
-- [ ] T058 [US5] Add `--bun-1-4-2` to `bun/tests/npm/registry/write_lockfiles.ts`: it writes
+- [X] T058 [US5] Add `--bun-1-4-2` to `bun/tests/npm/registry/write_lockfiles.ts`: it writes
   `bun/tests/npm/conformance/bun_1_4_2/<project>/` (`bun.lock`, `package.json`, workspace
   `package.json` files, a `BUILD.bazel` exporting them) for every corpus project, and keeps an
   exported `NOT_APPLICABLE_1_4_2` map with the reason for each project 1.4.2 cannot write or install
@@ -511,7 +511,7 @@ with reasons (Q4).
   (`$(bazel info output_base)/external/<its repository>/bun`, `--version` = `1.4.2`); run
   `bazel run //:gazelle`; `conformance_test` (1.4.4) now compares these lockfiles too (T010, R10)
   (depends on T056)
-- [ ] T059 [US5] In `bun/tests/npm/conformance/conformance.test.ts` add the 1.4.2 mode, selected
+- [X] T059 [US5] In `bun/tests/npm/conformance/conformance.test.ts` add the 1.4.2 mode, selected
   when `Bun.version` is `1.4.2` (asserted to be `1.4.2` or `1.4.4`): projects are exactly the
   directories under `bun/tests/npm/conformance/bun_1_4_2/`, the not-applicable list is
   `NOT_APPLICABLE_1_4_2` printed with reasons, and a difference fails with the contract's "1.4.2
@@ -525,7 +525,7 @@ with reasons (Q4).
   spec's stop condition: stop and report, change neither side. If Bun 1.4.4's `--frozen-lockfile`
   install refuses a 1.4.2-written lockfile (it would rewrite it), stop and report the same way
   (depends on T059, T051)
-- [ ] T061 [US5] In `.github/workflows/ci.yaml` add to the `test` job, `if: matrix.folder == '.'`,
+- [X] T061 [US5] In `.github/workflows/ci.yaml` add to the `test` job, `if: matrix.folder == '.'`,
   a step `bazel test //bun/tests/npm/conformance:conformance_1_4_2_test
   --platforms=//bun/tests/npm/conformance:host_bun_1_4_2` so it runs on `ubuntu-latest`,
   `macos-latest` and `windows-latest` (FR-013)

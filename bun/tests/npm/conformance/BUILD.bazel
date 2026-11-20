@@ -1,5 +1,6 @@
 load("//bun:defs.bzl", "bun_library", "bun_test")
 load(":graph_test.bzl", "graph_test_suite")
+load(":toolchains.bzl", "bun_1_4_2_toolchains")
 
 # The differential conformance test of feature 006: the pinned Bun's isolated install is the oracle
 # for the links the ruleset resolves from every bun.lock the tests hold.
@@ -26,23 +27,45 @@ bun_library(
     ],
 )
 
+_CONFORMANCE_DATA = [
+    "//bun/tests/integration:workspace_files",
+    "//bun/tests/npm/conformance/bun_1_4_2:conformance_files",
+    "//bun/tests/npm/fixtures:conformance_files",
+    "//bun/tests/npm/registry/archives",
+    "//bun/tests/npm/scale:conformance_files",
+    "@npm_fixture_results//:graphs.json",
+]
+
+_CONFORMANCE_DEPS = [
+    ":graph_ts",
+    ":not_applicable_1_4_2",
+    ":oracle",
+    "//bun/tests/npm/scale:generate",
+    "//bun/tests/support:spawn",
+]
+
+bun_library(
+    name = "not_applicable_1_4_2",
+    srcs = ["not_applicable_1_4_2.ts"],
+)
+
 bun_test(
     name = "conformance_test",
     size = "enormous",
     srcs = ["conformance.test.ts"],
-    data = [
-        "//bun/tests/integration:workspace_files",
-        "//bun/tests/npm/fixtures:conformance_files",
-        "//bun/tests/npm/registry/archives",
-        "//bun/tests/npm/scale:conformance_files",
-        "@npm_fixture_results//:graphs.json",
-    ],
-    deps = [
-        ":graph_ts",
-        ":oracle",
-        "//bun/tests/npm/scale:generate",
-        "//bun/tests/support:spawn",
-    ],
+    data = _CONFORMANCE_DATA,
+    deps = _CONFORMANCE_DEPS,
+)
+
+# The same test with Bun 1.4.2 as the oracle (US5): run it with
+# --platforms=//bun/tests/npm/conformance:host_bun_1_4_2; `bazel test //...` skips it.
+bun_test(
+    name = "conformance_1_4_2_test",
+    size = "enormous",
+    srcs = ["conformance.test.ts"],
+    data = _CONFORMANCE_DATA,
+    target_compatible_with = [":bun_1_4_2"],
+    deps = _CONFORMANCE_DEPS,
 )
 
 bun_test(
@@ -57,4 +80,24 @@ bun_test(
         "//bun/private:resolve.bzl",
     ],
     deps = ["//bun/tests/support:spawn"],
+)
+
+# The second oracle, Bun 1.4.2 (US5, research R10): a target toolchain that only a platform with the
+# bun_1_4_2 constraint value selects; MODULE.bazel registers it before @bun_toolchains.
+constraint_setting(name = "bun_version")
+
+constraint_value(
+    name = "bun_1_4_2",
+    constraint_setting = ":bun_version",
+)
+
+platform(
+    name = "host_bun_1_4_2",
+    constraint_values = [":bun_1_4_2"],
+    parents = ["@platforms//host"],
+)
+
+bun_1_4_2_toolchains(
+    name = "bun_1_4_2_toolchain",
+    constraint = ":bun_1_4_2",
 )

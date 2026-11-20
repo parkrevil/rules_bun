@@ -1,0 +1,16 @@
+{
+  "name": "conformance-unresolved",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "a": "1.0.0",
+    "opt-user": "1.0.0",
+    "q": "1.0.0",
+    "state": "1.0.0"
+  },
+  "optionalDependencies": {
+    "b": "^3.0.0"
+  }
+}

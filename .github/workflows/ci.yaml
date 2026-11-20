@@ -29,6 +29,10 @@ jobs:
           bazelrc: ${{ matrix.folder == '.' && 'common --config=ci' || '' }}
       - run: bazel test //...
       - run: bazel run ${{ matrix.folder == '.' && '//bun/tests/run/app:main -- extra' || '//app:main' }}
+      # The conformance test with Bun 1.4.2 as the oracle (feature 006 US5). Bazel runs a test on an
+      # execution platform with the target platform's constraints, so the platform is both.
+      - if: matrix.folder == '.'
+        run: bazel test //bun/tests/npm/conformance:conformance_1_4_2_test --platforms=//bun/tests/npm/conformance:host_bun_1_4_2 --extra_execution_platforms=//bun/tests/npm/conformance:host_bun_1_4_2
       - if: matrix.folder == '.'
         run: bazel test //bun/tests/run/protocol/env:env_inherit_set_test
         env:

@@ -35,8 +35,12 @@ text. After the carry-over, Q1 passes.
 
 ```sh
 bazel test //bun/tests/npm/conformance:conformance_1_4_2_test \
-  --platforms=//bun/tests/npm/conformance:host_bun_1_4_2 --test_output=errors
+  --platforms=//bun/tests/npm/conformance:host_bun_1_4_2 \
+  --extra_execution_platforms=//bun/tests/npm/conformance:host_bun_1_4_2 --test_output=errors
 ```
+
+Bazel runs a test on an execution platform with the target platform's constraints, so the platform
+is also given as an execution platform.
 
 Expected: PASS, listing the 1.4.2 lockfiles compared and the corpus projects 1.4.2 cannot write with
 the reason. A "Bun 1.4.2 links this lockfile differently from Bun 1.4.4" failure is the spec's stop

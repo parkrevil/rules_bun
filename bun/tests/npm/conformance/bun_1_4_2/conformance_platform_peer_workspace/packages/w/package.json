@@ -1,0 +1,10 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "p": "1.0.0"
+  },
+  "optionalDependencies": {
+    "q": "npm:q-darwin@1.0.0"
+  }
+}

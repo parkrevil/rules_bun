@@ -1,0 +1,11 @@
+{
+  "name": "conformance-platform",
+  "private": true,
+  "dependencies": {
+    "nomatch-aix-ppc64": "1.0.0",
+    "plat-user": "1.0.0"
+  },
+  "optionalDependencies": {
+    "native-darwin-arm64": "1.0.0"
+  }
+}

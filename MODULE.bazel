@@ -18,11 +18,25 @@ bazel_dep(name = "gazelle", version = "0.54.0", dev_dependency = True, repo_name
 
 bun_dev = use_extension("//bun:extensions.bzl", "bun", dev_dependency = True)
 bun_dev.toolchain(bun_version = "1.4.4")
-use_repo(bun_dev, "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-aarch64-musl", "bun_linux-x64", "bun_linux-x64-musl", "bun_toolchains", "bun_windows-x64")
+
+# The second conformance oracle (feature 006 US5, research R10): Bun 1.4.2, verified with the
+# integrity versions.bzl records, registered as a target toolchain that only the platform
+# //bun/tests/npm/conformance:host_bun_1_4_2 selects.
+bun_dev.toolchain(
+    name = "bun_1_4_2",
+    bun_version = "1.4.2",
+)
+use_repo(bun_dev, "bun_1_4_2_darwin-aarch64", "bun_1_4_2_darwin-x64", "bun_1_4_2_linux-aarch64", "bun_1_4_2_linux-aarch64-musl", "bun_1_4_2_linux-x64", "bun_1_4_2_linux-x64-musl", "bun_1_4_2_windows-x64", "bun_darwin-aarch64", "bun_darwin-x64", "bun_linux-aarch64", "bun_linux-aarch64-musl", "bun_linux-x64", "bun_linux-x64-musl", "bun_toolchains", "bun_windows-x64")
 
 # rules_bun's own Windows launcher toolchain (specs/005-review-defect-fixes research R6), for
 # every module that uses rules_bun, as hermetic_launcher registers its own.
 register_toolchains("//bun/private/windows_launcher:all")
+
+# Before @bun_toolchains, whose toolchains also match host_bun_1_4_2: the first match is used.
+register_toolchains(
+    "//bun/tests/npm/conformance:all",
+    dev_dependency = True,
+)
 
 register_toolchains(
     "@bun_toolchains//:all",

@@ -1,0 +1,8 @@
+{
+  "name": "conformance-unresolved-peer",
+  "private": true,
+  "dependencies": {
+    "opt-user": "1.0.0",
+    "state2-user": "1.0.0"
+  }
+}

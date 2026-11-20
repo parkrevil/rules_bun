@@ -11,6 +11,11 @@
 //        entry's links are compared.
 //
 // RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `workspace`'s ruleset graph (FR-011, red mode).
+//
+// Run by Bun 1.4.2 (conformance_1_4_2_test, --platforms=//bun/tests/npm/conformance:host_bun_1_4_2;
+// US5, research R10), the oracle is Bun 1.4.2 and the projects are exactly the lockfiles Bun 1.4.2
+// wrote (bun_1_4_2/); since conformance_test asserts the ruleset links them as Bun 1.4.4 does, a
+// difference there is a disagreement of the two Bun versions.
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -18,7 +23,12 @@ import { join } from "node:path";
 import { rlocation, rlocationList } from "../../support/spawn.ts";
 import { writeArchives } from "../scale/generate.ts";
 import { classFor, compare, type Graph, hostTuple, readBunGraph } from "./graph.ts";
+import { NOT_APPLICABLE_1_4_2 } from "./not_applicable_1_4_2.ts";
 import { installWithBun } from "./oracle.ts";
+
+// The oracle is the test's own Bun: 1.4.4, the pinned one, or 1.4.2, the second oracle (US5).
+if (Bun.version !== "1.4.4" && Bun.version !== "1.4.2") throw new Error(`the conformance oracle must be Bun 1.4.4 or 1.4.2, not ${Bun.version}`);
+const MODE_1_4_2 = Bun.version === "1.4.2";
 
 const MAIN = "_main";
 
@@ -105,7 +115,10 @@ function redirectOneEdge(graph: Graph): string {
   return `the root's "${name}" redirected to ${graph.entries[other].name}@${graph.entries[other].version}`;
 }
 
-const projects = projectsInRunfiles();
+const projects = projectsInRunfiles().filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`));
+const notApplicable: Record<string, string> = MODE_1_4_2
+  ? Object.fromEntries(Object.entries(NOT_APPLICABLE_1_4_2).map(([name, reason]) => [`${BUN_1_4_2}/${name}`, reason]))
+  : NOT_APPLICABLE;
 const host = hostTuple();
 const compared: string[] = [];
 const differences: string[] = [];
@@ -113,15 +126,16 @@ let scaleArchives: string | undefined;
 const scaleDir = () => (scaleArchives ??= join(process.env.TEST_TMPDIR!, "scale-archives"));
 
 test("every project is on both sides (FR-009, US2-4)", () => {
-  expect(Object.keys(graphs).sort()).toEqual(projects);
-  for (const project of Object.keys(NOT_APPLICABLE)) expect(projects).toContain(project);
+  expect(Object.keys(graphs).filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`)).sort()).toEqual(projects);
+  // A project 1.4.2 cannot write has no lockfile; any other not-applicable project is asserted below.
+  if (!MODE_1_4_2) for (const project of Object.keys(NOT_APPLICABLE)) expect(projects).toContain(project);
 });
 
 for (const project of projects) {
   test(
     project,
     async () => {
-      if (project in NOT_APPLICABLE) {
+      if (project in notApplicable) {
         // Asserted, not skipped: the oracle must still refuse it.
         await expect(installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir))).rejects.toThrow();
         return;
@@ -140,6 +154,9 @@ for (const project of projects) {
         }
         difference = compare(project, ruleset, bun);
       }
+      if (MODE_1_4_2 && difference !== undefined) {
+        difference = `${project}: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (${difference.slice(project.length + 2)}); the ruleset cannot follow both (constitution V)`;
+      }
       compared.push(project);
       if (difference !== undefined) differences.push(difference);
       expect(difference).toBeUndefined();
@@ -149,9 +166,10 @@ for (const project of projects) {
 }
 
 afterAll(() => {
+  console.log(`oracle: Bun ${Bun.version}`);
   console.log(`host platform: ${JSON.stringify(host)}`);
   console.log(`compared ${compared.length} projects:\n  ${compared.join("\n  ")}`);
-  console.log(`not applicable:\n${Object.entries(NOT_APPLICABLE).map(([p, r]) => `  ${p}: ${r}`).join("\n")}`);
+  console.log(`not applicable:\n${Object.entries(notApplicable).map(([p, r]) => `  ${p}: ${r}`).join("\n")}`);
   console.log(
     "excluded by name: ID-1 (no lifecycle scripts), ID-2 (selection by target platform), ID-3 (no hoisting), ID-4 (unfetched entries fail analysis)",
   );

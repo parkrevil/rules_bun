@@ -1,0 +1,17 @@
+{
+  "name": "conformance-catalog",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "q": "1.0.0",
+      "state": "2.0.0"
+    }
+  },
+  "dependencies": {
+    "ident-a": "1.0.0",
+    "state": "catalog:"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "conformance-shared-peer",
+  "private": true,
+  "dependencies": {
+    "ident-a": "1.0.0",
+    "state-peer-any": "1.0.0",
+    "state2-user": "1.0.0"
+  }
+}

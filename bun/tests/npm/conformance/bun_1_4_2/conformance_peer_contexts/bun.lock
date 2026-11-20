@@ -1,0 +1,38 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-peer-contexts",
+      "dependencies": {
+        "p-user": "1.0.0",
+        "q": "1.0.0",
+        "q2-user": "1.0.0",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "p-user": "1.0.0",
+        "q": "1.0.0",
+        "r": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "p": ["p@1.0.0", "http://127.0.0.1:28761/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "p-user": ["p-user@1.0.0", "http://127.0.0.1:28761/p-user/-/p-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0" } }, "sha512-y5+XBk5r/8wnG1rPhrLPGs1J2fE3BqygDnsVII6PYdPYyUvzn74Cet5uZ2Lubb+uMJVSRnbDN64WuldBzpHtVA=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "q2-user": ["q2-user@1.0.0", "http://127.0.0.1:28761/q2-user/-/q2-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0", "q": "2.0.0" } }, "sha512-LKRiUDcxZXa/iMDmuGTuMIfrMBVbDm64B61q9mCRoxptjGV951vycs3hiVPlC2UuJRTZCcaRCbhxpgImyCNDtw=="],
+
+    "r": ["r@1.0.0", "http://127.0.0.1:28761/r/-/r-1.0.0.tgz", {}, "sha512-Wolab2Htrgl65Wq4UnDlWY+ZQ9Kz1gdZYUZnDALmWX15/MuL713+kcyDIZC/EJlhZacHmNO7q7RQk+WyE6mNsA=="],
+
+    "w": ["w@workspace:packages/w"],
+
+    "q2-user/q": ["q@2.0.0", "http://127.0.0.1:28761/q/-/q-2.0.0.tgz", {}, "sha512-MgQQSwwi79l0HnkTi9pSO7kSZD/NbsybDvO5a8e/a2VeD+6JngI+SbTkQpFmG/+o7Tgd9YeGgbRMTEi/C+r+KA=="],
+  }
+}

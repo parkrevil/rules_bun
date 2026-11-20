@@ -1,0 +1,40 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-catalog",
+      "dependencies": {
+        "ident-a": "1.0.0",
+        "state": "catalog:",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "p-user": "1.0.0",
+      },
+      "peerDependencies": {
+        "q": "catalog:",
+      },
+    },
+  },
+  "catalog": {
+    "q": "1.0.0",
+    "state": "2.0.0",
+  },
+  "packages": {
+    "ident-a": ["ident-a@1.0.0", "http://127.0.0.1:28761/ident-a/-/ident-a-1.0.0.tgz", { "peerDependencies": { "state": "^1.0.0" } }, "sha512-iqTJkNIBqNe6tZZKox5bRM2fWYFzA1Kd/CYqwk33OERgOFK47WB7FkYTxdf/f+crjy5lyHNrduerd4Z5V50z8g=="],
+
+    "p": ["p@1.0.0", "http://127.0.0.1:28761/p/-/p-1.0.0.tgz", { "peerDependencies": { "q": "^1.0.0 || ^2.0.0", "r": "^1.0.0" }, "optionalPeers": ["r"] }, "sha512-CNKhicjz4b66prIXvok9gjYQP7+9HRlj+C+iSjt3J1JtvvHUbfEr6IoHsg4qvMMN62AD56RWNGC9scytI0LZLA=="],
+
+    "p-user": ["p-user@1.0.0", "http://127.0.0.1:28761/p-user/-/p-user-1.0.0.tgz", { "dependencies": { "p": "^1.0.0" } }, "sha512-y5+XBk5r/8wnG1rPhrLPGs1J2fE3BqygDnsVII6PYdPYyUvzn74Cet5uZ2Lubb+uMJVSRnbDN64WuldBzpHtVA=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "state": ["state@2.0.0", "http://127.0.0.1:28761/state/-/state-2.0.0.tgz", {}, "sha512-5oYgfIJ4VV7KgpvYFom82dqshLROyj5341TAsd6B2JotwyjZZPFKkcUZgvwu9XqMt/0M8ObDe4zorf90CIhnDw=="],
+
+    "w": ["w@workspace:packages/w"],
+  }
+}

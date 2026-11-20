@@ -1,0 +1,12 @@
+{
+  "name": "conformance-overrides",
+  "private": true,
+  "dependencies": {
+    "ident-a": "1.0.0",
+    "p-user": "1.0.0"
+  },
+  "overrides": {
+    "q": "2.0.0",
+    "state": "2.0.0"
+  }
+}

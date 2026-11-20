@@ -49,7 +49,7 @@ the project, empty cache, then the graph is read from the file system (research 
 
 | Item | Value |
 |---|---|
-| Targets | `//bun/tests/npm/conformance:conformance_test` (Bun 1.4.4, in `bazel test //...`); `//bun/tests/npm/conformance:conformance_1_4_2_test` (`target_compatible_with` the `bun_1_4_2` value, run with `--platforms=//bun/tests/npm/conformance:host_bun_1_4_2`) |
+| Targets | `//bun/tests/npm/conformance:conformance_test` (Bun 1.4.4, in `bazel test //...`); `//bun/tests/npm/conformance:conformance_1_4_2_test` (`target_compatible_with` the `bun_1_4_2` value, run with `--platforms=//bun/tests/npm/conformance:host_bun_1_4_2 --extra_execution_platforms=//bun/tests/npm/conformance:host_bun_1_4_2`) |
 | Projects | every `bun.lock` under `bun/tests/npm/fixtures/`, `bun/tests/npm/scale/`, `bun/tests/integration/workspaces/`, `bun/tests/npm/conformance/bun_1_4_2/`; a fixed, asserted list of not-applicable projects with reasons |
 | Exclusions | `ID-1` (`--ignore-scripts`), `ID-2` (host class only), `ID-3` (`node_modules/.bun/node_modules` and root fallbacks not read), `ID-4` (the `status` of an entry marked `unfetched` is not a difference; its links are compared). Named in the test; nothing else excluded. |
 | Red mode | `RULES_BUN_CONFORMANCE_RED=1`: one ruleset edge is redirected; the test must fail naming it |

@@ -1,0 +1,27 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-platform",
+      "dependencies": {
+        "nomatch-aix-ppc64": "1.0.0",
+        "plat-user": "1.0.0",
+      },
+      "optionalDependencies": {
+        "native-darwin-arm64": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "native-aix-x64": ["native-aix-x64@1.0.0", "http://127.0.0.1:28761/native-aix-x64/-/native-aix-x64-1.0.0.tgz", { "os": "aix", "cpu": "x64" }, "sha512-Xm28b3SSUc25V7Uo+evWMIDbAAvR09CqS9V+oqLDIjNHruNgdvc0W+hgEyt3rdJ6Ut+LtWCN9F6BpX2+QaeXsQ=="],
+
+    "native-darwin-arm64": ["native-darwin-arm64@1.0.0", "http://127.0.0.1:28761/native-darwin-arm64/-/native-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-urQGWYaZViOQmrp/glFt/8XY3O7grThH1T9XEgwtYFEW/trqHmqExzc7tca4Dei+Z7Dq/Ys32kHRlRdJWNB9Qg=="],
+
+    "nomatch-aix-ppc64": ["nomatch-aix-ppc64@1.0.0", "http://127.0.0.1:28761/nomatch-aix-ppc64/-/nomatch-aix-ppc64-1.0.0.tgz", { "os": "aix", "cpu": "ppc64" }, "sha512-7ZCgWHsp1FI2hRUXzakcc7KKR+90MUuQqRPe5SgRD0BMeOUoR4o1hVDHTTi+R/4NYjt9I3ng79UH34S2xR4RZA=="],
+
+    "nomatch-sunos-x64": ["nomatch-sunos-x64@1.0.0", "http://127.0.0.1:28761/nomatch-sunos-x64/-/nomatch-sunos-x64-1.0.0.tgz", { "os": "sunos", "cpu": "x64" }, "sha512-0NxMgvPUDNaWVcMBSRTefoGAth9v8gr0MIaQvsEyJ5Xo07p5SgywZowJa/wBFFF6KW478M22PajmS1260Rt9rA=="],
+
+    "plat-user": ["plat-user@1.0.0", "http://127.0.0.1:28761/plat-user/-/plat-user-1.0.0.tgz", { "dependencies": { "native-aix-x64": "1.0.0" }, "optionalDependencies": { "nomatch-sunos-x64": "1.0.0" } }, "sha512-LbOsp5EYvQNgN30XGs51FY9QR+KFKcFetFqOEXfslUlDkl42GlXovc4JQd+mwLCVL5UcwUgN+1RWodVsLjtzNQ=="],
+  }
+}

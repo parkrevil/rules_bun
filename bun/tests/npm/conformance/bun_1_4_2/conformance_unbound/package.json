@@ -1,0 +1,16 @@
+{
+  "name": "conformance-unbound",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "optionalDependencies": {
+    "state": "^3.0.0"
+  },
+  "peerDependencies": {
+    "r": "^9.0.0"
+  }
+}

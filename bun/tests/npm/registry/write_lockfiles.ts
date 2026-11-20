@@ -4,6 +4,13 @@
 //
 //   $(bazel info output_base)/external/+bun+bun_linux-x64/bun bun/tests/npm/registry/write_lockfiles.ts [project...]
 //
+// With --bun-1-4-2, run by Bun 1.4.2 (the dev toolchain bun_1_4_2 of MODULE.bazel,
+// $(bazel info output_base)/external/+bun+bun_1_4_2_linux-x64/bun), it writes each corpus project
+// (conformance_*) that Bun 1.4.2 can write and install into
+// bun/tests/npm/conformance/bun_1_4_2/<project>/ instead: bun.lock, package.json and the workspace
+// members' package.json files, without the BUILD files of the fixture (feature 006 US5, research
+// R10); NOT_APPLICABLE_1_4_2 lists the others with the reason.
+//
 // For each project it writes the project files, copies them into a temporary
 // directory, starts the loopback registry with the fixture archives and runs
 // the pinned Bun's `install` there with an empty cache. It rewrites nothing Bun
@@ -15,10 +22,15 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type ArchiveSpec, FIXTURE_PORT, type IntegrityAlgorithm, type Registry, startRegistry } from "../../support/npm_registry.ts";
+import { NOT_APPLICABLE_1_4_2 } from "../conformance/not_applicable_1_4_2.ts";
+
+export { NOT_APPLICABLE_1_4_2 };
 
 const here = import.meta.dir;
 const archivesDir = join(here, "archives");
 const fixtures = join(here, "..", "fixtures");
+const BUN_1_4_2_FLAG = "--bun-1-4-2";
+const bun142 = join(here, "..", "conformance", "bun_1_4_2");
 
 type Files = Record<string, string>;
 
@@ -736,7 +748,7 @@ function writeFiles(dir: string, files: Files) {
 
 // Bun runs as a child process without blocking this process, which serves the
 // loopback registry it fetches from.
-async function generate(name: string, project: Project) {
+async function generate(name: string, project: Project, forBun142 = false) {
   const registry = startRegistry({ archives: archives(project), port: FIXTURE_PORT });
   const work = mkdtempSync(join(tmpdir(), `rules-bun-lock-${name}-`));
   try {
@@ -763,6 +775,16 @@ async function generate(name: string, project: Project) {
     const lock = () => Bun.JSONC.parse(readFileSync(join(dir, "bun.lock"), "utf8")) as Lockfile;
     if (project.run) await project.run({ dir, registry, bun, lock });
     else await bun("install", `--registry=${registry.url}`);
+    if (forBun142) {
+      // Bun 1.4.2 writes its own forms; the project's check is of the pinned Bun's (1.4.4).
+      const out = join(bun142, name);
+      rmSync(out, { recursive: true, force: true });
+      writeFiles(out, Object.fromEntries(Object.entries(files).filter(([file]) => !file.endsWith("BUILD.bazel"))));
+      for (const kept of ["bun.lock", ...(project.keep ?? [])]) cpSync(join(dir, kept), join(out, kept), { recursive: true });
+      writeFileSync(join(out, "BUILD.bazel"), `${CONFORMANCE_LOAD}\n# Written by Bun 1.4.2 (write_lockfiles.ts --bun-1-4-2).\n\nexports_files([\n    "bun.lock",\n    "package.json",\n])\n\nconformance_files()\n`);
+      console.log(`${name}: lockfileVersion ${lock().lockfileVersion} (Bun ${Bun.version})`);
+      return;
+    }
     project.check(lock());
 
     const out = join(fixtures, name);
@@ -787,7 +809,13 @@ async function generate(name: string, project: Project) {
   }
 }
 
-const selected = process.argv.slice(2);
-for (const [name, project] of Object.entries(projects)) {
-  if (selected.length === 0 || selected.includes(name)) await generate(name, project);
+if (import.meta.main) {
+  const forBun142 = process.argv.includes(BUN_1_4_2_FLAG);
+  const selected = process.argv.slice(2).filter((arg) => arg !== BUN_1_4_2_FLAG);
+  if (forBun142 && Bun.version !== "1.4.2") throw new Error(`write_lockfiles: ${BUN_1_4_2_FLAG} needs Bun 1.4.2, not ${Bun.version}`);
+  for (const [name, project] of Object.entries(projects)) {
+    if (selected.length > 0 && !selected.includes(name)) continue;
+    if (forBun142 && (!name.startsWith("conformance_") || name in NOT_APPLICABLE_1_4_2)) continue;
+    await generate(name, project, forBun142);
+  }
 }

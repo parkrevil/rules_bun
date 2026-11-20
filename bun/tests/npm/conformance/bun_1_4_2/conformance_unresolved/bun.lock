@@ -1,0 +1,43 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-unresolved",
+      "dependencies": {
+        "a": "1.0.0",
+        "opt-user": "1.0.0",
+        "q": "1.0.0",
+        "state": "1.0.0",
+      },
+      "optionalDependencies": {
+        "b": "^3.0.0",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "a": "1.0.0",
+      },
+      "optionalDependencies": {
+        "q": "^3.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:28761/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+
+    "ident-a": ["ident-a@1.0.0", "http://127.0.0.1:28761/ident-a/-/ident-a-1.0.0.tgz", { "peerDependencies": { "state": "^1.0.0" } }, "sha512-iqTJkNIBqNe6tZZKox5bRM2fWYFzA1Kd/CYqwk33OERgOFK47WB7FkYTxdf/f+crjy5lyHNrduerd4Z5V50z8g=="],
+
+    "opt-user": ["opt-user@1.0.0", "http://127.0.0.1:28761/opt-user/-/opt-user-1.0.0.tgz", { "dependencies": { "ident-a": "1.0.0" }, "optionalDependencies": { "state": "^3.0.0" } }, "sha512-lt10XfhSLJRuV7fz90jn2DFhPu0ww53CZpZaC52gBkTbWRvgQfqER6zhB9jvGtimjgZfA3Hkt20HPezgsCKkYg=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "state": ["state@1.0.0", "http://127.0.0.1:28761/state/-/state-1.0.0.tgz", {}, "sha512-sGZb7AOYLr4Imwh9FrhNETSJfhtvq+mXb+/hYcvjmeld/a3Q7GWCWfJ0P4pMKmshVrUC6R439QTySFxhzDq0zw=="],
+
+    "w": ["w@workspace:packages/w"],
+  }
+}

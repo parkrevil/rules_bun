@@ -1,0 +1,10 @@
+{
+  "name": "conformance-registry-to-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "member-user": "1.0.0"
+  }
+}
