@@ -27,6 +27,8 @@ the conformance test (a difference before, none after) and listed in the PR.
 | Two keys holding one `name@version` whose walks find different versions | one instance per key, each with its walk's version | one package, bound as Bun's row evidence decides | BC-6 |
 | A non-optional dependency whose package's `os`/`cpu` exclude the target platform | carried on every platform | not carried on that platform | BC-7 |
 | The dependencies of an unfetched entry (`unsupported_reason`) | not followed | followed: they get instances; the entry still fails analysis, no target name changes | BC-8 |
+| An optional peer an ancestor's dependencies or the lockfile's own entry of that name provide | not linked | linked as the pinned Bun's isolated install links it | BC-9 |
+| A dependency listed in a package's `bundleDependencies` | linked from the `<package>/<dep>` key | not linked; the package carries its own copy | BC-10 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences, and the CI runner labels the tests ran on | — |
 
 Diagnostics added: a lockfile Bun 1.4.4 refuses to load fails evaluation with an English message
