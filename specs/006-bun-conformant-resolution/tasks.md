@@ -228,7 +228,7 @@ naming the injected binding (Q2).
   and `missing_peer`, BC-6 `dependency_conflict` and `conformance_nested`, BC-7
   `conformance_platform` only where the host is excluded, BC-8 `unsupported`). A project that
   differs for no BC, or a BC that shows no difference: stop and report
-- [ ] T018 [US2] Make `RULES_BUN_CONFORMANCE_RED=1` redirect one edge of `basic` (a project with no
+- [X] T018 [US2] Make `RULES_BUN_CONFORMANCE_RED=1` redirect one edge of `basic` (a project with no
   Behavior Change, so its red cannot be confused with a BC difference); run `bazel test
   //bun/tests/npm/conformance:conformance_test --test_env=RULES_BUN_CONFORMANCE_RED=1
   --test_output=errors` (Q2) and record that it fails naming `basic`, the dependent, the dependency
@@ -440,7 +440,7 @@ projects without a BC are unchanged (Q7, T064).
   with red modes for L31 (the info object of a non-npm row), L32 (a row's `devDependencies`) and
   L33 (a workspace's `optionalPeers`) on 2026-11-21: add them, red first, as T019–T027 added theirs
   (depends on T044)
-- [ ] T051 [US1] Run `bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors`
+- [X] T051 [US1] Run `bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors`
   (Q1: `0 differences`), `//bun/tests/npm/...`, `//bun/tests/canary/npm/...`,
   `//bun/tests/integration/...` and `//...`; record green, and for each BC-n of T017 one row
   "difference gone" naming the project (SC-003). A remaining difference is fixed in the carry-over
@@ -470,7 +470,7 @@ mode, and research Part 2 lists 0 unaccounted Bun steps (Q6).
   `RULES_BUN_CITATIONS_RED=1` (its own variable, so Q2 does not flip it) adds an uncited `def` to
   the checked text and the test must fail;
   record green and red
-- [ ] T054 [US3] Re-read every cited range in `SRC` against its Starlark function (same steps, same
+- [X] T054 [US3] Re-read every cited range in `SRC` against its Starlark function (same steps, same
   order); correct any citation or carry-over that differs, then re-run T051's conformance test;
   record the review in `tdd-log.md` (one row per `bun/private/bun_*.bzl` file). The user approved
   ID-6 on 2026-11-21 (research Part 6): `linkWorkspacePackages` binds as Bun's default and no
@@ -522,7 +522,7 @@ with reasons (Q4).
   holds because `conformance_test` asserts the ruleset equals Bun 1.4.4 on the same lockfiles; add
   the `bun_test` target `conformance_1_4_2_test` with `target_compatible_with =
   [":bun_1_4_2"]` so `bazel test //...` skips it (depends on T057, T058)
-- [ ] T060 [US5] Run Q4 on Linux and record the result per project; `conformance_test` must stay
+- [X] T060 [US5] Run Q4 on Linux and record the result per project; `conformance_test` must stay
   green with the 1.4.2 lockfiles. A "Bun 1.4.2 links this lockfile differently" failure is the
   spec's stop condition: stop and report, change neither side. If Bun 1.4.4's `--frozen-lockfile`
   install refuses a 1.4.2-written lockfile (it would rewrite it), stop and report the same way
