@@ -1044,10 +1044,31 @@ def dependency_parse(alias, literal):
         return _version_value(tag, literal, catalog = _trim(dependency[len("catalog:"):], _WHITESPACE))
     return _version_value(VERSION_TAG.UNINITIALIZED, literal)
 
-def split_name_and_version(text):
-    """`split_name_and_version`: `name@version`, the scope's `@` being part of the name.
+def split_name_and_maybe_version(text):
+    """`split_name_and_maybe_version`: `name@version`, the scope's `@` being part of the name.
 
-    Bun: src/install/dependency.rs L485–L532 @ bun-v1.4.4
+    Bun: src/install/dependency.rs L485–L516 @ bun-v1.4.4
+
+    Args:
+        text: `<name>` or `<name>@<version>`.
+
+    Returns:
+        `(name, version)`; `version` is `None` when nothing follows the name.
+    """
+    at = text.find("@")
+    if at == -1:
+        return text, None
+    if at == 0:
+        second = text.find("@", 1)
+        if second == -1:
+            return text, None
+        at = second
+    return text[:at], (text[at + 1:] if at + 1 < len(text) else None)
+
+def split_name_and_version(text):
+    """`split_name_and_version`.
+
+    Bun: src/install/dependency.rs L529–L532 @ bun-v1.4.4
 
     Args:
         text: Slot 0 of a `packages` row.
@@ -1055,17 +1076,10 @@ def split_name_and_version(text):
     Returns:
         `(name, version)`, or `None` when no version follows (`MissingVersion`).
     """
-    at = text.find("@")
-    if at == -1:
+    name, version = split_name_and_maybe_version(text)
+    if version == None:
         return None
-    if at == 0:
-        second = text.find("@", 1)
-        if second == -1:
-            return None
-        at = second
-    if at + 1 >= len(text):
-        return None
-    return text[:at], text[at + 1:]
+    return name, version
 
 def is_safe_install_folder_name(name):
     """`is_safe_install_folder_name`: a name that can be a folder under `node_modules`.

@@ -315,7 +315,7 @@ projects without a BC are unchanged (Q7, T064).
   `bun.lock` label, the entry and the field without printing the value (spec Edge Cases); a name
   under `unresolved` that is no optional dependency is accepted (ignored later, as Bun does);
   `bundled` not a boolean; a workspace `version` not a string
-- [ ] T031 [P] [US1] Write `bun/tests/npm/bun_lockfile_test.bzl` on `@npm_fixture_results`
+- [X] T031 [P] [US1] Write `bun/tests/npm/bun_lockfile_test.bzl` on `@npm_fixture_results`
   lockfiles and inline texts: one package per `name@resolution` (`append_package_dedupe`:
   `dependency_conflict`'s `x@1.0.0` keys are one package); workspaces under their names first;
   `./lib/<dep>` and `./@scope/lib/<dep>` bind the workspace's dependencies
@@ -364,7 +364,7 @@ projects without a BC are unchanged (Q7, T064).
 - [X] T039 [P] [US1] In `bun/private/lockfile.bzl` add the checked accesses L23–L30, each tagged
   `# L<n>` as L1–L22 are, with the diagnostics of T030 (an `unresolved` value is never printed);
   record green for `lockfile_test`
-- [ ] T040 [US1] Carry over S1 into `bun/private/bun_lockfile.bzl`: LOCK
+- [X] T040 [US1] Carry over S1 into `bun/private/bun_lockfile.bzl`: LOCK
   `parse_into_binary_lockfile` L1797–2711 (top-level fields L1815–2099, `workspaces` L2100–2304 with
   each workspace in the key map under its name L2302, `packages` rows L2308– with `bundled` L2351 and
   `os`/`cpu`/`libc` L2594–2602, the key forms of PRIOR S3 including "Duplicate package path" and
@@ -374,13 +374,13 @@ projects without a BC are unchanged (Q7, T064).
   …)` as `resolve.bzl` returns them; cite each function. List every load error of LOCK
   L1797–2711 in research Part 4 with its line; each is tested in T031 or recorded there as not
   produced by any supported Bun (FR-004) (depends on T037, T038, T039)
-- [ ] T041 [US1] Carry over S2 into `bun/private/bun_lockfile.bzl`: `resolutions` L2765–3031 (root
+- [X] T041 [US1] Carry over S2 into `bun/private/bun_lockfile.bzl`: `resolutions` L2765–3031 (root
   dependencies, `workspace` dependencies by name, peers by `linked_member`/`peer_by_version`
   L2793–2855; workspace dependencies by `<name>/<dep>`, `./<name>/<dep>`, then `<dep>` L2859–2921;
   rows by `PkgMap::find_resolution` L1580–1662 with `RowEvidence` L1524–1542 and "later row of equal
   evidence wins" L2993; the `unresolved` reset L3027–3031), `may_stay_unresolved` L3298 and
   `dependency_resolution_failure` L3302; cite each function (depends on T040)
-- [ ] T042 [US1] Carry over S3 and S5 into `bun/private/bun_lockfile.bzl`:
+- [X] T042 [US1] Carry over S3 and S5 into `bun/private/bun_lockfile.bzl`:
   `resolve_peer_dep_version_based` L3067–3089, `version_based_peer_range` L3174–3208 (catalogs and
   overrides), `PeerRanges::shared_version` L3091–3172, and REACH `packages_without_peer_provider`,
   with the package index by name ordered by `Resolution::order`; cite each function (depends on

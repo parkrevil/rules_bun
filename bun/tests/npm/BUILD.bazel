@@ -1,5 +1,6 @@
 load(":bins_test.bzl", "bins_test_suite")
 load(":bun_install_types_test.bzl", "bun_install_types_test_suite")
+load(":bun_lockfile_test.bzl", "bun_lockfile_test_suite")
 load(":bun_semver_test.bzl", "bun_semver_test_suite")
 load(":compare_test.bzl", "compare_test_suite")
 load(":generated_test.bzl", "generated_test_suite")
@@ -55,3 +56,5 @@ urls_test_suite(name = "urls")
 bun_semver_test_suite(name = "bun_semver")
 
 bun_install_types_test_suite(name = "bun_install_types")
+
+bun_lockfile_test_suite(name = "bun_lockfile")

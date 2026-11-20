@@ -148,6 +148,15 @@ bzl_library(
 )
 
 bzl_library(
+    name = "bun_lockfile",
+    srcs = ["bun_lockfile.bzl"],
+    deps = [
+        ":bun_install_types",
+        ":bun_semver",
+    ],
+)
+
+bzl_library(
     name = "bun_semver",
     srcs = ["bun_semver.bzl"],
 )
