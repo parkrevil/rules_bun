@@ -77,10 +77,13 @@ the path.
 A target platform without a `//bun/toolchain:target_type` toolchain, or a Windows target platform
 without a hermetic-launcher stub, fails analysis naming the missing toolchain type.
 
-npm packages (the `:node_modules/<package>` targets of the `npm` extension in `deps`): each package
-version the target reaches is copied once into `<name>.bun/.store/<name>@<version>/node_modules/<name>/`
-(a scope's `/` written `+`), with hardlinks where the file system allows them; an empty directory
-of the package's archive is not carried. Each package can
+npm packages (the `:node_modules/<package>` targets of the `npm` extension in `deps`): each store
+entry the target reaches is copied once into `<name>.bun/.store/<name>@<version>/node_modules/<name>/`
+(a scope's `/` written `+`), or, for a package whose transitive peers bind, into
+`.store/<name>@<version>+<peer hash>/...`, the form of the pinned Bun's isolated store entries, so a
+package version reached under different peer bindings is copied once per binding; copies use
+hardlinks where the file system allows them, and an empty directory of the package's archive is not
+carried. Each package can
 load, by Node's `node_modules` lookup, exactly its own dependencies and resolved peers, and the
 workspace package's `node_modules` holds only that package's direct links; importing anything else
 fails with Bun's module-not-found error, or with the load guard's error when a copy is reachable.
@@ -88,8 +91,8 @@ rules_bun does not read the lockfile's `configVersion`, so a lockfile written fo
 installs gets this layout too, and code that relies on a hoisted, undeclared package fails. Peers
 resolve as the pinned Bun's isolated install resolves them (the `npm` extension's Resolution): to
 the version a dependent above the package provides, else to the version the lockfile lists; a peer
-nothing provides is absent. A target in which one package version would need two versions of one
-dependency or peer fails analysis naming the package, that dependency or peer and both versions.
+nothing provides is absent. Two instances with one store directory that come from different
+lockfiles and differ fail analysis, as the `npm` extension's "Several lockfiles" states.
 
 The load guard admits every file under the target's store entries and nothing else; its limits
 above apply unchanged, and Bun's resolver may still read a `package.json` outside the declared set
@@ -185,6 +188,15 @@ def _directory_link(ctx, root, path, target):
 def _name_version(instance):
     return "{}@{}".format(instance.package, instance.store_name[len(instance.package.replace("/", "+")) + 1:])
 
+def _store_path(instance):
+    """An instance's store directory, as Bun's isolated store names an entry (feature 006 BC-11).
+
+    `<name>@<version>`, with `+<peer hash>` for an entry whose transitive peers bind
+    (`fmt_store_path`, Bun's src/install/isolated_install/Store.rs L450-L466 at bun-v1.4.4), so
+    a package version reached under different peer bindings is one directory per binding.
+    """
+    return instance.store_name + ("+" + instance.peer_hash if instance.peer_hash else "")
+
 def _key(instance, instance_id = None):
     """The identity of `instance`, or of the instance its edge names, across hubs (US9)."""
     return str(instance.label.same_package_label(instance_id or instance.id))
@@ -230,31 +242,33 @@ def _equivalent(instances, first, second):
     for alias in first.edges.keys():
         a = instances.get(_key(first, first.edges[alias]))
         b = instances.get(_key(second, second.edges[alias]))
-        if (a == None) != (b == None) or (a != None and a.store_name != b.store_name):
+        if (a == None) != (b == None) or (a != None and _store_path(a) != _store_path(b)):
             return False
     return True
 
 def _check_unique(ctx, instances):
-    """Picks one instance per package version and fails when two differ (FR-003, FR-017, US5-4).
+    """Picks one instance per store directory and fails when two differ (FR-003, FR-017, US5-4).
 
-    Instance IDs are unique within one hub only, so `instances` is keyed by `_key`. Instances of
-    different hubs (several lockfiles) with one content identity whose edges reach the same
-    package versions lay out alike and are carried once; any other two instances of one package
-    version fail. The error names the first content-identity property that differs, else the
-    first dependency whose resolutions differ in version or `bun.lock` key; when two instances
-    differ only through instances of one version below them, those are reported instead.
+    Instance IDs are unique within one hub only, so `instances` is keyed by `_key`. One hub gives
+    the store entries of one package version different directories when their peer bindings
+    differ (`_store_path`, feature 006 BC-11). Instances of different hubs (several lockfiles)
+    with one directory and one content identity whose edges reach the same directories lay out
+    alike and are carried once; any other two instances with one directory fail. The error names
+    the first content-identity property that differs, else the first dependency whose
+    resolutions differ in version or `bun.lock` key; when two instances differ only through
+    instances below them, those are reported instead.
 
     Returns:
         Key -> the key of the instance carried in its place.
     """
     groups = {}
     for key in sorted(instances.keys()):
-        groups.setdefault(instances[key].store_name, []).append(key)
+        groups.setdefault(_store_path(instances[key]), []).append(key)
     carried = {}
     conflicts = []
-    for store_name in sorted(groups.keys()):
+    for directory in sorted(groups.keys()):
         classes = []
-        for key in groups[store_name]:
+        for key in groups[directory]:
             match = [c for c in classes if _equivalent(instances, instances[c], instances[key])]
             if not match:
                 classes.append(key)
@@ -264,7 +278,7 @@ def _check_unique(ctx, instances):
     for first, second in conflicts:
         difference = _identity_difference(first, second)
         if difference:
-            fail("{}: the npm package {} comes from the hubs {} ({}) and {} ({}) with different {}: {} and {}; one instance per package version is carried only when both hubs describe the same content".format(
+            fail("{}: the npm package {} comes from the hubs {} ({}) and {} ({}) with different {}: {} and {}; one instance per package version and peer bindings is carried only when both hubs describe the same content".format(
                 ctx.label,
                 _name_version(first),
                 first.hub,
@@ -279,7 +293,7 @@ def _check_unique(ctx, instances):
         for alias in sorted({a: True for a in first.edges.keys() + second.edges.keys()}.keys()):
             if _resolved(instances, first, alias) == _resolved(instances, second, alias):
                 continue
-            fail('{}: the npm package {} would be carried twice, because its {} "{}" resolves to {} and to {}; a target holds one instance of each package version, so its dependencies must agree on it'.format(
+            fail('{}: the npm package {} would be carried twice, because its {} "{}" resolves to {} and to {}; a target holds one instance of each package version and peer bindings, so its dependencies must agree on it'.format(
                 ctx.label,
                 _name_version(first),
                 "peer" if alias in first.peers or alias in second.peers else "dependency",
@@ -289,7 +303,7 @@ def _check_unique(ctx, instances):
             ))
     if conflicts:
         first, second = conflicts[0]
-        fail("{}: the npm package {} would be carried as the two instances {} and {}; a target holds one instance of each package version".format(
+        fail("{}: the npm package {} would be carried as the two instances {} and {}; a target holds one instance of each package version and peer bindings".format(
             ctx.label,
             _name_version(first),
             _key(first),
@@ -332,7 +346,7 @@ def _member_links(ctx, root, deps, instances, kept):
                     _display(member),
                     _display(member),
                 ))
-            path = ".store/{}/node_modules/{}".format(instance.store_name, alias)
+            path = ".store/{}/node_modules/{}".format(_store_path(instance), alias)
             outputs.append(_directory_link(ctx, root, path, _link_dir(member)))
             paths.append(path)
     return outputs, paths
@@ -340,7 +354,7 @@ def _member_links(ctx, root, deps, instances, kept):
 def _package_layout(ctx, root, deps):
     """Lays out the packages of `deps` in the copy tree as a strict store (research R5).
 
-    Each instance tree is copied once to `.store/<store name>/node_modules/<package>`; each
+    Each instance tree is copied once to `.store/<store directory>/node_modules/<package>`; each
     dependency edge is a directory link next to it, and each link record a direct link in its
     workspace package's `node_modules`, to a store entry or, for a workspace member, to the
     member's package, where the member target's files are copied.
@@ -377,7 +391,7 @@ def _package_layout(ctx, root, deps):
     kept = sorted([k for k in instances.keys() if carried[k] == k])
     for key in kept:
         instance = instances[key]
-        path = ".store/{}/node_modules/{}".format(instance.store_name, instance.package)
+        path = ".store/{}/node_modules/{}".format(_store_path(instance), instance.package)
         copy = ctx.actions.declare_directory("{}/{}".format(root, path))
         copy_directory_bin_action(ctx, src = instance.tree, dst = copy, copy_directory_bin = copy_directory_bin, hardlink = "auto")
         entries[key] = path
@@ -392,7 +406,7 @@ def _package_layout(ctx, root, deps):
             target = _key(instance, target)
             if alias == instance.package or target not in entries:
                 continue
-            path = ".store/{}/node_modules/{}".format(instance.store_name, alias)
+            path = ".store/{}/node_modules/{}".format(_store_path(instance), alias)
             outputs.append(_directory_link(ctx, root, path, entries[target]))
             link_paths.append(path)
     member_outputs, member_paths = _member_links(ctx, root, deps, instances, kept)
@@ -558,7 +572,7 @@ def _bun_run_impl(ctx, mode):
         _, instance = _bin_record(ctx)
         config["bunfig"] = _rlocation_path(ctx.file._bunfig)
         config["entry_point"] = _rlocation_path(packages.stores[_key(instance)]) + "/" + ctx.attr.path
-        config["entry_point_tree"] = ".store/{}/node_modules/{}/{}".format(instance.store_name, instance.package, ctx.attr.path)
+        config["entry_point_tree"] = ".store/{}/node_modules/{}/{}".format(_store_path(instance), instance.package, ctx.attr.path)
     elif mode == "binary":
         config["bunfig"] = _rlocation_path(ctx.file._bunfig)
         config["entry_point"] = main_copies[0]

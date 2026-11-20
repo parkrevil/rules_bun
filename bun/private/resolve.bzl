@@ -129,10 +129,31 @@ def _reached(graph, root):
                 queue.append(target)
     return seen
 
-def _ids(lockfile, keys, statuses, hash_fn):
-    """This is the adapter: entry key -> instance ID, `name@version__<h>[__<n>]` as on `main`.
+def _hex16(value):
+    """This is the adapter: `value` as 16 lowercase hexadecimal digits, Bun's `{:016x}`."""
+    digits = []
+    for _ in range(16):
+        digits.append("0123456789abcdef"[value % 16])
+        value //= 16
+    return "".join(reversed(digits))
 
-    The ID of an instance the hub cannot use keeps only target-name characters, as on `main`.
+def _ids(lockfile, keys, statuses, hash_fn):
+    """Entry key -> instance ID and peer hash.
+
+    This is the adapter: the ID is `name@version__<h>[__<n>]` as on `main`, `<h>` the hash of the
+    entry's transitive peers and `<n>` numbering entries whose hashes collide; the ID of an instance
+    the hub cannot use keeps only target-name characters, as on `main`. The peer hash names the
+    entry's store directory as Bun's isolated store names it, `<name>@<version>+<peer hash>`, or
+    no hash for an entry without peers (`PeerHash::NONE`). Bun hashes the peers' names and
+    resolutions with Wyhash; the adapter hashes the same text with `hash_fn` and adds `<n>`, so two
+    entries of one hub never share a directory (feature 006 BC-11). Bun's hash of an entry without
+    peers that is a tarball (its integrity) is not carried: rules_bun does not fetch tarballs (ID-4).
+
+    Bun: src/install/isolated_install/Store.rs L450–L466 @ bun-v1.4.4
+    Bun: src/install/isolated_install.rs L1353–L1386 @ bun-v1.4.4
+
+    Returns:
+        `struct(ids, peer_hashes)`, each keyed by entry key.
     """
     groups = {}
     for key in keys:
@@ -141,6 +162,7 @@ def _ids(lockfile, keys, statuses, hash_fn):
         encoding = json.encode([[name, _label(lockfile, pkg_id)] for name, pkg_id in key[1]])
         groups.setdefault(name_version, {}).setdefault(hash_fn(encoding) % 4294967296, []).append((encoding, key))
     ids = {}
+    peer_hashes = {}
     for name_version, by_hash in groups.items():
         for h, group in by_hash.items():
             group = sorted(group)
@@ -148,7 +170,8 @@ def _ids(lockfile, keys, statuses, hash_fn):
                 suffix = "" if len(group) == 1 else "__{}".format(n)
                 prefix = name_version if statuses[key] == "ok" else _target_safe(name_version)
                 ids[key] = "{}__{}{}".format(prefix, h, suffix)
-    return ids
+                peer_hashes[key] = _hex16(n * 4294967296 + h) if key[1] else ""
+    return struct(ids = ids, peer_hashes = peer_hashes)
 
 def _label(lockfile, pkg_id):
     """This is the adapter: a package's `name@<resolution>` for messages and IDs."""
@@ -167,8 +190,9 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
 
     Returns:
         `struct(value, error)`; `value` is `struct(instances, links, members)`: `instances` maps an
-        instance ID to `struct(id, name, version, store_name, key, edges, dependency_keys, peers,
-        members, status, unfetched)` (`edges`: alias -> instance ID; `dependency_keys`: alias ->
+        instance ID to `struct(id, name, version, store_name, peer_hash, key, edges, dependency_keys,
+        peers, members, status, unfetched)` (`peer_hash`: 16 hexadecimal digits naming the entry's
+        transitive peer bindings, or `""` without peers; `edges`: alias -> instance ID; `dependency_keys`: alias ->
         the `bun.lock` key of the package an ordinary dependency links; `peers`: the aliases of
         `edges` that are peers; `members`: alias -> the path of a workspace it links; `status`:
         `ok`, or why the instance cannot be used; `unfetched`: whether that is because rules_bun
@@ -207,7 +231,8 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             merged.peers.update(node.peers)
     patched = getattr(lockfile, "patched", [])
     statuses = {key: unsupported_reason(bun.packages[key[0]].entry, patched) or "ok" for key in nodes}
-    ids = _ids(bun, sorted(nodes.keys()), statuses, hash_fn)
+    named = _ids(bun, sorted(nodes.keys()), statuses, hash_fn)
+    ids = named.ids
     instances = {}
     for key, node in nodes.items():
         package = bun.packages[key[0]]
@@ -218,6 +243,7 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             name = package.name,
             version = entry.version,
             store_name = "{}@{}".format(package.name.replace("/", "+"), entry.version),
+            peer_hash = named.peer_hashes[key],
             key = package.key,
             edges = {alias: ids[target] for alias, target in node.edges.items()},
             dependency_keys = {alias: bun.packages[target[0]].key for alias, target in node.edges.items() if alias not in node.peers},

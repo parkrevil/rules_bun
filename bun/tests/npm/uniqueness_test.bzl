@@ -31,8 +31,26 @@ def _copies_impl(entries):
 # row evidence (feature 006 BC-6, research E2), so y and z link one copy of it.
 _dependency_test = analysistest.make(_copies_impl([".store/x@1.0.0/node_modules/x", ".store/b@1.0.0/node_modules/b"]))
 
-# p with the root's q@1.0.0, and p through q2-user, which provides q@2.0.0.
-_peer_test = _make_failure_test(["p@1.0.0", 'peer "q"', "q@1.0.0", "q@2.0.0"])
+def _store_entries(outputs, store_name, package):
+    """The store-entry copies of `store_name` under any peer hash (`<store_name>+<16 hex digits>`)."""
+    found = []
+    for output in outputs:
+        _, sep, tail = output.partition("/.store/{}+".format(store_name))
+        if sep and tail[16:] == "/node_modules/" + package and not tail[:16].lstrip("0123456789abcdef"):
+            found.append(output)
+    return found
+
+def _peer_impl(ctx):
+    env = analysistest.begin(ctx)
+    outputs = [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
+    asserts.equals(env, 2, len(_store_entries(outputs, "p@1.0.0", "p")), "copies of p@1.0.0, one per peer binding")
+    asserts.equals(env, 0, len([o for o in outputs if o.endswith(".store/p@1.0.0/node_modules/p")]), "copies of p@1.0.0 without a peer hash")
+    return analysistest.end(env)
+
+# p with the root's q@1.0.0, and p through q2-user, which provides q@2.0.0: two store entries of
+# p@1.0.0, each in its own store directory as the pinned Bun's isolated store lays them out
+# (feature 006 BC-11).
+_peer_test = analysistest.make(_peer_impl)
 
 # A peer nothing provides is not linked, and the package is usable (feature 006 BC-5), as the pinned
 # Bun installs it.
@@ -43,9 +61,16 @@ _missing_peer_test = analysistest.make(_copies_impl([".store/ident-a@1.0.0/node_
 # identities tell them apart.
 _hubs_test = _make_failure_test(["a@1.0.0", 'dependency "b"', "b@1.0.0", "b@2.0.0"])
 
-# a-outer@1.0.0's peer ident-a is ident-a@1.0.0 in both instances; the instances of ident-a differ
-# by their own peer state, so the error names state's two versions, not ident-a@1.0.0 twice.
-_peer_chain_test = _make_failure_test(["ident-a@1.0.0", 'peer "state"', "state@1.0.0", "state@2.0.0"])
+def _peer_chain_impl(ctx):
+    env = analysistest.begin(ctx)
+    outputs = [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
+    for store_name, package in [("a-outer@1.0.0", "a-outer"), ("ident-a@1.0.0", "ident-a")]:
+        asserts.equals(env, 2, len(_store_entries(outputs, store_name, package)), "copies of " + store_name)
+    return analysistest.end(env)
+
+# a-outer@1.0.0 and its peer ident-a@1.0.0 under two transitive peer bindings (state@1.0.0 and
+# state@2.0.0) are two store entries each, carried side by side (feature 006 BC-11).
+_peer_chain_test = analysistest.make(_peer_chain_impl)
 
 def _hubs_alike_impl(ctx):
     env = analysistest.begin(ctx)
@@ -116,16 +141,18 @@ def _identity_links(name, second, edges = False):
 def _peer_chain_links(name):
     """Two link targets whose a-outer@1.0.0 instances differ only below their peer (US5-4).
 
-    The instance names sort as a hub's IDs do (`<name>@<version>__<n>`), a-outer first.
+    The instance names sort as a hub's IDs do (`<name>@<version>__<n>`), a-outer first. Each
+    instance with transitive peers has its peer hash, as the hub gives it (feature 006 BC-11).
     """
     copy_to_directory(name = name + "_tree", srcs = ["no_packages.test.ts"], tags = ["manual"])
     tree = ":" + name + "_tree"
     links = []
     for n in ["1", "2"]:
         outer, ident, state = ["{}_{}__{}".format(name, nv, n) for nv in ["a-outer@1.0.0", "ident-a@1.0.0", "state@{}.0.0".format(n)]]
+        peer_hash = "000000000000000" + n
         npm_instance(name = state, package = "state", store_name = "state@{}.0.0".format(n), tree = tree, tags = ["manual"])
-        npm_instance(name = ident, edges = {"state": state}, package = "ident-a", peers = ["state"], store_name = "ident-a@1.0.0", tree = tree, tags = ["manual"])
-        npm_instance(name = outer, edges = {"ident-a": ident}, package = "a-outer", peers = ["ident-a"], store_name = "a-outer@1.0.0", tree = tree, tags = ["manual"])
+        npm_instance(name = ident, edges = {"state": state}, package = "ident-a", peer_hash = peer_hash, peers = ["state"], store_name = "ident-a@1.0.0", tree = tree, tags = ["manual"])
+        npm_instance(name = outer, edges = {"ident-a": ident}, package = "a-outer", peer_hash = peer_hash, peers = ["ident-a"], store_name = "a-outer@1.0.0", tree = tree, tags = ["manual"])
         npm_link(name = "{}_link{}".format(name, n), alias = "a-outer", root = outer, instances = [":" + i for i in [outer, ident, state]], tags = ["manual"])
         links.append(":{}_link{}".format(name, n))
     return links

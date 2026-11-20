@@ -22,8 +22,8 @@ export interface Graph {
   /** Workspace path (`""` for the root) → dependency name → target. */
   holders: Record<string, Record<string, Target>>;
   entries: Entry[];
-  /** Ruleset side only: workspace path → name@version its links reach as several entries, which
-   * one target cannot hold (run.bzl `_check_unique`) → how many. */
+  /** Ruleset side only: workspace path → store directory (`name@version[+<peer hash>]`) its links
+   * reach as several entries, which one target cannot hold (run.bzl `_check_unique`) → how many. */
   conflicts?: Record<string, Record<string, number>>;
 }
 

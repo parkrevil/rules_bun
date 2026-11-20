@@ -120,6 +120,10 @@ def _ids_test_impl(ctx):
     root = resolution["links"][""]
     asserts.equals(env, "p@1.0.0__7__0", root["p"]["root"])
     asserts.equals(env, "p@1.0.0__7__1", resolution["instances"][root["q2-user"]["root"]]["edges"]["p"])
+
+    # Colliding hashes still give the two entries two store directories (BC-11).
+    asserts.equals(env, "0000000000000007", resolution["instances"]["p@1.0.0__7__0"].get("peer_hash"))
+    asserts.equals(env, "0000000100000007", resolution["instances"]["p@1.0.0__7__1"].get("peer_hash"))
     return unittest.end(env)
 
 def _store_name_test_impl(ctx):
@@ -129,6 +133,21 @@ def _store_name_test_impl(ctx):
     asserts.equals(env, "@scope+s@1.0.0", s["store_name"])
     a = resolution["instances"][resolution["links"][""]["a"]["root"]]
     asserts.equals(env, "a@1.0.0", a["store_name"])
+
+    # An entry without peers has no peer hash, as Bun's `PeerHash::NONE` (Store.rs L464).
+    asserts.equals(env, "", a.get("peer_hash"))
+
+    # p with q@1.0.0 and p through q2-user with q@2.0.0: two store entries of p@1.0.0, each named
+    # `<name>@<version>+<peer hash>` as Bun's isolated store names them (Store.rs L450-L466; BC-11).
+    root = resolution["links"][""]
+    p_q1 = resolution["instances"][root["p"]["root"]]
+    p_q2 = resolution["instances"][resolution["instances"][root["q2-user"]["root"]]["edges"]["p"]]
+    for p in [p_q1, p_q2]:
+        asserts.equals(env, "p@1.0.0", p["store_name"])
+        peer_hash = p.get("peer_hash") or ""
+        asserts.equals(env, 16, len(peer_hash), peer_hash)
+        asserts.equals(env, "", peer_hash.lstrip("0123456789abcdef"), peer_hash)
+    asserts.true(env, p_q1.get("peer_hash") != p_q2.get("peer_hash"), "two peer bindings, two peer hashes")
     return unittest.end(env)
 
 def _provided_peer_test_impl(ctx):

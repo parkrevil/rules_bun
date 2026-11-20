@@ -6,8 +6,8 @@ a link's root and its closure on every platform, an optional instance where its 
 `npm_repositories.bzl` selects them, and an instance's edge where its target is carried in a link
 that carries the instance, as `run.bzl` links them; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
-rules_bun does not fetch it (ID-4); and, per holder, each name@version its links reach as several
-instances, since one target cannot hold them (`conflicts`).
+rules_bun does not fetch it (ID-4); and, per holder, each store directory its links reach as
+several instances, since one target cannot hold them (`conflicts`).
 """
 
 load("//bun/private:npm_repositories.bzl", "conditions_hold")
@@ -39,6 +39,11 @@ def _available(link, os, cpu, libc):
             carried[i] = True
     return carried
 
+def _store_path(instance):
+    """An instance's store directory, as `run.bzl` names it: `<name>@<version>[+<peer hash>]`."""
+    peer_hash = getattr(instance, "peer_hash", "")
+    return "{}@{}".format(instance.name, instance.version) + ("+" + peer_hash if peer_hash else "")
+
 def _graph(value, os, cpu, libc):
     instances = value.instances
     npm_libc = None if libc == "unconstrained" else libc
@@ -57,18 +62,18 @@ def _graph(value, os, cpu, libc):
         holders[path] = holder
     reached = sorted({i: True for carried in carried_sets for i in carried}.keys())
 
-    # One target holds one instance of each package version (run.bzl `_check_unique`): a holder
-    # whose links reach several instances of one name@version cannot be used by one target.
+    # One target holds one instance of each store directory (run.bzl `_check_unique`): a holder
+    # whose links reach several instances with one directory cannot be used by one target.
     conflicts = {}
     for path in sorted(value.links.keys()):
-        by_version = {}
+        by_directory = {}
         for alias, link in value.links[path].items():
             carried = _available(link, os, cpu, npm_libc)
             if link.root not in carried:
                 continue
             for i in carried:
-                by_version.setdefault("{}@{}".format(instances[i].name, instances[i].version), {})[i] = True
-        found = {nv: len(ids) for nv, ids in sorted(by_version.items()) if len(ids) > 1}
+                by_directory.setdefault(_store_path(instances[i]), {})[i] = True
+        found = {d: len(ids) for d, ids in sorted(by_directory.items()) if len(ids) > 1}
         if found:
             conflicts[path] = found
     index = {instance_id: n for n, instance_id in enumerate(reached)}

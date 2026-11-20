@@ -115,7 +115,7 @@ test("a holder whose links reach two entries of one name@version in the ruleset 
     holders: { "": { p: "e:0", "q2-user": "e:2" } },
     entries: [entry("p", "1.0.0", { q: "e:1" }), entry("q", "1.0.0"), entry("q2-user", "1.0.0", { p: "e:3", q: "e:4" }), entry("p", "1.0.0", { q: "e:4" }), entry("q", "2.0.0")],
   };
-  expect(compare("p", { ...graph, conflicts: { "": { "p@1.0.0": 2 } } }, graph)).toBe(
-    "p: the root's links reach 2 entries of p@1.0.0, which run.bzl fails analysis of in one target, while Bun links each",
+  expect(compare("p", { ...graph, conflicts: { "": { "p@1.0.0+0000000000000001": 2 } } }, graph)).toBe(
+    "p: the root's links reach 2 entries of p@1.0.0+0000000000000001, which run.bzl fails analysis of in one target, while Bun links each",
   );
 });

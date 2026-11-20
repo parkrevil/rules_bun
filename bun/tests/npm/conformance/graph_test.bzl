@@ -190,15 +190,12 @@ def _status_test_impl(ctx):
 
 status_test = unittest.make(_status_test_impl)
 
-def _conflicts_test_impl(ctx):
-    env = unittest.begin(ctx)
-
-    # p@1.0.0 under two peer bindings: one target cannot hold both (run.bzl `_check_unique`), so a
-    # holder whose links reach both marks the name@version.
+def _conflicts_graph(p1_hash, p2_hash):
+    """The graph of a root reaching p@1.0.0 under two peer bindings, with the given peer hashes."""
     q1 = _instance("q", "1.0.0")
     q2 = _instance("q", "2.0.0")
-    p1 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q1.id})), id = "p@1.0.0__1"))
-    p2 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q2.id})), id = "p@1.0.0__2"))
+    p1 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q1.id})), id = "p@1.0.0__1", peer_hash = p1_hash))
+    p2 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q2.id})), id = "p@1.0.0__2", peer_hash = p2_hash))
     user = _instance("q2-user", "1.0.0", edges = {"p": p2.id, "q": q2.id})
     links = {
         "": {
@@ -207,8 +204,20 @@ def _conflicts_test_impl(ctx):
         },
         "packages/w": {"p": _link("p", p1.id, [p1.id, q1.id])},
     }
-    graph = conformance_graphs(_resolution([q1, q2, p1, p2, user], links), [_LINUX_GLIBC])[0]["graph"]
-    asserts.equals(env, {"": {"p@1.0.0": 2}}, graph.get("conflicts"))
+    return conformance_graphs(_resolution([q1, q2, p1, p2, user], links), [_LINUX_GLIBC])[0]["graph"]
+
+def _conflicts_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # p@1.0.0 under two peer bindings is two store entries, each in its own store directory
+    # (`<name>@<version>+<peer hash>`, BC-11), so one target holds both: no conflict.
+    graph = _conflicts_graph("0000000000000001", "0000000000000002")
+    asserts.equals(env, None, graph.get("conflicts"))
+
+    # Two instances with one store directory: one target cannot hold both (run.bzl
+    # `_check_unique`), so a holder whose links reach both marks that directory.
+    graph = _conflicts_graph("0000000000000001", "0000000000000001")
+    asserts.equals(env, {"": {"p@1.0.0+0000000000000001": 2}}, graph.get("conflicts"))
     return unittest.end(env)
 
 conflicts_test = unittest.make(_conflicts_test_impl)

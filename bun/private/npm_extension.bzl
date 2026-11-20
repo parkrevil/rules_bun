@@ -337,6 +337,7 @@ def _translate(module_ctx, tag, replacements):
             "exclude": identities[name_version].exclude,
             "integrity": identities[name_version].integrity,
             "members": {alias: member_label(member) for alias, member in instance.members.items()},
+            "peer_hash": instance.peer_hash,
             "peers": instance.peers,
             "package": instance.name,
             "replaced": name_version in replacements,
@@ -535,8 +536,9 @@ extension is reproducible and not OS- or architecture-dependent, so it adds no e
 
 Several lockfiles: each `translate_lock` tag creates its own hub, in the root module and in any
 other module, so a module can use npm packages of its own lockfile. A target that depends on
-packages of several hubs carries one instance of each package version: instances from different
-lockfiles are carried once only when both lockfiles describe the same content (equal integrity,
+packages of several hubs carries one instance of each package version and peer bindings (one store
+directory): instances from different lockfiles are carried once only when both lockfiles describe
+the same content (equal integrity,
 source, that is the download URL or the `replace_package` archive, and exclusion policy) and their
 dependencies resolve to the same versions. Any other two fail analysis, naming the package
 version, both hubs with their lockfiles and the first property that differs with both values, or
