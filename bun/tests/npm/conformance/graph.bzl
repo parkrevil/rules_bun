@@ -6,7 +6,8 @@ a link's root and its closure on every platform, an optional instance where its 
 `npm_repositories.bzl` selects them, and an instance's edge where its target is carried in a link
 that carries the instance, as `run.bzl` links them; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
-rules_bun does not fetch it (ID-4).
+rules_bun does not fetch it (ID-4); and, per holder, each name@version its links reach as several
+instances, since one target cannot hold them (`conflicts`).
 """
 
 load("//bun/private:npm_repositories.bzl", "conditions_hold")
@@ -55,6 +56,21 @@ def _graph(value, os, cpu, libc):
             holder[alias] = "w:" + member
         holders[path] = holder
     reached = sorted({i: True for carried in carried_sets for i in carried}.keys())
+
+    # One target holds one instance of each package version (run.bzl `_check_unique`): a holder
+    # whose links reach several instances of one name@version cannot be used by one target.
+    conflicts = {}
+    for path in sorted(value.links.keys()):
+        by_version = {}
+        for alias, link in value.links[path].items():
+            carried = _available(link, os, cpu, npm_libc)
+            if link.root not in carried:
+                continue
+            for i in carried:
+                by_version.setdefault("{}@{}".format(instances[i].name, instances[i].version), {})[i] = True
+        found = {nv: len(ids) for nv, ids in sorted(by_version.items()) if len(ids) > 1}
+        if found:
+            conflicts[path] = found
     index = {instance_id: n for n, instance_id in enumerate(reached)}
 
     def target(instance_id):
@@ -79,10 +95,13 @@ def _graph(value, os, cpu, libc):
                 # Because rules_bun does not fetch it: the status ID-4 excludes.
                 entry["unfetched"] = True
         entries.append(entry)
-    return {
+    graph = {
         "holders": {path: {alias: target(t) for alias, t in holder.items()} for path, holder in holders.items()},
         "entries": entries,
     }
+    if conflicts:
+        graph["conflicts"] = conflicts
+    return graph
 
 def conformance_graphs(resolution, tuples):
     """The ruleset's linked graph per platform class.

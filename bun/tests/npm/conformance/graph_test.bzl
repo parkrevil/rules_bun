@@ -23,6 +23,9 @@ def _instance(name, version, edges = {}, status = "ok", unfetched = False):
         unfetched = unfetched,
     )
 
+def _plain_fields(instance):
+    return {field: getattr(instance, field) for field in dir(instance)}
+
 def _link(alias, root, closure, optional = {}):
     return struct(alias = alias, root = root, closure = closure, optional = optional)
 
@@ -187,6 +190,29 @@ def _status_test_impl(ctx):
 
 status_test = unittest.make(_status_test_impl)
 
+def _conflicts_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # p@1.0.0 under two peer bindings: one target cannot hold both (run.bzl `_check_unique`), so a
+    # holder whose links reach both marks the name@version.
+    q1 = _instance("q", "1.0.0")
+    q2 = _instance("q", "2.0.0")
+    p1 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q1.id})), id = "p@1.0.0__1"))
+    p2 = struct(**dict(_plain_fields(_instance("p", "1.0.0", edges = {"q": q2.id})), id = "p@1.0.0__2"))
+    user = _instance("q2-user", "1.0.0", edges = {"p": p2.id, "q": q2.id})
+    links = {
+        "": {
+            "p": _link("p", p1.id, [p1.id, q1.id]),
+            "q2-user": _link("q2-user", user.id, [user.id, p2.id, q2.id]),
+        },
+        "packages/w": {"p": _link("p", p1.id, [p1.id, q1.id])},
+    }
+    graph = conformance_graphs(_resolution([q1, q2, p1, p2, user], links), [_LINUX_GLIBC])[0]["graph"]
+    asserts.equals(env, {"": {"p@1.0.0": 2}}, graph.get("conflicts"))
+    return unittest.end(env)
+
+conflicts_test = unittest.make(_conflicts_test_impl)
+
 def graph_test_suite(name):
     unittest.suite(
         name,
@@ -197,4 +223,5 @@ def graph_test_suite(name):
         error_test,
         unfetched_test,
         status_test,
+        conflicts_test,
     )

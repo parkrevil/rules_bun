@@ -107,3 +107,15 @@ test("an unfetched entry's status is excluded by ID-4, its links still compared"
   const unlinked: Graph = { holders: { "": { a: "e:0" } }, entries: [{ ...entry("a", "1.0.0"), status: reason, unfetched: true }] };
   expect(compare("p", unlinked, bun)).toBe('p: a@1.0.0 links "b" to no link, Bun links it to b@1.0.0');
 });
+
+test("a holder whose links reach two entries of one name@version in the ruleset differs", () => {
+  // Bun links p@1.0.0 under two peer bindings; the ruleset links both too, but one target cannot
+  // hold them (run.bzl `_check_unique`).
+  const graph: Graph = {
+    holders: { "": { p: "e:0", "q2-user": "e:2" } },
+    entries: [entry("p", "1.0.0", { q: "e:1" }), entry("q", "1.0.0"), entry("q2-user", "1.0.0", { p: "e:3", q: "e:4" }), entry("p", "1.0.0", { q: "e:4" }), entry("q", "2.0.0")],
+  };
+  expect(compare("p", { ...graph, conflicts: { "": { "p@1.0.0": 2 } } }, graph)).toBe(
+    "p: the root's links reach 2 entries of p@1.0.0, which run.bzl fails analysis of in one target, while Bun links each",
+  );
+});

@@ -22,6 +22,9 @@ export interface Graph {
   /** Workspace path (`""` for the root) → dependency name → target. */
   holders: Record<string, Record<string, Target>>;
   entries: Entry[];
+  /** Ruleset side only: workspace path → name@version its links reach as several entries, which
+   * one target cannot hold (run.bzl `_check_unique`) → how many. */
+  conflicts?: Record<string, Record<string, number>>;
 }
 
 export type Tuple = [string | null, string | null, string | null];
@@ -220,6 +223,13 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   }
   for (const { ruleset: r, bun: b, node } of counts.values()) {
     if (r !== b) return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}`;
+  }
+  // Linked alike, but one target cannot hold the entries a holder's links reach, while Bun links each.
+  for (const [path, found] of Object.entries(ruleset.conflicts ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    const where = path === "" ? "the root's" : `workspace "${path}"'s`;
+    for (const [nv, n] of Object.entries(found).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+      return `${project}: ${where} links reach ${n} entries of ${nv}, which run.bzl fails analysis of in one target, while Bun links each`;
+    }
   }
   // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it;
   // except an entry rules_bun does not fetch, which ID-4 lets fail analysis (its links are compared
