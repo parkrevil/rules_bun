@@ -541,7 +541,7 @@ with reasons (Q4).
   the old rules (BC-7's "A non-optional dependency is carried whatever its `os`, `cpu` and `libc`
   say", BC-3's and BC-5's failures); name only CI runner labels whose jobs ran these tests (filled at
   T067)
-- [ ] T063 [P] In `specs/004-bun-1-4-4-upgrade/research.md` mark G1 and G2 resolved by feature 006,
+- [X] T063 [P] In `specs/004-bun-1-4-4-upgrade/research.md` mark G1 and G2 resolved by feature 006,
   with a link to this feature's research Part 4 (L23, L25)
 - [ ] T064 Q7: on `main` and on the branch, list the targets of every root fixture hub
   (`bazel query '@<hub>//...'`) and, in `e2e/smoke/`, `bazel mod show_extension

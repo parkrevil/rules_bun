@@ -299,6 +299,12 @@ change; out of scope here (FR-008). No fixture produces it.
 **Decision (user, 2026-10-26)**: G1 and G2 are left out of this feature and become the next
 feature, which reads both keys with the approval and canaries constitution V requires.
 
+**Resolved by feature 006** (`006-bun-conformant-resolution`): the resolver is a carry-over of Bun
+1.4.4's loader and isolated linker, which reads `"unresolved"` (G1) and `"./<name>/<dep>"` keys
+(G2) with the user's approval of 2026-10-29 and the canaries C-UNRESOLVED and C-UNLINKED; see that
+feature's [research Part 4](../006-bun-conformant-resolution/research.md#part-4-fields-and-key-forms-the-carried-over-algorithm-reads),
+accesses L23 and L25, and its conformance rows BC-1 and BC-2.
+
 ### G3: 1.4.2 is known but no longer fetched by a test
 
 After the upgrade no test downloads the 1.4.2 archives: `versions_test` checks that the entry is
