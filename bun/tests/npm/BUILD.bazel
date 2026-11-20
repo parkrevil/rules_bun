@@ -1,4 +1,5 @@
 load(":bins_test.bzl", "bins_test_suite")
+load(":bun_semver_test.bzl", "bun_semver_test_suite")
 load(":compare_test.bzl", "compare_test_suite")
 load(":generated_test.bzl", "generated_test_suite")
 load(":glob_test.bzl", "glob_test_suite")
@@ -49,3 +50,5 @@ unsupported_test_suite(name = "unsupported")
 workspaces_test_suite(name = "workspaces")
 
 urls_test_suite(name = "urls")
+
+bun_semver_test_suite(name = "bun_semver")

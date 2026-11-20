@@ -302,7 +302,7 @@ projects without a BC are unchanged (Q7, T064).
 
 ### Tests for User Story 1 (write first, see red)
 
-- [ ] T028 [P] [US1] Write `bun/tests/npm/bun_semver_test.bzl`: version parse and order
+- [X] T028 [P] [US1] Write `bun/tests/npm/bun_semver_test.bzl`: version parse and order
   (prerelease and build), npm range parse and `satisfies` (`||`, hyphen, x-ranges, `~`, `^`,
   comparators, the prerelease rule), each case taken from `SRC/test/cli/install/semver.test.ts` and
   commented with its line at the tag (research R5)
@@ -354,7 +354,7 @@ projects without a BC are unchanged (Q7, T064).
 
 ### Implementation for User Story 1 (in Bun's order, research R2)
 
-- [ ] T037 [US1] Carry over SEMVER into `bun/private/bun_semver.bzl` (version parse and
+- [X] T037 [US1] Carry over SEMVER into `bun/private/bun_semver.bzl` (version parse and
   `Resolution::order`-relevant order, npm query parse, `satisfies`; only the parts S3, S5 and TREE
   L659, L716, L1717, L1876 call); cite each function; record green for `bun_semver_test`
 - [ ] T038 [P] [US1] Carry over HOOKS `Behavior`, `is_placed`, `Libc::for_dependency`, META
