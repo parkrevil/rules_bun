@@ -287,7 +287,7 @@ binding-relevant Bun steps are unaccounted.
 | `bun_install_types.bzl` `is_safe_install_folder_name` | `src/install/dependency.rs` L570–L596 |
 | `bun_lockfile.bzl` `_refusal` | `src/install/lockfile/bun.lock.rs` L1806–L1811 |
 | `bun_lockfile.bzl` `_failure` | `src/install/lockfile/bun.lock.rs` L3302–L3345 |
-| `bun_lockfile.bzl` `is_valid` | `src/install/lockfile/bun.lock.rs` L3269–L3270 |
+| `bun_lockfile.bzl` `is_valid` | `src/install_types/resolver_hooks.rs` L32 (`INVALID_PACKAGE_ID`) |
 | `bun_lockfile.bzl` `_meta` | `src/install/lockfile/bun.lock.rs` L2593–L2604; `src/install/lockfile/Package/Meta.rs` L51–L66 |
 | `bun_lockfile.bzl` `_package` | `src/install/lockfile/Package.rs` L244–L282 |
 | `bun_lockfile.bzl` `_dependency` | `src/install_types/resolver_hooks.rs` L517–L528 |
@@ -306,7 +306,7 @@ binding-relevant Bun steps are unaccounted.
 | `bun_lockfile.bzl` `_range_selects` | `src/install/lockfile/OverrideMap.rs` L88–L114 |
 | `bun_lockfile.bzl` `_cmp_range_text` | `src/install/lockfile/OverrideMap.rs` L116–L128 |
 | `bun_lockfile.bzl` `package_version` | `src/install/lockfile.rs` L831–L843 |
-| `bun_lockfile.bzl` `_owner_package_id` | `src/install/lockfile/OverrideMap.rs` L395–L419 |
+| `bun_lockfile.bzl` `_owner_package_id` | `src/install/lockfile/OverrideMap.rs` L392–L419 |
 | `bun_lockfile.bzl` `_scoped_rule_for` | `src/install/lockfile/OverrideMap.rs` L307–L369 |
 | `bun_lockfile.bzl` `is_overridden_dependency` | `src/install/lockfile.rs` L1145–L1148; `src/install/lockfile/OverrideMap.rs` L234–L297 |
 | `bun_lockfile.bzl` `_index_insert` | `src/install/lockfile.rs` L3205–L3226; `src/install/lockfile.rs` L2713–L2729 |
@@ -710,6 +710,7 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L3377, L3386 | Expected an array / a string (`optionalPeers`, `unresolved`) | refused | `lockfile_test.bzl` `unresolved_test`, `workspace_fields_test` (T030) |
 | L3408, L3422 | Expected an object / a string (a dependency map) | refused | `lockfile_test.bzl` `dependency_maps_test` (T080) |
 | L3451 | Invalid dependency version | refused | `_LOADER_REFUSALS` L3451 |
+| L1590–L1592 (`find_resolution`) | `InvalidPackageKey` for `<key>/<dependency>` beyond the path buffer, reported as "Invalid package path" | not refused | not written: as L3470 |
 | L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
 
 ## Part 5: Differences found so far
@@ -765,6 +766,16 @@ the `.npmrc` its `npmrc` attribute names, and nothing from the host (FR-003). Op
 an Intentional Difference (the row stays ID-4), or refuse every such row whose URL is outside the
 default registry and the `npmrc` attribute's registries (refusing some lockfiles Bun loads when
 `bunfig.toml` or the environment configures the registry).
+
+**T054 (2026-11-21), awaiting the user**: Bun reads `[install] linkWorkspacePackages` from
+`bunfig.toml` (default `true`, PackageManagerOptions L149, L725–L726). With `false`,
+`linked_workspace_path` returns nothing (LOCKFILE L2247–L2249): an npm range on a workspace's name
+binds to an npm row instead of the workspace, in the loader's peers (LOCK L2795–L2807) and in
+`tag_workspace_links` (LOCKFILE L2319, L2377–L2385). The ruleset reads no `bunfig.toml` (FR-003)
+and binds as with the default. Example: with `false`, a workspace `q` at version `1.5.0`, a member
+with peer `q: ^1.0.0` and an npm row `q@1.2.0`: Bun binds the peer to `q@1.2.0`, the ruleset to the
+workspace. Options: list it as an Intentional Difference (the ruleset links as Bun's default does),
+or read the option from a `bunfig.toml` the consumer names.
 
 ## Part 7: Evidence log
 

@@ -421,7 +421,8 @@ def _owner_package_id(lockfile, dep_id):
 def _scoped_rule_for(lockfile, dep_id, name, declared):
     """`OverrideMap::scoped_rule_for`: the most specific scoped rule for a dependency.
 
-    Bun: src/install/lockfile/OverrideMap.rs L307–L369 @ bun-v1.4.4
+    Bun: src/install/lockfile/OverrideMap.rs L307–L375 @ bun-v1.4.4
+    Bun: src/install/lockfile/OverrideMap.rs L377–L390 @ bun-v1.4.4
     """
     best = None
     best_tier = 0
