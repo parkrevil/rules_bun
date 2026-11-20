@@ -315,6 +315,16 @@ def _translate(module_ctx, tag, replacements):
             replacement_label = _label_text(replacements[name_version]) if name_version in replacements else "",
         )
 
+    lock_dir = tag.bun_lock.package
+
+    # The repository part of the lockfile's canonical label, which the member targets share.
+    lock_repo = str(tag.bun_lock).partition("//")[0]
+
+    def member_label(member):
+        # The member's target by its canonical label: the hub links it by path and does not
+        # depend on it, so a member that depends on the package forms no cycle (BC-4).
+        return "{}//{}:{}".format(lock_repo, "/".join([p for p in [lock_dir, member] if p]), tag.workspace_target_name)
+
     instances = {}
     for instance in resolution.value.instances.values():
         name_version = "{}@{}".format(instance.name, instance.version)
@@ -326,6 +336,7 @@ def _translate(module_ctx, tag, replacements):
             "edges": instance.edges,
             "exclude": identities[name_version].exclude,
             "integrity": identities[name_version].integrity,
+            "members": {alias: member_label(member) for alias, member in instance.members.items()},
             "peers": instance.peers,
             "package": instance.name,
             "replaced": name_version in replacements,
@@ -334,7 +345,6 @@ def _translate(module_ctx, tag, replacements):
             "status": "ok",
             "store_name": instance.store_name,
         }
-    lock_dir = tag.bun_lock.package
     links = {}
     for path, aliases in resolution.value.links.items():
         package = "/".join([p for p in [lock_dir, path] if p])
@@ -452,7 +462,12 @@ Generated targets (public API, under these naming rules):
   `devDependencies`, `optionalDependencies` or `peerDependencies`, scope kept
   (`:node_modules/@scope/name`); accepted in `deps` of `bun_library`, `bun_binary` and `bun_test`,
   at the version the lockfile lists for that workspace package. A `workspace:` dependency links to
-  the member's target named by `workspace_target_name`.
+  the member's target named by `workspace_target_name`. A package's dependency on a workspace
+  member links to the member's package, where the files of that target are copied; the hub does not
+  depend on that target (so a member that depends on the package forms no dependency cycle), and a
+  `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
+  `deps`, directly or through another target, or its analysis fails naming the package, the
+  dependency and the target to add.
 - `:node_modules/<package>/bin/<bin>` for each `bin` entry of such a package (a string `bin` is
   named after the package name without its scope); it runs with `bazel run` or as a build action's
   tool, with the toolchain's Bun. A bin runs when its file has a source extension or its first line

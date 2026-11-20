@@ -1,6 +1,7 @@
 {
   "name": "member-lib",
   "version": "1.0.0",
+  "main": "index.js",
   "dependencies": {
     "b": "2.0.0"
   }

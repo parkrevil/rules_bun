@@ -1,5 +1,12 @@
+load("//bun:defs.bzl", "bun_library")
 load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
-# A workspace member of the fixture project.
+# A workspace member of the fixture project; `pkg` is the hub's `workspace_target_name`.
+bun_library(
+    name = "pkg",
+    srcs = ["index.js"],
+    data = ["package.json"],
+    visibility = ["//visibility:public"],
+)
 
 conformance_files()

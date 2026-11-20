@@ -1,6 +1,6 @@
 """Implementation of the `bun_library` rule."""
 
-load(":providers.bzl", "BunLibraryInfo")
+load(":providers.bzl", "BunDeclaredTargetsInfo", "BunLibraryInfo")
 
 SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]
 
@@ -38,6 +38,21 @@ def library_info(srcs, data, deps):
         packages = depset(transitive = [packages_of(d[BunLibraryInfo]) for d in deps]),
     )
 
+def declared_targets(label, deps):
+    """Returns the `BunDeclaredTargetsInfo` of a target: its label and those of its `deps`.
+
+    Args:
+        label: The target's label, or `None` for a target that is not itself declarable.
+        deps: List of the target's `deps` targets.
+
+    Returns:
+        `BunDeclaredTargetsInfo`.
+    """
+    return BunDeclaredTargetsInfo(labels = depset(
+        [label] if label else [],
+        transitive = [d[BunDeclaredTargetsInfo].labels for d in deps if BunDeclaredTargetsInfo in d],
+    ))
+
 def library_runfiles(ctx, files, data, deps):
     """Returns runfiles holding `files`, the files of `data` and the runfiles of `data` and `deps`.
 
@@ -60,6 +75,7 @@ def _bun_library_impl(ctx):
     check_no_directory(ctx.label, ctx.files.data)
     return [
         library_info(ctx.files.srcs, ctx.attr.data, ctx.attr.deps),
+        declared_targets(ctx.label, ctx.attr.deps),
         DefaultInfo(
             files = depset(ctx.files.srcs),
             runfiles = library_runfiles(ctx, ctx.files.srcs, ctx.attr.data, ctx.attr.deps),

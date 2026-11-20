@@ -266,6 +266,16 @@ npm.translate_lock(
     bun_lock = "//bun/tests/npm/fixtures/missing_peer:bun.lock",
 )
 
+# A registry package that depends on a workspace member (feature 006 BC-4).
+npm.translate_lock(
+    name = "npm_conformance_registry_to_workspace",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_registry_to_workspace:bun.lock",
+)
+npm.replace_package(
+    package = "member-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:member-user@1.0.0.tgz",
+)
+
 # Excludes files that rules_bun renames, by their archive names (FR-033).
 npm.translate_lock(
     name = "npm_renamed",
@@ -301,7 +311,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.

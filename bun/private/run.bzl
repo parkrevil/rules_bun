@@ -4,8 +4,8 @@ load("@bazel_lib//lib:copy_directory.bzl", "copy_directory_bin_action")
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@hermetic_launcher//launcher:lib.bzl", "launcher")
-load(":library.bzl", "SOURCE_EXTENSIONS", "check_no_directory", "library_info", "library_runfiles", "packages_of")
-load(":providers.bzl", "BunLibraryInfo")
+load(":library.bzl", "SOURCE_EXTENSIONS", "check_no_directory", "declared_targets", "library_info", "library_runfiles", "packages_of")
+load(":providers.bzl", "BunDeclaredTargetsInfo", "BunLibraryInfo")
 
 _TARGET_TYPE = Label("//bun/toolchain:target_type")
 _WINDOWS_LAUNCHER_TYPE = Label("//bun/private/windows_launcher:toolchain_type")
@@ -226,6 +226,8 @@ def _equivalent(instances, first, second):
         return False
     if sorted(first.edges.keys()) != sorted(second.edges.keys()) or sorted(first.peers) != sorted(second.peers):
         return False
+    if first.members != second.members:
+        return False
     for alias in first.edges.keys():
         a = instances.get(_key(first, first.edges[alias]))
         b = instances.get(_key(second, second.edges[alias]))
@@ -296,6 +298,46 @@ def _check_unique(ctx, instances):
         ))
     return carried
 
+def _link_dir(label):
+    """The runfiles path of a label's package, where the copy tree holds that package's files."""
+    return "/".join([p for p in [label.repo_name or "_main", label.package] if p])
+
+def _display(label):
+    """A label as its BUILD files write it: `//pkg:name` in the main repository."""
+    return "//{}:{}".format(label.package, label.name) if not label.repo_name else str(label)
+
+def _member_links(ctx, root, deps, instances, kept):
+    """Links each carried instance's dependencies on workspace members (feature 006 BC-4).
+
+    The hub links such a dependency by path only, to the member's package, where the files of the
+    member's target are copied; the target must declare the member's target (in its `deps`,
+    directly or through another target), else analysis fails naming it.
+
+    Returns:
+        `(outputs, paths)`: the links and their paths relative to the copy-tree root.
+    """
+    outputs = []
+    paths = []
+    declared = None
+    for key in kept:
+        instance = instances[key]
+        for alias, member in sorted(instance.members.items()):
+            if declared == None:
+                labels = depset(transitive = [d[BunDeclaredTargetsInfo].labels for d in deps if BunDeclaredTargetsInfo in d])
+                declared = {str(label): True for label in labels.to_list()}
+            if str(member) not in declared:
+                fail('{}: the npm package {} links its dependency "{}" to the workspace member {}, which this target does not declare; add {} to its deps'.format(
+                    ctx.label,
+                    _name_version(instance),
+                    alias,
+                    _display(member),
+                    _display(member),
+                ))
+            path = ".store/{}/node_modules/{}".format(instance.store_name, alias)
+            outputs.append(_directory_link(ctx, root, path, _link_dir(member)))
+            paths.append(path)
+    return outputs, paths
+
 def _package_layout(ctx, root, deps):
     """Lays out the packages of `deps` in the copy tree as a strict store (research R5).
 
@@ -354,6 +396,9 @@ def _package_layout(ctx, root, deps):
             path = ".store/{}/node_modules/{}".format(instance.store_name, alias)
             outputs.append(_directory_link(ctx, root, path, entries[target]))
             link_paths.append(path)
+    member_outputs, member_paths = _member_links(ctx, root, deps, instances, kept)
+    outputs.extend(member_outputs)
+    link_paths.extend(member_paths)
     links = {}
     for record, root_key in zip(records, record_roots):
         path = "{}/node_modules/{}".format(record.link_dir, record.alias)
@@ -548,6 +593,7 @@ def _bun_run_impl(ctx, mode):
     return [
         DefaultInfo(executable = executable, runfiles = runfiles),
         info,
+        declared_targets(ctx.label, deps),
         coverage_common.instrumented_files_info(
             ctx,
             source_attributes = {"bin": [], "binary": ["entry_point", "srcs"], "test": ["srcs"]}[mode],

@@ -421,7 +421,7 @@ projects without a BC are unchanged (Q7, T064).
   are followed (BC-8) while its `status` keeps failing analysis and tagging links `manual` as on
   `main`; remove every function of `main`'s resolver this replaces; each remaining function cites
   the Bun lines it adapts or states it is the adapter (depends on T045, T046)
-- [ ] T048 [US1] Change the existing tests that assert behavior Bun does not have (research R14,
+- [X] T048 [US1] Change the existing tests that assert behavior Bun does not have (research R14,
   FR-016), each listed in `tdd-log.md` as "FR-016 change" with the BC it follows:
   `bun/tests/npm/resolve_test.bzl` cases on per-key instances of one `name@version` (BC-6) and on
   `missing_peer` (BC-5: resolves, `state` not linked); the test of
@@ -769,7 +769,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   list it as an Intentional Difference. If it cannot, record why in research R4 with the Bun
   lines. In either case add a `bun/tests/npm/resolve_test.bzl` case for each error path, per spec
   P3 / FR-015 / Constitution II (partial)
-- [ ] T073 BC-4 in builds (user decision 2026-11-21, research Part 6): the hub links a registry
+- [X] T073 BC-4 in builds (user decision 2026-11-21, research Part 6): the hub links a registry
   package's dependency on a workspace member by path only (no target dependency, so no Bazel
   dependency cycle), and the rule that builds the copy tree (`bun/private/run.bzl`) fails analysis
   when a target's closure holds such an edge and the member's target is not among the target's

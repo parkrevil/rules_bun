@@ -106,8 +106,11 @@ before the change it reports the difference for each layout listed in Behavior C
    (keyed `./lib/<dep>` in the lockfile), never `other`'s.
 3. **Given** an optional or peer dependency of the root or a workspace for which the lockfile has no
    key, **When** the consumer builds, **Then** the build succeeds and that dependency is not linked.
-4. **Given** a registry package that depends on a workspace member, **When** the consumer builds,
-   **Then** that package links the workspace member, as the pinned Bun links it.
+4. **Given** a registry package that depends on a workspace member, **When** the consumer builds a
+   target that declares the member's target, **Then** that package links the workspace member, as
+   the pinned Bun links it; **When** the target does not declare it, **Then** analysis fails naming
+   the package, the dependency and the member's target, and telling the consumer to add it to
+   `deps` (BC-4).
 5. **Given** a package whose non-optional peer nothing in the tree provides, **When** the consumer
    builds, **Then** the build succeeds and that peer is not linked, as the pinned Bun leaves it.
 6. **Given** any existing fixture project whose resolution already equals Bun's, **When** it is

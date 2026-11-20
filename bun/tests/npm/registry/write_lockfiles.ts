@@ -508,7 +508,8 @@ const projects: Record<string, Project> = {
   conformance_registry_to_workspace: {
     files: () => ({
       "package.json": json({ name: "conformance-registry-to-workspace", private: true, workspaces: ["packages/*"], dependencies: { "member-user": "1.0.0" } }),
-      "packages/member-lib/package.json": json({ name: "member-lib", version: "1.0.0", dependencies: { b: "2.0.0" } }),
+      "packages/member-lib/package.json": json({ name: "member-lib", version: "1.0.0", main: "index.js", dependencies: { b: "2.0.0" } }),
+      "packages/member-lib/index.js": 'module.exports = { name: "member-lib" };\n',
       "packages/member-lib/BUILD.bazel": STUB_BUILD,
     }),
     check(lock) {

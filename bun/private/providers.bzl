@@ -20,6 +20,13 @@ provider created without this field is read as holding none.""",
     },
 )
 
+BunDeclaredTargetsInfo = provider(
+    doc = "Private: a target and the rules_bun targets among its transitive `deps` (feature 006 BC-4).",
+    fields = {
+        "labels": "`depset` of `Label`.",
+    },
+)
+
 NpmInstanceInfo = provider(
     doc = "Private: one package instance of a `bun.lock` hub (research R2, R7).",
     fields = {
@@ -31,6 +38,7 @@ NpmInstanceInfo = provider(
         "edges": "Dict from dependency alias to the instance ID it resolves to.",
         "dependency_keys": "Dict from ordinary dependency alias to the `bun.lock` key it resolves to.",
         "peers": "The aliases of `edges` that are peers.",
+        "members": "Dict from dependency alias to the `Label` of the workspace member's target it links, by path (feature 006 BC-4).",
         "check": "The stamp `File` of the replacement integrity check, or `None`.",
         "integrity": "Content identity (feature 005 research R1): the padded integrity the package's download or replacement is verified against.",
         "source": "Content identity: the download URL, or the `npm.replace_package` archive's label text.",

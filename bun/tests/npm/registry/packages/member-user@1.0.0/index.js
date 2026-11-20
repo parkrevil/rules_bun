@@ -1,1 +1,1 @@
-module.exports = { name: "member-user", version: "1.0.0" };
+module.exports = { name: "member-user", version: "1.0.0", lib: require("member-lib") };

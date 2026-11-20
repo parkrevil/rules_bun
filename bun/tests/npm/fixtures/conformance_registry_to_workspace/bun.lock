@@ -21,6 +21,6 @@
 
     "member-lib": ["member-lib@workspace:packages/member-lib"],
 
-    "member-user": ["member-user@1.0.0", "http://127.0.0.1:28761/member-user/-/member-user-1.0.0.tgz", { "dependencies": { "member-lib": "^1.0.0" } }, "sha512-IUwGEP8jTeoim6CG++bEhpsXGzrMigAziugiptpax/Q9As2Eb1dafR76Oebmisl1EMgBIv4m2hXk1jgHnvFQWQ=="],
+    "member-user": ["member-user@1.0.0", "http://127.0.0.1:28761/member-user/-/member-user-1.0.0.tgz", { "dependencies": { "member-lib": "^1.0.0" } }, "sha512-iJiVBDZ2CC1PWDzwAuYIiYjRtF98H6NTi6DqU7MJ7DGEOlEcDYvk9a7PsN8Pk/jw3H0WoZQWW/48msLcqadsRw=="],
   }
 }

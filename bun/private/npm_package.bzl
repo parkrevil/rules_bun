@@ -1,7 +1,7 @@
 """Build rules of npm packages: instance trees, instances and links (research R4, R7)."""
 
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
-load(":library.bzl", "packages_of")
+load(":library.bzl", "declared_targets", "packages_of")
 load(":providers.bzl", "BunLibraryInfo", "NpmInstanceInfo", "NpmLinkInfo", "NpmPackageTreeInfo")
 
 _COPY_TO_DIRECTORY_TOOLCHAIN = "@bazel_lib//lib:copy_to_directory_toolchain_type"
@@ -91,6 +91,7 @@ def _npm_instance_impl(ctx):
         edges = dict(ctx.attr.edges),
         dependency_keys = dict(ctx.attr.dependency_keys),
         peers = list(ctx.attr.peers),
+        members = {alias: Label(member) for alias, member in ctx.attr.members.items()},
         check = ctx.file.check,
         integrity = ctx.attr.integrity,
         source = ctx.attr.source,
@@ -111,6 +112,7 @@ npm_instance = rule(
         "hub": attr.string(doc = "The hub's name, for errors."),
         "integrity": attr.string(doc = "The padded integrity the package is verified against (content identity)."),
         "lockfile": attr.string(doc = "The hub's `bun.lock` label, for errors."),
+        "members": attr.string_dict(doc = "Dependency alias -> the canonical label of the workspace member's target it links, by path, so the hub does not depend on it (feature 006 BC-4)."),
         "package": attr.string(doc = "The package name.", mandatory = True),
         "peers": attr.string_list(doc = "The aliases of `edges` that are peers."),
         "source": attr.string(doc = "The download URL or the replacement's label text (content identity)."),
@@ -154,6 +156,8 @@ def _npm_member_link(ctx):
             data = info.data,
             packages = depset([record], transitive = [packages_of(info)]),
         ),
+        # Declaring the link declares the member's target.
+        declared_targets(None, [member]),
         DefaultInfo(files = member[DefaultInfo].files, runfiles = member[DefaultInfo].default_runfiles),
     ]
 
