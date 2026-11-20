@@ -226,6 +226,30 @@ bun_test(
     ],
 )
 
+bun_test(
+    name = "c_rowinfo_test",
+    srcs = ["c_rowinfo.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_rowdevdeps_test",
+    srcs = ["c_rowdevdeps.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
+    name = "c_wsoptpeers_test",
+    srcs = ["c_wsoptpeers.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
 test_suite(
     name = "canaries",
     tests = [
@@ -243,6 +267,8 @@ test_suite(
         ":c_patched_test",
         ":c_peers_test",
         ":c_pkgext_test",
+        ":c_rowdevdeps_test",
+        ":c_rowinfo_test",
         ":c_roworder_test",
         ":c_slot0_test",
         ":c_unlinked_test",
@@ -255,6 +281,7 @@ test_suite(
         ":c_wsdeps_test",
         ":c_wskey_test",
         ":c_wsname_test",
+        ":c_wsoptpeers_test",
         ":c_wsversion_test",
     ],
 )

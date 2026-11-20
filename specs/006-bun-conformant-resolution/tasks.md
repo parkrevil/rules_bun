@@ -433,7 +433,7 @@ projects without a BC are unchanged (Q7, T064).
   and `bun/private/npm_extension.bzl` (PRIOR's audit of key walks, research Part 1): each walk or
   binding decision made outside the carry-over is replaced by `resolve.bzl`'s output or recorded in
   research Part 2 with its lines and the reason it decides no link (depends on T047)
-- [ ] T050 [US1] Close research Part 4: every `root.get(...)`/`info.get(...)` of LOCK L1797–3543 in
+- [X] T050 [US1] Close research Part 4: every `root.get(...)`/`info.get(...)` of LOCK L1797–3543 in
   `SRC` is an access L1–L30 or listed as read by Bun and deciding no binding
   (`trustedDependencies` L1872, `hasInstallScript` L2606, `configVersion` L1861, …); any access the
   carry-over reads without a canary: stop and report (constitution V). The user approved canaries
@@ -732,7 +732,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 13: Convergence
 
-- [ ] T075 CRITICAL: pin with canaries the three `bun.lock` accesses the carry-over already reads
+- [X] T075 CRITICAL: pin with canaries the three `bun.lock` accesses the carry-over already reads
   without one (research Part 4 "none yet"): L31 the info object in slot 1 of a row that is not an
   npm version (`bun/private/lockfile.bzl` `# L31`), L32 a row's `devDependencies` (`# L32`), L33 a
   workspace's `optionalPeers` (`# L33`). Add `bun/tests/canary/npm/c_rowinfo.test.ts` (C-ROWINFO: a

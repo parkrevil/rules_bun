@@ -591,13 +591,40 @@ New accesses:
 | — | top-level `patchedDependencies` | LOCK L1899 | read by Bun but decides no binding (a patch changes a package's files, not which package a dependency binds); rules_bun keeps treating a patched package as unsupported (feature 003 FR-010, canary C-PATCHED) | C-PATCHED (existing) |
 | L29 | order of `packages` rows (equal evidence: later row wins) | LOCK L2929, L2993 | E10: sorted by the parent path's depth, the parent path, then the name (writer LOCK L506–L508, L646) | C-ROWORDER |
 | L30 | `dependencies`, `optionalDependencies`, `peerDependencies` ranges (read as npm ranges, R5) | LOCK L3347–3543, L3174–3208 | existing fixtures; E11 (`range-user@1.0.0`) | C-INFODEPS / C-PEERS (range tests) |
-| L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, git, GitHub, `link:`) | LOCK L2346, L2557–L2591 | `unsupported` (`local`, `tb`) | none yet (T050) |
-| L32 | a row's `devDependencies` | LOCK L1478–L1483, L3405–L3490 | none: the writer prints it for a folder package (LOCK L931–L1000) | none yet (T050) |
-| L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284) | none | none yet (T050) |
+| L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, git, GitHub, `link:`) | LOCK L2346, L2557–L2591 (writer L720–L728) | `unsupported` (`local`, `tb`); E12 | C-ROWINFO (T075) |
+| L32 | a row's `devDependencies` | LOCK L1478–L1483, L3405–L3490 (writer L950–L1004 for a folder, resolver_hooks.rs L1251–L1256 `Features::FOLDER`) | E13 | C-ROWDEVDEPS (T075) |
+| L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284; writer L1184–L1240) | E14 | C-WSOPTPEERS (T075) |
 
-The list is closed when the loader is carried over: every `root.get(...)`/`info.get(...)` of LOCK
-L1797–3543 is either an access above or recorded as read by Bun and not affecting a binding
-(`trustedDependencies` L1872, `hasInstallScript` L2606, `configVersion` L1861).
+The list is closed (T050): every `root.get(...)`/`value.get(...)`/`info.get(...)` of LOCK
+L1797–3543 at `bun-v1.4.4`, and each slot of a `packages` row, is an access with a canary or read by
+Bun and deciding no binding:
+
+| Bun reads | Lines | Access |
+|---|---|---|
+| `lockfileVersion` | L1815 | L2 |
+| `configVersion` | L1861 | decides no binding (the default linker of a later install; this one is `--linker isolated`) |
+| `trustedDependencies` | L1872 | decides no binding (lifecycle scripts, ID-1) |
+| `patchedDependencies` | L1899 | L20 (a patched package is unfetched, ID-4) |
+| `packageExtensions` | L1928 | L27 (not read: the rows carry the extended dependencies) |
+| `overrides` | L1934 | L18 |
+| `catalog`, `catalogs` | L2037, L2056 | L19 |
+| `workspaces` and its keys | L2100 | L3, L4 |
+| a workspace's `name` | L2137, L2211, L2275, L3496 | L5 |
+| a workspace's `version` | L2162 | L28 |
+| `packages`, its keys and row order | L2308, L2929, L2993 | L7, L8, L21, L25, L29 |
+| slot 0 | L2375–L2432 | L9, L22 |
+| an npm row's slots 1–3 | L2433–L2476, L2636–L2669 | L10, L11, L12 |
+| slot 1 of any other row | L2557–L2591 | L31 |
+| `bundled` | L2351 | L26 |
+| `os`, `cpu`, `libc` | L2594–L2602 | L15, C-LIBC |
+| `hasInstallScript` | L2606 | decides no binding (lifecycle scripts, ID-1) |
+| `bin`, `binDir` | L1714–L1721 | L16 (`binDir` decides no binding: which files are bins) |
+| the root row's `{ bin, binDir }` | L2612–L2634 | decides no binding (the root's own bins) |
+| a git or GitHub row's `.bun-tag` | L2671–L2720 | decides no binding ("Not carried over") |
+| `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies` of a row or workspace | L3405–L3490 | L6, L13, L14, L30, L32 |
+| `optionalPeers`, `unresolved` | L3372–L3400 | L14, L23, L24, L33 |
+
+No access the carry-over reads is without a canary (constitution V).
 
 ## Part 5: Differences found so far
 
@@ -686,3 +713,16 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
 - **E11** (C-INFODEPS, C-PEERS, T025): `range-user@1.0.0`'s row holds `dependencies { a: "~1.0.0", b:
   "1.0.0 - 1.9.9", c: "1.x" }`, `optionalDependencies { ident-a: "^1.0.0 || ^2.0.0" }`,
   `peerDependencies { q: ">=1.0.0 <3.0.0", state: "1.0.x" }`, as its `package.json` writes them.
+
+- **E12** (C-ROWINFO, T075): a `file:./local` folder declaring `dependencies { c: "1.0.0" }` is
+  written as `"local": ["local@file:local", { "dependencies": { "c": "1.0.0" } }]`, and a tarball URL
+  dependency `tb` on `<registry>/a/-/a-1.0.0.tgz` as
+  `"tb": ["a@<registry>/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-…"]`; the
+  folder declaring nothing gets `["local@file:local", {}]`.
+- **E13** (C-ROWDEVDEPS, T075): a folder declaring `devDependencies { b: "1.0.0" }` is written as
+  `"local": ["local@file:local", { "devDependencies": { "b": "1.0.0" } }]`, with a row `b` for
+  `b@1.0.0`; declared as an ordinary dependency, it is written under `dependencies`.
+- **E14** (C-WSOPTPEERS, T075): member `w` with `peerDependencies { q: "^1.0.0" }` and
+  `peerDependenciesMeta { q: { optional: true } }` is written as
+  `"packages/w": { "name": "w", "version": "1.0.0", "peerDependencies": { "q": "^1.0.0" },
+  "optionalPeers": ["q"] }`; without the meta, no `optionalPeers`.
