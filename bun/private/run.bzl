@@ -516,7 +516,7 @@ def _bun_run_impl(ctx, mode):
         # A package executable: its copy tree lies outside `node_modules` (research R10).
         _check_bin(ctx)
         root = "_npm_bin/{}/{}.bun".format(ctx.attr.package.label.name.removeprefix("node_modules/"), ctx.attr.bin)
-        deps = [ctx.attr.package]
+        deps = [ctx.attr.package] + ctx.attr.members
         data = []
         main_files = []
         sources = []
@@ -752,6 +752,10 @@ every bin target `manual` (research D1).""",
     attrs = {k: v for k, v in _COMMON_ATTRS.items() if k.startswith("_")} | {
         "bin": attr.string(doc = "The `bin` entry's target name.", mandatory = True),
         "entry": attr.string(doc = "The `bin` entry's name as the package writes it, for errors.", mandatory = True),
+        "members": attr.label_list(
+            doc = "The targets of the workspace members the package's instances link by path (feature 006 BC-4), laid out as a declaring target's `deps` are.",
+            providers = [BunLibraryInfo],
+        ),
         "package": attr.label(doc = "The package's `:node_modules/<package>` target.", mandatory = True, providers = [BunLibraryInfo]),
         "path": attr.string(doc = "The `bin` file's path in the package.", mandatory = True),
     },

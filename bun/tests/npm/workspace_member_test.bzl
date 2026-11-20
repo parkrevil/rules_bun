@@ -25,8 +25,25 @@ def _undeclared_impl(ctx):
 
 _undeclared_test = analysistest.make(_undeclared_impl, expect_failure = True)
 
+def _bin_impl(ctx):
+    env = analysistest.begin(ctx)
+    outputs = [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
+
+    # A bin target has no deps: the hub hands it the members its package's closure links, and its
+    # copy tree links member-lib as a declaring target's does.
+    tree = "_npm_bin/member-user/member-user.bun/"
+    link = tree + ".store/member-user@1.0.0/node_modules/member-lib"
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith(link)]), "links " + link)
+    index = tree + "_main/bun/tests/npm/fixtures/conformance_registry_to_workspace/packages/member-lib/index.js"
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith(index)]), "copies " + index)
+    return analysistest.end(env)
+
+_bin_test = analysistest.make(_bin_impl)
+
 def workspace_member_test_suite(name):
-    """Checks that a target links a package's workspace-member dependency only when it declares it.
+    """Checks how targets and bins link a package's workspace-member dependency.
+
+    A target links it only when it declares the member's target; a package's bin always does.
 
     Args:
         name: Name of the test suite and prefix of its tests.
@@ -41,4 +58,6 @@ def workspace_member_test_suite(name):
         bun_test(name = target, srcs = ["no_packages.test.ts"], deps = deps, tags = ["manual"])
         rule(name = target + "_test", target_under_test = target)
         tests.append(target + "_test")
+    _bin_test(name = name + "_bin_test", target_under_test = _FIXTURE + ":node_modules/member-user/bin/member-user")
+    tests.append(name + "_bin_test")
     native.test_suite(name = name, tests = tests)

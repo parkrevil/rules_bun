@@ -110,7 +110,7 @@ before the change it reports the difference for each layout listed in Behavior C
    target that declares the member's target, **Then** that package links the workspace member, as
    the pinned Bun links it; **When** the target does not declare it, **Then** analysis fails naming
    the package, the dependency and the member's target, and telling the consumer to add it to
-   `deps` (BC-4).
+   `deps`; a bin of that package links the member without declaring anything (BC-4).
 5. **Given** a package whose non-optional peer nothing in the tree provides, **When** the consumer
    builds, **Then** the build succeeds and that peer is not linked, as the pinned Bun leaves it.
 6. **Given** any existing fixture project whose resolution already equals Bun's, **When** it is
@@ -354,7 +354,9 @@ the test that shows it:
 - **BC-4**: a registry package's dependency on a workspace member is linked to that member, by
   path; a target whose closure holds such a link must declare the member's target in its `deps`
   (transitively), or analysis fails naming the package, the dependency and the member's target, as
-  Bazel requires everything a target uses to be declared (user, 2026-11-21).
+  Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
+  (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
+  package's dependencies link to (T081).
 - **BC-5**: a peer nothing provides no longer fails the build; it is not linked.
 - **BC-6**: one package per `name@version`: two keys holding one `name@version` are one package,
   whose dependencies are bound once, as Bun's row evidence decides, not one instance per key with

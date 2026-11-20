@@ -2,6 +2,9 @@
   "name": "member-user",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": {
+    "member-user": "cli.js"
+  },
   "dependencies": {
     "member-lib": "^1.0.0"
   }

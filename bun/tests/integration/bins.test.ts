@@ -3,7 +3,8 @@
 // bin entries whose names become one target name fail evaluation naming both.
 // A bin that is a JavaScript program for Node or Bun by its #! line runs with
 // the toolchain's Bun; any other fails analysis naming the reason; `bazel build
-// //...` builds no bin target (feature 005 FR-012, research D1).
+// //...` builds no bin target (feature 005 FR-012, research D1). A bin of a package that depends on
+// a workspace member links the member as Bun links it (feature 006 BC-4).
 
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
@@ -13,7 +14,9 @@ import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
 const FIXTURES = "_main/bun/tests/npm/fixtures";
 const archive = (p: string) => rlocation(`_main/bun/tests/npm/registry/archives/${p}.tgz`);
-const inner = new Inner("bins", { npmArchives: [archive("node-bin@1.0.0"), archive("single-bin@1.0.0"), archive("dirbin@1.0.0")] });
+const inner = new Inner("bins", {
+  npmArchives: [archive("node-bin@1.0.0"), archive("single-bin@1.0.0"), archive("dirbin@1.0.0"), archive("member-user@1.0.0"), archive("b@2.0.0")],
+});
 afterAll(() => inner.close());
 
 // A fixture file, with the loopback port of the run that wrote it replaced.
@@ -106,6 +109,25 @@ test(
     const bin = (await inner.run(["info", "bazel-bin"])).stdout.trim();
     // single-bin/bin/single-bin is a .js file; no earlier case builds it.
     expect(existsSync(join(bin, "_npm_bin", "single-bin"))).toBe(false);
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "BC-4: a bin of a package that depends on a workspace member loads the member",
+  async () => {
+    project("conformance_registry_to_workspace");
+    for (const file of ["package.json", "index.js"]) {
+      inner.write(`packages/member-lib/${file}`, fixture(`conformance_registry_to_workspace/packages/member-lib/${file}`));
+    }
+    inner.write(
+      "packages/member-lib/BUILD.bazel",
+      'load("@rules_bun//bun:defs.bzl", "bun_library")\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//visibility:public"],\n)\n',
+    );
+    const result = await inner.run(["run", "//:node_modules/member-user/bin/member-user"]);
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout.trim()).toBe("member-user member-lib");
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,

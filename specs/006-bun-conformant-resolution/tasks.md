@@ -815,7 +815,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   L3405–L3426); fail naming the `bun.lock` label, the entry or workspace and the field, in English,
   without printing the value; write the `bun/tests/npm/lockfile_test.bzl` cases red first and record
   red and green in `tdd-log.md`, per spec Edge Cases (malformed value) / FR-004 (partial)
-- [ ] T081 Settle BC-4 for package executables: `npm_bin` (`bun/private/run.bzl`, mode `bin`) lays
+- [X] T081 Settle BC-4 for package executables: `npm_bin` (`bun/private/run.bzl`, mode `bin`) lays
   out `deps = [package]`, and a registry `npm_link` carries no `BunDeclaredTargetsInfo`, so
   `:node_modules/<package>/bin/<bin>` of a package whose closure links a workspace member always
   fails `_member_links` with "add … to its deps", which a bin target has no attribute for. Write the

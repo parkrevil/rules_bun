@@ -391,6 +391,10 @@ config_setting(
     for aliases in links.values():
         for link in aliases.values():
             if "workspace" not in link:
+                # The workspace members the link's instances link by path (BC-4), on any platform:
+                # a bin target has no deps to declare them in, so the hub declares them for it.
+                reached = link["closure"] + list((link["optional"] or {}).keys())
+                link["members"] = sorted({m: True for i in reached for m in instances[i].get("members", {}).values()}.keys())
                 link["select"] = _selections(link.pop("optional")) if link["optional"] else None
     repository_ctx.file("BUILD.bazel", "".join(build))
     repository_ctx.file("defs.bzl", """\
@@ -470,6 +474,7 @@ def npm_link_all_packages():
             npm_bin(
                 name = "{{}}/bin/{{}}".format(name, bin),
                 package = ":" + name,
+                members = [Label(m) for m in link["members"]],
                 bin = bin,
                 entry = entry,
                 path = path,

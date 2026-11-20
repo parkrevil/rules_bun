@@ -467,7 +467,8 @@ Generated targets (public API, under these naming rules):
   depend on that target (so a member that depends on the package forms no dependency cycle), and a
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
   `deps`, directly or through another target, or its analysis fails naming the package, the
-  dependency and the target to add.
+  dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
+  targets of the workspace members its package's dependencies link to, on any platform.
 - `:node_modules/<package>/bin/<bin>` for each `bin` entry of such a package (a string `bin` is
   named after the package name without its scope); it runs with `bazel run` or as a build action's
   tool, with the toolchain's Bun. A bin runs when its file has a source extension or its first line
