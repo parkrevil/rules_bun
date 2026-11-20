@@ -872,12 +872,14 @@ def load_lockfile(lock, file):
     if root_workspace == None:
         return _refusal(file, "workspaces", "Expected root package")
 
+    if type(root_workspace.name) != "string":
+        return _refusal(file, "workspace \"\"", "Expected a string")
     unresolved_rows = []
     result = _parse_append_dependencies(lockfile, _workspace_obj(root_workspace), unresolved_rows, None, member_rows, True, file, "the workspace \"\"")
     if result.error:
         return result
     off, length = result.value
-    root_name = root_workspace.name if type(root_workspace.name) == "string" else ""
+    root_name = root_workspace.name
     lockfile.packages.append(_package(root_name, struct(tag = RESOLUTION_TAG.ROOT, value = None), off, length, _meta(None, True)))
     _index_insert(lockfile, root_name, 0)
 

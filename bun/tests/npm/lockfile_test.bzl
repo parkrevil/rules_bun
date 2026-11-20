@@ -313,6 +313,89 @@ def _dependency_maps_test_impl(ctx):
     asserts.equals(env, {"p": "^1"}, read["value"]["workspaces"]["packages/w"]["peerDependencies"])
     return unittest.end(env)
 
+# Feature 006 T079: refusals of Bun 1.4.4's text-lockfile loader (LOCK L1727-L3543), each a text the
+# pinned Bun refuses with that line's message (research Part 4, "Loader refusals"), and the
+# fragments the ruleset's evaluation error names besides the label. A row's integrity is a valid
+# sha512, so Bun reaches the line under test.
+_LOADER_REFUSALS = [
+    ("L1816", '{"workspaces": {"": {}}, "packages": {}}', ["lockfileVersion"]),
+    ("L1829", '{"lockfileVersion": "2", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["lockfileVersion"]),
+    ("L1855", '{"lockfileVersion": 4, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["lockfileVersion 4"]),
+    ("L1946", '{"lockfileVersion": 2, "overrides": {"": "1.0.0"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["overrides", "Expected a non-empty string"]),
+    ("L1968", '{"lockfileVersion": 2, "overrides": {"a": "ftp://example.com/a.tgz"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Invalid override version"]),
+    ("L1978", '{"lockfileVersion": 2, "overrides": {"a": 1}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Expected a string or an object"]),
+    ("L1986", '{"lockfileVersion": 2, "overrides": {"@": {"b": "1.0.0"}}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "@"', "Invalid override key"]),
+    ("L1992", '{"lockfileVersion": 2, "overrides": {"a": {"b": 1}}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Expected a string"]),
+    ("L2007", '{"lockfileVersion": 2, "overrides": {"a": {"@": "1.0.0"}}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Invalid override key"]),
+    ("L2027", '{"lockfileVersion": 2, "overrides": {"a": {"b": "ftp://example.com/b.tgz"}}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Invalid override version"]),
+    ("L1738", '{"lockfileVersion": 2, "catalog": {"": "1.0.0"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalog", "Expected a non-empty string"]),
+    ("L1746", '{"lockfileVersion": 2, "catalog": {"a": 1}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalog", "Expected a string"]),
+    ("L1765", '{"lockfileVersion": 2, "catalog": {"a": "ftp://example.com/a.tgz"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalog", "Invalid catalog version"]),
+    ("L2068", '{"lockfileVersion": 2, "catalogs": {"": {}}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalogs", "Expected a non-empty string"]),
+    ("L2076", '{"lockfileVersion": 2, "catalogs": {"g": 1}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['catalogs "g"', "Expected an object"]),
+    ("L2138", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {}}, "packages": {}}', ['workspace "w"', "Expected a string name property"]),
+    ("L2146", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {"name": 1}}, "packages": {}}', ['workspace "w"', "Expected a string name property"]),
+    ("L2164", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {"name": "w", "version": 1}}, "packages": {}}', ['workspace "w"', "version"]),
+    ("L2181", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {"name": "w", "version": "abc"}}, "packages": {}}', ['workspace "w"', "Invalid semver version"]),
+    ("L2200", '{"lockfileVersion": 2, "workspaces": {"w": {"name": "w"}}, "packages": {}}', ["workspaces", "Expected root package"]),
+    ("L2339", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": "SECRET"}}', ['"a"']),
+    ("L2368", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": []}}', ['"a"']),
+    ("L2380", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": [1]}}', ['"a"']),
+    ("L2394", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a"]}}', ['"a"', "<name>@<resolution>"]),
+    ("L2403", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["../a@1.0.0", "", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "invalid package name"]),
+    ("L2427", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@^1.0.0", "", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "Unexpected resolution"]),
+    ("L2434", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0"]}}', ['"a"', "slots"]),
+    ("L2445", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", 1, {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "slot 1"]),
+    ("L2536", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@workspace:nope"]}}', ['"a"', "Unknown workspace"]),
+    ("L2558", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@file:a"]}}', ['"a"', "slot 1"]),
+    ("L2569", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", 1, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "slot 2"]),
+    ("L2640", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}]}}', ['"a"', "slots"]),
+    ("L2643", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, 1]}}', ['"a"', "slot 3"]),
+    ("L2650", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, "md5-AAAA"]}}', ['"a"', "Unsupported or malformed integrity hash"]),
+    ("L2843", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"b": "1.0.0"}}}, "packages": {}}', ["Failed to resolve root prod dependency 'b'"]),
+    ("L2908", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {"name": "w", "dependencies": {"b": "1.0.0"}}}, "packages": {}}', ["Failed to resolve prod dependency 'b' for package 'w'"]),
+    ("L3000", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a@b/c": ["c@1.0.0", "", {"dependencies": {"d": "1.0.0"}}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a@b/c"', "Invalid package path"]),
+    ("L3010", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"dependencies": {"d": "1.0.0"}}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ["Failed to resolve prod dependency 'd' for package 'a'"]),
+    ("L3451", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"b": "ftp://example.com/b.tgz"}}}, "packages": {}}', ['workspace ""', "Invalid dependency version"]),
+]
+
+# The containers the reader crashed on or accepted (`dict()` of a string, `.items()` of a list) and
+# the root workspace's `name` (T079, red first).
+_CONTAINER_REFUSALS = [
+    ("L1901", '{"lockfileVersion": 2, "patchedDependencies": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["patchedDependencies"]),
+    ("L1936", '{"lockfileVersion": 2, "overrides": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["overrides"]),
+    ("L2039", '{"lockfileVersion": 2, "catalog": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalog"]),
+    ("L2058", '{"lockfileVersion": 2, "catalogs": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalogs"]),
+    ("L2101", '{"lockfileVersion": 2, "workspaces": ["SECRET"], "packages": {}}', ["workspaces"]),
+    ("L2114", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": "SECRET"}, "packages": {}}', ['workspace "w"']),
+    ("L2215", '{"lockfileVersion": 2, "workspaces": {"": {"name": 1}}, "packages": {}}', ['workspace ""', "Expected a string"]),
+    ("L2313", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": ["SECRET"]}', ["packages"]),
+]
+
+def _load_error(text):
+    read = read_lockfile(text, "inline/bun.lock")
+    if read.error:
+        return read.error
+    return resolve(read.value, "inline/bun.lock").error
+
+def _check_refusals(env, cases):
+    for line, text, fragments in cases:
+        error = _load_error(text) or ""
+        asserts.true(env, error.startswith("inline/bun.lock: "), "{} names the label: {}".format(line, error))
+        for fragment in fragments:
+            asserts.true(env, fragment in error, "{} names {}: {}".format(line, fragment, error))
+        asserts.false(env, "SECRET" in error, "{} prints no unchecked value: {}".format(line, error))
+
+def _loader_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _LOADER_REFUSALS)
+    return unittest.end(env)
+
+def _container_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _CONTAINER_REFUSALS)
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -327,6 +410,8 @@ bundled_test = unittest.make(_bundled_test_impl)
 workspace_fields_test = unittest.make(_workspace_fields_test_impl)
 row_fields_test = unittest.make(_row_fields_test_impl)
 dependency_maps_test = unittest.make(_dependency_maps_test_impl)
+loader_refusals_test = unittest.make(_loader_refusals_test_impl)
+container_refusals_test = unittest.make(_container_refusals_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -345,4 +430,6 @@ def lockfile_test_suite(name):
         workspace_fields_test,
         row_fields_test,
         dependency_maps_test,
+        loader_refusals_test,
+        container_refusals_test,
     )

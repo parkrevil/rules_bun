@@ -159,7 +159,7 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | optional-peer omission, pruned-workspace links, workspace filters in `is_filtered_dependency_or_workspace` | TREE L1364–L1404, PRUNED L36–L53, reachable.rs L93–L137 | a default install enables dev and optional dependencies (no omission), a frozen install keeps every workspace (PRUNED L11–L16, no pruned one), and no `--filter` is given; all three then skip nothing |
 | `HostedGitInfo::from_url` beyond the host | HOSTED L231–L326, L874–L1259 | it chooses between the `git`, `github` and `tarball` tags of a URL; the carry-over decides by the URL's host alone (`_hosted_git_tag`). The tag decides a binding only for a peer written as such a URL, bound to a git or GitHub resolution (RES L39–L49), which rules_bun does not fetch (FR-010) |
 | the digest of an `integrity` | INTEGRITY L99–L120 | its base64 is not decoded; an unknown algorithm is still refused (LOCK L1688–L1711). A malformed digest decides no link; rules_bun verifies the digest when it downloads (feature 003 FR-021) |
-| the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry is the consumer's `.npmrc`, which the loader does not read. rules_bun refuses to fetch any row without integrity (FR-010) |
+| the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry comes from `bunfig.toml`, the environment and `.npmrc`, of which the ruleset reads only the `npmrc` attribute (FR-003). rules_bun refuses to fetch any row without integrity (FR-010, ID-4). Stopped at T079 for the user's decision (Part 4, "Loader refusals"; Part 6) |
 | the `.bun-tag` of a git or GitHub row | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); not read |
 | a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists; the adapter (ID-2) gives it a value no package names, npm's rule for an unknown value (`bun_install_types.bzl` `platform_value`) |
 
@@ -662,6 +662,55 @@ Bun and deciding no binding:
 
 No access the carry-over reads is without a canary (constitution V).
 
+### Loader refusals (T079)
+
+Every refusal of Bun's text-lockfile loader at `bun-v1.4.4`, LOCK L1797–L3543, with `parse_catalog`
+(L1727–L1795) and `parse_integrity` (L1688–L1711), which it calls. L1809 and L3365 are the `fail!`
+macros, not sites. Each text of the `bun/tests/npm/lockfile_test.bzl` tables `_LOADER_REFUSALS`
+and `_CONTAINER_REFUSALS` was installed with the pinned Bun (`bun install --frozen-lockfile`,
+Linux x64, 2026-11-21), which refused it with the message of its line; the ruleset fails evaluation
+with an English error naming the `bun.lock` label and the key or field (`npm_extension.bzl` fails
+on any `read_lockfile` or `resolve` error). "Not written" means no supported Bun writes the form,
+for the reason given; the ruleset does not read that field, or reads only what decides a binding.
+
+| Line | Bun's message | Ruleset | Test, or why no supported Bun writes it |
+|---|---|---|---|
+| L1816 | Missing lockfile version | refused | `_LOADER_REFUSALS` L1816 |
+| L1829 | Invalid lockfile version | refused | `_LOADER_REFUSALS` L1829 |
+| L1855 | Unsupported lockfile version | refused | `_LOADER_REFUSALS` L1855; `versions_test`; `lockfile_errors.test.ts` |
+| L1864 | Invalid "configVersion". Expected a number | not refused | not written: the writer prints a number (L373); not read (decides no binding, table above) |
+| L1875, L1884 | Expected an array / a string (`trustedDependencies`) | not refused | not written: the writer prints an array of strings (L510–L527); not read (ID-1) |
+| L1901 | Expected an object (`patchedDependencies`) | refused | `_CONTAINER_REFUSALS` L1901 (red first) |
+| L1910 | Expected a string (a patch path) | not refused | not written: the writer prints each path as a JSON string (L528–L549); L20 reads the keys only |
+| L1936 | Expected an object (`overrides`) | refused | `_CONTAINER_REFUSALS` L1936 (red first) |
+| L1946, L1968, L1978, L1986, L1992, L2007, L2027 | the `overrides` refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L1738, L1746, L1765 | the `parse_catalog` refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L1782 | Duplicate catalog entry | not refused | not written: it needs one key twice in one JSON object, which the writer never prints (it iterates a map, L586–L615, `write_catalog` L912); Starlark's `json.decode` keeps one of two equal keys, so the ruleset cannot see it |
+| L2039 | Expected an object (`catalog`) | refused | `_CONTAINER_REFUSALS` L2039 (red first) |
+| L2058 | Expected an object (`catalogs`) | refused | `_CONTAINER_REFUSALS` L2058 (red first) |
+| L2068, L2076 | the `catalogs` refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L2101 | Missing a workspaces object property | refused | `_CONTAINER_REFUSALS` L2101 (red first; one check for missing and not an object) |
+| L2114 | Expected an object (a workspace) | refused | `_CONTAINER_REFUSALS` L2114 (red first) |
+| L2126 | Duplicate root package | not refused | not written: a second `""` key in `workspaces`; the writer prints each workspace path once, and `json.decode` keeps one (as L1782) |
+| L2138, L2146, L2164, L2181, L2200 | the workspace refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L2215 | Expected a string (the root's `name`) | refused | `_CONTAINER_REFUSALS` L2215 (red first) |
+| L2313 | Expected an object (`packages`) | refused | `_CONTAINER_REFUSALS` L2313 (red first) |
+| L2339, L2368, L2380, L2394, L2403, L2427, L2434, L2445, L2536, L2558, L2569, L2640, L2643 | the row refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | not refused | not written: the writer prints the object (L751–L778); not read (the root's own bins, table above) |
+| L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused for an unknown algorithm | `_LOADER_REFUSALS` L2650; a malformed digest of a known algorithm is not written: the writer prints the digest it decoded, base64-encoded again (INTEGRITY L245–L266), and is not decoded here (Part 2, "Not carried over") |
+| L2664 | Missing integrity hash for npm package resolved to a tarball URL outside the configured registry | not refused; the row is unfetched (ID-4) | **stopped and reported (2026-11-21)**: Bun's configured registry comes from `bunfig.toml` (`install.registry`, `install.scopes`), the environment and `.npmrc` (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only the `npmrc` attribute's `.npmrc` (FR-003), so it cannot tell which URLs are under the configured registry. The user decides (Part 6) |
+| L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | not refused | not written: the writer prints the resolved commit (L884–L888); `.bun-tag` is not read (Part 2, "Not carried over") |
+| L2721 (L1688–L1711) | Unsupported or malformed integrity hash (a tarball or git row) | not refused | not written: the writer prints such an integrity only when it is supported (L814, L889); not read (ID-4: these rows are not fetched) |
+| L2759 | Duplicate package path | refused | `bun_lockfile_test.bzl` (T031), `lockfile_errors.test.ts` (T035) |
+| L2843, L2908, L3010 | Failed to resolve … dependency (`dependency_resolution_failure`, L3302–L3345) | refused | `_LOADER_REFUSALS`, one row each |
+| L2888 | Workspace and dependency name too long | not refused | not written: `./<workspace>/<dependency>` must exceed the path buffer (4,096 bytes on Linux), but each name is a directory under `node_modules`, at most 255 bytes on every supported file system |
+| L2933 | `InvalidPackagesObject` | refused (unreachable) | unreachable in Bun: the first loop puts every row in the key map (L2360–L2762); `bun_lockfile.bzl` keeps the same refusal |
+| L3000 | Invalid package path | refused | `_LOADER_REFUSALS` L3000 |
+| L3377, L3386 | Expected an array / a string (`optionalPeers`, `unresolved`) | refused | `lockfile_test.bzl` `unresolved_test`, `workspace_fields_test` (T030) |
+| L3408, L3422 | Expected an object / a string (a dependency map) | refused | `lockfile_test.bzl` `dependency_maps_test` (T080) |
+| L3451 | Invalid dependency version | refused | `_LOADER_REFUSALS` L3451 |
+| L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
+
 ## Part 5: Differences found so far
 
 BC-1 to BC-5 are the spec's. Found while planning:
@@ -703,6 +752,18 @@ constitution III) is an intentional difference; L31–L33 get canaries with red 
 path, and a target that reaches such a link without declaring the member fails analysis naming it
 (T073), rather than a target dependency (a member that depends on the package would form a Bazel
 cycle) or a silent run-time failure.
+
+**T079 (2026-11-21), awaiting the user**: Bun 1.4.4 refuses a lockfile v2+ whose npm row has a URL
+outside both the configured and the default registry and no supported integrity (LOCK L2652–L2669,
+"Missing integrity hash for npm package resolved to a tarball URL outside the configured
+registry"). The ruleset loads it and treats the row as unfetched (ID-4: a target that needs it
+fails analysis). Following Bun needs its configured registry, which comes from `bunfig.toml`
+(`install.registry`, `install.scopes`), the environment (`BUN_CONFIG_REGISTRY`,
+`NPM_CONFIG_REGISTRY`) and `.npmrc` files (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only
+the `.npmrc` its `npmrc` attribute names, and nothing from the host (FR-003). Options: list it as
+an Intentional Difference (the row stays ID-4), or refuse every such row whose URL is outside the
+default registry and the `npmrc` attribute's registries (refusing some lockfiles Bun loads when
+`bunfig.toml` or the environment configures the registry).
 
 ## Part 7: Evidence log
 

@@ -206,9 +206,19 @@ def read_lockfile(text, file):
              "the versions Bun 1.4.4 writes: run `bun install` with Bun 1.4.4 and commit bun.lock").format(file, version),
         )
 
+    # Bun refuses a lockfile whose containers are not objects (LOCK L1899-L1906, L1934-L1941,
+    # L2037-L2063, L2100-L2116, L2309-L2318); the value is not printed.
+    for field in ["patchedDependencies", "overrides", "catalog", "catalogs", "packages"]:  # L20, L18, L19, L7
+        if lock.get(field) != None and type(lock[field]) != "dict":
+            return _error("{}: the field \"{}\" is not an object; run `bun install` to rewrite bun.lock".format(file, field))
+    if type(lock.get("workspaces")) != "dict":  # L3
+        return _error("{}: the lockfile has no \"workspaces\" object; run `bun install` to rewrite bun.lock".format(file))
+
     workspaces = {}
-    for path, workspace in lock.get("workspaces", {}).items():  # L3, L4
+    for path, workspace in lock["workspaces"].items():  # L3, L4
         owner = "the workspace \"{}\"".format(path)
+        if type(workspace) != "dict":
+            return _error("{}: {} is not an object; run `bun install` to rewrite bun.lock".format(file, owner))
         fields = {}
         for kind in DEPENDENCY_KINDS:
             fields[kind], error = _dependencies(workspace.get(kind), file, owner, kind)  # L3, L6
