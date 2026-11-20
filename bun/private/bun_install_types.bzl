@@ -304,6 +304,8 @@ def _all(names):
     """`ALL_VALUE`: every named bit of a platform set.
 
     Bun: src/install_types/resolver_hooks.rs L810–L817 @ bun-v1.4.4
+    Bun: src/install_types/resolver_hooks.rs L866–L866 @ bun-v1.4.4
+    Bun: src/install_types/resolver_hooks.rs L930–L940 @ bun-v1.4.4
     """
     value = 0
     for bit in names.values():
@@ -809,6 +811,8 @@ def version_tag_infer(dependency):
         dependency = version
     return _infer(dependency)
 
+_DRIVE_LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 def _infer(dependency):
     """`Tag::infer` of a literal that is not an `npm:` alias.
 
@@ -817,7 +821,11 @@ def _infer(dependency):
     if not dependency:
         return VERSION_TAG.DIST_TAG
 
-    # A Windows drive letter is a folder only on Windows; keys and literals are not paths here.
+    # `starts_with_windows_drive_letter_t` and the platform's separator: `/` is one on every OS
+    # (L800-L814). Windows also takes a backslash, which a lockfile read on any host cannot depend on.
+    if len(dependency) > 2 and dependency[1] == ":" and dependency[0] in _DRIVE_LETTERS and dependency[2] == "/":
+        return VERSION_TAG.TARBALL if is_tarball(dependency) else VERSION_TAG.FOLDER
+
     c = dependency[0]
     if c in ["=", ">", "<", "^", "*", "|"]:
         return VERSION_TAG.NPM
@@ -847,7 +855,7 @@ def _infer(dependency):
                 if url.startswith("github.com/") and _is_github_shorthand(url[len("github.com/"):]):
                     return VERSION_TAG.GITHUB
                 return _hosted_git_tag(dependency) or VERSION_TAG.GIT
-            if url[0] == "+":
+            elif url[0] == "+":
                 if url.startswith("+ssh:") or url.startswith("+file:") or url.startswith("+git:"):
                     return VERSION_TAG.GIT
                 if url.startswith("+http"):
@@ -864,7 +872,7 @@ def _infer(dependency):
                         if url.startswith("github.com/") and _is_github_shorthand(url[len("github.com/"):]):
                             return VERSION_TAG.GITHUB
                         return _hosted_git_tag(dependency) or VERSION_TAG.GIT
-            if url[0] == "h" and url.startswith("hub:") and _is_github_shorthand(url[len("hub:"):]):
+            elif url[0] == "h" and url.startswith("hub:") and _is_github_shorthand(url[len("hub:"):]):
                 return VERSION_TAG.GITHUB
     if c == "h" and (dependency.startswith("http:") or dependency.startswith("https:")):
         url = dependency[len("http"):]
@@ -1026,15 +1034,16 @@ def dependency_parse(alias, literal, tag = None):
         repository = _parse_repository_git(dependency)
         return _version_value(tag, literal, git = repository)
     if tag == VERSION_TAG.GITHUB:
-        # `HostedGitInfo::from_url` for the GitHub forms `Tag::infer` returns `github` for.
-        text = dependency
+        # The committish is the fragment after the first `#` (L1361-L1378); owner and repo come
+        # from `HostedGitInfo::from_url`, here for the GitHub forms `Tag::infer` returns `github` for.
+        text, _, fragment = dependency.partition("#")
         for prefix in ["git+https://github.com/", "git+http://github.com/", "git://github.com/", "https://github.com/", "http://github.com/", "github:"]:
             if text.startswith(prefix):
                 text = text[len(prefix):]
                 break
         repository = _parse_repository_github(text)
-        if repository.repo.endswith(".git"):
-            repository = struct(owner = repository.owner, repo = repository.repo[:-len(".git")], committish = repository.committish, resolved = "", package_name = "")
+        repo = repository.repo[:-len(".git")] if repository.repo.endswith(".git") else repository.repo
+        repository = struct(owner = repository.owner, repo = repo, committish = fragment, resolved = "", package_name = "")
         return _version_value(tag, literal, github = repository)
     if tag == VERSION_TAG.TARBALL:
         if is_remote_tarball(dependency):
@@ -1071,6 +1080,8 @@ def dependency_parse(alias, literal, tag = None):
     if tag == VERSION_TAG.WORKSPACE:
         return _version_value(tag, literal, workspace = dependency[len("workspace:"):] if dependency.startswith("workspace:") else dependency)
     if tag == VERSION_TAG.CATALOG:
+        if not dependency.startswith("catalog:"):
+            return None
         return _version_value(tag, literal, catalog = _trim(dependency[len("catalog:"):], _WHITESPACE))
     return _version_value(VERSION_TAG.UNINITIALIZED, literal)
 

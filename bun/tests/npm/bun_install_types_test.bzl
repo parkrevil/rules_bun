@@ -186,6 +186,13 @@ def _dependency_test_impl(ctx):
         ("user/repo", VERSION_TAG.GITHUB),
         ("github:user/repo", VERSION_TAG.GITHUB),
         ("git+ssh://git@host/repo.git", VERSION_TAG.GIT),
+        # A drive letter and `/` is a path on every OS (L800-L814).
+        ("C:/x", VERSION_TAG.FOLDER),
+        ("v:/x.tgz", VERSION_TAG.TARBALL),
+        # One arm of `match url[0]` per literal (L894-L972): `+http` with nothing after it falls
+        # to the tail, and `hub:` is tested on the text after `git` only.
+        ("git+http", VERSION_TAG.DIST_TAG),
+        ("git+httphub:a/b", VERSION_TAG.GIT),
     ]:
         asserts.equals(env, tag, version_tag_infer(text), text)
 
@@ -199,6 +206,16 @@ def _dependency_test_impl(ctx):
     asserts.equals(env, "tools", dependency_parse("a", "catalog: tools ").catalog)
     asserts.equals(env, "*", dependency_parse("w", "workspace:*").workspace)
     asserts.equals(env, "../x", dependency_parse("x", "file:../x").folder)
+
+    # A drive-letter path is no folder Bun parses off Windows ("Unsupported protocol", L1531-L1564).
+    asserts.equals(env, None, dependency_parse("x", "C:/x"))
+
+    # The committish is the fragment after the first `#` (L1361-L1378).
+    github = dependency_parse("r", "user/repo#a#b").github
+    asserts.equals(env, ["user", "repo", "a#b"], [github.owner, github.repo, github.committish])
+
+    # `strip_prefix(b"catalog:")?` (L1612): a literal without the prefix is no catalog version.
+    asserts.equals(env, None, dependency_parse("a", "tools", VERSION_TAG.CATALOG))
     asserts.equals(env, ["a", "latest"], [dependency_parse("a", "").dist_tag.name, dependency_parse("a", "").dist_tag.tag])
 
     # split_name_and_version (dependency.rs L486-L532).
