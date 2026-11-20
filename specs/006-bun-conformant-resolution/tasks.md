@@ -800,7 +800,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   and BC-12 rows), `data-model.md` and `quickstart.md` to BC-1…BC-12 and ID-1…ID-6, keep the
   unconditional claim only for layouts Q1 shows conformant, and confirm with a green Q1 run recorded
   in `tdd-log.md`, per Constitution II / FR-017 (contradicts)
-- [ ] T079 Complete T040's inventory in research Part 4: every refusal of Bun's loader at
+- [X] T079 Complete T040's inventory in research Part 4: every refusal of Bun's loader at
   `bun-v1.4.4`, LOCK L1797–L3543 (the 48 `fail!` sites from L1819 "Missing lockfile version" to
   L2710 "Invalid git dependency tag", `UnknownLockfileVersion` L1855, `UnexpectedResolution` L2427,
   `InvalidPackageInfo` L2536 and L2888, `InvalidPackagesObject` L2933, `parse_append_dependencies`'
