@@ -306,7 +306,7 @@ projects without a BC are unchanged (Q7, T064).
   (prerelease and build), npm range parse and `satisfies` (`||`, hyphen, x-ranges, `~`, `^`,
   comparators, the prerelease rule), each case taken from `SRC/test/cli/install/semver.test.ts` and
   commented with its line at the tag (research R5)
-- [ ] T029 [P] [US1] Write `bun/tests/npm/bun_install_types_test.bzl`: `Behavior` bits and
+- [X] T029 [P] [US1] Write `bun/tests/npm/bun_install_types_test.bzl`: `Behavior` bits and
   `is_placed` (HOOKS L271), `Libc::for_dependency` (HOOKS L884–890: `libc` applies to optional
   dependencies only), `is_disabled` (META L72–74) with Bun's `OperatingSystem`/`Architecture`/`Libc`
   `is_match` including negated entries (`!win32`), and `DepSorter` order (LOCKFILE)
@@ -357,7 +357,7 @@ projects without a BC are unchanged (Q7, T064).
 - [X] T037 [US1] Carry over SEMVER into `bun/private/bun_semver.bzl` (version parse and
   `Resolution::order`-relevant order, npm query parse, `satisfies`; only the parts S3, S5 and TREE
   L659, L716, L1717, L1876 call); cite each function; record green for `bun_semver_test`
-- [ ] T038 [P] [US1] Carry over HOOKS `Behavior`, `is_placed`, `Libc::for_dependency`, META
+- [X] T038 [P] [US1] Carry over HOOKS `Behavior`, `is_placed`, `Libc::for_dependency`, META
   `is_disabled` with Bun's `os`/`arch`/`libc` `is_match`, and LOCKFILE `DepSorter` into
   `bun/private/bun_install_types.bzl`; cite each function; record green for
   `bun_install_types_test`

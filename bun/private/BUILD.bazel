@@ -142,6 +142,12 @@ bzl_library(
 )
 
 bzl_library(
+    name = "bun_install_types",
+    srcs = ["bun_install_types.bzl"],
+    deps = [":bun_semver"],
+)
+
+bzl_library(
     name = "bun_semver",
     srcs = ["bun_semver.bzl"],
 )

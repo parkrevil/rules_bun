@@ -35,8 +35,9 @@ def _parse_ascii(text):
     return number if number <= U64_MAX else None
 
 def _length_of_leading_whitespace_ascii(text, start):
-    """`strings::length_of_leading_whitespace_ascii` of `text[start:]`.
+    """`strings::length_of_leading_whitespace_ascii` of `text[start:]`, as the range parser uses it.
 
+    Bun: src/semver/SemverQuery.rs L912–L942 @ bun-v1.4.4
     Bun: src/bun_core/string/immutable.rs L1956–L1971 @ bun-v1.4.4
     """
     count = 0
