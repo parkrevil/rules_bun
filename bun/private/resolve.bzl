@@ -32,6 +32,7 @@ _NAME_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 _LIMIT = 1 << 30
 
 def _error(message):
+    """This is the adapter: an error as a value."""
     return struct(value = None, error = message)
 
 def unsupported_reason(entry, patched):
@@ -150,6 +151,7 @@ def _ids(lockfile, keys, statuses, hash_fn):
     return ids
 
 def _label(lockfile, pkg_id):
+    """This is the adapter: a package's `name@<resolution>` for messages and IDs."""
     package = lockfile.packages[pkg_id]
     return "{}@{}".format(package.name, package.entry.version if package.entry else package.resolution.value)
 

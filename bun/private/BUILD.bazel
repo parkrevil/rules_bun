@@ -37,9 +37,15 @@ bzl_library(
 
 exports_files(
     [
+        "bun_install_types.bzl",
+        "bun_isolated_store.bzl",
+        "bun_lockfile.bzl",
+        "bun_semver.bzl",
+        "bun_tree.bzl",
         "isolated_bunfig.toml",
         "launcher.js",
         "launcher.sh.tpl",
+        "resolve.bzl",
     ],
     visibility = ["//bun/tests:__subpackages__"],
 )

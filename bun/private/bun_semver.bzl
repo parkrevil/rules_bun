@@ -16,6 +16,10 @@ _ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _WHITESPACE = [" ", "\t", "\n", "\r", "\013", "\014"]
 
 def _version(major = 0, minor = 0, patch = 0, pre = "", build = ""):
+    """`Version`: three numbers and the prerelease and build tags.
+
+    Bun: src/semver/Version.rs L56–L66 @ bun-v1.4.4
+    """
     return struct(major = major, minor = minor, patch = patch, pre = pre, build = build)
 
 _ZERO_PRE = "0"
@@ -267,6 +271,10 @@ def _parse_result(wildcard, valid, overflow, parts, pre, build, length):
     )
 
 def _cmp(lhs, rhs):
+    """`Ord::cmp` of two numbers or strings, as the version order compares them.
+
+    Bun: src/semver/Version.rs L469–L500 @ bun-v1.4.4
+    """
     if lhs < rhs:
         return -1
     if lhs > rhs:
@@ -398,11 +406,19 @@ def _is_zero(version):
     return version.major == 0 and version.minor == 0 and version.patch == 0
 
 def _comparator(op = "unset", version = None):
+    """`Comparator`: an operator and a version.
+
+    Bun: src/semver/SemverRange.rs L184–L188 @ bun-v1.4.4
+    """
     return struct(op = op, version = version if version != None else _version())
 
 _UNSET = _comparator()
 
 def _range(left = _UNSET, right = _UNSET):
+    """`Range`: a left and a right comparator.
+
+    Bun: src/semver/SemverRange.rs L20–L24 @ bun-v1.4.4
+    """
     return struct(left = left, right = right)
 
 def _null_set():

@@ -44,3 +44,17 @@ bun_test(
         "//bun/tests/support:spawn",
     ],
 )
+
+bun_test(
+    name = "citations_test",
+    srcs = ["citations.test.ts"],
+    data = [
+        "//bun/private:bun_install_types.bzl",
+        "//bun/private:bun_isolated_store.bzl",
+        "//bun/private:bun_lockfile.bzl",
+        "//bun/private:bun_semver.bzl",
+        "//bun/private:bun_tree.bzl",
+        "//bun/private:resolve.bzl",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)

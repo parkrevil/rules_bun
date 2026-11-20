@@ -59,6 +59,10 @@ _SERVED = "served"
 _PLACEMENT = "placement"
 
 def _result(kind, value = None, id = None, bundled = False):
+    """`HoistDependencyResult`.
+
+    Bun: src/install/lockfile/Tree.rs L148–L171 @ bun-v1.4.4
+    """
     return struct(kind = kind, value = value, id = id, bundled = bundled)
 
 def _in_slice(slice, dep_id):

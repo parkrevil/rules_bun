@@ -41,6 +41,10 @@ VERSION_TAG = struct(
 )
 
 def _has(bits, flag):
+    """`Behavior::contains` of one bit.
+
+    Bun: src/install_types/resolver_hooks.rs L171–L188 @ bun-v1.4.4
+    """
     return bits & flag != 0
 
 def behavior_is_prod(behavior):
@@ -297,6 +301,10 @@ _LIBC_NAMES = {
 }
 
 def _all(names):
+    """`ALL_VALUE`: every named bit of a platform set.
+
+    Bun: src/install_types/resolver_hooks.rs L810–L817 @ bun-v1.4.4
+    """
     value = 0
     for bit in names.values():
         value |= bit
@@ -449,6 +457,10 @@ def meta_is_disabled(meta, cpu, os, libc):
 # --- resolution.rs -------------------------------------------------------------------------------
 
 def _resolution(tag, value = None):
+    """`Resolution`: a tag and its value.
+
+    Bun: src/install/resolution.rs L66–L72 @ bun-v1.4.4
+    """
     return struct(tag = tag, value = value)
 
 def _parse_repository_git(text):
@@ -618,6 +630,10 @@ _LITERAL_WHITESPACE = [" ", "\t", "\n", "\r"]
 _WHITESPACE = [" ", "\t", "\n", "\r", "\013", "\014"]
 
 def _has_suffix_ignore_ascii_case(text, suffix):
+    """`has_suffix_ignore_ascii_case`.
+
+    Bun: src/install/dependency.rs L429–L432 @ bun-v1.4.4
+    """
     return len(text) >= len(suffix) and text[len(text) - len(suffix):].lower() == suffix
 
 def is_tarball(dependency):
@@ -941,6 +957,10 @@ def _trim_literal(literal):
     return ""
 
 def _version_value(tag, literal, **fields):
+    """`dependency::Version`: a tag, the literal and the arm of the tag.
+
+    Bun: src/install_types/resolver_hooks.rs L439–L444 @ bun-v1.4.4
+    """
     value = dict(npm = None, dist_tag = None, tarball = None, folder = None, symlink = None, workspace = None, git = None, github = None, catalog = None)
     value.update(fields)
     return struct(tag = tag, literal = literal, **value)

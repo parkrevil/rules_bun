@@ -70,6 +70,10 @@ def _refusal(file, where, message):
     return struct(value = None, error = "{}: Bun 1.4.4 refuses to load this lockfile ({}): {}".format(file, where, message))
 
 def _failure(file, message):
+    """A dependency the loader cannot resolve: the label and Bun's message.
+
+    Bun: src/install/lockfile/bun.lock.rs L3302–L3345 @ bun-v1.4.4
+    """
     return struct(value = None, error = "{}: {}".format(file, message))
 
 def is_valid(pkg_id):
@@ -558,6 +562,11 @@ def _parse_append_dependencies(lockfile, obj, unresolved_rows, bundled, member_r
     return struct(value = (off, end - off), error = None)
 
 def _workspace_obj(workspace):
+    """The object of the root or a workspace that `parse_append_dependencies` reads.
+
+    Bun: src/install/lockfile/bun.lock.rs L2225–L2235 @ bun-v1.4.4
+    Bun: src/install/lockfile/bun.lock.rs L2284–L2294 @ bun-v1.4.4
+    """
     return struct(
         groups = {name: getattr(workspace, name) for name, _ in _GROUPS},
         optional_peers = workspace.optional_peers,
@@ -565,6 +574,10 @@ def _workspace_obj(workspace):
     )
 
 def _row_obj(entry):
+    """The info object of a `packages` row that `parse_append_dependencies` reads.
+
+    Bun: src/install/lockfile/bun.lock.rs L2565–L2587 @ bun-v1.4.4
+    """
     return struct(
         groups = {
             "dependencies": entry.dependencies,

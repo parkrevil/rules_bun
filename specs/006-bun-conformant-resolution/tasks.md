@@ -459,7 +459,7 @@ maps every binding-relevant Bun step (FR-002, SC-004).
 **Independent Test**: `bazel test //bun/tests/npm/conformance:citations_test` passes, fails in red
 mode, and research Part 2 lists 0 unaccounted Bun steps (Q6).
 
-- [ ] T053 [P] [US3] Write `bun/tests/npm/conformance/citations.test.ts` and its `bun_test` target
+- [X] T053 [P] [US3] Write `bun/tests/npm/conformance/citations.test.ts` and its `bun_test` target
   `citations_test` in `bun/tests/npm/conformance/BUILD.bazel` (`data` = `bun/private/bun_*.bzl` and
   `bun/private/resolve.bzl`): every `def` has a docstring with at least one line matching
   `Bun: (src/install|src/install_types|src/semver)/\S+ L\d+–L\d+ @ bun-v1\.4\.4` naming a file of
