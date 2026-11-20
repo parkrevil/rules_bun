@@ -503,18 +503,24 @@ does not declare, are not reproduced, so only declared dependencies resolve (ID-
 rules_bun does not fetch fails analysis of a target that needs it (ID-4, below).
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
-platforms that match, by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
-negations included; `select()` on `@platforms`); a value with no `@platforms`
-constraint, such as `sunos` or `ppc64`, matches no platform. An optional dependency's `libc` (`glibc` or
+platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's
+`src/install/lockfile/Package/Meta.rs` L70–L74, `src/install/npm.rs` L850–L865 and
+`src/install_types/resolver_hooks.rs` L610–L687 at `bun-v1.4.4`, which rules_bun carries over),
+through `select()` on `@platforms`. A list allows the values it names; `!<value>` removes one, and
+a list of removals only allows every other value (`["!win32"]`); `any` allows every value unless a
+value Bun knows follows it (`["linux", "any"]` matches every OS, `["any", "linux"]` only Linux);
+`none`, or only values Bun does not know, allows none. A value with no `@platforms` constraint,
+such as `sunos` or `ppc64`, matches no target platform. An optional dependency's `libc` (`glibc` or
 `musl`, which Bun 1.4.4 writes) is matched against the target platform's
-`@rules_bun//bun/platforms/libc:libc` constraint, by npm's rule: on a Linux platform with
-`@rules_bun//bun/platforms/libc:glibc` or `:musl`, only the entries whose `libc` allows that C
-library are carried; on a Linux platform without the constraint (its default,
+`@rules_bun//bun/platforms/libc:libc` constraint (`Libc::is_match`, resolver_hooks.rs L876–L880):
+on a Linux platform with `@rules_bun//bun/platforms/libc:glibc` or `:musl`, only the entries whose
+`libc` allows that C library are carried; on a Linux platform without the constraint (its default,
 `:unconstrained`), every `libc` variant is carried, because the platform does not say which C
-library it has; an entry with `libc` matches no other OS. To get only one variant, add the C
-library to the Linux platform: `constraint_values = ["@platforms//os:linux",
+library it has; on any other OS, `libc` excludes nothing, as Bun matches every C library off Linux
+(`Libc::CURRENT`, L869–L874), so only the entry's `os` and `cpu` decide. To get only one variant,
+add the C library to the Linux platform: `constraint_values = ["@platforms//os:linux",
 "@platforms//cpu:x86_64", "@rules_bun//bun/platforms/libc:glibc"]`. A non-optional dependency is
-carried whatever its `libc` says, as Bun carries it. An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
+carried whatever its `libc` says, as Bun carries it (`Libc::for_dependency`, L882–L890). An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
 and any other resolution, a patched package, an entry without integrity, an integrity algorithm
 other than `sha256`, `sha384` and `sha512`) gets no download; a target that needs it fails analysis
 naming the package and the reason, and other targets are unaffected. A link that reaches such an

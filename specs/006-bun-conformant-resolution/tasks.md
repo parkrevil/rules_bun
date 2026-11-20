@@ -844,7 +844,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 15: Convergence
 
-- [ ] T084 CRITICAL: make `_NPM_DOC`'s "Packages" paragraph in `bun/private/npm_extension.bzl`
+- [X] T084 CRITICAL: make `_NPM_DOC`'s "Packages" paragraph in `bun/private/npm_extension.bzl`
   (L501–L513) state the rule the resolver applies. It says a dependency's `os`, `cpu` and `libc` are
   matched "by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
   negations included)", while platform classes come from Bun's `Meta::is_disabled` with

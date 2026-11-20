@@ -4,7 +4,7 @@ research R11 for libc, which Bun 1.4.4 writes)."""
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
-load("//bun/private:bun_install_types.bzl", "LIBC_ALL", "platform_value")
+load("//bun/private:bun_install_types.bzl", "BEHAVIOR", "LIBC_ALL", "libc_for_dependency", "meta_is_disabled", "negatable_from_json_value", "platform_value")
 load("//bun/private:bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load("//bun/private:bun_tree.bzl", "hoist")
 load("//bun/private:lockfile.bzl", "read_lockfile")
@@ -47,6 +47,49 @@ def _platform_classes_test_impl(ctx):
     return unittest.end(env)
 
 _platform_classes_test = unittest.make(_platform_classes_test_impl)
+
+def _carried_on(platform, os = None, cpu = None, libc = None, behavior = BEHAVIOR.OPTIONAL):
+    """Whether a package with these fields is carried on a platform tuple, as the resolver decides."""
+    meta = struct(
+        os = negatable_from_json_value("os", os),
+        arch = negatable_from_json_value("cpu", cpu),
+        libc = negatable_from_json_value("libc", libc),
+    )
+    bits = platform_bits(platform)
+    return not meta_is_disabled(meta, bits.cpu, bits.os, libc_for_dependency(bits.libc, behavior))
+
+def _bun_rule_test_impl(ctx):
+    env = unittest.begin(ctx)
+    linux_glibc = ("linux", "x64", "glibc")
+    linux_musl = ("linux", "x64", "musl")
+    linux = ("linux", "x64", None)
+    darwin = ("darwin", "arm64", None)
+    windows = ("win32", "x64", None)
+
+    # The cases the `npm` extension's "Packages" paragraph states (feature 006 T084), on the
+    # platform tuples the hub selects by. `any` allows every value unless a known value follows.
+    for platform in [linux_glibc, darwin, windows]:
+        asserts.true(env, _carried_on(platform, os = ["linux", "any"]), platform)
+    asserts.false(env, _carried_on(darwin, os = ["any", "linux"]))
+
+    # A list of removals only allows every other value.
+    asserts.false(env, _carried_on(windows, os = ["!win32"]))
+    asserts.true(env, _carried_on(darwin, os = ["!win32"]))
+
+    # A value Bun knows but `@platforms` has no constraint for matches no target platform.
+    asserts.equals(env, [], [t for t in platform_tuples() if _carried_on(t, os = ["sunos"])])
+    asserts.equals(env, [], [t for t in platform_tuples() if _carried_on(t, cpu = ["ppc64"])])
+
+    # `libc`: on Linux with the libc constraint only the matching variant; on Linux without it and
+    # off Linux every variant (`Libc::CURRENT`); a non-optional dependency whatever its `libc`.
+    asserts.false(env, _carried_on(linux_musl, libc = ["glibc"]))
+    asserts.true(env, _carried_on(linux_glibc, libc = ["glibc"]))
+    asserts.true(env, _carried_on(linux, libc = ["glibc"]))
+    asserts.true(env, _carried_on(darwin, libc = ["glibc"]))
+    asserts.true(env, _carried_on(linux_musl, libc = ["glibc"], behavior = BEHAVIOR.PROD))
+    return unittest.end(env)
+
+_bun_rule_test = unittest.make(_bun_rule_test_impl)
 
 _PLATFORMS = ["linux_x64", "linux_x64_glibc", "linux_x64_musl", "linux_aarch64", "darwin_x64", "darwin_aarch64", "windows_x64"]
 
@@ -184,7 +227,7 @@ def platforms_test_suite(name):
     linux_x64_test(name = name + "_aix_linux_x64_test", target_under_test = _AIX, package = "aix-user", expected = [])
     tests += [name + "_aix_x64_test", name + "_aix_linux_x64_test"]
 
-    # A sole `any` matches every platform (npm-install-checks `checkList`, feature 005 FR-006).
+    # A sole `any` matches every platform (Bun's `Negatable::combine`, feature 005 FR-006).
     for platform in ["linux_x64", "darwin_aarch64", "windows_x64"]:
         _RULES[platform](name = "{}_any_{}_test".format(name, platform), target_under_test = _ANY, package = "", expected = ["any-platform"])
         tests.append("{}_any_{}_test".format(name, platform))
@@ -198,6 +241,8 @@ def platforms_test_suite(name):
 
     _platform_classes_test(name = name + "_platform_classes_test")
     tests.append(name + "_platform_classes_test")
+    _bun_rule_test(name = name + "_bun_rule_test")
+    tests.append(name + "_bun_rule_test")
 
     _exec_tool(name = name + "_exec_tool", tool = name + "_native_tool", tags = ["manual"])
     exec_test(name = name + "_exec_test", target_under_test = name + "_exec_tool")
