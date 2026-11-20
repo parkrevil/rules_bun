@@ -63,7 +63,10 @@ _GROUPS = [
 ]
 
 def _refusal(file, where, message):
-    """A lockfile Bun refuses to load (FR-004): the label, where, and Bun's own message."""
+    """A lockfile Bun refuses to load (FR-004): the label, where, and Bun's own message.
+
+    Bun: src/install/lockfile/bun.lock.rs L1806–L1811 @ bun-v1.4.4
+    """
     return struct(value = None, error = "{}: Bun 1.4.4 refuses to load this lockfile ({}): {}".format(file, where, message))
 
 def _failure(file, message):

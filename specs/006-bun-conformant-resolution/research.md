@@ -32,6 +32,7 @@ code, not against this plan.
 | SEMVER | https://github.com/oven-sh/bun/tree/bun-v1.4.4/src/semver (`Version.rs`, `SemverQuery.rs`, `SemverRange.rs`, `lib.rs`) | `satisfies_dependency_version`, version order (R5) |
 | INSTALL | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/install/PackageManager/install_with_manager.rs | the order of the stages in an install (S0) |
 | ISO-142, LOCK-142, TREE-142 | the same files at `bun-v1.4.2` | the 1.4.2 oracle (R10) |
+| DEP, RES, NPM, CATALOG, OVERRIDE, SELECTOR, PKG, OPTIONS, CLI, HOSTED, REPO, INTEGRITY, INSTALLER, INTERSECTS, STRINGS | the same tag's `src/install/dependency.rs`, `resolution.rs`, `npm.rs`, `lockfile/CatalogMap.rs`, `lockfile/OverrideMap.rs`, `lockfile/override_selector.rs`, `lockfile/Package.rs`, `PackageManager/PackageManagerOptions.rs`, `PackageManager/CommandLineArguments.rs`, `hosted_git_info.rs`, `repository.rs`, `integrity.rs`, `PackageInstaller.rs`, `src/semver/intersects.rs`, `src/bun_core/string/immutable.rs` | the types and helpers the stages above call: dependency versions and `Tag::infer`, resolutions and their order, `os`/`cpu`/`libc` sets, catalogs, overrides, `Package::clone`, the install's default features, `--os`/`--cpu`, repository and integrity parsing, `alias_is_safe_install_target`, range intersection, string helpers. Fetched while carrying over (T037–T045), each range re-read at the tag before it is cited |
 | DOC-ISO | https://bun.com/docs/install/isolated | the layout the oracle reads: `node_modules/.bun/<package>@<version>/node_modules/…` and the symlinks into it (R7) |
 | BLOG | https://bun.com/blog/bun-lock-text-lockfile | the format outline bun.com links to; it describes none of the fields Part 4 marks new |
 | PRIOR | the earlier attempt's research, committed as `prior-research.md` in this directory | S1–S8 of that file, re-read at the tag: every line range it cites for LOCK and TREE was found unchanged (`bun.lock.rs` and `Tree.rs` are byte-identical to its copies) |
@@ -151,6 +152,13 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | workspace filters, `packages_to_install`, `--omit` | ISO L1005–1031, TREE L1393–1404 | the ruleset links every workspace; its consumers select targets |
 | lifecycle scripts, `trustedDependencies` | ISO Installer | ID-1 |
 | `Wyhash` of `ctx_hash` | ISO L814–867 | replaced by the exact key it hashes (same equality, no collisions) |
+| `BuilderMethod::Filter` hoisting, `keep_linked_rows`, shipped and contested rows | TREE L436–L452, L929–L1249 | the hoisted linker's install tree; the isolated linker reads the `Resolvable` trees of `Lockfile::resolve` (`build_store` reads `trees[0]` only, ISO L713–L720) |
+| optional-peer omission, pruned-workspace links, workspace filters in `is_filtered_dependency_or_workspace` | TREE L1364–L1404, PRUNED L36–L53, reachable.rs L93–L137 | a default install enables dev and optional dependencies (no omission), a frozen install keeps every workspace (PRUNED L11–L16, no pruned one), and no `--filter` is given; all three then skip nothing |
+| `HostedGitInfo::from_url` beyond the host | HOSTED L231–L326, L874–L1259 | it chooses between the `git`, `github` and `tarball` tags of a URL; the carry-over decides by the URL's host alone (`_hosted_git_tag`). The tag decides a binding only for a peer written as such a URL, bound to a git or GitHub resolution (RES L39–L49), which rules_bun does not fetch (FR-010) |
+| the digest of an `integrity` | INTEGRITY L99–L120 | its base64 is not decoded; an unknown algorithm is still refused (LOCK L1688–L1711). A malformed digest decides no link; rules_bun verifies the digest when it downloads (feature 003 FR-021) |
+| the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry is the consumer's `.npmrc`, which the loader does not read. rules_bun refuses to fetch any row without integrity (FR-010) |
+| the `.bun-tag` of a git or GitHub row | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); not read |
+| a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists; the adapter (ID-2) gives it a value no package names, npm's rule for an unknown value (`bun_install_types.bzl` `platform_value`) |
 
 ## Part 3: Decisions
 
@@ -372,6 +380,9 @@ New accesses:
 | — | top-level `patchedDependencies` | LOCK L1899 | read by Bun but decides no binding (a patch changes a package's files, not which package a dependency binds); rules_bun keeps treating a patched package as unsupported (feature 003 FR-010, canary C-PATCHED) | C-PATCHED (existing) |
 | L29 | order of `packages` rows (equal evidence: later row wins) | LOCK L2929, L2993 | E10: sorted by the parent path's depth, the parent path, then the name (writer LOCK L506–L508, L646) | C-ROWORDER |
 | L30 | `dependencies`, `optionalDependencies`, `peerDependencies` ranges (read as npm ranges, R5) | LOCK L3347–3543, L3174–3208 | existing fixtures; E11 (`range-user@1.0.0`) | C-INFODEPS / C-PEERS (range tests) |
+| L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, git, GitHub, `link:`) | LOCK L2346, L2557–L2591 | `unsupported` (`local`, `tb`) | none yet (T050) |
+| L32 | a row's `devDependencies` | LOCK L1478–L1483, L3405–L3490 | none: the writer prints it for a folder package (LOCK L931–L1000) | none yet (T050) |
+| L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284) | none | none yet (T050) |
 
 The list is closed when the loader is carried over: every `root.get(...)`/`info.get(...)` of LOCK
 L1797–3543 is either an access above or recorded as read by Bun and not affecting a binding

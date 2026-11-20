@@ -140,7 +140,10 @@ def _leaking_peers(lockfile, platform, is_contained_folder):
     return leaking, peer_names
 
 def _sorted_peers(node):
-    """A node's transitive peers in their set's order: by package name."""
+    """A node's transitive peers in their set's order: by package name (`OrderedArraySet::slice`).
+
+    Bun: src/install/isolated_install/Store.rs L209–L211 @ bun-v1.4.4
+    """
     return [node.peers[name] for name in sorted(node.peers.keys())]
 
 def _insert_peer(lockfile, node, peer):

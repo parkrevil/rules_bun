@@ -2,9 +2,10 @@
 // fresh output base and an empty repository cache, a target needing no package
 // requests no archive, one needing a requests only a and b@1.0.0, and x, whose
 // archive the server does not have, leaves the build and test green. A target
-// needing p-user requests only p-user, p and p's resolved peer q@1.0.0: neither
-// the optional peer r, which p-user does not provide, nor q@2.0.0, which the
-// lockfile lists for q2-user (the server has neither).
+// needing p-user requests only p-user, p, p's resolved peer q@1.0.0 and its
+// optional peer r@1.0.0, which the pinned Bun links from the lockfile's own
+// entry (feature 006 BC-9); not q@2.0.0, which the lockfile lists for q2-user
+// (the server does not have it).
 
 import { afterAll, expect, test } from "bun:test";
 import { rlocation } from "../support/spawn.ts";
@@ -13,7 +14,7 @@ import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 const archive = (p: string) => rlocation(`_main/bun/tests/npm/registry/archives/${p}.tgz`);
 
 const inner = new Inner("fetch", {
-  npmArchives: ["a@1.0.0", "b@1.0.0", "b@2.0.0", "c@1.0.0", "p@1.0.0", "p-user@1.0.0", "q@1.0.0"].map(archive),
+  npmArchives: ["a@1.0.0", "b@1.0.0", "b@2.0.0", "c@1.0.0", "p@1.0.0", "p-user@1.0.0", "q@1.0.0", "r@1.0.0"].map(archive),
 });
 afterAll(() => inner.close());
 
@@ -45,6 +46,7 @@ test(
       "/p-user/-/p-user-1.0.0.tgz",
       "/p/-/p-1.0.0.tgz",
       "/q/-/q-1.0.0.tgz",
+      "/r/-/r-1.0.0.tgz",
     ]);
     assertOffline(inner.log);
   },

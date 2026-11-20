@@ -318,6 +318,7 @@ bun_test(
         "//bun/tests/npm/registry/archives:p-user@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:p@1.0.0.tgz",
         "//bun/tests/npm/registry/archives:q@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:r@1.0.0.tgz",
     ],
     tags = ["requires-network"],
     deps = [
