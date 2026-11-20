@@ -64,12 +64,27 @@ def _kind(resolution):
     return "npm"
 
 def _strings(value):
-    """A string or a list of strings as a list (`os`, `cpu`, `libc`: a string when one value)."""
-    if value == None:
-        return []
+    """A string or a list of strings as a list (`os`, `cpu`, `libc`: a string when one value).
+
+    Bun reads the strings of a list and nothing else (`negatable_from_json_value`, npm.rs
+    L850-L865), so other values give no entry.
+    """
     if type(value) == "string":
         return [value]
-    return list(value)
+    if type(value) == "list":
+        return [item for item in value if type(item) == "string"]
+    return []
+
+def _names(value, file, owner, field):
+    """`(names, error)` of `optionalPeers` or `unresolved`: a list of strings (LOCK L3372-L3400).
+
+    The value is not printed: the reader has not checked it.
+    """
+    if value == None:
+        return [], None
+    if type(value) != "list" or any([type(item) != "string" for item in value]):
+        return None, "{}: {} has a field \"{}\" that is not a list of strings; run `bun install` to rewrite bun.lock".format(file, owner, field)
+    return list(value), None
 
 def _bin(name, value):
     """`bin` as a name-to-path map; a string `bin` is named after the package without its scope."""
@@ -102,8 +117,20 @@ def _entry(key, entry, file):
         integrity = entry[3]  # L12
     elif kind == "workspace":
         pass  # L22: ["<name>@workspace:<path>"]
+    elif not resolution.startswith("root:"):
+        # Every other resolution has its info object in slot 1 (LOCK L2557-L2591); rules_bun does not
+        # fetch these (FR-010), but the dependencies they declare are linked (BC-8).
+        if len(entry) < 2 or type(entry[1]) != "dict":
+            return _error("{}: the packages entry \"{}\" has no info object in slot 1; run `bun install` to rewrite bun.lock".format(file, key))
+        info = entry[1]  # L31
 
-    # Every other kind is unsupported (FR-010): only slot 0 is read, as Part 3 lists no other slot.
+    unresolved, error = _names(info.get("unresolved"), file, "the packages entry \"{}\"".format(key), "unresolved")  # L23
+    if error:
+        return _error(error)
+    optional_peers, error = _names(info.get("optionalPeers"), file, "the packages entry \"{}\"".format(key), "optionalPeers")  # L14
+    if error:
+        return _error(error)
+    bundled = info.get("bundled")  # L26: Bun skips a value that is not a boolean (LOCK L2351).
     return struct(
         value = struct(
             key = key,
@@ -116,9 +143,12 @@ def _entry(key, entry, file):
             url = url,
             integrity = integrity,
             dependencies = dict(info.get("dependencies", {})),  # L13
+            dev_dependencies = dict(info.get("devDependencies", {})),  # L32
             optional_dependencies = dict(info.get("optionalDependencies", {})),  # L13
             peers = dict(info.get("peerDependencies", {})),  # L14
-            optional_peers = list(info.get("optionalPeers", [])),  # L14
+            optional_peers = optional_peers,  # L14
+            unresolved = unresolved,  # L23
+            bundled = bundled == True,  # L26
             os = _strings(info.get("os")),  # L15
             cpu = _strings(info.get("cpu")),  # L15
             libc = _strings(info.get("libc")),  # Written by Bun 1.4.4 (canary C-LIBC)
@@ -135,11 +165,13 @@ def read_lockfile(text, file):
         file: The file's name, for error messages.
 
     Returns:
-        `struct(value, error)`; `value` is `struct(version, workspaces, entries, overrides,
+        `struct(value, error)`; `value` is `struct(version, workspaces, entries, keys, overrides,
         catalog, catalogs, patched)`: `workspaces` maps a member path (`""` for the root) to
-        `struct(path, name, <dependency kinds>)`, `entries` maps a `packages` key to an entry
-        struct (data-model "Lockfile model"), `overrides`, `catalog` and `catalogs` are the top-level
-        maps as written, and `patched` lists the `name@version` keys of `patchedDependencies`.
+        `struct(path, name, version, unresolved, optional_peers, <dependency kinds>)`, `entries`
+        maps a `packages` key to an entry struct (data-model "Lockfile model"), `keys` lists the
+        `packages` keys in the order of the file, `overrides`, `catalog` and `catalogs` are the
+        top-level maps as written, and `patched` lists the `name@version` keys of
+        `patchedDependencies`.
     """
     decoded = jsonc_decode(text, file)  # L1
     if decoded.error:
@@ -157,19 +189,39 @@ def read_lockfile(text, file):
     workspaces = {}
     for path, workspace in lock.get("workspaces", {}).items():  # L3, L4
         fields = {kind: dict(workspace.get(kind, {})) for kind in DEPENDENCY_KINDS}  # L3, L6
-        workspaces[path] = struct(path = path, name = workspace.get("name", ""), **fields)  # L5
+        owner = "the workspace \"{}\"".format(path)
+        workspace_version = workspace.get("version")  # L28
+        if workspace_version != None and type(workspace_version) != "string":
+            return _error("{}: {} has a field \"version\" that is not a string; run `bun install` to rewrite bun.lock".format(file, owner))
+        unresolved, error = _names(workspace.get("unresolved"), file, owner, "unresolved")  # L24
+        if error:
+            return _error(error)
+        optional_peers, error = _names(workspace.get("optionalPeers"), file, owner, "optionalPeers")  # L33
+        if error:
+            return _error(error)
+        workspaces[path] = struct(
+            path = path,
+            name = workspace.get("name", ""),  # L5
+            version = workspace_version,
+            unresolved = unresolved,
+            optional_peers = optional_peers,
+            **fields
+        )
 
     entries = {}
+    keys = []
     for key, entry in lock.get("packages", {}).items():  # L7
         result = _entry(key, entry, file)
         if result.error:
             return result
         entries[key] = result.value
+        keys.append(key)  # L29: the rows in the order Bun wrote them
     return struct(
         value = struct(
             version = version,
             workspaces = workspaces,
             entries = entries,
+            keys = keys,
             overrides = dict(lock.get("overrides", {})),  # L18
             catalog = dict(lock.get("catalog", {})),  # L19
             catalogs = dict(lock.get("catalogs", {})),  # L19

@@ -310,7 +310,7 @@ projects without a BC are unchanged (Q7, T064).
   `is_placed` (HOOKS L271), `Libc::for_dependency` (HOOKS L884–890: `libc` applies to optional
   dependencies only), `is_disabled` (META L72–74) with Bun's `OperatingSystem`/`Architecture`/`Libc`
   `is_match` including negated entries (`!win32`), and `DepSorter` order (LOCKFILE)
-- [ ] T030 [P] [US1] Add cases to `bun/tests/npm/lockfile_test.bzl` for the accesses L23–L30 of
+- [X] T030 [P] [US1] Add cases to `bun/tests/npm/lockfile_test.bzl` for the accesses L23–L30 of
   `bun/private/lockfile.bzl`: `unresolved` not a list, or holding a non-string, fails naming the
   `bun.lock` label, the entry and the field without printing the value (spec Edge Cases); a name
   under `unresolved` that is no optional dependency is accepted (ignored later, as Bun does);
@@ -361,7 +361,7 @@ projects without a BC are unchanged (Q7, T064).
   `is_disabled` with Bun's `os`/`arch`/`libc` `is_match`, and LOCKFILE `DepSorter` into
   `bun/private/bun_install_types.bzl`; cite each function; record green for
   `bun_install_types_test`
-- [ ] T039 [P] [US1] In `bun/private/lockfile.bzl` add the checked accesses L23–L30, each tagged
+- [X] T039 [P] [US1] In `bun/private/lockfile.bzl` add the checked accesses L23–L30, each tagged
   `# L<n>` as L1–L22 are, with the diagnostics of T030 (an `unresolved` value is never printed);
   record green for `lockfile_test`
 - [ ] T040 [US1] Carry over S1 into `bun/private/bun_lockfile.bzl`: LOCK

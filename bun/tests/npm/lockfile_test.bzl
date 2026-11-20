@@ -129,14 +129,15 @@ def _kinds_test_impl(ctx):
     asserts.equals(env, "", unsupported["tb"]["integrity"])
     asserts.equals(env, "", unsupported["nointegrity"]["integrity"])
 
-    # Research Part 3 lists no slot after slot 0 of a `file:` or tarball-URL entry, so none is read.
-    unread = _read(_inline(
+    # The info object in slot 1 of a `file:` or tarball-URL entry is read (L31, feature 006 BC-8:
+    # Bun links its dependencies); no integrity is read, because rules_bun fetches neither.
+    rows = _read(_inline(
         '"local": ["local@file:local", {"dependencies": {"b": "1.0.0"}}], ' +
         '"tb": ["b@http://example.com/b.tgz", {"dependencies": {"b": "1.0.0"}}, "sha512-x"]',
     ))["value"]["entries"]
     for key in ["local", "tb"]:
-        asserts.equals(env, {}, unread[key]["dependencies"], key)
-        asserts.equals(env, "", unread[key]["integrity"], key)
+        asserts.equals(env, {"b": "1.0.0"}, rows[key]["dependencies"], key)
+        asserts.equals(env, "", rows[key]["integrity"], key)
 
     git = _read(_inline('"g": ["g@git+https://example.com/g.git#abc", {}, "abc"]'))["value"]["entries"]["g"]
     asserts.equals(env, "unsupported", git["kind"])
@@ -190,6 +191,108 @@ def _unsupported_test_impl(ctx):
     asserts.true(env, "sha1" in sha1 and "sha256, sha384 and sha512" in sha1, sha1)
     return unittest.end(env)
 
+def _workspace_inline(workspace, entries = ""):
+    return '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": %s}, "packages": {%s}}' % (workspace, entries)
+
+def _refused(env, text, *fragments):
+    """Asserts that reading `text` fails naming the label and each fragment, printing no value."""
+    result = _read(text)
+    asserts.equals(env, None, result["value"])
+    error = result["error"] or ""
+    asserts.true(env, "inline/bun.lock" in error, error)
+    for fragment in fragments:
+        asserts.true(env, fragment in error, "names {}: {}".format(fragment, error))
+    asserts.false(env, "SECRET" in error, "prints no unchecked value: " + error)
+
+def _unresolved_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # L23, L24 (research Part 4): `unresolved` of an entry and of a workspace, as Bun wrote them.
+    unresolved = _lockfile(env, "conformance_unresolved")
+    asserts.equals(env, ["state"], unresolved["entries"]["opt-user"].get("unresolved"))
+    asserts.equals(env, ["b"], unresolved["workspaces"][""].get("unresolved"))
+    asserts.equals(env, ["q"], unresolved["workspaces"]["packages/w"].get("unresolved"))
+    asserts.equals(env, [], _lockfile(env, "basic")["entries"]["a"].get("unresolved"))
+
+    # A name that is no optional dependency is read as written; the loader ignores it, as Bun's
+    # `parse_append_dependencies` does (LOCK L3531-L3537).
+    entry = _read(_inline('"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}, "unresolved": ["b", "zz"]}, "sha512-x"]'))
+    asserts.equals(env, None, entry["error"])
+    asserts.equals(env, ["b", "zz"], entry["value"]["entries"]["a"].get("unresolved"))
+
+    # Malformed: Bun refuses it ("Expected an array", "Expected a string", LOCK L3376-L3391).
+    _refused(env, _inline('"a": ["a@1.0.0", "", {"unresolved": "SECRET"}, "sha512-x"]'), "\"a\"", "unresolved")
+    _refused(env, _inline('"a": ["a@1.0.0", "", {"unresolved": ["b", {"SECRET": 1}]}, "sha512-x"]'), "\"a\"", "unresolved")
+    _refused(env, _workspace_inline('{"name": "w", "unresolved": {"SECRET": 1}}'), "packages/w", "unresolved")
+    return unittest.end(env)
+
+def _bundled_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # L26: `bundled: true` marks an entry of a bundled dependency (LOCK L2351).
+    bundled = _lockfile(env, "conformance_bundled")["entries"]
+    asserts.equals(env, True, bundled["bundler/b"].get("bundled"))
+    asserts.equals(env, False, bundled["bundler"].get("bundled"))
+
+    # Bun skips a `bundled` that is not a boolean (`let Some(&Boolean(bundled)) = … else continue`).
+    other = _read(_inline('"a": ["a@1.0.0", "", {"bundled": "yes"}, "sha512-x"]'))
+    asserts.equals(env, None, other["error"])
+    asserts.equals(env, False, other["value"]["entries"]["a"].get("bundled"))
+    return unittest.end(env)
+
+def _workspace_fields_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # L28: a workspace's `version` (LOCK L2162-L2191); `None` when absent.
+    workspaces = _read(_workspace_inline('{"name": "w", "version": "1.5.0"}'))["value"]["workspaces"]
+    asserts.equals(env, "1.5.0", workspaces["packages/w"].get("version"))
+    asserts.equals(env, None, workspaces[""].get("version"))
+    _refused(env, _workspace_inline('{"name": "w", "version": ["SECRET"]}'), "packages/w", "version")
+
+    # L33: a workspace's `optionalPeers` (LOCK L3372-L3400 for the root and workspaces).
+    peers = _read(_workspace_inline('{"name": "w", "peerDependencies": {"p": "1"}, "optionalPeers": ["p"]}'))["value"]
+    asserts.equals(env, ["p"], peers["workspaces"]["packages/w"].get("optional_peers"))
+    _refused(env, _workspace_inline('{"name": "w", "optionalPeers": "SECRET"}'), "packages/w", "optionalPeers")
+    return unittest.end(env)
+
+def _row_fields_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # L29: the `packages` rows in the order Bun wrote them (LOCK L2929, L2993).
+    asserts.equals(env, [
+        "@scope/lib",
+        "app",
+        "b",
+        "lib",
+        "q",
+        "x",
+        "y",
+        "./@scope/lib/b",
+        "./lib/b",
+        "./lib/y",
+        "@scope/lib/b",
+        "app/@scope/lib",
+        "app/lib",
+        "./lib/y/x",
+        "app/@scope/lib/b",
+        "app/lib/b",
+        "app/lib/y",
+        "app/lib/y/x",
+    ], _lockfile(env, "conformance_alias_workspace").get("keys"))
+
+    # L31: the info object of a row that is not an npm version (LOCK L2557-L2591: index 1).
+    rows = _read(_inline(
+        '"local": ["local@file:local", {"dependencies": {"b": "1.0.0"}}], ' +
+        '"tb": ["b@http://example.com/b.tgz", {"optionalDependencies": {"c": "1.0.0"}}, "sha512-x"]',
+    ))["value"]["entries"]
+    asserts.equals(env, {"b": "1.0.0"}, rows["local"]["dependencies"])
+    asserts.equals(env, {"c": "1.0.0"}, rows["tb"]["optional_dependencies"])
+
+    # L32: a row's `devDependencies` (LOCK L1478-L1483, WORKSPACE_DEPENDENCY_GROUPS).
+    dev = _read(_inline('"local": ["local@file:local", {"devDependencies": {"d": "1.0.0"}}]'))["value"]["entries"]
+    asserts.equals(env, {"d": "1.0.0"}, dev["local"].get("dev_dependencies"))
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -199,6 +302,10 @@ kinds_test = unittest.make(_kinds_test_impl)
 scoped_keys_test = unittest.make(_scoped_keys_test_impl)
 bad_slot_test = unittest.make(_bad_slot_test_impl)
 unsupported_test = unittest.make(_unsupported_test_impl)
+unresolved_test = unittest.make(_unresolved_test_impl)
+bundled_test = unittest.make(_bundled_test_impl)
+workspace_fields_test = unittest.make(_workspace_fields_test_impl)
+row_fields_test = unittest.make(_row_fields_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -212,4 +319,8 @@ def lockfile_test_suite(name):
         scoped_keys_test,
         bad_slot_test,
         unsupported_test,
+        unresolved_test,
+        bundled_test,
+        workspace_fields_test,
+        row_fields_test,
     )
