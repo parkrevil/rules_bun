@@ -554,7 +554,7 @@ with reasons (Q4).
   equal except where a BC lists a change (SC-005); record the comparison, and that links are
   compared by inference (both `main`'s and the branch's links equal Bun's in `conformance_test` for
   projects without a BC); any other change: stop and report
-- [ ] T065 Completion gates (Q8, FR-018): in the root `bazel run //:gazelle`,
+- [X] T065 Completion gates (Q8, FR-018): in the root `bazel run //:gazelle`,
   `prek run --all-files`, `bazel test //...`, `bazel test //... --noenable_runfiles
   --spawn_strategy=local`; in `e2e/smoke/` `bazel test //...`; record each; report a failure, do not
   widen the task (AGENTS.md)
