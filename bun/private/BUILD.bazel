@@ -162,6 +162,16 @@ bzl_library(
 )
 
 bzl_library(
+    name = "bun_tree",
+    srcs = ["bun_tree.bzl"],
+    deps = [
+        ":bun_install_types",
+        ":bun_lockfile",
+        ":bun_semver",
+    ],
+)
+
+bzl_library(
     name = "jsonc",
     srcs = ["jsonc.bzl"],
 )

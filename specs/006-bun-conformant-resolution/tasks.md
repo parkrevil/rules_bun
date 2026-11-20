@@ -328,7 +328,7 @@ projects without a BC are unchanged (Q7, T064).
   (FR-004); and the spec's edge cases: a peer provided only through an `unresolved` optional edge
   stays as Bun binds it; a `./<name>/...` key of a linked workspace is loaded and never bound; a
   name under `unresolved` that is not an optional dependency changes no binding
-- [ ] T032 [P] [US1] Write `bun/tests/npm/bun_tree_test.bzl`: hoisting places rows as Bun's
+- [X] T032 [P] [US1] Write `bun/tests/npm/bun_tree_test.bzl`: hoisting places rows as Bun's
   `process_subtree`/`hoist_dependency` do on `hoisted` and `conformance_nested`; `bind_served_peers`
   rebinds a peer unless it is placed; `is_filtered_dependency_or_workspace` skips a disabled package
   whether or not optional (BC-7), an unplaced behavior, an omitted optional peer, a pruned workspace,
@@ -385,7 +385,7 @@ projects without a BC are unchanged (Q7, T064).
   overrides), `PeerRanges::shared_version` L3091–3172, and REACH `packages_without_peer_provider`,
   with the package index by name ordered by `Resolution::order`; cite each function (depends on
   T041)
-- [ ] T043 [US1] Carry over S4's hoister and S7's filters into `bun/private/bun_tree.bzl`: TREE
+- [X] T043 [US1] Carry over S4's hoister and S7's filters into `bun/private/bun_tree.bzl`: TREE
   `process_subtree` L1412, `hoist_dependency` L1782, `bind_served_peers` L816–834, `bind_peer` and
   `peer_by_version` L851–878, `is_filtered_dependency_or_workspace` L1313–1405 (with L1324–1326),
   `is_unlinked_member` (L379–388 for unlinked workspaces), and PRUNED
