@@ -1,7 +1,8 @@
 // Every function of the rebuilt resolver names the Bun source lines it carries over (feature 006
-// FR-002, SC-004, quickstart Q6): each `def` of `bun/private/bun_*.bzl` and `resolve.bzl` has a
-// docstring line `Bun: <file> L<a>–L<b> @ bun-v1.4.4` naming a file of research Part 1; in
-// `resolve.bzl` a function may instead state that it is the adapter (research R4).
+// FR-002, SC-004, quickstart Q6): each `def` of `bun/private/bun_*.bzl` and `resolve.bzl`, and the
+// resolver functions of `platforms.bzl` (research R3), has a docstring line
+// `Bun: <file> L<a>–L<b> @ bun-v1.4.4` naming a file of research Part 1; in `resolve.bzl` and
+// `platforms.bzl` a function may instead state that it is the adapter (research R3, R4).
 //
 // RULES_BUN_CITATIONS_RED=1 adds a function without a citation to the checked text, and the test
 // must fail naming it.
@@ -10,7 +11,15 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { rlocation } from "../../support/spawn.ts";
 
-const MODULES = ["bun_semver", "bun_install_types", "bun_lockfile", "bun_tree", "bun_isolated_store", "resolve"];
+const MODULES = ["bun_semver", "bun_install_types", "bun_lockfile", "bun_tree", "bun_isolated_store", "resolve", "platforms"];
+
+// The modules where a function may be the adapter instead of citing Bun (research R3, R4).
+const ADAPTERS = new Set(["resolve", "platforms"]);
+
+// `platforms.bzl` is also the toolchain's platform table; only these of its functions resolve.
+const ONLY: Record<string, Set<string>> = {
+  platforms: new Set(["platform_tuples", "platform_bits", "platform_classes"]),
+};
 
 // The files of research Part 1 (LOCK, LOCKFILE, TREE, REACH, PRUNED, META, ISO, STORE, HOOKS,
 // SEMVER, INSTALL, and the types and helpers those call).
@@ -57,6 +66,9 @@ function uncited(module: string, text: string): Uncited[] {
   const found: Uncited[] = [];
   const defs = [...text.matchAll(/^def (\w+)\([^)]*\):\n((?: {4}"""[\s\S]*?"""\n)?)/gm)];
   for (const [, name, docstring] of defs) {
+    if (ONLY[module] && !ONLY[module].has(name)) {
+      continue;
+    }
     if (!docstring) {
       found.push({ module, name, reason: "has no docstring" });
       continue;
@@ -66,7 +78,7 @@ function uncited(module: string, text: string): Uncited[] {
     const bad = citations.filter((m) => !PART_1.has(m[1]) || Number(m[2]) > Number(m[3]));
     if (bad.length > 0) {
       found.push({ module, name, reason: `cites ${bad.map((m) => m[1]).join(", ")}, not a file of research Part 1` });
-    } else if (citations.length === 0 && !(module === "resolve" && docstring.includes("This is the adapter"))) {
+    } else if (citations.length === 0 && !(ADAPTERS.has(module) && docstring.includes("This is the adapter"))) {
       found.push({ module, name, reason: "cites no Bun source lines" });
     }
   }
@@ -82,7 +94,7 @@ test("every function of the resolver cites Bun's lines at bun-v1.4.4", () => {
       text += '\ndef _red_mode(x):\n    """A function that cites nothing."""\n    return x\n';
       console.log("red mode: an uncited function _red_mode added to resolve.bzl");
     }
-    functions += [...text.matchAll(/^def \w+\(/gm)].length;
+    functions += [...text.matchAll(/^def (\w+)\(/gm)].filter(([, name]) => !ONLY[module] || ONLY[module].has(name)).length;
     all.push(...uncited(module, text));
   }
   console.log(`${functions} functions checked in ${MODULES.length} modules`);

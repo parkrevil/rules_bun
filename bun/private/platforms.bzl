@@ -107,6 +107,9 @@ def check_list(value, values):
 def platform_tuples():
     """The target platforms the hub tells apart, as `(os, cpu, libc)` npm values (research R3).
 
+    This is the adapter of research R3 (ID-2): Bun installs for one platform, so it has no list of
+    platforms; rules_bun resolves for every platform its hub's `select()` tells apart.
+
     They are the `select()` branches of the hub's links (`npm_repositories.bzl`): every `NPM_OS`
     alone and with each `NPM_CPU`, on Linux each of those also with each `NPM_LIBC` value; and the
     default branch, a platform that maps to no npm value. `None` is a value the platform does not

@@ -77,6 +77,7 @@ bun_test(
         "//bun/private:bun_lockfile.bzl",
         "//bun/private:bun_semver.bzl",
         "//bun/private:bun_tree.bzl",
+        "//bun/private:platforms.bzl",
         "//bun/private:resolve.bzl",
     ],
     deps = ["//bun/tests/support:spawn"],
