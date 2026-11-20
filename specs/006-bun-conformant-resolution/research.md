@@ -684,9 +684,9 @@ difference from `main` is stated.
 
 **T017 findings (2026-10-30)**: the conformance test found BC-9 and BC-10 (spec, Behavior Changes),
 both consequences of principle P1 the user approved (link what the pinned Bun links), so they are
-listed and fixed under it. BC-5 shows on `conformance_unprovided_peer` and not on `missing_peer`
-(the graph does not carry `main`'s analysis failure); `missing_peer` is covered by its FR-016 test
-change at T048. BC-8 gets a corpus project `conformance_unfetched` (a patched package with a
+listed and fixed under it. BC-5 shows on `conformance_unprovided_peer`; on `missing_peer` it shows
+since T071, which carries an instance's analysis-failing `status` into the graph (`missing_peer:
+ident-a@1.0.0 fails analysis in the ruleset …`), besides its FR-016 test change at T048. BC-8 gets a corpus project `conformance_unfetched` (a patched package with a
 dependency) so it is red before its fix.
 **BC-9 and BC-10 approved by the user (2026-10-30)**, at T068.
 

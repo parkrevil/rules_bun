@@ -708,7 +708,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   the name ID-4, so `missing_peer`'s BC-5 status stays a difference; name ID-4 in
   `conformance.test.ts`'s header and its "excluded by name" line; record red and green in
   `tdd-log.md`, before T051, per FR-011 / SC-001 (contradicts)
-- [ ] T073 After T068 and T072 are answered, bring `plan.md` (Summary, Constitution Check VII,
+- [X] T073 After T068 and T072 are answered, bring `plan.md` (Summary, Constitution Check VII,
   Phases: "BC-1…BC-8") and research Part 6 "T017 findings" (`missing_peer` shows BC-5 in the
   conformance test since T071, not only through T048) into line with the spec's Behavior Changes and
   Intentional Differences, per spec P3 / FR-017 (partial)
