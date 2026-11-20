@@ -472,7 +472,9 @@ mode, and research Part 2 lists 0 unaccounted Bun steps (Q6).
   record green and red
 - [ ] T054 [US3] Re-read every cited range in `SRC` against its Starlark function (same steps, same
   order); correct any citation or carry-over that differs, then re-run T051's conformance test;
-  record the review in `tdd-log.md` (one row per `bun/private/bun_*.bzl` file)
+  record the review in `tdd-log.md` (one row per `bun/private/bun_*.bzl` file). The user approved
+  ID-6 on 2026-11-21 (research Part 6): `linkWorkspacePackages` binds as Bun's default and no
+  `bunfig.toml` is read; T078 names ID-6 in the docs
 - [X] T055 [US3] Write research Part 2's function-level map: each Bun function of S1–S8 → the
   ruleset function that carries it over; complete "Not carried over" with T044's `clean` decision
   and T049's audit; state that 0 binding-relevant Bun steps are unaccounted (SC-004) in
@@ -560,7 +562,8 @@ with reasons (Q4).
   with `gh pr create`: the BC table of `contracts/public-api.md`, each BC with its T017 difference
   and its T051 "difference gone" row, the FR-016 list of changed tests (T048), the Intentional
   Differences, `scale_test` times on `main` and on the branch (T005, T052), and the 1.4.2 results
-  per platform (T060); end the body with the attribution line the session specifies
+  per platform (T060), and the speckit overlay as outside feature 006's scope (T083); end the body
+  with the attribution line the session specifies
 - [ ] T067 Watch the PR's CI run (`gh pr checks --watch`); for each job on `ubuntu-latest`,
   `macos-latest`, `windows-latest` (including the 1.4.2 step) record the result in `tdd-log.md`; on a
   failure, report it with its log, do not widen the task; when every job passes, fill `_NPM_DOC`'s
@@ -745,30 +748,31 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   `RULES_BUN_CANARY_RED=1` red in `tdd-log.md`, and fill research Part 4's Evidence and Canary
   columns with Part 7 evidence rows. If the pinned Bun does not write a form, stop and report
   (the read is then removed or the user decides), per Constitution V (contradicts)
-- [ ] T076 Ask the user to decide how to treat a target that reaches two store entries of one
-  `name@version` with different peer bindings. Bun's isolated install links both (spec Edge Cases;
-  `conformance_peer_contexts`: `p@1.0.0` with the root's `q@1.0.0` and through `q2-user` with
-  `q@2.0.0`), but `bun/private/run.bzl` `_check_unique` fails analysis of such a target ("a target
-  holds one instance of each package version"), and `bun/tests/npm/uniqueness_test.bzl`
-  `_peer_test` and `_peer_chain_test` assert that failure. `bun/tests/npm/conformance/graph.bzl`
-  does not model it, so `conformance_test` cannot see it. Before anything changes, make the
-  conformance test report it: a `graph_test` / `graph_test_ts` case, red first, for a holder whose
-  links reach two entries of one `name@version`, recorded red in `tdd-log.md`. Then, as the user
-  decides, either list it as a new Intentional Difference (spec, the Exclusions of
-  `contracts/conformance-graph.md`, `data-model.md`, `quickstart.md` Q1, `conformance.test.ts`'s
-  "excluded by name" line, `_NPM_DOC`), or lay out each entry by its peer bindings in `run.bzl` and
-  change the two tests as FR-016 changes; record green, per spec P3 / FR-016 / US1 (contradicts)
-- [ ] T077 Settle the adapter's two failures that neither the spec lists nor a test covers:
+- [ ] T076 The user approved BC-11 on 2026-11-21 (research Part 6). Carry both store entries of one
+  `name@version` with different peer bindings into a target that reaches both. Bun's isolated
+  install links both (spec Edge Cases; `conformance_peer_contexts`: `p@1.0.0` with the root's
+  `q@1.0.0` and through `q2-user` with `q@2.0.0`), but `bun/private/run.bzl` `_check_unique` fails
+  analysis of such a target ("a target holds one instance of each package version"), and
+  `bun/tests/npm/uniqueness_test.bzl` `_peer_test` and `_peer_chain_test` assert that failure.
+  `bun/tests/npm/conformance/graph.bzl` does not model it, so `conformance_test` cannot see it.
+  Before anything changes, make the conformance test report it: a `graph_test` / `graph_test_ts`
+  case, red first, for a holder whose links reach two entries of one `name@version`, recorded red in
+  `tdd-log.md`. Then lay out each entry by its peer bindings in `run.bzl`, in a store directory
+  named as Bun's isolated store names it (`<name>@<version>+<peer hash>`, Store.rs L450–L466,
+  cited), and change the two tests as FR-016 changes; record green, per spec BC-11 / P3 / FR-016 /
+  US1 (contradicts)
+- [ ] T077 The user approved BC-12 on 2026-11-21 (research Part 6). Settle the adapter's two
+  failures that neither the spec lists nor a test covers:
   `bun/private/resolve.bzl` "the store links \"<alias>\" of <package> to different packages on
   different platforms" and "\"<alias>\" of the workspace \"<path>\" links different packages on
   different platforms, which rules_bun cannot express". Determine from Bun's cited lines (S7, S8)
   whether the pinned Bun can write a lockfile whose store binds one alias of an entry or holder
   to different packages on different platform classes. If it can, add a corpus project through
-  `bun/tests/npm/registry/write_lockfiles.ts` with a `check`, record its difference red, and either
-  express it (a per-class binding the hub turns into `select()`) or stop and report so the user can
-  list it as an Intentional Difference. If it cannot, record why in research R4 with the Bun
+  `bun/tests/npm/registry/write_lockfiles.ts` with a `check`, record its difference red, and express
+  it: a per-class binding the hub turns into `select()` on the `[os, cpu, libc]` classes it already
+  selects optional links by (BC-12). If it cannot, record why in research R4 with the Bun
   lines. In either case add a `bun/tests/npm/resolve_test.bzl` case for each error path, per spec
-  P3 / FR-015 / Constitution II (partial)
+  P3 / BC-12 / FR-015 / Constitution II (partial)
 - [X] T073 BC-4 in builds (user decision 2026-11-21, research Part 6): the hub links a registry
   package's dependency on a workspace member by path only (no target dependency, so no Bazel
   dependency cycle), and the rule that builds the copy tree (`bun/private/run.bzl`) fails analysis
@@ -785,16 +789,17 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 - [ ] T078 CRITICAL: make the documentation claim only what `conformance_test` passes on. Today
   `_NPM_DOC`'s Resolution paragraph in `bun/private/npm_extension.bzl` ("the hub links what the
-  pinned Bun 1.4.4's isolated install links … a package reached under different peers is one
-  package per set of peers") and `bun_binary`'s doc in `bun/private/run.bzl` ("Peers resolve as the
-  pinned Bun's isolated install resolves them") hold unconditionally, while `conformance_test`
-  reports T076's layouts (`basic`, `conformance_peer_contexts`, `integration/workspaces/fetch`: one
-  target reaching two entries of `p@1.0.0` fails analysis) and T077's (`conformance_platform_peer`,
-  `conformance_platform_peer_workspace`: evaluation fails, "rules_bun cannot express"). After the
-  user decides T076 and T077, and before T065: name in both docs each layout left as an Intentional
-  Difference by its ID with the diagnostic a consumer sees, keep the unconditional claim only for
-  layouts Q1 shows conformant, and confirm with a green Q1 run recorded in `tdd-log.md`, per
-  Constitution II / FR-017 (contradicts)
+  pinned Bun 1.4.4's isolated install links … a package reached under different peers is one package
+  per set of peers") and `bun_binary`'s doc in `bun/private/run.bzl` ("Peers resolve as the pinned
+  Bun's isolated install resolves them") hold unconditionally, while `conformance_test` reports
+  T076's layouts (`basic`, `conformance_peer_contexts`, `integration/workspaces/fetch`: one target
+  reaching two entries of `p@1.0.0` fails analysis) and T077's (`conformance_platform_peer`,
+  `conformance_platform_peer_workspace`: evaluation fails, "rules_bun cannot express"). The user
+  decided T076 (BC-11) and T077 (BC-12) on 2026-11-21; after both land and before T065: name in both
+  docs ID-5 and ID-6 with what a consumer sees, bring `plan.md`, `contracts/public-api.md` (BC-11
+  and BC-12 rows), `data-model.md` and `quickstart.md` to BC-1…BC-12 and ID-1…ID-6, keep the
+  unconditional claim only for layouts Q1 shows conformant, and confirm with a green Q1 run recorded
+  in `tdd-log.md`, per Constitution II / FR-017 (contradicts)
 - [ ] T079 Complete T040's inventory in research Part 4: every refusal of Bun's loader at
   `bun-v1.4.4`, LOCK L1797–L3543 (the 48 `fail!` sites from L1819 "Missing lockfile version" to
   L2710 "Invalid git dependency tag", `UnknownLockfileVersion` L1855, `UnexpectedResolution` L2427,
@@ -805,9 +810,9 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   `bun.lock` label and the key or field (written red first), or the reason no supported Bun writes
   it. Settle L2667 explicitly ("Missing integrity hash for npm package resolved to a tarball URL
   outside the configured registry", lockfile v2+): the ruleset now treats such a row as ID-4 (fails
-  analysis of a target that needs it) where Bun refuses the lockfile; follow Bun's
-  `npm_url_needs_integrity` lines, or stop and report if the configured registry cannot be known from
-  what the ruleset reads (FR-003), per FR-004 / T040 (partial)
+  analysis of a target that needs it) where Bun refuses the lockfile. The user approved ID-5 on
+  2026-11-21 (research Part 6): keep the row ID-4 and record ID-5 against L2652–L2669 in the
+  inventory, per FR-004 / T040 (partial)
 - [X] T080 In `bun/private/lockfile.bzl`, check the dependency maps the carry-over reads before
   `dict(...)`: an entry's `dependencies`, `optionalDependencies`, `peerDependencies` (L13, L14) and
   `devDependencies` (L32), and a workspace's dependency kinds (L3, L6), each an object whose values
@@ -830,6 +835,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   a function there state that it is the adapter of research R3 (ID-2) as `resolve.bzl` may; cite or
   mark `platform_tuples`; record green and the existing `RULES_BUN_CITATIONS_RED=1` red in
   `tdd-log.md`, per FR-002 / SC-004 (partial)
-- [ ] T083 Ask the user whether `.specify/workflows/overlays/speckit/rules-bun.yml` (commit 57a1326,
-  called for by neither spec nor plan) ships in this feature's PR or separately; if it ships, list it
-  in T066's PR body as outside feature 006's scope, per FR-018 (unrequested)
+- [X] T083 The user decided on 2026-11-21 (research Part 6) that
+  `.specify/workflows/overlays/speckit/rules-bun.yml` (commit 57a1326, called for by neither spec
+  nor plan) ships in this feature's PR; T066's PR body lists it as outside feature 006's scope, per
+  FR-018 (unrequested)

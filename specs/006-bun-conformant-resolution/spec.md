@@ -321,8 +321,9 @@ writes for the corpus projects it can install, and reports zero differences.
 
 ### Intentional Differences
 
-The only differences between the ruleset and the pinned Bun's isolated install that the
-conformance test excludes:
+The only differences between the ruleset and the pinned Bun's isolated install. The conformance
+test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 and ID-6 (the oracle refuses
+ID-5's lockfile, and the corpus uses Bun's default for ID-6):
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
   scripts; files those scripts would create are not compared, and the oracle install runs with
@@ -339,6 +340,16 @@ conformance test excludes:
   a target that needs it, while Bun installs it, because constitution III allows only downloads
   verified with an integrity the lockfile records. The conformance test excludes only that status,
   by this name, and still compares the entry's links (user, 2026-11-21).
+- **ID-5 Registry-dependent integrity refusal**: Bun refuses a lockfile (v2+) with an npm row that
+  resolves to a tarball URL outside its configured and default registries and has no integrity
+  (LOCK L2652–L2669). Bun's configured registry comes from `bunfig.toml`, the environment and
+  `.npmrc` files; the ruleset reads only the `.npmrc` its `npmrc` attribute names and nothing from
+  the host (FR-003), so it loads such a lockfile and treats the row as unfetched (ID-4) (user,
+  2026-11-21, T079).
+- **ID-6 Default `linkWorkspacePackages`**: the ruleset binds as Bun's default `[install]
+  linkWorkspacePackages = true` (an npm range on a workspace's name binds to the workspace) and
+  reads no `bunfig.toml` (FR-003); a project setting it to `false`, where Bun binds such a range to
+  an npm row (LOCKFILE L2247–L2249), links differently (user, 2026-11-21, T054).
 
 ### Behavior Changes
 
@@ -374,6 +385,15 @@ the test that shows it:
 - **BC-10**: a dependency listed in a package's `bundleDependencies` is not linked, because the
   package carries its own copy, as Bun links nothing for it; `main` links it from the
   `<package>/<dep>` key (`conformance_bundled`). Found at T017.
+- **BC-11**: two store entries of one `name@version` that differ by peer bindings are both carried
+  into a target that reaches both, each in its own store directory named as Bun names it
+  (`<name>@<version>+<peer hash>`, Store.rs L450–L466); `main` fails analysis of that target ("a
+  target holds one instance of each package version") (`basic`, `conformance_peer_contexts`,
+  `integration/workspaces/fetch`; user, 2026-11-21, T076).
+- **BC-12**: an alias the pinned Bun's store binds to different packages on different platform
+  classes is linked per target platform, through `select()` on the `[os, cpu, libc]` classes the
+  hub already selects optional links by (`conformance_platform_peer`,
+  `conformance_platform_peer_workspace`; user, 2026-11-21, T077).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

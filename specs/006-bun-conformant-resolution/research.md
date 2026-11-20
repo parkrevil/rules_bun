@@ -755,7 +755,7 @@ path, and a target that reaches such a link without declaring the member fails a
 (T073), rather than a target dependency (a member that depends on the package would form a Bazel
 cycle) or a silent run-time failure.
 
-**T079 (2026-11-21), awaiting the user**: Bun 1.4.4 refuses a lockfile v2+ whose npm row has a URL
+**T079 (2026-11-21)**: Bun 1.4.4 refuses a lockfile v2+ whose npm row has a URL
 outside both the configured and the default registry and no supported integrity (LOCK L2652–L2669,
 "Missing integrity hash for npm package resolved to a tarball URL outside the configured
 registry"). The ruleset loads it and treats the row as unfetched (ID-4: a target that needs it
@@ -767,7 +767,7 @@ an Intentional Difference (the row stays ID-4), or refuse every such row whose U
 default registry and the `npmrc` attribute's registries (refusing some lockfiles Bun loads when
 `bunfig.toml` or the environment configures the registry).
 
-**T054 (2026-11-21), awaiting the user**: Bun reads `[install] linkWorkspacePackages` from
+**T054 (2026-11-21)**: Bun reads `[install] linkWorkspacePackages` from
 `bunfig.toml` (default `true`, PackageManagerOptions L149, L725–L726). With `false`,
 `linked_workspace_path` returns nothing (LOCKFILE L2247–L2249): an npm range on a workspace's name
 binds to an npm row instead of the workspace, in the loader's peers (LOCK L2795–L2807) and in
@@ -776,6 +776,22 @@ and binds as with the default. Example: with `false`, a workspace `q` at version
 with peer `q: ^1.0.0` and an npm row `q@1.2.0`: Bun binds the peer to `q@1.2.0`, the ruleset to the
 workspace. Options: list it as an Intentional Difference (the ruleset links as Bun's default does),
 or read the option from a `bunfig.toml` the consumer names.
+
+**T076, T077, T079, T054 and T083 decided by the user (2026-11-21)**, each on the recommended
+option:
+- T076: BC-11. Two store entries of one `name@version` that differ by peer bindings are each laid
+  out in their own store directory, named as Bun's isolated store names them
+  (`<name>@<version>+<peer hash>`, Store.rs L450–L466), so a target reaching both builds, rather
+  than an Intentional Difference keeping the analysis failure.
+- T077: BC-12. An alias bound to different packages on different platform classes is linked
+  through `select()` on the existing `[os, cpu, libc]` classes, rather than an Intentional
+  Difference keeping the evaluation error.
+- T079: ID-5. The integrity refusal for a row outside the configured registry is not reproduced;
+  such a row stays unfetched (ID-4).
+- T054: ID-6. The ruleset binds as Bun's default `linkWorkspacePackages = true` and reads no
+  `bunfig.toml`.
+- T083: `.specify/workflows/overlays/speckit/rules-bun.yml` (57a1326) ships in this feature's PR,
+  listed in the PR body as outside feature 006's scope.
 
 ## Part 7: Evidence log
 
