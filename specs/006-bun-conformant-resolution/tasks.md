@@ -881,3 +881,15 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   return that error, or stop and report so the user decides to keep them (T054: unreachable within
   an evaluation) and record the decision in research Part 6, per tasks.md Conventions / T054
   (contradicts)
+
+---
+
+## Phase 16: Convergence
+
+- [ ] T088 After T087 changes `bun/private/bun_lockfile.bzl`, `bun/private/bun_tree.bzl`,
+  `bun/private/bun_isolated_store.bzl` and `bun/private/resolve.bzl`, run the completion gates
+  again on the final code before T066 (T065's records predate it): in the root
+  `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...`, `bazel test //...
+  --noenable_runfiles --spawn_strategy=local`, and Q1 (`conformance_test`, `0 differences`); in
+  `e2e/smoke/` `bazel test //...`; record each in `tdd-log.md`; report a failure, do not widen the
+  task (AGENTS.md), per FR-018 / SC-006 (partial)
