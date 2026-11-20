@@ -18,7 +18,7 @@ _WHITESPACE = [" ", "\t", "\n", "\r", "\013", "\014"]
 def _version(major = 0, minor = 0, patch = 0, pre = "", build = ""):
     """`Version`: three numbers and the prerelease and build tags.
 
-    Bun: src/semver/Version.rs L56–L66 @ bun-v1.4.4
+    Bun: src/semver/Version.rs L56–L65 @ bun-v1.4.4
     """
     return struct(major = major, minor = minor, patch = patch, pre = pre, build = build)
 
@@ -119,7 +119,7 @@ def parse_version(text):
     """`Version::parse`: a version, possibly partial or with a wildcard, at the start of `text`.
 
     Bun: src/semver/Version.rs L520–L728 @ bun-v1.4.4
-    Bun: src/semver/Version.rs L963–L983 @ bun-v1.4.4
+    Bun: src/semver/Version.rs L963–L972 @ bun-v1.4.4
 
     Args:
         text: The text.
@@ -274,6 +274,10 @@ def _cmp(lhs, rhs):
     """`Ord::cmp` of two numbers or strings, as the version order compares them.
 
     Bun: src/semver/Version.rs L469–L500 @ bun-v1.4.4
+    Bun: src/semver/lib.rs L169–L176 @ bun-v1.4.4
+    Bun: src/semver/lib.rs L299–L301 @ bun-v1.4.4
+
+    Strings compare by `strings::order`, byte by byte, as Starlark compares ASCII strings.
     """
     if lhs < rhs:
         return -1
@@ -965,7 +969,7 @@ def _admits(group, version):
 def _admits_an_exact_version_of(group, other):
     """`Group::admits_an_exact_version_of`.
 
-    Bun: src/semver/intersects.rs L235–L242 @ bun-v1.4.4
+    Bun: src/semver/intersects.rs L235–L240 @ bun-v1.4.4
     """
     for ranges in other.lists:
         version = _exact_version(ranges)

@@ -68,7 +68,7 @@ def _result(kind, value = None, id = None, bundled = False):
 def _in_slice(slice, dep_id):
     """`DependencySlice::contains`.
 
-    Bun: src/install_types/resolver_hooks.rs L105–L110 @ bun-v1.4.4
+    Bun: src/install_types/resolver_hooks.rs L105–L108 @ bun-v1.4.4
     """
     return dep_id >= slice.off and dep_id < slice.off + slice.len
 

@@ -11,9 +11,14 @@ Not carried over (research Part 2): hidden and public hoisting (`claim_hidden_ho
 the workspace filter and `packages_to_install` (a default install selects everything), and the
 `Wyhash` of an early-dedupe context, which is the exact tuple it hashes here.
 
-Bun's sets keep its orders: a node's transitive peers are ordered by package name and keep the
-first of a name (`TransitivePeerOrderedArraySetCtx`); an entry's dependencies are ordered by name
-and keep the first of a name (`DependenciesOrderedArraySetCtx`).
+Bun's sets: a node's transitive peers are ordered by package name and keep the first of a name
+(`TransitivePeerOrderedArraySetCtx`); an entry's dependencies keep the first of a name
+(`DependenciesOrderedArraySetCtx`), here in the order they are added, where Bun keeps them sorted
+by name. The members are the same; only their order differs, and no consumer reads it.
+
+An entry's `nested_folder` (ISO L1404, L1424) is not kept: the installer reads it to link a nested
+folder package through the package containing it instead of installing it (ISO L2365-L2390), which
+changes no entry and no link (research Part 2, "Not carried over").
 """
 
 load(
@@ -150,7 +155,7 @@ def _insert_peer(lockfile, node, peer):
     """`OrderedArraySet::insert` with `TransitivePeerOrderedArraySetCtx`: one per package name.
 
     Bun: src/install/isolated_install/Store.rs L234–L245 @ bun-v1.4.4
-    Bun: src/install/isolated_install/Store.rs L635–L656 @ bun-v1.4.4
+    Bun: src/install/isolated_install/Store.rs L635–L655 @ bun-v1.4.4
     """
     node.peers.setdefault(lockfile.packages[peer[1]].name, peer)
 
@@ -158,6 +163,7 @@ def _peers_eql(lhs, rhs):
     """`OrderedArraySet::eql` with `TransitivePeerOrderedArraySetCtx`: the same packages.
 
     Bun: src/install/isolated_install/Store.rs L218–L232 @ bun-v1.4.4
+    Bun: src/install/isolated_install/Store.rs L636–L639 @ bun-v1.4.4
     """
     if len(lhs) != len(rhs):
         return False
@@ -177,7 +183,7 @@ def _named(lockfile, node, name):
 def build_store(lockfile, platform):
     """`build_store` of an install that selects everything, for one platform.
 
-    Bun: src/install/isolated_install.rs L510–L1470 @ bun-v1.4.4
+    Bun: src/install/isolated_install.rs L510–L1484 @ bun-v1.4.4
     Bun: src/install/isolated_install.rs L494–L508 @ bun-v1.4.4
 
     Args:
