@@ -98,6 +98,29 @@ darwin_aarch64_test = _make("darwin_aarch64")
 windows_x64_test = _make("windows_x64")
 aix_x64_test = _make("aix_x64")
 
+_PLATFORM_PEER = "//bun/tests/npm/fixtures/conformance_platform_peer:node_modules/plat-peer-host"
+
+def _root_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    asserts.equals(env, ctx.attr.expected, _carried(target, "plat-peer-host"))
+    record = target[BunLibraryInfo].packages.to_list()[0]
+    roots = [i for i in record.instances.to_list() if i.id == record.root]
+    asserts.equals(env, 1, len(roots), "the link's root instance")
+    if roots:
+        asserts.equals(env, ctx.attr.peers, roots[0].peer_hash != "", "whether the root has peer bindings")
+    return analysistest.end(env)
+
+def _make_root(platform):
+    return analysistest.make(
+        _root_impl,
+        attrs = {"expected": attr.string_list(), "peers": attr.bool()},
+        config_settings = {"//command_line_option:platforms": str(Label("//bun/tests/platforms:" + platform))},
+    )
+
+_root_linux_x64_test = _make_root("linux_x64")
+_root_darwin_aarch64_test = _make_root("darwin_aarch64")
+
 _RULES = {
     "darwin_aarch64": darwin_aarch64_test,
     "darwin_x64": darwin_x64_test,
@@ -165,6 +188,13 @@ def platforms_test_suite(name):
     for platform in ["linux_x64", "darwin_aarch64", "windows_x64"]:
         _RULES[platform](name = "{}_any_{}_test".format(name, platform), target_under_test = _ANY, package = "", expected = ["any-platform"])
         tests.append("{}_any_{}_test".format(name, platform))
+
+    # plat-peer-host@1.0.0 is a different store entry by platform (feature 006 BC-12): on darwin
+    # its own q-darwin provides its p's peer q; elsewhere that is disabled, so the peer binds the
+    # root's q@1.0.0 and the root has peer bindings. The hub selects the root by platform.
+    _root_linux_x64_test(name = name + "_root_linux_x64_test", target_under_test = _PLATFORM_PEER, expected = ["p", "q"], peers = True)
+    _root_darwin_aarch64_test(name = name + "_root_darwin_aarch64_test", target_under_test = _PLATFORM_PEER, expected = ["p", "q-darwin"], peers = False)
+    tests += [name + "_root_linux_x64_test", name + "_root_darwin_aarch64_test"]
 
     _platform_classes_test(name = name + "_platform_classes_test")
     tests.append(name + "_platform_classes_test")

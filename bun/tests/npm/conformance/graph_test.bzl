@@ -26,8 +26,8 @@ def _instance(name, version, edges = {}, status = "ok", unfetched = False):
 def _plain_fields(instance):
     return {field: getattr(instance, field) for field in dir(instance)}
 
-def _link(alias, root, closure, optional = {}):
-    return struct(alias = alias, root = root, closure = closure, optional = optional)
+def _link(alias, root, closure, optional = {}, roots = {}):
+    return struct(alias = alias, root = root, closure = closure, optional = optional, roots = roots)
 
 def _resolution(instances, links, members = {}):
     return struct(
@@ -222,6 +222,30 @@ def _conflicts_test_impl(ctx):
 
 conflicts_test = unittest.make(_conflicts_test_impl)
 
+def _roots_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # A holder's alias whose root is a different store entry by platform (BC-12): host with q@1.0.0
+    # on Linux, host without peers (its own q-darwin) on darwin.
+    q = _instance("q", "1.0.0")
+    q_darwin = _instance("q-darwin", "1.0.0")
+    linux = struct(**dict(_plain_fields(_instance("host", "1.0.0", edges = {"q": q.id})), id = "host@1.0.0__1"))
+    darwin = struct(**dict(_plain_fields(_instance("host", "1.0.0", edges = {"q": q_darwin.id})), id = "host@1.0.0__2"))
+    on_linux = [list(t) for t in [_LINUX_GLIBC, _LINUX_MUSL, _LINUX_UNCONSTRAINED]]
+    on_darwin = [list(_DARWIN)]
+    links = {"": {
+        "host": _link("host", None, [], {linux.id: on_linux, darwin.id: on_darwin, q.id: on_linux, q_darwin.id: on_darwin}, {linux.id: on_linux, darwin.id: on_darwin}),
+    }}
+    classes = conformance_graphs(_resolution([q, q_darwin, linux, darwin], links), _TUPLES)
+    for platform, expected in [(_LINUX_GLIBC, "q@1.0.0"), (_DARWIN, "q-darwin@1.0.0")]:
+        graph = _graph_for(classes, platform)
+        asserts.equals(env, "host@1.0.0", _target(graph, graph["holders"][""]["host"]))
+        host = graph["entries"][int(graph["holders"][""]["host"][2:])]
+        asserts.equals(env, {"q": expected}, {k: _target(graph, v) for k, v in host["links"].items()})
+    return unittest.end(env)
+
+roots_test = unittest.make(_roots_test_impl)
+
 def graph_test_suite(name):
     unittest.suite(
         name,
@@ -233,4 +257,5 @@ def graph_test_suite(name):
         unfetched_test,
         status_test,
         conflicts_test,
+        roots_test,
     )

@@ -2,7 +2,8 @@
 
 It reads only `resolve.bzl`'s output, `struct(instances, links, members)`, so it serves any resolver
 that produces it. For each platform tuple (research R3) the graph holds what the hub links there:
-a link's root and its closure on every platform, an optional instance where its conditions hold, as
+a link's root (or, for a link whose root differs by platform, the root whose conditions hold) and
+its closure on every platform, an optional instance where its conditions hold, as
 `npm_repositories.bzl` selects them, and an instance's edge where its target is carried in a link
 that carries the instance, as `run.bzl` links them; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
@@ -44,6 +45,16 @@ def _store_path(instance):
     peer_hash = getattr(instance, "peer_hash", "")
     return "{}@{}".format(instance.name, instance.version) + ("+" + peer_hash if peer_hash else "")
 
+def _root(link, os, cpu, libc):
+    """The instance a link's alias links on a platform: its root, or the per-platform root (BC-12)."""
+    roots = getattr(link, "roots", {})
+    if not roots:
+        return link.root
+    for instance_id, conditions in roots.items():
+        if conditions_hold(conditions, os, cpu, libc):
+            return instance_id
+    return None
+
 def _graph(value, os, cpu, libc):
     instances = value.instances
     npm_libc = None if libc == "unconstrained" else libc
@@ -53,9 +64,10 @@ def _graph(value, os, cpu, libc):
         holder = {}
         for alias, link in sorted(value.links[path].items()):
             carried = _available(link, os, cpu, npm_libc)
-            if link.root not in carried:
+            root = _root(link, os, cpu, npm_libc)
+            if root not in carried:
                 continue
-            holder[alias] = link.root
+            holder[alias] = root
             carried_sets.append(carried)
         for alias, member in sorted(getattr(value, "members", {}).get(path, {}).items()):
             holder[alias] = "w:" + member
@@ -69,7 +81,7 @@ def _graph(value, os, cpu, libc):
         by_directory = {}
         for alias, link in value.links[path].items():
             carried = _available(link, os, cpu, npm_libc)
-            if link.root not in carried:
+            if _root(link, os, cpu, npm_libc) not in carried:
                 continue
             for i in carried:
                 by_directory.setdefault(_store_path(instances[i]), {})[i] = True
@@ -121,7 +133,7 @@ def conformance_graphs(resolution, tuples):
     """
     if resolution.error != None:
         return {"error": resolution.error}
-    if not any([link.optional for links in resolution.value.links.values() for link in links.values()]):
+    if not any([link.optional or getattr(link, "roots", {}) for links in resolution.value.links.values() for link in links.values()]):
         # Nothing is platform-restricted: one class, computed once.
         return [{"platforms": [list(t) for t in tuples], "graph": _graph(resolution.value, None, None, None)}]
     classes = {}

@@ -748,7 +748,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   `RULES_BUN_CANARY_RED=1` red in `tdd-log.md`, and fill research Part 4's Evidence and Canary
   columns with Part 7 evidence rows. If the pinned Bun does not write a form, stop and report
   (the read is then removed or the user decides), per Constitution V (contradicts)
-- [ ] T076 The user approved BC-11 on 2026-11-21 (research Part 6). Carry both store entries of one
+- [X] T076 The user approved BC-11 on 2026-11-21 (research Part 6). Carry both store entries of one
   `name@version` with different peer bindings into a target that reaches both. Bun's isolated
   install links both (spec Edge Cases; `conformance_peer_contexts`: `p@1.0.0` with the root's
   `q@1.0.0` and through `q2-user` with `q@2.0.0`), but `bun/private/run.bzl` `_check_unique` fails
@@ -761,7 +761,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   named as Bun's isolated store names it (`<name>@<version>+<peer hash>`, Store.rs L450–L466,
   cited), and change the two tests as FR-016 changes; record green, per spec BC-11 / P3 / FR-016 /
   US1 (contradicts)
-- [ ] T077 The user approved BC-12 on 2026-11-21 (research Part 6). Settle the adapter's two
+- [X] T077 The user approved BC-12 on 2026-11-21 (research Part 6). Settle the adapter's two
   failures that neither the spec lists nor a test covers:
   `bun/private/resolve.bzl` "the store links \"<alias>\" of <package> to different packages on
   different platforms" and "\"<alias>\" of the workspace \"<path>\" links different packages on

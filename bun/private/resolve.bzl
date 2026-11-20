@@ -10,7 +10,9 @@ hub has consumed since feature 003, `struct(instances, links, members)`:
   entry reached on several platform classes is one instance, its edges the union of theirs;
 - a link is a root's or a workspace's dependency, with the instances it reaches on every platform
   (`closure`) and those it reaches on some (`optional`, instance ID -> the `[os, cpu, libc]`
-  platform tuples it is reached on, which `npm_repositories.bzl` turns into `select()`);
+  platform tuples it is reached on, which `npm_repositories.bzl` turns into `select()`), and its
+  root, one instance, or one per platform class where the store binds it to different entries
+  (`roots`, feature 006 BC-12);
 - `members` are the links to workspaces, which the hub links as the members' targets.
 
 An entry rules_bun does not fetch (FR-010) is linked like any other, so its dependencies get
@@ -197,8 +199,10 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
         `edges` that are peers; `members`: alias -> the path of a workspace it links; `status`:
         `ok`, or why the instance cannot be used; `unfetched`: whether that is because rules_bun
         does not fetch it, feature 006 ID-4), `links` maps a workspace path (`""` for the root) to
-        alias -> `struct(alias, root, closure, optional)`, and `members` maps a workspace path to
-        alias -> the path of each workspace it links.
+        alias -> `struct(alias, root, roots, closure, optional)` (`root`: the instance ID the
+        alias links, or `None` when that differs by platform; then `roots` maps each root's ID to
+        the `[os, cpu, libc]` tuples it is the root on, else it is empty), and `members` maps a
+        workspace path to alias -> the path of each workspace it links.
     """
     loaded = load_lockfile(lockfile, file)
     if loaded.error:
@@ -254,7 +258,10 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             unfetched = statuses[key] != "ok",
         )
 
-    # Links: each holder's dependencies, with what they reach on each platform.
+    # Links: each holder's dependencies, with what they reach on each platform. A holder's alias
+    # the store binds to different entries on different platform classes (a peer provider that is
+    # disabled on some, research R4 "Bindings that differ by platform class") has one root per
+    # class, which the hub selects by platform (feature 006 BC-12).
     tuples_of = [platforms for platforms in classes]
     all_tuples = len(platform_tuples())
     links = {path: {} for path in lockfile.workspaces.keys()}
@@ -265,17 +272,24 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
         for path, holder in graph.holders.items():
             members.setdefault(path, {}).update(holder.members)
             for alias, root in holder.links.items():
-                if roots.setdefault((path, alias), root) != root:
-                    return _error("{}: \"{}\" of the workspace \"{}\" links different packages on different platforms, which rules_bun cannot express".format(file, alias, path))
+                roots.setdefault((path, alias), {}).setdefault(root, []).extend(tuples_of[index])
                 for key in _reached(graph, root):
                     reach.setdefault((path, alias), {}).setdefault(key, []).extend(tuples_of[index])
-    for (path, alias), root in roots.items():
+    for (path, alias), by_root in roots.items():
         closure = []
         optional = {}
         for key, platforms in reach[(path, alias)].items():
             if len(platforms) == all_tuples:
                 closure.append(ids[key])
             else:
-                optional[ids[key]] = sorted([list(p) for p in platforms], key = lambda p: [str(v) for v in p])
-        links.setdefault(path, {})[alias] = struct(alias = alias, root = ids[root], closure = sorted(closure), optional = optional)
+                optional[ids[key]] = _conditions(platforms)
+        if len(by_root) == 1:
+            link = struct(alias = alias, root = ids[by_root.keys()[0]], roots = {}, closure = sorted(closure), optional = optional)
+        else:
+            link = struct(alias = alias, root = None, roots = {ids[key]: _conditions(platforms) for key, platforms in by_root.items()}, closure = sorted(closure), optional = optional)
+        links.setdefault(path, {})[alias] = link
     return struct(value = struct(instances = instances, links = links, members = members), error = None)
+
+def _conditions(platforms):
+    """This is the adapter: platform tuples as the sorted `[os, cpu, libc]` lists the hub selects by."""
+    return sorted([list(p) for p in platforms], key = lambda p: [str(v) for v in p])

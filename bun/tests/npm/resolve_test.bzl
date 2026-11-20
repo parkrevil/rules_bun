@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun/private:lockfile.bzl", "read_lockfile")
+load("//bun/private:platforms.bzl", "platform_tuples")
 load("//bun/private:resolve.bzl", "resolve")
 
 def _plain(value):
@@ -258,13 +259,44 @@ def _unfetched_test_impl(ctx):
     asserts.true(env, any([i.get("unfetched") for i in resolution["instances"].values()]))
     return unittest.end(env)
 
-def _platform_holder_error_test_impl(ctx):
-    env = unittest.begin(ctx)
+def _roots_by_peer(resolution, link, chain):
+    """The platforms of each root of a per-platform link, by the version its chain's peer `q` binds."""
+    by_q = {}
+    for root_id, platforms in link["roots"].items():
+        instance = resolution["instances"][root_id]
+        for alias in chain:
+            instance = resolution["instances"][instance["edges"][alias]]
+        by_q[_nv(resolution, instance["edges"]["q"])] = platforms
+    return by_q
 
-    # w's p binds its peer q to w's own q (q-darwin@1.0.0) on darwin and to the root's q@1.0.0
-    # elsewhere, so the workspace's "p" links two store entries by platform (T077).
-    error = RESULTS["conformance_platform_peer_workspace"]["resolution"]["error"]
-    asserts.true(env, error != None and '"p" of the workspace "packages/w" links different packages on different platforms' in error, error)
+def _platform_holder_test_impl(ctx):
+    env = unittest.begin(ctx)
+    tuples = len(platform_tuples())
+
+    # The root's plat-peer-host: its p binds the peer q to plat-peer-host's own q (q-darwin@1.0.0)
+    # on darwin; elsewhere q-darwin is disabled, so p's q leaks to plat-peer-host and binds the
+    # root's q@1.0.0. Two store entries of plat-peer-host@1.0.0, one root per platform (BC-12).
+    resolution = _resolution(env, "conformance_platform_peer")
+    link = resolution["links"][""]["plat-peer-host"]
+    asserts.equals(env, None, link["root"])
+    by_q = _roots_by_peer(resolution, link, ["p"])
+    asserts.equals(env, ["q-darwin@1.0.0", "q@1.0.0"], sorted(by_q.keys()))
+    asserts.true(env, ["darwin", "arm64", None] in by_q["q-darwin@1.0.0"], by_q)
+    asserts.equals(env, [], [t for t in by_q["q-darwin@1.0.0"] if t[0] != "darwin"])
+    asserts.true(env, ["linux", "x64", None] in by_q["q@1.0.0"], by_q)
+    asserts.equals(env, tuples, len(by_q["q-darwin@1.0.0"]) + len(by_q["q@1.0.0"]))
+
+    # The same through the workspace w, whose own q is q-darwin@1.0.0: its "p" (T077).
+    resolution = _resolution(env, "conformance_platform_peer_workspace")
+    link = resolution["links"]["packages/w"]["p"]
+    asserts.equals(env, None, link["root"])
+    by_q = _roots_by_peer(resolution, link, [])
+    asserts.equals(env, ["q-darwin@1.0.0", "q@1.0.0"], sorted(by_q.keys()))
+    asserts.equals(env, [], [t for t in by_q["q-darwin@1.0.0"] if t[0] != "darwin"])
+    asserts.equals(env, tuples, len(by_q["q-darwin@1.0.0"]) + len(by_q["q@1.0.0"]))
+
+    # A link whose root is one store entry on every platform has no per-platform roots.
+    asserts.equals(env, {}, resolution["links"][""]["q"]["roots"])
     return unittest.end(env)
 
 def _platform_entry_error_test_impl(ctx):
@@ -303,7 +335,7 @@ missing_peer_test = unittest.make(_missing_peer_test_impl)
 peer_cycle_test = unittest.make(_peer_cycle_test_impl)
 peer_instances_test = unittest.make(_peer_instances_test_impl)
 unfetched_test = unittest.make(_unfetched_test_impl)
-platform_holder_error_test = unittest.make(_platform_holder_error_test_impl)
+platform_holder_test = unittest.make(_platform_holder_test_impl)
 platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
 
 def resolve_test_suite(name):
@@ -323,6 +355,6 @@ def resolve_test_suite(name):
         peer_cycle_test,
         peer_instances_test,
         unfetched_test,
-        platform_holder_error_test,
+        platform_holder_test,
         platform_entry_error_test,
     )

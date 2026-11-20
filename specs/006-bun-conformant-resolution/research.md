@@ -461,12 +461,17 @@ node the lookup passes is marked with (ISO L1097–L1176, L1198–L1210), so the
 class only when the lookup ends without a provider (`best_version` invalid, ISO L1084–L1090, then
 `continue` at L1183–L1186, marking nothing).
 
-- **A holder's alias** (`"<alias>" of the workspace "<path>" links different packages on different
-  platforms`): reachable. `conformance_platform_peer` (the root's `plat-peer-host`, whose `p`'s peer
-  `q` is `plat-peer-host`'s own `q: npm:q-darwin@1.0.0` on darwin and the root's `q@1.0.0`
-  elsewhere) and `conformance_platform_peer_workspace` (the same through workspace `w`): the pinned
-  Bun writes both lockfiles and installs them; the adapter fails. `resolve_test.bzl`
-  `platform_holder_error_test`.
+- **A holder's alias**: reachable. `conformance_platform_peer` (the root's `plat-peer-host`, whose
+  `p`'s peer `q` is `plat-peer-host`'s own `q: npm:q-darwin@1.0.0` on darwin and the root's
+  `q@1.0.0` elsewhere) and `conformance_platform_peer_workspace` (the same through workspace `w`):
+  the pinned Bun writes both lockfiles and installs them. Expressed (BC-12, user 2026-11-21): the
+  link's `roots` map each root to the platform tuples it is the root on, and the hub selects the
+  root with `select()` on the settings it selects optional instances by (`npm_repositories.bzl`
+  `_root_selections`); every root is the same package under other peer bindings, so the link's
+  bins are the same. `resolve_test.bzl` `platform_holder_test`, `platforms_test.bzl`
+  `root_linux_x64_test`/`root_darwin_aarch64_test`, the fixture test
+  `conformance_platform_peer:platform_peer_test`, and `conformance_test` (both projects, `0
+  differences`).
 - **An entry's alias** (`the store links "<alias>" of <package> to different packages on different
   platforms`): needs an optional peer that no row on the peer's key path resolves (LOCK L1580–L1662)
   while the parent's own platform-restricted dependency provides it. The pinned Bun hoists that
@@ -474,12 +479,9 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   `r: npm:r-darwin@1.0.0` and `p`'s optional peer `r` is written with the key `r`, not
   `plat-r-host/r`), so the row is on the peer's key path, the peer resolves, and the lookup marks
   the parent; a conflicting root `r` would provide the peer on every class. No Bun-written lockfile
-  reaching it was found; `resolve_test.bzl` `platform_entry_error_test` reaches it with a
-  hand-written lockfile.
-
-Expressing a per-class binding needs the hub to `select()` a link's root and an instance's edges by
-platform; until the user decides between that and an Intentional Difference, the two corpus projects
-fail the conformance test (T077).
+  reaching it was found, so it keeps its error (`the store links "<alias>" of <package> to
+  different packages on different platforms, which rules_bun cannot express`); `resolve_test.bzl`
+  `platform_entry_error_test` reaches it with a hand-written lockfile.
 
 ### R5. npm ranges: carry over Bun's semver
 

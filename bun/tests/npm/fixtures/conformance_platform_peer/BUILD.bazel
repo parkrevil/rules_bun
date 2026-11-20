@@ -1,8 +1,20 @@
+load("@npm_conformance_platform_peer//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_test")
 load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 exports_files([
     "bun.lock",
     "package.json",
 ])
+
+npm_link_all_packages()
+
+# BC-12 (feature 006): plat-peer-host@1.0.0 is a different store entry by target platform; on the
+# host's (not darwin) it binds p's peer q to the root's q@1.0.0.
+bun_test(
+    name = "platform_peer_test",
+    srcs = ["platform_peer.test.ts"],
+    deps = [":node_modules/plat-peer-host"],
+)
 
 conformance_files()

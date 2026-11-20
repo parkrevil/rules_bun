@@ -351,7 +351,9 @@ def _translate(module_ctx, tag, replacements):
         package = "/".join([p for p in [lock_dir, path] if p])
         targets = {}
         for alias, link in aliases.items():
-            root = resolution.value.instances[link.root]
+            # The roots of a link whose root differs by platform are one package under different
+            # peer bindings (feature 006 BC-12), so any of them names its bins.
+            root = resolution.value.instances[link.root or sorted(link.roots.keys())[0]]
             entry_bins = entries[root.key].bin if root.status == "ok" else {}
             bins = bin_targets("{}@{}".format(root.name, root.version), entry_bins)
             if bins.error:
@@ -362,6 +364,7 @@ def _translate(module_ctx, tag, replacements):
                 "closure": link.closure,
                 "optional": link.optional,
                 "root": link.root,
+                "roots": link.roots,
             }
 
         # A `workspace:` dependency links to the member's target (research R7).
