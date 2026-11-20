@@ -546,7 +546,7 @@ with reasons (Q4).
   T067)
 - [X] T063 [P] In `specs/004-bun-1-4-4-upgrade/research.md` mark G1 and G2 resolved by feature 006,
   with a link to this feature's research Part 4 (L23, L25)
-- [ ] T064 Q7: on `main` and on the branch, list the targets of every root fixture hub
+- [X] T064 Q7: on `main` and on the branch, list the targets of every root fixture hub
   (`bazel query '@<hub>//...'`) and, in `e2e/smoke/`, `bazel mod show_extension
   @rules_bun//bun:extensions.bzl%npm`; the `:node_modules/...` names and every public symbol must be
   equal except where a BC lists a change (SC-005); record the comparison, and that links are
