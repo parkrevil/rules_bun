@@ -839,3 +839,45 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   `.specify/workflows/overlays/speckit/rules-bun.yml` (commit 57a1326, called for by neither spec
   nor plan) ships in this feature's PR; T066's PR body lists it as outside feature 006's scope, per
   FR-018 (unrequested)
+
+---
+
+## Phase 15: Convergence
+
+- [ ] T084 CRITICAL: make `_NPM_DOC`'s "Packages" paragraph in `bun/private/npm_extension.bzl`
+  (L501–L513) state the rule the resolver applies. It says a dependency's `os`, `cpu` and `libc` are
+  matched "by npm's rule (npm-install-checks `checkList`: a sole `any` matches every platform, `!`
+  negations included)", while platform classes come from Bun's `Meta::is_disabled` with
+  `OperatingSystem`/`Architecture`/`Libc` `is_match` (`bun/private/bun_install_types.bzl`
+  `negatable_from_json_value`, `meta_is_disabled`; HOOKS L884–L890: `libc` applies to optional
+  dependencies only), which differs from `checkList` (for example `os: ["linux", "any"]` matches
+  every OS in Bun, only Linux in npm). Name Bun's rule with its lines, and for each case the
+  paragraph states (a sole `any`, `!` negations, a value without an `@platforms` constraint, `libc`
+  off Linux), add a `bun/tests/npm/bun_install_types_test.bzl` or `bun/tests/npm/platforms_test.bzl`
+  case on `meta_is_disabled` / `platform_classes`, written red first where it covers new behavior;
+  record in `tdd-log.md`, per Constitution II / FR-017 / P1 (contradicts)
+- [ ] T085 Bring `specs/006-bun-conformant-resolution/contracts/public-api.md` in line with spec BC-4
+  (user, 2026-11-21): its BC-4 row still reads "not linked → linked to the member". Make it state the
+  link by path, the analysis failure of a target whose closure holds such a link without the
+  member's target among its transitive `deps` (naming the package, the dependency and the member's
+  target), and the bin target receiving the members from the hub (T081). In "Diagnostics added",
+  list BC-4's analysis failure and the refusals T079 and T080 added (a container or a dependency map
+  that is not an object of strings), and remove "No other diagnostic changes text, except those of
+  BC-3 and BC-5" (once T076 lands, also BC-11's removed "a target holds one instance of each package
+  version"), per spec BC-4 / FR-015 / P4 (partial)
+- [ ] T086 Review `libc_matches` (`bun/private/npm_repositories.bzl` L260) and `check_list`
+  (`bun/private/platforms.bzl` L80), `main`'s npm-rule package selection: since T046/T047 the hub
+  selects by the resolver's platform tuples (`conditions_hold`), and only
+  `bun/tests/npm/libc_test.bzl` and `bun/tests/npm/platforms_test.bzl` `_check_list_test` call them
+  (plan's "`check_list` stays for the toolchain": no toolchain file calls it). Remove them, their
+  tests and their registration, as T047 removes every function of `main`'s resolver it replaces, or
+  record in research Part 2 the non-test use that keeps them; run `bazel run //:gazelle` and
+  `bazel test //bun/tests/npm/...`, per T047 / plan Source Code (unrequested)
+- [ ] T087 Exhausting `_LIMIT` falls through silently in every carried-over loop
+  (`bun/private/bun_lockfile.bzl` L1170, L1212, L1231, L1437; `bun/private/bun_tree.bzl` L701;
+  `bun/private/bun_isolated_store.bzl` L127, L252, L443; `bun/private/resolve.bzl` L123), against the
+  "Carry over" convention ("exhausting `_LIMIT` returns an English error naming the stage, as
+  `resolve.bzl` does on `main`"); T054's review left them without the user's decision. Make each
+  return that error, or stop and report so the user decides to keep them (T054: unreachable within
+  an evaluation) and record the decision in research Part 6, per tasks.md Conventions / T054
+  (contradicts)
