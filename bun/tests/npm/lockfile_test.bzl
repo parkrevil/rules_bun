@@ -293,6 +293,26 @@ def _row_fields_test_impl(ctx):
     asserts.equals(env, {"d": "1.0.0"}, dev["local"].get("dev_dependencies"))
     return unittest.end(env)
 
+def _dependency_maps_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # L13, L14, L32 (an entry) and L3, L6 (a workspace): each dependency map is an object whose
+    # values are strings, or Bun refuses the lockfile ("Expected an object", "Expected a string",
+    # LOCK L3405-L3426).
+    for field in ["dependencies", "optionalDependencies", "peerDependencies", "devDependencies"]:
+        _refused(env, _inline('"a": ["a@1.0.0", "", {"%s": "SECRET"}, "sha512-x"]' % field), "\"a\"", field)
+        _refused(env, _inline('"a": ["a@1.0.0", "", {"%s": ["SECRET"]}, "sha512-x"]' % field), "\"a\"", field)
+        _refused(env, _inline('"a": ["a@1.0.0", "", {"%s": {"b": {"SECRET": 1}}}, "sha512-x"]' % field), "\"a\"", field, "\"b\"")
+        _refused(env, _inline('"local": ["local@file:local", {"%s": {"b": ["SECRET"]}}]' % field), "\"local\"", field, "\"b\"")
+        _refused(env, _workspace_inline('{"name": "w", "%s": "SECRET"}' % field), "packages/w", field)
+        _refused(env, _workspace_inline('{"name": "w", "%s": {"b": 1}}' % field), "packages/w", field, "\"b\"")
+
+    # As written, an empty map included.
+    read = _read(_workspace_inline('{"name": "w", "dependencies": {}, "peerDependencies": {"p": "^1"}}'))
+    asserts.equals(env, None, read["error"])
+    asserts.equals(env, {"p": "^1"}, read["value"]["workspaces"]["packages/w"]["peerDependencies"])
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -306,6 +326,7 @@ unresolved_test = unittest.make(_unresolved_test_impl)
 bundled_test = unittest.make(_bundled_test_impl)
 workspace_fields_test = unittest.make(_workspace_fields_test_impl)
 row_fields_test = unittest.make(_row_fields_test_impl)
+dependency_maps_test = unittest.make(_dependency_maps_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -323,4 +344,5 @@ def lockfile_test_suite(name):
         bundled_test,
         workspace_fields_test,
         row_fields_test,
+        dependency_maps_test,
     )

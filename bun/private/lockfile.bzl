@@ -86,6 +86,20 @@ def _names(value, file, owner, field):
         return None, "{}: {} has a field \"{}\" that is not a list of strings; run `bun install` to rewrite bun.lock".format(file, owner, field)
     return list(value), None
 
+def _dependencies(value, file, owner, field):
+    """`(map, error)` of a dependency map: an object whose values are strings (LOCK L3405-L3426).
+
+    Bun refuses another value ("Expected an object", "Expected a string"); the value is not printed.
+    """
+    if value == None:
+        return {}, None
+    if type(value) != "dict":
+        return None, "{}: {} has a field \"{}\" that is not an object; run `bun install` to rewrite bun.lock".format(file, owner, field)
+    for name, version in value.items():
+        if type(version) != "string":
+            return None, "{}: {} has a field \"{}\" whose entry \"{}\" is not a string; run `bun install` to rewrite bun.lock".format(file, owner, field, name)
+    return dict(value), None
+
 def _bin(name, value):
     """`bin` as a name-to-path map; a string `bin` is named after the package without its scope."""
     if value == None:
@@ -124,12 +138,18 @@ def _entry(key, entry, file):
             return _error("{}: the packages entry \"{}\" has no info object in slot 1; run `bun install` to rewrite bun.lock".format(file, key))
         info = entry[1]  # L31
 
-    unresolved, error = _names(info.get("unresolved"), file, "the packages entry \"{}\"".format(key), "unresolved")  # L23
+    owner = "the packages entry \"{}\"".format(key)
+    unresolved, error = _names(info.get("unresolved"), file, owner, "unresolved")  # L23
     if error:
         return _error(error)
-    optional_peers, error = _names(info.get("optionalPeers"), file, "the packages entry \"{}\"".format(key), "optionalPeers")  # L14
+    optional_peers, error = _names(info.get("optionalPeers"), file, owner, "optionalPeers")  # L14
     if error:
         return _error(error)
+    maps = {}
+    for field in DEPENDENCY_KINDS:
+        maps[field], error = _dependencies(info.get(field), file, owner, field)  # L13, L14, L32
+        if error:
+            return _error(error)
     bundled = info.get("bundled")  # L26: Bun skips a value that is not a boolean (LOCK L2351).
     return struct(
         value = struct(
@@ -142,10 +162,10 @@ def _entry(key, entry, file):
             resolution = resolution,
             url = url,
             integrity = integrity,
-            dependencies = dict(info.get("dependencies", {})),  # L13
-            dev_dependencies = dict(info.get("devDependencies", {})),  # L32
-            optional_dependencies = dict(info.get("optionalDependencies", {})),  # L13
-            peers = dict(info.get("peerDependencies", {})),  # L14
+            dependencies = maps["dependencies"],  # L13
+            dev_dependencies = maps["devDependencies"],  # L32
+            optional_dependencies = maps["optionalDependencies"],  # L13
+            peers = maps["peerDependencies"],  # L14
             optional_peers = optional_peers,  # L14
             unresolved = unresolved,  # L23
             bundled = bundled == True,  # L26
@@ -188,8 +208,12 @@ def read_lockfile(text, file):
 
     workspaces = {}
     for path, workspace in lock.get("workspaces", {}).items():  # L3, L4
-        fields = {kind: dict(workspace.get(kind, {})) for kind in DEPENDENCY_KINDS}  # L3, L6
         owner = "the workspace \"{}\"".format(path)
+        fields = {}
+        for kind in DEPENDENCY_KINDS:
+            fields[kind], error = _dependencies(workspace.get(kind), file, owner, kind)  # L3, L6
+            if error:
+                return _error(error)
         workspace_version = workspace.get("version")  # L28
         if workspace_version != None and type(workspace_version) != "string":
             return _error("{}: {} has a field \"version\" that is not a string; run `bun install` to rewrite bun.lock".format(file, owner))
