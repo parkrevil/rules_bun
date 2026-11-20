@@ -411,6 +411,7 @@ listed and fixed under it. BC-5 shows on `conformance_unprovided_peer` and not o
 (the graph does not carry `main`'s analysis failure); `missing_peer` is covered by its FR-016 test
 change at T048. BC-8 gets a corpus project `conformance_unfetched` (a patched package with a
 dependency) so it is red before its fix.
+**BC-9 and BC-10 approved by the user (2026-10-30)**, at T068.
 
 ## Part 7: Evidence log
 

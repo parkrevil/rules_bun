@@ -663,12 +663,11 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 9: Convergence
 
-- [ ] T068 Ask the user to approve BC-9 (optional peers linked as Bun links them:
+- [ ] T068 The user approved BC-9 (optional peers linked as Bun links them:
   `conformance_peer_contexts`, `bun/tests/integration/workspaces/fetch`) and BC-10
-  (`bundleDependencies` not linked: `conformance_bundled`), which spec "Behavior Changes" now lists
-  under P1 without a recorded approval; after approval add both rows to `contracts/public-api.md`
-  and name them in T017's `tdd-log.md` rows, before any carry-over task fixes them, per spec P3 /
-  "Any further difference … is added here before it is fixed" (partial)
+  (`bundleDependencies` not linked: `conformance_bundled`) on 2026-10-30 (research Part 6). Add both
+  rows to `contracts/public-api.md` and name them in T017's `tdd-log.md` rows, before any carry-over
+  task fixes them
 - [X] T069 Add the corpus project `conformance_unfetched` (research "T017 findings": a patched
   package with a dependency) to `bun/tests/npm/registry/write_lockfiles.ts` with a `check` asserting
   that form, write it with `$B` into `bun/tests/npm/fixtures/conformance_unfetched/` (archives only by
@@ -690,3 +689,38 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   graph difference"); the unfetched status BC-8 keeps is not one of ID-1–ID-3, so stop and report
   for the user to decide whether it becomes a listed Intentional Difference before excluding it;
   record red on `main`'s resolver before T047, per FR-007 / FR-011 / US1/AC5 (partial)
+
+---
+
+## Phase 11: Convergence
+
+- [ ] T072 Ask the user to decide how to treat the differences T071 reported with no ID or BC: an
+  unfetched entry fails analysis in the ruleset while Bun installs it (`unsupported`: tarball URL;
+  `restricted` and `integration/workspaces/multi_nointegrity/two`: no integrity, constitution III;
+  `conformance_unfetched`'s patched entry once BC-8 lands). Until decided, T051's `0 differences`
+  cannot hold. If the user approves it as **ID-4** (unfetched entries fail analysis), add ID-4 to
+  spec "Intentional Differences", the Exclusions of `contracts/conformance-graph.md`, `data-model.md`
+  "Intentional difference" and `quickstart.md` Q1; then, writing a `graph_test_ts` case red first,
+  make `bun/tests/npm/conformance/graph.ts`'s `compare` skip only an unfetched entry's `status`, by
+  the name ID-4, so `missing_peer`'s BC-5 status stays a difference; name ID-4 in
+  `conformance.test.ts`'s header and its "excluded by name" line; record red and green in
+  `tdd-log.md`, before T051, per FR-011 / SC-001 (contradicts)
+- [ ] T073 After T068 and T072 are answered, bring `plan.md` (Summary, Constitution Check VII,
+  Phases: "BC-1…BC-8") and research Part 6 "T017 findings" (`missing_peer` shows BC-5 in the
+  conformance test since T071, not only through T048) into line with the spec's Behavior Changes and
+  Intentional Differences, per spec P3 / FR-017 (partial)
+
+---
+
+## Phase 12: Convergence
+
+- [ ] T074 Add the corpus project `conformance_unresolved_peer` for the spec edge case "a peer that
+  some package provides only through an `unresolved` optional edge": a package whose peer's only
+  provider in the tree is an optional dependency another package lists under `unresolved`; add it to
+  `projects` in `bun/tests/npm/registry/write_lockfiles.ts` with a `check` asserting that form
+  (archives only by `pack.ts`), write it with `$B` into
+  `bun/tests/npm/fixtures/conformance_unresolved_peer/`, and run `conformance_test` on `main`'s
+  resolver before T047, recording in `tdd-log.md` its difference (with its BC, or stop and report
+  if none explains it) or that it shows none, so the oracle, not T031's hand-reasoned case, decides
+  the binding; if the pinned Bun cannot write the layout, stop and report, per spec Edge Cases / P2
+  / FR-009 (partial)
