@@ -59,6 +59,45 @@ for (const [name, file, content, expected] of CASES) {
   );
 }
 
+// Feature 006 FR-004: a lockfile the pinned Bun refuses to load fails evaluation with Bun's own
+// message. A `packages` key equal to a workspace's name holding a `file:` folder is Bun's
+// "Duplicate package path" (LOCK L2748–L2760); Bun's message names no remedy. The pinned Bun writes
+// no such lockfile, so it is written here.
+test(
+  "a packages key equal to a workspace's name holding a file: folder fails evaluation naming the key",
+  async () => {
+    const PACKAGE_JSON = readFileSync(join(inner.dir, "package.json"), "utf8");
+    try {
+      inner.write(
+        "package.json",
+        JSON.stringify({ name: "lockfile-errors", private: true, workspaces: ["packages/*"], dependencies: { lib: "file:vendor/lib" } }),
+      );
+      inner.write("packages/lib/package.json", JSON.stringify({ name: "lib" }));
+      inner.write("vendor/lib/package.json", JSON.stringify({ name: "lib", version: "1.0.0" }));
+      inner.write("MODULE.bazel", MODULE.replace("{LOCKFILE}", "bun.lock"));
+      inner.write(
+        "bun.lock",
+        JSON.stringify({
+          lockfileVersion: 2,
+          workspaces: { "": { name: "lockfile-errors", dependencies: { lib: "file:vendor/lib" } }, "packages/lib": { name: "lib" } },
+          packages: { lib: ["lib@file:vendor/lib", {}] },
+        }),
+      );
+      const result = await inner.run(["build", "//..."]);
+      const line = result.stderr.split("\n").find((l) => l.startsWith("Error in fail:")) ?? result.stderr;
+      console.log(line);
+      expect(result.exitCode).not.toBe(0);
+      for (const text of ["//:bun.lock", "Bun 1.4.4 refuses to load this lockfile", 'packages key "lib"', "Duplicate package path"]) {
+        expect(line).toContain(text);
+      }
+      assertOffline(inner.log);
+    } finally {
+      inner.write("package.json", PACKAGE_JSON);
+    }
+  },
+  INNER_TIMEOUT,
+);
+
 // FR-016, research R8: the hub name must be a repository name and
 // workspace_target_name a target name; each fails evaluation naming the module,
 // the tag and the value.

@@ -342,12 +342,12 @@ projects without a BC are unchanged (Q7, T064).
   (research R3): a lockfile without a restricted package has one class; `conformance_platform`'s
   tuples group by the set of packages `is_disabled` leaves out; Linux `unconstrained` uses
   `Libc::ALL`; "unmapped" is a class
-- [ ] T035 [P] [US1] Add a case to `bun/tests/integration/lockfile_errors.test.ts` (with its project
+- [X] T035 [P] [US1] Add a case to `bun/tests/integration/lockfile_errors.test.ts` (with its project
   under `bun/tests/integration/lockfile_errors/`, written as the existing cases are, since Bun
   writes no lockfile it refuses): a `packages` key equal to a workspace's name holding a `file:`
   folder fails extension evaluation with an English message naming the `bun.lock` label and the key,
   and the remedy where Bun's message has one (FR-004, spec Edge Cases)
-- [ ] T036 [US1] Register the new suites in `bun/tests/npm/BUILD.bazel` (as `resolve_test_suite` is
+- [X] T036 [US1] Register the new suites in `bun/tests/npm/BUILD.bazel` (as `resolve_test_suite` is
   registered); run `bazel run //:gazelle` and `bazel test //bun/tests/npm/...
   //bun/tests/integration:lockfile_errors_test --keep_going`; record red for each new suite and
   case (depends on T028–T035)
