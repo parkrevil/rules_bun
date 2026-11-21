@@ -9,7 +9,7 @@ _LINUX_UNCONSTRAINED = ("linux", "x64", "unconstrained")
 _DARWIN = ("darwin", "arm64", None)
 _TUPLES = [_LINUX_GLIBC, _LINUX_MUSL, _LINUX_UNCONSTRAINED, _DARWIN]
 
-def _instance(name, version, edges = {}, status = "ok", unfetched = False):
+def _instance(name, version, edges = {}, status = "ok", unfetched = False, edge_conditions = {}):
     return struct(
         id = "{}@{}__1".format(name, version),
         name = name,
@@ -17,6 +17,7 @@ def _instance(name, version, edges = {}, status = "ok", unfetched = False):
         store_name = "{}@{}".format(name, version),
         key = name,
         edges = edges,
+        edge_conditions = edge_conditions,
         dependency_keys = {},
         peers = [],
         status = status,
@@ -246,6 +247,39 @@ def _roots_test_impl(ctx):
 
 roots_test = unittest.make(_roots_test_impl)
 
+def _combined_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # A run holding both of a holder's links lays out what either carries (run.bzl links an edge
+    # whenever its target is among the target's instances), so a's edge to b counts although a's
+    # own link does not carry b (T101).
+    b = _instance("b", "1.0.0")
+    a = _instance("a", "1.0.0", edges = {"b": b.id})
+    links = {"": {"a": _link("a", a.id, [a.id]), "b": _link("b", b.id, [b.id])}}
+    graph = conformance_graphs(_resolution([a, b], links), [_LINUX_GLIBC])[0]["graph"]
+    entry = graph["entries"][int(graph["holders"][""]["a"][2:])]
+    asserts.equals(env, {"b": "b@1.0.0"}, {k: _target(graph, v) for k, v in entry["links"].items()})
+    return unittest.end(env)
+
+combined_test = unittest.make(_combined_test_impl)
+
+def _edge_conditions_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # An edge the store has on some platform classes only (`edge_conditions`, T101): a links b on
+    # musl only, although the root links b everywhere.
+    b = _instance("b", "1.0.0")
+    a = _instance("a", "1.0.0", edges = {"b": b.id}, edge_conditions = {"b": [list(_LINUX_MUSL)]})
+    links = {"": {"a": _link("a", a.id, [a.id], {b.id: [list(_LINUX_MUSL)]}), "b": _link("b", b.id, [b.id])}}
+    classes = conformance_graphs(_resolution([a, b], links), _TUPLES)
+    for platform, expected in [(_LINUX_GLIBC, {}), (_LINUX_MUSL, {"b": "b@1.0.0"}), (_DARWIN, {})]:
+        graph = _graph_for(classes, platform)
+        entry = graph["entries"][int(graph["holders"][""]["a"][2:])]
+        asserts.equals(env, expected, {k: _target(graph, v) for k, v in entry["links"].items()}, str(platform))
+    return unittest.end(env)
+
+edge_conditions_test = unittest.make(_edge_conditions_test_impl)
+
 def graph_test_suite(name):
     unittest.suite(
         name,
@@ -258,4 +292,6 @@ def graph_test_suite(name):
         status_test,
         conflicts_test,
         roots_test,
+        combined_test,
+        edge_conditions_test,
     )

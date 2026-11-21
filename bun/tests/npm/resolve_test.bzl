@@ -366,7 +366,36 @@ missing_peer_test = unittest.make(_missing_peer_test_impl)
 peer_cycle_test = unittest.make(_peer_cycle_test_impl)
 peer_instances_test = unittest.make(_peer_instances_test_impl)
 unfetched_test = unittest.make(_unfetched_test_impl)
+
+def _platform_edge_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # native's optional edge to native-linux-x64-musl is in the store on the classes where musl is
+    # allowed only, while the root's non-optional link to it is on every class (T101): the edge
+    # carries the platform tuples it holds on.
+    resolution = _resolution(env, "conformance_platform_edge")
+    native = resolution["instances"][resolution["links"][""]["native"]["root"]]
+    musl = native["edge_conditions"].get("native-linux-x64-musl", [])
+    asserts.true(env, ["linux", "x64", "musl"] in musl, musl)
+    asserts.true(env, ["linux", "x64", None] in musl, musl)
+    asserts.equals(env, [], [t for t in musl if t[0] != "linux" or t[2] == "glibc"])
+    glibc = native["edge_conditions"].get("native-linux-x64", [])
+    asserts.true(env, ["linux", "x64", "glibc"] in glibc, glibc)
+    asserts.false(env, ["linux", "x64", "musl"] in glibc, glibc)
+
+    # The root's link holds native-linux-x64-musl on glibc too (its libc does not apply to a
+    # non-optional dependency, resolver_hooks.rs L882-L890).
+    root_link = resolution["links"][""]["native-linux-x64-musl"]
+    asserts.equals(env, native["edges"]["native-linux-x64-musl"], root_link["root"])
+    asserts.true(env, ["linux", "x64", "glibc"] in root_link["optional"][root_link["root"]], root_link)
+
+    # An edge on every class its instance is on has no conditions.
+    p = _resolution(env, "basic")["instances"]
+    asserts.equals(env, [], [i["id"] for i in p.values() if i["name"] == "a" and i["edge_conditions"]])
+    return unittest.end(env)
+
 platform_holder_test = unittest.make(_platform_holder_test_impl)
+platform_edge_test = unittest.make(_platform_edge_test_impl)
 platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
 platform_member_test = unittest.make(_platform_member_test_impl)
 
@@ -390,4 +419,5 @@ def resolve_test_suite(name):
         platform_holder_test,
         platform_entry_error_test,
         platform_member_test,
+        platform_edge_test,
     )

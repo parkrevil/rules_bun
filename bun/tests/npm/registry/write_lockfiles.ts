@@ -637,6 +637,24 @@ const projects: Record<string, Project> = {
       assert(slot0(lock, "q") === "q@1.0.0", "the root's q is not q@1.0.0");
     },
   },
+  // T101: an edge the store has on some platform classes only. native optionally depends on
+  // native-linux-x64-musl (libc musl), which the root depends on as well; off musl the store
+  // drops native's optional edge, while the root's non-optional one stays (`Libc::for_dependency`,
+  // resolver_hooks.rs L882-L890), so a target holding both must not link native's.
+  conformance_platform_edge: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-platform-edge",
+        private: true,
+        dependencies: { native: "1.0.0", "native-linux-x64-musl": "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(lock.packages["native"][2].optionalDependencies?.["native-linux-x64-musl"] === "1.0.0", "native does not optionally depend on native-linux-x64-musl");
+      assert(lock.packages["native-linux-x64-musl"][2].libc === "musl", "native-linux-x64-musl is not restricted to musl");
+      assert(walk(lock, "native", "native-linux-x64-musl") === "native-linux-x64-musl", "native's native-linux-x64-musl is not the root's");
+    },
+  },
   // FR-009: overrides of the ranges of a peer (state) and of a peer a dependency provides (q).
   conformance_overrides: {
     files: () => ({

@@ -164,6 +164,31 @@ def _make_root(platform):
 _root_linux_x64_test = _make_root("linux_x64")
 _root_darwin_aarch64_test = _make_root("darwin_aarch64")
 
+_PLATFORM_EDGE = "//bun/tests/npm/fixtures/conformance_platform_edge:edge_fixture"
+
+def _edge_impl(ctx):
+    env = analysistest.begin(ctx)
+    name = analysistest.target_under_test(env).label.name
+    marker = "/{}.bun/".format(name)
+    links = []
+    for action in analysistest.target_actions(env):
+        if action.mnemonic == "UnresolvedSymlink":
+            for f in action.outputs.to_list():
+                if marker in f.path and "/.store/" in f.path:
+                    links.append(f.path[f.path.find(marker) + len(marker):])
+    asserts.equals(env, ctx.attr.expected, sorted(links), "the store's dependency links")
+    return analysistest.end(env)
+
+def _make_edge(platform):
+    return analysistest.make(
+        _edge_impl,
+        attrs = {"expected": attr.string_list()},
+        config_settings = {"//command_line_option:platforms": str(Label("//bun/tests/platforms:" + platform))},
+    )
+
+_edge_glibc_test = _make_edge("linux_x64_glibc")
+_edge_musl_test = _make_edge("linux_x64_musl")
+
 _RULES = {
     "darwin_aarch64": darwin_aarch64_test,
     "darwin_x64": darwin_x64_test,
@@ -238,6 +263,13 @@ def platforms_test_suite(name):
     _root_linux_x64_test(name = name + "_root_linux_x64_test", target_under_test = _PLATFORM_PEER, expected = ["p", "q"], peers = True)
     _root_darwin_aarch64_test(name = name + "_root_darwin_aarch64_test", target_under_test = _PLATFORM_PEER, expected = ["p", "q-darwin"], peers = False)
     tests += [name + "_root_linux_x64_test", name + "_root_darwin_aarch64_test"]
+
+    # native's optional edge to native-linux-x64-musl exists on musl only, while the root's
+    # non-optional dependency on it holds everywhere (T101): a target holding both links native's
+    # only where the store does.
+    _edge_glibc_test(name = name + "_edge_glibc_test", target_under_test = _PLATFORM_EDGE, expected = [".store/native@1.0.0/node_modules/native-linux-x64"])
+    _edge_musl_test(name = name + "_edge_musl_test", target_under_test = _PLATFORM_EDGE, expected = [".store/native@1.0.0/node_modules/native-linux-x64-musl"])
+    tests += [name + "_edge_glibc_test", name + "_edge_musl_test"]
 
     _platform_classes_test(name = name + "_platform_classes_test")
     tests.append(name + "_platform_classes_test")

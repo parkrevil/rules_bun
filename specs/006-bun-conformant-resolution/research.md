@@ -500,6 +500,19 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   member and a package; it fails with the entry error's text (`of <package>`, `of the workspace
   "<path>"`, `of the root workspace`). `resolve_test.bzl` `platform_member_test` reaches it with
   per-class graphs written by hand.
+- **An edge** (T101, BC-15): an entry that exists on several classes can have an edge on some of
+  them only, an optional dependency `is_disabled` on the others being no node dependency there
+  (ISO L1032–L1047). The merged instance keeps such an edge's platform tuples
+  (`edge_conditions`), and the hub selects the instance's `edges`, `dependency_keys` and `peers`
+  by platform with the settings its links select by (`npm_repositories.bzl` `_edge_fields`):
+  `run.bzl` links an instance's edge whenever its target is among the target's instances, and a
+  target can hold that target through another link (`conformance_platform_edge`: the root's
+  non-optional `native-linux-x64-musl`, whose `libc` does not apply to it, HOOKS L882–L890). The
+  conformance graph takes an edge where its conditions hold and its target is carried by any link
+  (`graph.bzl`), the closure of a target holding every link, so it shows such an edge.
+  `platforms_test.bzl` `edge_glibc_test`/`edge_musl_test`, `resolve_test.bzl`
+  `platform_edge_test`, `graph_test.bzl` `combined_test`/`edge_conditions_test`, and
+  `conformance_test` (`conformance_platform_edge`, `0 differences`).
 
 ### R5. npm ranges: carry over Bun's semver
 
@@ -841,6 +854,12 @@ entry-level "cannot express" error, which the pinned Bun 1.4.4 was not seen writ
 kept as **ID-7** and pinned with that Bun-written lockfile, rather than expressing an entry's
 per-class binding in this feature (a new BC and hub work for a layout only the second oracle
 writes). The second Claude review's findings become T094–T100.
+
+**T101 decided by the lead, under the user's delegation (2026-11-21)**: Codex's branch review
+found that the adapter kept an edge when any platform class had it. Each edge now keeps its
+classes and the hub selects it by platform (R4 "An edge"). `main` carries an instance's edges
+without conditions as well (`git show main:bun/private/resolve.bzl` L422–L441), so the change is
+one in what a consumer's build links and is numbered **BC-15** (as D3).
 
 ## Part 7: Evidence log
 

@@ -1,0 +1,26 @@
+load("@npm_conformance_platform_edge//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# T101 (feature 006): a target holding native and native-linux-x64-musl, whose native links its
+# optional native-linux-x64-musl only where the store does (musl); read by
+# //bun/tests/npm:platforms's edge tests.
+bun_binary(
+    name = "edge_fixture",
+    entry_point = "edge.ts",
+    tags = ["manual"],
+    visibility = ["//bun/tests/npm:__pkg__"],
+    deps = [
+        ":node_modules/native",
+        ":node_modules/native-linux-x64-musl",
+    ],
+)
+
+conformance_files()

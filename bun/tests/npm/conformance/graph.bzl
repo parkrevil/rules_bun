@@ -4,8 +4,9 @@ It reads only `resolve.bzl`'s output, `struct(instances, links, members)`, so it
 that produces it. For each platform tuple (research R3) the graph holds what the hub links there:
 a link's root (or, for a link whose root differs by platform, the root whose conditions hold) and
 its closure on every platform, an optional instance where its conditions hold, as
-`npm_repositories.bzl` selects them, and an instance's edge where its target is carried in a link
-that carries the instance, as `run.bzl` links them; and an instance's `status` when it is not
+`npm_repositories.bzl` selects them, and an instance's edge where its conditions hold (an edge the
+store has on some platform classes only, `edge_conditions`) and its target is carried by any link,
+as `run.bzl` links them for a target holding every link; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
 rules_bun does not fetch it (ID-4); and, per holder, each store directory its links reach as
 several instances, since one target cannot hold them (`conflicts`).
@@ -72,7 +73,8 @@ def _graph(value, os, cpu, libc):
         for alias, member in sorted(getattr(value, "members", {}).get(path, {}).items()):
             holder[alias] = "w:" + member
         holders[path] = holder
-    reached = sorted({i: True for carried in carried_sets for i in carried}.keys())
+    carried_all = {i: True for carried in carried_sets for i in carried}
+    reached = sorted(carried_all.keys())
 
     # One target holds one instance of each store directory (run.bzl `_check_unique`): a holder
     # whose links reach several instances with one directory cannot be used by one target.
@@ -97,10 +99,14 @@ def _graph(value, os, cpu, libc):
     for instance_id in reached:
         instance = instances[instance_id]
         links = {}
+        edge_conditions = getattr(instance, "edge_conditions", {})
         for alias, edge in sorted(instance.edges.items()):
             if alias == instance.name:
                 continue
-            if any([instance_id in carried and edge in carried for carried in carried_sets]):
+            if alias in edge_conditions and not conditions_hold(edge_conditions[alias], os, cpu, npm_libc):
+                # The store has this edge on other platform classes only (T101).
+                continue
+            if edge in carried_all:
                 links[alias] = target(edge)
         for alias, member in sorted(getattr(instance, "members", {}).items()):
             links[alias] = "w:" + member
@@ -133,7 +139,8 @@ def conformance_graphs(resolution, tuples):
     """
     if resolution.error != None:
         return {"error": resolution.error}
-    if not any([link.optional or getattr(link, "roots", {}) for links in resolution.value.links.values() for link in links.values()]):
+    restricted = any([link.optional or getattr(link, "roots", {}) for links in resolution.value.links.values() for link in links.values()])
+    if not restricted and not any([getattr(i, "edge_conditions", {}) for i in resolution.value.instances.values()]):
         # Nothing is platform-restricted: one class, computed once.
         return [{"platforms": [list(t) for t in tuples], "graph": _graph(resolution.value, None, None, None)}]
     classes = {}

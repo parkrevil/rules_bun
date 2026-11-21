@@ -7,7 +7,9 @@ per platform class (`platforms.bzl`, research R3). It then maps the store's entr
 hub has consumed since feature 003, `struct(instances, links, members)`:
 
 - an instance is a store entry: a package with the packages its transitive peers bind to; an
-  entry reached on several platform classes is one instance, its edges the union of theirs;
+  entry reached on several platform classes is one instance, its edges the union of theirs, each
+  edge the store has on some of those classes only carrying the platform tuples of those
+  (`edge_conditions`, which the hub turns into `select()`);
 - a link is a root's or a workspace's dependency, with the instances it reaches on every platform
   (`closure`) and those it reaches on some (`optional`, instance ID -> the `[os, cpu, libc]`
   platform tuples it is reached on, which `npm_repositories.bzl` turns into `select()`), and its
@@ -236,9 +238,11 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
 
     Returns:
         `struct(value, error)`; `value` is `struct(instances, links, members)`: `instances` maps an
-        instance ID to `struct(id, name, version, store_name, peer_hash, key, edges, dependency_keys,
-        peers, members, status, unfetched)` (`peer_hash`: 16 hexadecimal digits naming the entry's
-        transitive peer bindings, or `""` without peers; `edges`: alias -> instance ID; `dependency_keys`: alias ->
+        instance ID to `struct(id, name, version, store_name, peer_hash, key, edges, edge_conditions,
+        dependency_keys, peers, members, status, unfetched)` (`peer_hash`: 16 hexadecimal digits
+        naming the entry's transitive peer bindings, or `""` without peers; `edges`: alias ->
+        instance ID; `edge_conditions`: alias of `edges` -> the `[os, cpu, libc]` tuples the edge
+        holds on, for an edge the store has on some of the instance's classes only; `dependency_keys`: alias ->
         the `bun.lock` key of the package an ordinary dependency links; `peers`: the aliases of
         `edges` that are peers; `members`: alias -> the path of a workspace it links; `status`:
         `ok`, or why the instance cannot be used; `unfetched`: whether that is because rules_bun
@@ -270,14 +274,18 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     if conflict:
         return _error(conflict)
 
-    # Instances: entries merged over the classes by package and peers.
+    # Instances: entries merged over the classes by package and peers. An edge the store has on
+    # some of an entry's classes only (an optional dependency disabled on the others, research R3)
+    # keeps those classes, so it is linked only there (T101).
     nodes = {}
-    for graph in graphs:
+    for index, graph in enumerate(graphs):
         for key, node in graph.nodes.items():
-            merged = nodes.setdefault(key, struct(edges = {}, members = {}, peers = {}))
+            merged = nodes.setdefault(key, struct(edges = {}, members = {}, peers = {}, classes = [], edge_classes = {}))
+            merged.classes.append(index)
             for alias, target in node.edges.items():
                 if merged.edges.setdefault(alias, target) != target:
                     return _error("{}: the store links \"{}\" of {} to different packages on different platforms, which rules_bun cannot express".format(file, alias, _label(bun, key[0])))
+                merged.edge_classes.setdefault(alias, []).append(index)
             merged.members.update(node.members)
             merged.peers.update(node.peers)
     patched = getattr(lockfile, "patched", [])
@@ -299,6 +307,11 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             edges = {alias: ids[target] for alias, target in node.edges.items()},
             dependency_keys = {alias: bun.packages[target[0]].key for alias, target in node.edges.items() if alias not in node.peers},
             peers = sorted([alias for alias in node.edges.keys() if alias in node.peers]),
+            edge_conditions = {
+                alias: _conditions([t for index in indexes for t in classes[index]])
+                for alias, indexes in node.edge_classes.items()
+                if len(indexes) != len(node.classes)
+            },
             members = dict(node.members),
             status = statuses[key],
             # Every status this adapter sets is an entry rules_bun does not fetch (ID-4).

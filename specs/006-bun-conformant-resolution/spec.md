@@ -418,6 +418,12 @@ the test that shows it:
 - **BC-14**: on a platform other than Linux, a package's `libc` excludes nothing, as Bun's
   `Meta::is_disabled` reads it; `main` lets `libc` match no other OS (research R3; user,
   2026-11-21).
+- **BC-15**: a package's dependency that the store links on some platform classes only (an
+  optional dependency excluded on the others) is linked from that package only on those target
+  platforms, also where the target holds the dependency through another link
+  (`conformance_platform_edge`: `native`'s optional `native-linux-x64-musl`, which the root also
+  depends on, is linked from `native` on musl only); `main` links it from the package on every
+  platform the target holds it (the lead, under the user's delegation, 2026-11-21, T101).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

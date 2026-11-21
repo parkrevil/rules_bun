@@ -1,0 +1,8 @@
+{
+  "name": "conformance-platform-edge",
+  "private": true,
+  "dependencies": {
+    "native": "1.0.0",
+    "native-linux-x64-musl": "1.0.0"
+  }
+}

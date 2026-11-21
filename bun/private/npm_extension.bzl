@@ -333,6 +333,7 @@ def _translate(module_ctx, tag, replacements):
             continue
         instances[instance.id] = {
             "dependency_keys": instance.dependency_keys,
+            "edge_conditions": instance.edge_conditions,
             "edges": instance.edges,
             "exclude": identities[name_version].exclude,
             "integrity": identities[name_version].integrity,
@@ -503,7 +504,9 @@ dependency of the root or a workspace to a different entry on different target p
 package providing a peer is excluded on some), the link selects that entry by target platform; a
 peer resolves to the version a dependent above it provides, else to the version the lockfile lists;
 a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
-linked; a dependency a package bundles (`bundleDependencies`) is not linked. A link to a
+linked; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
+dependency excluded on a target platform is not linked from that package there, also where the
+target holds that dependency through another link. A link to a
 workspace member that the store would make on some target platforms only fails evaluation naming
 the package or workspace and the dependency; no lockfile the pinned Bun writes is known to reach
 it. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are

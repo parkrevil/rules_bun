@@ -1,0 +1,10 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# Written by Bun 1.4.2 (write_lockfiles.ts --bun-1-4-2).
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+conformance_files()

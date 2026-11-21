@@ -319,6 +319,36 @@ def _root_selections(roots):
         selections[name] = ids[0] if ids else ""
     return selections
 
+def _edge_fields(instance):
+    """An instance's `edges`, `dependency_keys` and `peers` as `BUILD` text, by platform if needed.
+
+    An edge the store has on some of the instance's platform classes only (`edge_conditions`,
+    feature 006 T101) is in the `select()` branches whose platform tuple it holds on, as the
+    optional instances of a link are.
+    """
+    edges = instance["edges"]
+    dependency_keys = instance["dependency_keys"]
+    peers = instance["peers"]
+    conditions = instance.get("edge_conditions", {})
+    if not conditions:
+        return repr(edges), repr(dependency_keys), repr(peers)
+    branches = {}
+    tuples = [(name, os, cpu, libc) for name, (os, cpu, libc, _) in sorted(_settings().items())]
+    for name, os, cpu, libc in tuples + [("//conditions:default", None, None, None)]:
+        aliases = {a: True for a in edges if a not in conditions or conditions_hold(conditions[a], os, cpu, libc)}
+        branches[name if name.startswith("//conditions:") else ":" + name] = aliases
+
+    def field(value):
+        if type(value) == "list":
+            selected = {k: [a for a in value if a in aliases] for k, aliases in branches.items()}
+        else:
+            selected = {k: {a: v for a, v in value.items() if a in aliases} for k, aliases in branches.items()}
+        if len({repr(v): True for v in selected.values()}) == 1:
+            return repr(selected.values()[0])
+        return "select({})".format(repr(selected))
+
+    return field(edges), field(dependency_keys), field(peers)
+
 def _npm_hub_repository_impl(repository_ctx):
     instances = json.decode(repository_ctx.attr.instances)
     build = ['load("{}", "npm_instance", "npm_unsupported")\n'.format(_NPM_PACKAGE_BZL)]
@@ -334,6 +364,7 @@ npm_unsupported(
 )
 """.format(name = repr(instance_id), package = repr(instance["package"]), reason = repr(instance["status"])))
             continue
+        edges, dependency_keys, peers = _edge_fields(instance)
         build.append("""
 npm_instance(
     name = {name},
@@ -356,8 +387,8 @@ npm_instance(
 """.format(
             name = repr(instance_id),
             check = repr("@{}//check".format(instance["repo"])) if instance["replaced"] else None,
-            dependency_keys = repr(instance["dependency_keys"]),
-            edges = repr(instance["edges"]),
+            dependency_keys = dependency_keys,
+            edges = edges,
             exclude = repr(instance["exclude"]),
             hub = repr(repository_ctx.original_name),
             integrity = repr(instance["integrity"]),
@@ -365,13 +396,14 @@ npm_instance(
             members = repr(instance.get("members", {})),
             package = repr(instance["package"]),
             peer_hash = repr(instance["peer_hash"]),
-            peers = repr(instance["peers"]),
+            peers = peers,
             source = repr(instance["source"]),
             store_name = repr(instance["store_name"]),
             tree = repr("@{}//:tree".format(instance["repo"])),
         ))
     links = json.decode(repository_ctx.attr.links)
-    if [link for aliases in links.values() for link in aliases.values() if link.get("optional") or link.get("roots")]:
+    restricted = [link for aliases in links.values() for link in aliases.values() if link.get("optional") or link.get("roots")]
+    if restricted or [i for i in instances.values() if i.get("edge_conditions")]:
         for name, (_, _, _, constraints) in sorted(_settings().items()):
             build.append("""
 config_setting(
