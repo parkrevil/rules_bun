@@ -63,7 +63,9 @@ declared_targets_aspect = aspect(
 dependencies, whatever rule builds them and through whatever attribute, each with the sources and
 data files its `BunLibraryInfo` holds. Whether a workspace member counts as declared is decided from
 these files, not from the attributes walked: `bun_binary` and `bun_test` accept a member only where
-every one of them is in the copy tree they build (feature 006 BC-4; T124, T140).""",
+every one of them is in the copy tree they build (feature 006 BC-4; T124, T140). Bazel applies the
+aspect to the target an `alias` names and reports that target's label, so a member's target is also
+recognized by the member's `package.json` among these files (T146).""",
 )
 
 def library_runfiles(ctx, files, data, deps):

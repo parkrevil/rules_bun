@@ -35,6 +35,8 @@ export interface InstallOptions {
   registry?: Omit<RegistryOptions, "archives">;
   /** A directory to run in again, holding a project an earlier run wrote. */
   dir?: string;
+  /** Further environment variables for Bun, given the loopback registry's URL. */
+  env?: (url: string) => Record<string, string>;
 }
 
 export interface InstallResult {
@@ -105,6 +107,7 @@ export async function runInstall(
         BUN_INSTALL_CACHE_DIR: mkdtempSync(join(process.env.TEST_TMPDIR!, "canary-cache-")),
         BUN_CONFIG_REGISTRY: registry.url,
         NO_COLOR: "1",
+        ...options.env?.(registry.url),
       },
       stdin: "ignore",
       stdout: "pipe",

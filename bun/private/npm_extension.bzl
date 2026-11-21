@@ -260,28 +260,11 @@ def _translate(module_ctx, tag, replacements):
         fail(resolution.error)
     entries = lockfile.value.entries
 
-    # One package repository serves every entry of a name@version (research R3), so all entries
-    # of one must agree on the download, including an entry rules_bun does not fetch: whichever
-    # of them a dependency reaches must not decide which archive is verified.
-    first_entries = {}
-    for key in sorted(entries.keys()):
-        entry = entries[key]
-        if entry.kind != "npm":
-            continue
-        name_version = "{}@{}".format(entry.name, entry.version)
-        first = first_entries.setdefault(name_version, entry)
-        for field, what in [("integrity", "integrity"), ("url", "URL")]:
-            if getattr(first, field) != getattr(entry, field):
-                fail('rules_bun: {}: the entries "{}" and "{}" of {} record different {} values, "{}" and "{}"; run `bun install` to rewrite bun.lock'.format(
-                    file,
-                    first.key,
-                    entry.key,
-                    name_version,
-                    what,
-                    getattr(first, field),
-                    getattr(entry, field),
-                ))
-
+    # One package repository serves every package version (research R3). The loader keeps one
+    # package per name@version, the first row's, with that row's integrity and URL, as Bun's
+    # `append_package_dedupe` does (src/install/lockfile.rs L2684-L2711 @ bun-v1.4.4); a later row
+    # of the same name@version that records another integrity or URL is not read for the download
+    # (feature 006 BC-17).
     packages = {}
     for instance in resolution.value.instances.values():
         if instance.status != "ok":
@@ -479,7 +462,10 @@ Generated targets (public API, under these naming rules):
   only where every source and data file of its `BunLibraryInfo` (its `package.json` among them) is
   in the program's copy tree, so a target reached through a `srcs`, `data`, `tools`, `entry_point`
   or `preload` attribute, through a target that does not return `BunLibraryInfo`, or through a rule
-  whose `BunLibraryInfo` leaves out the member's files is not counted. Otherwise its analysis fails
+  whose `BunLibraryInfo` leaves out the member's files is not counted. A target whose files hold the
+  member's `package.json` (`<member package>:package.json`) counts as the member's target too,
+  which is how the target an `alias` names counts, as Bazel reports it under its own label.
+  Otherwise its analysis fails
   naming the package, the dependency and the target to add, where Bun links the member with no
   such declaration (ID-8, below). A bin target (below) has no `deps`: the hub gives it the
   targets of the workspace members its package's dependencies link to, on any platform, and of the

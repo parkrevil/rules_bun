@@ -1,0 +1,32 @@
+load("@npm_conformance_member_alias//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_library", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# The workspace member member-lib's files, built in this package; the member's target `pkg` (the
+# hub's `workspace_target_name`) is an alias of it (feature 006 T146).
+bun_library(
+    name = "member_lib",
+    srcs = ["//bun/tests/npm/fixtures/conformance_member_alias/packages/member-lib:index.js"],
+    data = ["//bun/tests/npm/fixtures/conformance_member_alias/packages/member-lib:package.json"],
+    visibility = ["//bun/tests/npm/fixtures/conformance_member_alias/packages/member-lib:__pkg__"],
+)
+
+# BC-4 (feature 006): member-user@1.0.0 links its dependency member-lib to the workspace member by
+# path; the test declares the member's target through its alias.
+bun_test(
+    name = "member_test",
+    srcs = ["member.test.ts"],
+    deps = [
+        ":node_modules/member-user",
+        "//bun/tests/npm/fixtures/conformance_member_alias/packages/member-lib:pkg",
+    ],
+)
+
+conformance_files()

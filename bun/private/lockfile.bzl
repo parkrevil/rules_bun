@@ -129,9 +129,11 @@ def _entry(key, entry, file):
     url = ""
     integrity = ""
     info = {}
+    tail = []
     if kind == "npm":
-        if len(entry) != 4:
-            return _error("{}: the npm entry \"{}\" has {} slots, not 4".format(file, key, len(entry)))
+        # Bun reads slots 1-3 by index and ignores any after them (LOCK L2433-L2669, BC-18).
+        if len(entry) < 4:
+            return _error("{}: the npm entry \"{}\" has {} slots, fewer than 4".format(file, key, len(entry)))
         for slot, expected in [(1, "string"), (2, "dict"), (3, "string")]:
             if type(entry[slot]) != expected:
                 return _error("{}: slot {} of the npm entry \"{}\" is a {}, not a {}".format(file, slot, key, type(entry[slot]), expected))
@@ -146,6 +148,7 @@ def _entry(key, entry, file):
         if len(entry) < 2 or type(entry[1]) != "dict":
             return _error("{}: the packages entry \"{}\" has no info object in slot 1; run `bun install` to rewrite bun.lock".format(file, key))
         info = entry[1]  # L31
+        tail = list(entry[2:])  # L36, L37: read by `bun_lockfile.bzl` only to refuse what Bun refuses
 
     owner = "the packages entry \"{}\"".format(key)
     unresolved, error = _names(info, "unresolved", file, owner)  # L23
@@ -171,6 +174,7 @@ def _entry(key, entry, file):
             resolution = resolution,
             url = url,
             integrity = integrity,
+            tail = tail,
             dependencies = maps["dependencies"],  # L13
             dev_dependencies = maps["devDependencies"],  # L32
             optional_dependencies = maps["optionalDependencies"],  # L13

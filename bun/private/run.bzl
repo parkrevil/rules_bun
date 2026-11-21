@@ -323,9 +323,37 @@ def _display(label):
     """A label as its BUILD files write it: `//pkg:name` in the main repository."""
     return "//{}:{}".format(label.package, label.name) if not label.repo_name else str(label)
 
-def _in_copy_tree(target, copied):
-    """Whether every source and data file of a target's `BunLibraryInfo` is in the copy tree."""
-    return all([f in copied for f in target.srcs.to_list() + target.data.to_list()])
+def _declared_members(deps, copied):
+    """The workspace members a target declares, by label and by `package.json` (feature 006 BC-4).
+
+    A target collected by `declared_targets_aspect` counts only where every source and data file
+    of its `BunLibraryInfo` is in the copy tree (T124, T140). Bazel reports a target reached through
+    an `alias` under the label of the target the alias names, and no API gives the alias's label,
+    so a member whose target is an alias is recognized by its `package.json`, the source file
+    `<member package>:package.json`, among the files of such a target (T146).
+
+    Args:
+        deps: The targets whose `BunDeclaredTargetsInfo` is searched.
+        copied: Dict whose keys are the `File`s copied into the copy tree.
+
+    Returns:
+        `struct(labels, manifests)`: the labels of the counted targets, and the labels of the
+        `package.json` source files among their files, each as a dict from its string.
+    """
+    labels = {}
+    manifests = {}
+    targets = depset(transitive = [d[BunDeclaredTargetsInfo].targets for d in deps if BunDeclaredTargetsInfo in d])
+    for target in targets.to_list():
+        if str(target.label) in labels:
+            continue
+        files = target.srcs.to_list() + target.data.to_list()
+        if not all([f in copied for f in files]):
+            continue
+        labels[str(target.label)] = True
+        for f in files:
+            if f.is_source and f.basename == "package.json":
+                manifests[str(f.owner)] = True
+    return struct(labels = labels, manifests = manifests)
 
 def _member_links(ctx, root, deps, instances, kept, copied):
     """Links each carried instance's dependencies on workspace members (feature 006 BC-4).
@@ -336,7 +364,9 @@ def _member_links(ctx, root, deps, instances, kept, copied):
     analysis fails naming it. A member counts as declared only where every source and data file of
     its `BunLibraryInfo` (its `package.json` among them) is in the copy tree, which holds what the
     program's `BunLibraryInfo` carries; `declared_targets_aspect` finds the member's target and its
-    files through any attribute, and the attributes walked decide nothing (T124, T140).
+    files through any attribute, and the attributes walked decide nothing (T124, T140). A target
+    whose files hold the member's `package.json` counts as the member's target too, which is how
+    the target an `alias` names counts (`_declared_members`, T146).
 
     Args:
         ctx: The rule context.
@@ -356,18 +386,15 @@ def _member_links(ctx, root, deps, instances, kept, copied):
         instance = instances[key]
         for alias, member in sorted(instance.members.items()):
             if declared == None:
-                targets = depset(transitive = [d[BunDeclaredTargetsInfo].targets for d in deps if BunDeclaredTargetsInfo in d])
-                declared = {}
-                for target in targets.to_list():
-                    if str(target.label) not in declared and _in_copy_tree(target, copied):
-                        declared[str(target.label)] = True
-            if str(member) not in declared:
-                fail('{}: the npm package {} links its dependency "{}" to the workspace member {}, which this target does not declare; add {} to its deps'.format(
+                declared = _declared_members(deps, copied)
+            if str(member) not in declared.labels and str(member.same_package_label("package.json")) not in declared.manifests:
+                fail('{}: the npm package {} links its dependency "{}" to the workspace member {}, which this target does not declare; add {} to its deps, or a target that carries {}'.format(
                     ctx.label,
                     _name_version(instance),
                     alias,
                     _display(member),
                     _display(member),
+                    _display(member.same_package_label("package.json")),
                 ))
             path = ".store/{}/node_modules/{}".format(_store_path(instance), alias)
             outputs.append(_directory_link(ctx, root, path, _link_dir(member)))

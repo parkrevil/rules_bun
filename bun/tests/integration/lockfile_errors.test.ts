@@ -1,7 +1,7 @@
 // Lockfiles the extension cannot read (FR-007, US2-5): each fails module
-// evaluation with an English error naming the file and the remedy. The last
-// case is the Edge Case of one package version whose entries record different
-// integrities, one of them unsupported (`sha1`).
+// evaluation with an English error naming the file and the remedy. Two entries
+// of one package version that record different integrities no longer fail: the
+// pinned Bun keeps the first row's (feature 006 BC-17, conflict.test.ts).
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -26,20 +26,6 @@ const CASES: [string, string, string | Uint8Array, string[]][] = [
   ["lockfileVersion 0", "bun.lock", lockfile(0), ["//:bun.lock", "lockfileVersion 0 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
   ["lockfileVersion 4", "bun.lock", lockfile(4), ["//:bun.lock", "lockfileVersion 4 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
   ["invalid JSONC", "bun.lock", '{ "lockfileVersion": 2, /* not closed', ["//:bun.lock", "is not closed", "run `bun install` to rewrite bun.lock"]],
-  [
-    "two entries of one package version with different integrities, one unsupported",
-    "bun.lock",
-    JSON.stringify({
-      lockfileVersion: 2,
-      workspaces: { "": { name: "lockfile-errors" } },
-      packages: {
-        a: ["a@1.0.0", "", {}, "sha512-AAAA"],
-        b: ["b@1.0.0", "", { dependencies: { a: "1.0.0" } }, "sha512-BBBB"],
-        "b/a": ["a@1.0.0", "", {}, "sha1-CCCC"],
-      },
-    }),
-    ['//:bun.lock: the entries "a" and "b/a" of a@1.0.0 record different integrity values, "sha512-AAAA" and "sha1-CCCC"', "run `bun install` to rewrite bun.lock"],
-  ],
 ];
 
 for (const [name, file, content, expected] of CASES) {

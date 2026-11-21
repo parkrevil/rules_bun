@@ -7,6 +7,12 @@ load(":consumer_rules.bzl", "consumer_carrier", "consumer_library", "consumer_wr
 _FIXTURE = "//bun/tests/npm/fixtures/conformance_registry_to_workspace"
 _MEMBER = _FIXTURE + "/packages/member-lib:pkg"
 
+# The same layout, whose member's target `pkg` is an alias of a target in the fixture's root
+# package, which carries the member's files (T146).
+_ALIAS_FIXTURE = "//bun/tests/npm/fixtures/conformance_member_alias"
+_ALIAS_MEMBER = _ALIAS_FIXTURE + "/packages/member-lib:pkg"
+_ALIAS_INDEX = "_main/bun/tests/npm/fixtures/conformance_member_alias/packages/member-lib/index.js"
+
 def _declared_impl(ctx):
     env = analysistest.begin(ctx)
     outputs = [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
@@ -40,6 +46,41 @@ def _bin_impl(ctx):
     return analysistest.end(env)
 
 _bin_test = analysistest.make(_bin_impl)
+
+def _alias_outputs(env):
+    return [f.short_path for action in analysistest.target_actions(env) for f in action.outputs.to_list()]
+
+def _alias_declared_impl(ctx):
+    env = analysistest.begin(ctx)
+    outputs = _alias_outputs(env)
+
+    # Bazel reports the alias's target under its own label; the member counts as declared through
+    # it, and the store links member-lib to the member's package, where its files are copied.
+    link = ".store/member-user@1.0.0/node_modules/member-lib"
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith(link)]), "links " + link)
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith("/" + _ALIAS_INDEX)]), "copies " + _ALIAS_INDEX)
+    return analysistest.end(env)
+
+_alias_declared_test = analysistest.make(_alias_declared_impl)
+
+def _alias_bin_impl(ctx):
+    env = analysistest.begin(ctx)
+    outputs = _alias_outputs(env)
+    tree = "_npm_bin/member-user/member-user.bun/"
+    link = tree + ".store/member-user@1.0.0/node_modules/member-lib"
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith(link)]), "links " + link)
+    asserts.equals(env, 1, len([o for o in outputs if o.endswith(tree + _ALIAS_INDEX)]), "copies " + _ALIAS_INDEX)
+    return analysistest.end(env)
+
+_alias_bin_test = analysistest.make(_alias_bin_impl)
+
+def _alias_undeclared_impl(ctx):
+    env = analysistest.begin(ctx)
+    for text in ["member-user@1.0.0", '"member-lib"', _ALIAS_MEMBER.lstrip("/"), "add", "deps"]:
+        asserts.expect_failure(env, text)
+    return analysistest.end(env)
+
+_alias_undeclared_test = analysistest.make(_alias_undeclared_impl, expect_failure = True)
 
 def workspace_member_test_suite(name):
     """Checks how targets and bins link a package's workspace-member dependency.
@@ -83,6 +124,9 @@ def workspace_member_test_suite(name):
         ("through_preload", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_preload"]),
         ("through_tools", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_tools"]),
         ("through_extras", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_member_extras"]),
+        # The member's target is an alias (T146): declared through it, and not declared.
+        ("alias_declared", _alias_declared_test, [_ALIAS_FIXTURE + ":node_modules/member-user", _ALIAS_MEMBER]),
+        ("alias_undeclared", _alias_undeclared_test, [_ALIAS_FIXTURE + ":node_modules/member-user"]),
     ]
     tests = []
     for suffix, rule, deps in cases:
@@ -92,4 +136,6 @@ def workspace_member_test_suite(name):
         tests.append(target + "_test")
     _bin_test(name = name + "_bin_test", target_under_test = _FIXTURE + ":node_modules/member-user/bin/member-user")
     tests.append(name + "_bin_test")
+    _alias_bin_test(name = name + "_alias_bin_test", target_under_test = _ALIAS_FIXTURE + ":node_modules/member-user/bin/member-user")
+    tests.append(name + "_alias_bin_test")
     native.test_suite(name = name, tests = tests)

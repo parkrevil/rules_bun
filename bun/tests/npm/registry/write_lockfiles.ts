@@ -540,6 +540,21 @@ const projects: Record<string, Project> = {
       assert(lock.packages["member-user"][2].dependencies?.["member-lib"] === "^1.0.0", "member-user does not depend on member-lib");
     },
   },
+  // BC-4 (T146): conformance_registry_to_workspace's layout, whose member's target `pkg` is an
+  // alias of a target in another Bazel package; the lockfile is the same layout, the BUILD files
+  // differ.
+  conformance_member_alias: {
+    files: () => ({
+      "package.json": json({ name: "conformance-member-alias", private: true, workspaces: ["packages/*"], dependencies: { "member-user": "1.0.0" } }),
+      "packages/member-lib/package.json": json({ name: "member-lib", version: "1.0.0", main: "index.js", dependencies: { b: "2.0.0" } }),
+      "packages/member-lib/index.js": 'module.exports = { name: "member-lib" };\n',
+      "packages/member-lib/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "member-lib") === "member-lib@workspace:packages/member-lib", "member-lib is not the workspace");
+      assert(lock.packages["member-user"][2].dependencies?.["member-lib"] === "^1.0.0", "member-user does not depend on member-lib");
+    },
+  },
   // BC-4 across two workspace boundaries (T123): the root's chain-cli (with a bin) depends on the
   // member chain-w1, which declares the registry package chain-helper, which depends on the member
   // chain-w2; a bin of chain-cli needs both members.

@@ -227,6 +227,17 @@ bun_test(
 )
 
 bun_test(
+    name = "c_rowtail_test",
+    srcs = ["c_rowtail.test.ts"],
+    deps = [
+        ":support",
+        "//bun/tests/support:npm_registry",
+        "//bun/tests/support:spawn",
+        "//bun/tests/support:tar",
+    ],
+)
+
+bun_test(
     name = "c_roworder_test",
     srcs = ["c_roworder.test.ts"],
     deps = [
@@ -297,6 +308,7 @@ test_suite(
         ":c_rowdevdeps_test",
         ":c_rowinfo_test",
         ":c_roworder_test",
+        ":c_rowtail_test",
         ":c_slot0_test",
         ":c_unlinked_test",
         ":c_unresolved_test",

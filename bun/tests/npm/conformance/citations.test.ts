@@ -23,7 +23,7 @@ const ONLY: Record<string, Set<string>> = {
 };
 
 // The files of research Part 1 (LOCK, LOCKFILE, TREE, REACH, PRUNED, META, ISO, STORE, HOOKS,
-// SEMVER, INSTALL, and the types and helpers those call).
+// SEMVER, INSTALL, and the types and helpers those call, BASE64 among them).
 const PART_1 = new Set([
   "src/install/lockfile/bun.lock.rs",
   "src/install/lockfile.rs",
@@ -53,9 +53,10 @@ const PART_1 = new Set([
   "src/install/repository.rs",
   "src/install/integrity.rs",
   "src/install/PackageInstaller.rs",
+  "src/base64/lib.rs",
 ]);
 
-const CITATION = /^\s*Bun: ((?:src\/install|src\/install_types|src\/semver)\/\S+) L(\d+)–L(\d+) @ bun-v1\.4\.4\s*$/;
+const CITATION = /^\s*Bun: ((?:src\/install|src\/install_types|src\/semver|src\/base64)\/\S+) L(\d+)–L(\d+) @ bun-v1\.4\.4\s*$/;
 
 interface Uncited {
   module: string;

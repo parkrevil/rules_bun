@@ -18,7 +18,10 @@ and whose bin targets are compatible with no platform (T111).
 
 Only where the ruleset linked something other than the pinned Bun (FR-015). Each BC row is covered
 by the conformance test (a difference before, none after) and listed in the PR; the R3 row by
-`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-9 (ID-7
+`bun/tests/npm/platforms_test.bzl` `bun_rule_test`; BC-17 and BC-18, where `main` fails evaluation
+of a lockfile the pinned Bun installs, by `bun/tests/integration/conflict.test.ts` and
+`bun/tests/npm/lockfile_test.bzl` `extra_slots_test`, and the conformance test compares the
+pinned Bun's install of BC-17's two lockfiles. The Intentional Differences ID-1 to ID-9 (ID-7
 withdrawn) are the spec's: ID-8 is BC-4's declared workspace members, ID-9 the two evaluation
 failures below (BC-12).
 
@@ -27,7 +30,7 @@ failures below (BC-12).
 | A package's optional dependency listed under `unresolved` while another package of that name is in the tree | linked to that package | not linked | BC-1 |
 | A workspace named like a package the root aliases | links the root's or the aliased package's dependencies | links its own (`./<name>/<dep>`) | BC-2 |
 | An optional or peer dependency of the root or a workspace without a key | evaluation fails ("declares …, which bun.lock lists no entry for") | not linked; no failure | BC-3 |
-| A registry package's dependency on a workspace member | not linked | linked to the member by path, with no target dependency on it; a `bun_binary` or `bun_test` whose closure holds such a link without the member's target among its transitive `deps` (through targets that pass its `BunLibraryInfo` on: it counts only where every source and data file of its `BunLibraryInfo`, its `package.json` among them, is in the target's copy tree, so not through a `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, a target without `BunLibraryInfo`, or a rule that returns `BunLibraryInfo` without the member's files, T124, T132, T140) fails analysis naming the package, the dependency and the member's target; a bin target (`:node_modules/<package>/bin/<bin>`) gets those members from the hub (T081), and the members that the packages those members declare link to, through any number of members (T123), each of which must be visible to the package that calls `npm_link_all_packages`, else Bazel's visibility error names it (T089) | BC-4 |
+| A registry package's dependency on a workspace member | not linked | linked to the member by path, with no target dependency on it; a `bun_binary` or `bun_test` whose closure holds such a link without the member's target among its transitive `deps` (through targets that pass its `BunLibraryInfo` on: it counts only where every source and data file of its `BunLibraryInfo`, its `package.json` among them, is in the target's copy tree, so not through a `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, a target without `BunLibraryInfo`, or a rule that returns `BunLibraryInfo` without the member's files, T124, T132, T140; a target whose files hold the member's `package.json` counts as the member's target too, which is how the target an `alias` names counts, T146) fails analysis naming the package, the dependency and the member's target; a bin target (`:node_modules/<package>/bin/<bin>`) gets those members from the hub (T081), and the members that the packages those members declare link to, through any number of members (T123), each of which must be visible to the package that calls `npm_link_all_packages`, else Bazel's visibility error names it (T089) | BC-4 |
 | A package's peer nothing provides and the lockfile does not resolve | evaluation fails (`missing_peer`) | not linked; no failure | BC-5 |
 | Two keys holding one `name@version` whose walks find different versions | one instance per key, each with its walk's version | one package, bound as Bun's row evidence decides | BC-6 |
 | A non-optional dependency whose package's `os`/`cpu` exclude the target platform | carried on every platform; its bins (`:node_modules/<package>/bin/<bin>`) compatible with every platform | not carried on that platform; its bins incompatible there, as an optional package's are (T117) | BC-7 |
@@ -39,6 +42,8 @@ failures below (BC-12).
 | A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29; on a target `os` or `cpu` Bun does not name (`netbsd`, `riscv64`), by npm's rule as on `main` (T112) | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
 | A package's dependency the store links on some platform classes only, held by the target through another link on others | linked from the package wherever the target holds it | linked from the package only where the store links it (`select()` on the instance's edges) | BC-15 |
 | A package's dependency that the store binds to different store entries on different platform classes (one package under other peer bindings) | one binding for every platform (on the branch before T107, evaluation fails: the former ID-7) | linked per target platform through `select()` on the instance's edges (`edge_targets`) | BC-16 |
+| Two rows of one `name@version` that record different integrity values or download URLs | evaluation fails ("the entries … record different integrity values") | one package with the first row's integrity and URL, downloaded once, as Bun's `append_package_dedupe` keeps it | BC-17 |
+| An npm row with more than 4 slots | evaluation fails ("has 5 slots, not 4") | read by its first 4 slots, as Bun reads them | BC-18 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-9 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
@@ -50,7 +55,9 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   `peerDependencies`, `devDependencies`, a workspace's dependency kinds) that is not an object of
   strings (T080), and a `configVersion` that is not a whole number of at least 0 and a
   `trustedDependencies` that is not an array of strings (T125), a present JSON `null` in each of
-  these fields included (T139), each naming the field without printing the value;
+  these fields included (T139), an integrity whose digest Bun's decoder rejects and a git or GitHub
+  row's missing, non-string or unsafe `.bun-tag` (T147), each naming the field without printing the
+  value;
 - a malformed `unresolved` or `optionalPeers`, `null` included (T139), fails naming the entry and
   the field without printing its value;
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails
@@ -64,7 +71,7 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   lockfile reaches it, research R4 "A holder's alias"). These two failures are ID-9. The failure of
   a package's dependency bound by platform (the former ID-7) is gone (BC-16).
 
-Diagnostics that change: BC-3's and BC-5's evaluation failures disappear; the analysis failure of
+Diagnostics that change: BC-3's, BC-5's, BC-17's and BC-18's evaluation failures disappear; the analysis failure of
 two instances of one package version in one target now applies only to instances with one store
 directory from several lockfiles and reads "one instance of each package version and peer
 bindings" (BC-11).

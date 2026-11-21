@@ -168,6 +168,23 @@ def _bad_slot_test_impl(ctx):
     asserts.true(env, "\"a\"" in result["error"] and "slot 1" in result["error"], result["error"])
     return unittest.end(env)
 
+def _extra_slots_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 006 T149, BC-18: Bun reads an npm row's slots by index and ignores any after slot 3
+    # (LOCK L2433-L2669); the pinned Bun loads each of these rows (`tdd-log.md` T149).
+    for extra in ['"x"', "5", '{"dependencies": {"zz": "1"}}', "null", '[], true, "y"']:
+        text = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {"a": ["a@1.0.0", "", {"dependencies": {}}, "%s", %s]}}' % (_VALID512, extra)
+        read = read_lockfile(text, "inline/bun.lock")
+        asserts.equals(env, None, read.error, extra)
+        if read.error:
+            continue
+        entry = read.value.entries["a"]
+        asserts.equals(env, _VALID512, entry.integrity, extra)
+        asserts.equals(env, {}, entry.dependencies, extra)
+        asserts.equals(env, None, resolve(read.value, "inline/bun.lock").error, extra)
+    return unittest.end(env)
+
 def _statuses(resolution):
     """Instance name -> status of a resolution."""
     return {i["name"]: i["status"] for i in resolution["instances"].values()}
@@ -424,6 +441,101 @@ _NULL_CONTAINER_REFUSALS = [
     ("L2313", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": null}', ['"packages"']),
 ]
 
+# Feature 006 T147: integrity digests and git tags Bun 1.4.4's loader refuses, each text one the
+# pinned Bun refused with its line's message ("Ignoring lockfile", `tdd-log.md` T147). The digest is
+# read as `Integrity::parse` reads it (integrity.rs L88–L164: standard base64 without padding, at
+# most the algorithm's length, the bits after the last byte zero; base64/lib.rs L550–L641); the tag
+# as `Repository::is_safe_resolved_tag` (repository.rs L107–L123), on every lockfile for a GitHub
+# row and from lockfileVersion 2 for a git row, and its length on every lockfile.
+_SHA = "0123456789abcdef0123456789abcdef01234567"
+_VALID512 = "sha512-" + "A" * 86 + "=="
+
+def _npm_row(integrity, version = 2):
+    return '{"lockfileVersion": %d, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {"a": ["a@1.0.0", "", {}, %s]}}' % (version, json.encode(integrity))
+
+def _git_row(slots, version = 2, github = False):
+    spec = "github:o/r#" + _SHA if github else "git+https://example.com/g.git#" + _SHA
+    row = json.encode(["g@" + spec, {}] + slots)
+    return '{"lockfileVersion": %d, "workspaces": {"": {"name": "x", "dependencies": {"g": %s}}}, "packages": {"g": %s}}' % (version, json.encode(spec), row)
+
+def _tarball_row(slots, version = 2):
+    url = "https://example.com/t.tgz"
+    row = json.encode(["t@" + url, {}] + slots)
+    return '{"lockfileVersion": %d, "workspaces": {"": {"name": "x", "dependencies": {"t": %s}}}, "packages": {"t": %s}}' % (version, json.encode(url), row)
+
+_INTEGRITY_REFUSALS = [
+    ("L2650", _npm_row("sha512-AB"), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-AAAAA"), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 85 + "!=="), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 85 + "-=="), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 85 + "_=="), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 88), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-AA=A"), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha1-" + "a" * 40), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-"), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-A"), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 85 + "B=="), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha256-" + "A" * 42 + "B="), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2650", _npm_row("sha512-" + "A" * 85 + "!==", version = 3), ['"a"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2733", _git_row([_SHA, "sha512-!!!!"]), ['"g"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2733", _git_row(["o-r-0123456", "md5-AAAA"], github = True), ['"g"', "slot 3", "Unsupported or malformed integrity hash"]),
+    ("L2733", _tarball_row(["sha512-!!!!"]), ['"t"', "slot 2", "Unsupported or malformed integrity hash"]),
+]
+
+_GIT_TAG_REFUSALS = [
+    ("L2674", _git_row([]), ['"g"', "slot 2", "Missing git dependency tag"]),
+    ("L2674", _git_row([], version = 1, github = True), ['"g"', "slot 2", "Missing git dependency tag"]),
+    ("L2685", _git_row([5]), ['"g"', "slot 2", "Expected a string"]),
+    ("L2685", _git_row([None], version = 1), ['"g"', "slot 2", "Expected a string"]),
+    ("L2707", _git_row([""]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["-x"]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a/b"]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["."]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row([".."]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a b"]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a~b"]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a" * 257]), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a" * 257], version = 1), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row([""], version = 1, github = True), ['"g"', "slot 2", "Invalid git dependency tag"]),
+    ("L2707", _git_row(["a/b"], version = 1, github = True), ['"g"', "slot 2", "Invalid git dependency tag"]),
+]
+
+# The texts of the same forms the pinned Bun loads (T147).
+_ROW_TAIL_ACCEPTED = [
+    _npm_row(_VALID512),
+    _npm_row("sha256-" + "A" * 43 + "="),
+    _npm_row("sha1-" + "A" * 27 + "="),
+    _npm_row("sha512-AAAA"),
+    _npm_row("sha512-AA"),
+    _npm_row("sha512-" + "A" * 86),
+    _npm_row("sha512-" + "A" * 86 + "===="),
+    _npm_row("sha512-AAAA?x!"),
+    _npm_row("sha512-!!!! sha1-" + "A" * 27 + "="),
+    _npm_row("sha512-!!!!\tsha256-" + "A" * 43 + "="),
+    _npm_row("sha512-!!!!\nsha256-" + "A" * 43 + "="),
+    _npm_row("sha512-!!!!\fsha256-" + "A" * 43 + "="),
+    _npm_row("sha512-!!!!\rsha256-" + "A" * 43 + "="),
+    _npm_row(" " + _VALID512),
+    _npm_row(""),
+    _npm_row("sha512-" + "A" * 85 + "!==", version = 1),
+    _git_row([_SHA]),
+    _git_row(["a" * 256]),
+    _git_row([".x"]),
+    _git_row([_SHA, 5]),
+    _git_row([_SHA, _VALID512]),
+    _git_row([_SHA, "sha512-!!!!"], version = 1),
+    _git_row(["", "md5-AAAA"], version = 1),
+    _git_row(["-x"], version = 1),
+    _git_row(["a/b"], version = 1),
+    _git_row([".."], version = 1),
+    _git_row(["o-r-0123456"], github = True),
+    _git_row(["o-r-0123456", "md5-AAAA"], version = 1, github = True),
+    _tarball_row([]),
+    _tarball_row([5]),
+    _tarball_row([_VALID512]),
+    _tarball_row(["sha512-!!!!"], version = 1),
+]
+
 def _load_error(text):
     read = read_lockfile(text, "inline/bun.lock")
     if read.error:
@@ -508,6 +620,22 @@ def _bin_objects_test_impl(ctx):
     _check_bins(env, _BIN_OBJECTS)
     return unittest.end(env)
 
+def _integrity_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _INTEGRITY_REFUSALS)
+    return unittest.end(env)
+
+def _git_tag_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _GIT_TAG_REFUSALS)
+    return unittest.end(env)
+
+def _row_tail_accepted_test_impl(ctx):
+    env = unittest.begin(ctx)
+    for text in _ROW_TAIL_ACCEPTED:
+        asserts.equals(env, None, _load_error(text), text)
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -516,6 +644,7 @@ entries_test = unittest.make(_entries_test_impl)
 kinds_test = unittest.make(_kinds_test_impl)
 scoped_keys_test = unittest.make(_scoped_keys_test_impl)
 bad_slot_test = unittest.make(_bad_slot_test_impl)
+extra_slots_test = unittest.make(_extra_slots_test_impl)
 unsupported_test = unittest.make(_unsupported_test_impl)
 unresolved_test = unittest.make(_unresolved_test_impl)
 bundled_test = unittest.make(_bundled_test_impl)
@@ -526,9 +655,13 @@ loader_refusals_test = unittest.make(_loader_refusals_test_impl)
 container_refusals_test = unittest.make(_container_refusals_test_impl)
 null_refusals_test = unittest.make(_null_refusals_test_impl)
 null_container_refusals_test = unittest.make(_null_container_refusals_test_impl)
+
 null_accepted_test = unittest.make(_null_accepted_test_impl)
 bin_values_test = unittest.make(_bin_values_test_impl)
 bin_objects_test = unittest.make(_bin_objects_test_impl)
+integrity_refusals_test = unittest.make(_integrity_refusals_test_impl)
+git_tag_refusals_test = unittest.make(_git_tag_refusals_test_impl)
+row_tail_accepted_test = unittest.make(_row_tail_accepted_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -541,6 +674,7 @@ def lockfile_test_suite(name):
         kinds_test,
         scoped_keys_test,
         bad_slot_test,
+        extra_slots_test,
         unsupported_test,
         unresolved_test,
         bundled_test,
@@ -554,4 +688,7 @@ def lockfile_test_suite(name):
         null_accepted_test,
         bin_values_test,
         bin_objects_test,
+        integrity_refusals_test,
+        git_tag_refusals_test,
+        row_tail_accepted_test,
     )

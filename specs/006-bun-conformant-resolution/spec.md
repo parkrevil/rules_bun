@@ -381,7 +381,9 @@ the test that shows it:
   source and data file of its `BunLibraryInfo`, its `package.json` among them, is in the target's
   copy tree, so not through a `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, a
   target without `BunLibraryInfo`, or a rule that returns `BunLibraryInfo` without the member's
-  files, T124, T132, T140), or analysis fails naming the package, the dependency and the member's
+  files, T124, T132, T140; a target whose files hold the member's `package.json` counts as the
+  member's target too, which is how the target an `alias` names counts, as Bazel reports it under
+  its own label, T146), or analysis fails naming the package, the dependency and the member's
   target, as
   Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
   (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
@@ -463,6 +465,18 @@ the test that shows it:
   entry (research R4 "An entry's alias"). `main` binds the dependency once for every platform
   (`p`'s `q` to `q-darwin@1.0.0` everywhere); the branch failed evaluation there until T107, as
   the former ID-7 stated (the lead, under the user's delegation, 2026-11-21, T107).
+
+- **BC-17**: two rows of one `name@version` that record different integrity values or download
+  URLs are one package with the first row's integrity and URL, as Bun's `append_package_dedupe`
+  keeps the package the first row appended (lockfile.rs L2684–L2711) and the pinned Bun installs
+  such a lockfile, downloading the package once from that row's URL; `main` fails evaluation ("the
+  entries … record different integrity values") (`integration/workspaces/conflict/integrity`,
+  `integration/workspaces/conflict/url`, `conflict.test.ts`; the lead, under the user's delegation,
+  2026-11-22, T148).
+- **BC-18**: an npm row with more than 4 slots is read by its first 4, as Bun reads the slots by
+  index and ignores the others (LOCK L2433–L2669); `main` fails evaluation ("has 5 slots, not 4")
+  (`lockfile_test.bzl` `extra_slots_test`; the lead, under the user's delegation, 2026-11-22,
+  T149).
 
 Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
 target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin

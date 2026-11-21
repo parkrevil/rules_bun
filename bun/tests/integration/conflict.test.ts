@@ -1,26 +1,24 @@
-// Two lockfile entries of one name@version that disagree on what to download
-// (research R3, Edge Case): evaluation fails naming both keys and both values,
-// because one package repository serves every entry of a name@version.
+// Two lockfile entries of one name@version that disagree on what to download (feature 006 BC-17).
+// The pinned Bun keeps one package per name@version, the first row's, with its integrity and URL
+// (`append_package_dedupe`, src/install/lockfile.rs L2684–L2711 @ bun-v1.4.4), and installs such a
+// lockfile; the ruleset downloads that package once, from the first row's URL, verified against
+// the first row's integrity. integrity/bun.lock and url/bun.lock are the workspace's bun.lock with
+// the "c/b" row's integrity or URL changed, written by hand, as no Bun writes two such rows; the
+// conformance test compares the pinned Bun's install of each with the ruleset's graph (research R9).
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
-const inner = new Inner("conflict");
+const archive = (p: string) => rlocation(`_main/bun/tests/npm/registry/archives/${p}.tgz`);
+const inner = new Inner("conflict", { npmArchives: [archive("a@1.0.0"), archive("b@1.0.0"), archive("c@1.0.0")] });
 afterAll(() => inner.close());
-
-const B = "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w==";
-const OTHER = "sha512-/b1IpgijxGDDhzGXLX7uNz9MRXh4yXD6Q1sra8gGGFlmw+Q3L2mluSOUR/3lGLlPYW8IPVPyIvK1A8IeK/wO+w==";
 
 // The committed lockfile (workspaces/conflict/bun.lock, which the conformance test compares with
 // the pinned Bun's install, feature 006 T143), whose "c/b" entry repeats b's.
 const CONSISTENT = readFileSync(join(inner.dir, "bun.lock"), "utf8");
-const NESTED = `"c/b": ["b@1.0.0", "${inner.registry.url}/b/-/b-1.0.0.tgz", {}, "${B}"]`;
-if (!CONSISTENT.includes(NESTED)) throw new Error(`workspaces/conflict/bun.lock holds no ${NESTED}`);
-
-/** The committed lockfile with the "c/b" entry's URL and integrity replaced. */
-const lockfile = (nested: [string, string]) => CONSISTENT.replace(NESTED, `"c/b": ["b@1.0.0", "${nested[0]}", {}, "${nested[1]}"]`);
 
 test(
   "consistent entries evaluate",
@@ -32,21 +30,27 @@ test(
   INNER_TIMEOUT,
 );
 
-const CASES: [string, () => [string, string], () => string[]][] = [
-  ["different integrities", () => [`${inner.registry.url}/b/-/b-1.0.0.tgz`, OTHER], () => [B, OTHER]],
-  ["different URLs", () => [`${inner.registry.url}/mirror/b-1.0.0.tgz`, B], () => [`${inner.registry.url}/b/-/b-1.0.0.tgz`, `${inner.registry.url}/mirror/b-1.0.0.tgz`]],
+// The URL case runs first, while the repository cache holds no b@1.0.0, so b is downloaded and
+// the request shows which URL; the integrity case then finds b cached under the first row's
+// integrity, which would miss if the ruleset verified against the other row's.
+const VARIANTS: [string, string, string[] | undefined][] = [
+  ["url", "URLs", ["/b/-/b-1.0.0.tgz"]],
+  ["integrity", "integrities", undefined],
 ];
 
-for (const [name, nested, values] of CASES) {
+for (const [variant, what, requests] of VARIANTS) {
   test(
-    `two entries of b@1.0.0 with ${name} fail evaluation naming both`,
+    `two entries of b@1.0.0 with different ${what} download b as the first row records it`,
     async () => {
-      inner.write("bun.lock", lockfile(nested()));
-      const result = await inner.run(["query", "//..."]);
-      const line = result.stderr.split("\n").find((l) => l.startsWith("Error in fail:")) ?? result.stderr;
-      console.log(line);
-      expect(result.exitCode).not.toBe(0);
-      for (const text of ['"b"', '"c/b"', "b@1.0.0", ...values()]) expect(line).toContain(text);
+      const lockfile = readFileSync(join(inner.dir, variant, "bun.lock"), "utf8");
+      if (lockfile === CONSISTENT) throw new Error(`workspaces/conflict/${variant}/bun.lock is the consistent lockfile`);
+      inner.write("bun.lock", lockfile);
+      const start = inner.log.length;
+      const result = await inner.run(["build", "//:node_modules/c"]);
+      expect(result.exitCode, result.stderr).toBe(0);
+      const paths = inner.log.slice(start).map((e) => e.path).filter((p) => p.includes("b-1.0.0.tgz"));
+      if (requests) expect(paths).toEqual(requests);
+      else expect(paths.filter((p) => p !== "/b/-/b-1.0.0.tgz")).toEqual([]);
       assertOffline(inner.log);
     },
     INNER_TIMEOUT,

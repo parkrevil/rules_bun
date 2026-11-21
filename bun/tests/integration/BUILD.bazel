@@ -310,8 +310,16 @@ bun_test(
     name = "conflict_test",
     size = "enormous",
     srcs = ["conflict.test.ts"],
+    data = [
+        "//bun/tests/npm/registry/archives:a@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:b@1.0.0.tgz",
+        "//bun/tests/npm/registry/archives:c@1.0.0.tgz",
+    ],
     tags = ["requires-network"],
-    deps = [":inner"],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
 )
 
 bun_test(

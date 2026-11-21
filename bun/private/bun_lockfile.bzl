@@ -793,21 +793,137 @@ def _dependency_resolution_failure(file, dependency, pkg_path):
 
 # --- parse_into_binary_lockfile ------------------------------------------------------------------
 
-_SUPPORTED_INTEGRITY = ["sha1", "sha256", "sha384", "sha512"]
+# `Tag::digest_len` of each algorithm `Tag::parse` names (integrity.rs L8-L11, L326-L335).
+_DIGEST_LEN = {"sha1": 20, "sha256": 32, "sha384": 48, "sha512": 64}
+
+# `STANDARD_ALPHABET_CHARS` (base64/lib.rs L416-L417).
+_BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+# `u8::is_ascii_whitespace` other than the space: tab, line feed, form feed, carriage return.
+_ASCII_WHITESPACE = ["\t", "\n", "\f", "\r"]
+
+# `crate::repository::MAX_RESOLVED_TAG_LEN` (repository.rs L107).
+_MAX_RESOLVED_TAG_LEN = 256
+
+_SAFE_TAG_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_."
+
+def _integrity_tag_parse(buf):
+    """`Tag::parse`: the algorithm before the first `-` among the first 7 bytes, and its end.
+
+    Bun: src/install/integrity.rs L307–L324 @ bun-v1.4.4
+    """
+    i = buf[:7].find("-")
+    if i == -1 or len(buf) <= i + 1:
+        return None, 0
+    if buf[:i] not in _DIGEST_LEN:
+        return None, 0
+    return buf[:i], i + 1
+
+def _integrity_parse_entry(buf):
+    """`Integrity::parse_entry`: the entry's algorithm, or None where Bun reads `Tag::UNKNOWN`.
+
+    Bun: src/install/integrity.rs L99–L164 @ bun-v1.4.4
+    Bun: src/base64/lib.rs L548–L641 @ bun-v1.4.4
+
+    The digest is checked as `STANDARD_NO_PAD`'s `calc_size_for_slice` and `decode` check it:
+    its length is not 1 more than a multiple of 4, it decodes to at most the algorithm's digest
+    length (a shorter one is accepted), each character is in the standard alphabet, and the bits
+    after the last whole byte are zero. The decoded bytes are not needed: the ruleset downloads
+    with the lockfile's text (feature 003 FR-021).
+    """
+    if len(buf) < len("sha256-"):
+        return None
+    tag, offset = _integrity_tag_parse(buf)
+    if tag == None:
+        return None
+    expected_len = _DIGEST_LEN[tag]
+    s = buf[offset:]
+    question = s.find("?")
+    if question != -1:
+        s = s[:question]
+    digits = s.rstrip("=")
+    leftover = len(digits) % 4
+    if leftover == 1:
+        return None
+    if len(digits) // 4 * 3 + leftover * 3 // 4 > expected_len:
+        return None
+    for c in digits.elems():
+        if c not in _BASE64:
+            return None
+    unused = leftover * 6 % 8
+    if unused and _BASE64.index(digits[-1]) % (1 << unused) != 0:
+        return None
+    return tag
 
 def _integrity_is_supported(text):
-    """`Integrity::parse` and `Tag::is_supported`: some entry names a known algorithm.
+    """`Integrity::parse` then `Tag::is_supported`: some whitespace-separated entry parses.
 
-    Bun: src/install/integrity.rs L88–L120 @ bun-v1.4.4
-    Bun: src/install/integrity.rs L291–L324 @ bun-v1.4.4
+    Bun: src/install/integrity.rs L88–L97 @ bun-v1.4.4
+    Bun: src/install/integrity.rs L290–L293 @ bun-v1.4.4
 
-    The digest's base64 is not decoded (research Part 2, "Not carried over").
+    `parse` keeps the strongest entry; it is supported exactly when one entry has an algorithm.
     """
+    for c in _ASCII_WHITESPACE:
+        text = text.replace(c, " ")
     for entry in text.split(" "):
-        dash = entry[:7].find("-")
-        if len(entry) >= len("sha256-") and dash != -1 and len(entry) > dash + 1 and entry[:dash] in _SUPPORTED_INTEGRITY:
+        if _integrity_parse_entry(entry) != None:
             return True
     return False
+
+def _parse_integrity(text, version, file, where):
+    """`parse_integrity`: a refusal for a value that is neither empty nor supported, from v2.
+
+    Bun: src/install/lockfile/bun.lock.rs L1688–L1711 @ bun-v1.4.4
+
+    Before lockfileVersion 2 Bun warns and drops the value; the ruleset reads no integrity of a
+    row it does not fetch, and an npm row's integrity it does not verify is refused when it
+    downloads (feature 003 FR-021).
+    """
+    if not text or _integrity_is_supported(text) or version < 2:
+        return None
+    return _refusal(file, where, "Unsupported or malformed integrity hash")
+
+def _is_safe_resolved_tag(resolved):
+    """`is_safe_resolved_tag`: one path component of letters, digits, `-`, `_`, `.`.
+
+    Bun: src/install/repository.rs L114–L123 @ bun-v1.4.4
+    """
+    if not resolved or len(resolved) > _MAX_RESOLVED_TAG_LEN or resolved[0] == "-":
+        return False
+    if resolved in [".", ".."]:
+        return False
+    for c in resolved.elems():
+        if c not in _SAFE_TAG_CHARS:
+            return False
+    return True
+
+def _row_tail(lockfile, res, entry, file, key):
+    """The integrity and `.bun-tag` slots of a row, refused where Bun refuses them (T147).
+
+    Bun: src/install/lockfile/bun.lock.rs L2636–L2735 @ bun-v1.4.4
+
+    An npm row's integrity is slot 3 (`read_lockfile` checks that it is a string, L2640–L2648);
+    a git or GitHub row's tag is the slot after the info object, then an optional integrity, which
+    a tarball row has right after its info object. The values decide no binding.
+    """
+    if res.tag == RESOLUTION_TAG.NPM:
+        return _parse_integrity(entry.integrity, lockfile.version, file, 'packages "{}" slot 3'.format(key))
+    i = 0
+    if res.tag in [RESOLUTION_TAG.GIT, RESOLUTION_TAG.GITHUB]:
+        where = 'packages "{}" slot 2'.format(key)
+        if i >= len(entry.tail):
+            return _refusal(file, where, "Missing git dependency tag")
+        bun_tag = entry.tail[i]
+        i += 1
+        if type(bun_tag) != "string":
+            return _refusal(file, where, "Expected a string")
+        enforce_safe_tag = res.tag == RESOLUTION_TAG.GITHUB or lockfile.version >= 2
+        if len(bun_tag) > _MAX_RESOLVED_TAG_LEN or (enforce_safe_tag and not _is_safe_resolved_tag(bun_tag)):
+            return _refusal(file, where, "Invalid git dependency tag")
+    if res.tag in [RESOLUTION_TAG.LOCAL_TARBALL, RESOLUTION_TAG.REMOTE_TARBALL, RESOLUTION_TAG.GIT, RESOLUTION_TAG.GITHUB]:
+        if i < len(entry.tail) and type(entry.tail[i]) == "string":
+            return _parse_integrity(entry.tail[i], lockfile.version, file, 'packages "{}" slot {}'.format(key, i + 2))
+    return None
 
 def load_lockfile(lock, file):
     """`parse_into_binary_lockfile` up to `tag_workspace_links`: packages, then resolutions.
@@ -938,8 +1054,9 @@ def load_lockfile(lock, file):
             if result.error:
                 return result
             off, length = result.value
-        if res.tag == RESOLUTION_TAG.NPM and lockfile.version >= 2 and entry.integrity and not _integrity_is_supported(entry.integrity):
-            return _refusal(file, where, "Unsupported or malformed integrity hash")
+        refusal = _row_tail(lockfile, res, entry, file, key)
+        if refusal:
+            return refusal
         if res.tag in [RESOLUTION_TAG.GIT, RESOLUTION_TAG.GITHUB]:
             res = struct(tag = res.tag, value = repository_with_resolved(res.value, ""))
         info = struct(os = entry.os, cpu = entry.cpu, libc = entry.libc)

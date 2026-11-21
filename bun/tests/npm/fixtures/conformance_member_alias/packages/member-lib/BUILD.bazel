@@ -1,0 +1,19 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+exports_files(
+    [
+        "index.js",
+        "package.json",
+    ],
+    visibility = ["//bun/tests/npm/fixtures/conformance_member_alias:__pkg__"],
+)
+
+# A workspace member of the fixture project. `pkg`, the hub's `workspace_target_name`, is an alias
+# of a target in another Bazel package that carries this member's files (feature 006 T146).
+alias(
+    name = "pkg",
+    actual = "//bun/tests/npm/fixtures/conformance_member_alias:member_lib",
+    visibility = ["//visibility:public"],
+)
+
+conformance_files()

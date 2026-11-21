@@ -111,8 +111,8 @@ def _unresolved_test_impl(ctx):
     # A name under `unresolved` that is no optional dependency changes no binding (LOCK L3531-L3537).
     other = _load_text(
         '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {' +
-        '"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}, "unresolved": ["b"]}, "sha512-x"], ' +
-        '"b": ["b@1.0.0", "", {}, "sha512-y"]}}',
+        '"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}, "unresolved": ["b"]}, "sha512-xA"], ' +
+        '"b": ["b@1.0.0", "", {}, "sha512-yA"]}}',
     )
     asserts.equals(env, None, other.error)
     asserts.equals(env, "b@1.0.0", _bound(other.value, "a", "b"))
@@ -135,7 +135,7 @@ def _unbound_test_impl(ctx):
     asserts.true(env, "inline/bun.lock" in root.error and "Failed to resolve root prod dependency 'zz'" in root.error, root.error)
     row = _load_text(
         '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {' +
-        '"a": ["a@1.0.0", "", {"dependencies": {"zz": "1.0.0"}}, "sha512-x"]}}',
+        '"a": ["a@1.0.0", "", {"dependencies": {"zz": "1.0.0"}}, "sha512-xA"]}}',
     )
     asserts.true(env, "Failed to resolve prod dependency 'zz' for package 'a'" in row.error, row.error)
     return unittest.end(env)
@@ -160,7 +160,7 @@ def _unlinked_key_test_impl(ctx):
     # dependencies are bound by `<name>/<dep>`, then `<dep>` (LOCK L2864-L2900).
     result = _load_text(
         '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w", "dependencies": {"b": "^1.0.0"}}}, ' +
-        '"packages": {"b": ["b@1.0.0", "", {}, "sha512-x"], "./w/b": ["b@2.0.0", "", {}, "sha512-y"], "w": ["w@workspace:packages/w"]}}',
+        '"packages": {"b": ["b@1.0.0", "", {}, "sha512-xA"], "./w/b": ["b@2.0.0", "", {}, "sha512-yA"], "w": ["w@workspace:packages/w"]}}',
     )
     asserts.equals(env, None, result.error)
     asserts.true(env, "./w/b" in result.value.pkg_map)
@@ -192,8 +192,8 @@ def _clean_test_impl(ctx):
     # every binding of the reached packages is kept.
     loaded = _load_text(
         '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {' +
-        '"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}}, "sha512-a"], "b": ["b@1.0.0", "", {}, "sha512-b"], ' +
-        '"orphan": ["orphan@1.0.0", "", {}, "sha512-c"]}}',
+        '"a": ["a@1.0.0", "", {"dependencies": {"b": "1.0.0"}}, "sha512-aA"], "b": ["b@1.0.0", "", {}, "sha512-bA"], ' +
+        '"orphan": ["orphan@1.0.0", "", {}, "sha512-cA"]}}',
     ).value
     asserts.equals(env, None, lockfile_resolve(loaded, hoist))
     cleaned = lockfile_clean(loaded, hoist)

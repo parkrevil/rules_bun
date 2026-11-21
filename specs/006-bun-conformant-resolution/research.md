@@ -33,6 +33,7 @@ code, not against this plan.
 | INSTALL | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/install/PackageManager/install_with_manager.rs | the order of the stages in an install (S0) |
 | ISO-142, LOCK-142, TREE-142 | the same files at `bun-v1.4.2` | the 1.4.2 oracle (R10) |
 | DEP, RES, NPM, CATALOG, OVERRIDE, SELECTOR, PKG, OPTIONS, CLI, HOSTED, REPO, INTEGRITY, INSTALLER, INTERSECTS, STRINGS | the same tag's `src/install/dependency.rs`, `resolution.rs`, `npm.rs`, `lockfile/CatalogMap.rs`, `lockfile/OverrideMap.rs`, `lockfile/override_selector.rs`, `lockfile/Package.rs`, `PackageManager/PackageManagerOptions.rs`, `PackageManager/CommandLineArguments.rs`, `hosted_git_info.rs`, `repository.rs`, `integrity.rs`, `PackageInstaller.rs`, `src/semver/intersects.rs`, `src/bun_core/string/immutable.rs` | the types and helpers the stages above call: dependency versions and `Tag::infer`, resolutions and their order, `os`/`cpu`/`libc` sets, catalogs, overrides, `Package::clone`, the install's default features, `--os`/`--cpu`, repository and integrity parsing, `alias_is_safe_install_target`, range intersection, string helpers. Fetched while carrying over (T037–T045), each range re-read at the tag before it is cited |
+| BASE64 | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/base64/lib.rs | the standard-base64 decoder `Integrity::parse_entry` checks a digest with: `calc_size_upper_bound` L548–L564, `calc_size_for_slice` L566–L581, `decode` L583–L641 (T147) |
 | BIN | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/install/bin.rs (1,981 lines) | how a row's `bin` is read: `Bin::parse_append` L193–L229, `parse_append_object` L231–L263 (T144) |
 | DOC-ISO | https://bun.com/docs/install/isolated | the layout the oracle reads: `node_modules/.bun/<package>@<version>/node_modules/…` and the symlinks into it (R7) |
 | BLOG | https://bun.com/blog/bun-lock-text-lockfile | the format outline bun.com links to; it describes none of the fields Part 4 marks new |
@@ -161,9 +162,8 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | `BuilderMethod::Filter` hoisting, `keep_linked_rows`, shipped and contested rows | TREE L436–L452, L929–L1249 | the hoisted linker's install tree; the isolated linker reads the `Resolvable` trees of `Lockfile::resolve` (`build_store` reads `trees[0]` only, ISO L713–L720) |
 | optional-peer omission, pruned-workspace links, workspace filters in `is_filtered_dependency_or_workspace` | TREE L1364–L1404, PRUNED L36–L53, reachable.rs L93–L137 | a default install enables dev and optional dependencies (no omission), a frozen install keeps every workspace (PRUNED L11–L16, no pruned one), and no `--filter` is given; all three then skip nothing |
 | `HostedGitInfo::from_url` beyond the host, and the control-character check of a GitHub fragment | HOSTED L231–L326, L874–L1259; DEP L1356–L1359, L1376 | it chooses between the `git`, `github` and `tarball` tags of a URL, and refuses a GitHub literal it cannot parse or whose fragment holds a control character; the carry-over decides by the URL's host alone (`_hosted_git_tag`). The tag decides a binding only for a peer written as such a URL, bound to a git or GitHub resolution (RES L39–L49), which rules_bun does not fetch (FR-010) |
-| the digest of an `integrity` | INTEGRITY L99–L120 | its base64 is not decoded; an unknown algorithm is still refused (LOCK L1688–L1711). A malformed digest decides no link; rules_bun verifies the digest when it downloads (feature 003 FR-021) |
 | the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry comes from `bunfig.toml`, the environment and `.npmrc`, of which the ruleset reads only the `npmrc` attribute (FR-003). rules_bun refuses to fetch any row without integrity (FR-010, ID-4). Not reproduced: ID-5 (user, 2026-11-21; Part 4, "Loader refusals"; Part 6) |
-| the `.bun-tag` of a git or GitHub row | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); not read |
+| the `.bun-tag` of a git or GitHub row beyond its checks | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); read only to refuse what Bun refuses (L36, T147) |
 | a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists. For one the hub selects on (`NPM_OS`, `NPM_CPU`: `netbsd`, `riscv64`) the adapter (ID-2) gives the value its own bit and reads a package's list for it as npm's `checkList` does, as `main` did (`platforms.bzl` `package_platforms`, `npm_only_names`, `platform_bits`; T112); a platform with no npm value gets a bit no package names that "every value" includes (`bun_install_types.bzl` `platform_value`) |
 
 ### Walks outside the carry-over (T049)
@@ -327,7 +327,12 @@ binding-relevant Bun steps are unaccounted.
 | `bun_lockfile.bzl` `linked_workspace_path` | `src/install/lockfile.rs` L2218–L2256 |
 | `bun_lockfile.bzl` `may_stay_unresolved` | `src/install/lockfile/bun.lock.rs` L3297–L3300 |
 | `bun_lockfile.bzl` `_dependency_resolution_failure` | `src/install/lockfile/bun.lock.rs` L3302–L3345 |
-| `bun_lockfile.bzl` `_integrity_is_supported` | `src/install/integrity.rs` L88–L120; `src/install/integrity.rs` L291–L324 |
+| `bun_lockfile.bzl` `_integrity_tag_parse` | `src/install/integrity.rs` L307–L324 |
+| `bun_lockfile.bzl` `_integrity_parse_entry` | `src/install/integrity.rs` L99–L164; `src/base64/lib.rs` L548–L641 |
+| `bun_lockfile.bzl` `_integrity_is_supported` | `src/install/integrity.rs` L88–L97; `src/install/integrity.rs` L290–L293 |
+| `bun_lockfile.bzl` `_parse_integrity` | `src/install/lockfile/bun.lock.rs` L1688–L1711 |
+| `bun_lockfile.bzl` `_is_safe_resolved_tag` | `src/install/repository.rs` L114–L123 |
+| `bun_lockfile.bzl` `_row_tail` | `src/install/lockfile/bun.lock.rs` L2636–L2735 |
 | `bun_lockfile.bzl` `load_lockfile` | `src/install/lockfile/bun.lock.rs` L1797–L3034 |
 | `bun_lockfile.bzl` `_resolve_rows` | `src/install/lockfile/bun.lock.rs` L2765–L3025 |
 | `bun_lockfile.bzl` `linked_member` (nested in `_resolve_rows`, T128) | `src/install/lockfile/bun.lock.rs` L2793–L2807 |
@@ -685,7 +690,9 @@ The integration tests that wrote their lockfiles inline (T143, decided by the le
 user's delegation, 2026-11-21: compare every one the ruleset resolves, record the rest).
 `conflict.test.ts`, `registries.test.ts`, `credentials.test.ts`, `rename.test.ts` and
 `stale_link.test.ts` now take every lockfile the ruleset resolves from a committed `bun.lock`
-(`workspaces/conflict`; `workspaces/registries`, which both registry tests use;
+(`workspaces/conflict`, and `workspaces/conflict/integrity` and `workspaces/conflict/url`, whose
+`c/b` row records another integrity or URL than `b`'s, written by hand as no Bun writes them and
+installed by the pinned Bun, BC-17, T148; `workspaces/registries`, which both registry tests use;
 `workspaces/rename`; `workspaces/stale_link` and `workspaces/stale_link/edited`, the two lockfiles
 `stale_link.test.ts` filled in from a template that Bun could not load and the test listed as not
 applicable), which this test compares as it compares every `bun.lock` under
@@ -694,9 +701,6 @@ each replacement checked to match) or writes one of the lockfiles below. The oth
 tests read a committed `bun.lock` listed above (a fixture, or `scale`'s, with their URLs
 rewritten). Not compared, each with its reason:
 
-- `conflict.test.ts`, the two lockfiles whose `c/b` entry records another integrity or another URL
-  than `b`'s: the ruleset fails evaluation naming both entries (one package repository serves every
-  entry of a `name@version`), so it resolves no graph.
 - `credentials.test.ts`, the cases (a)–(l): a URL with user information in `bun.lock`,
   `package.json` or `.npmrc` fails evaluation without being printed (feature 005 FR-002), so the
   ruleset resolves no graph.
@@ -704,7 +708,7 @@ rewritten). Not compared, each with its reason:
   resolves it (the row unfetched, ID-4), but the oracle's install is offline against the loopback
   registry (FR-007), which serves no git repository, so the pinned Bun cannot install it.
 - `lockfile_errors.test.ts`, every lockfile: a `bun.lockb`, `lockfileVersion` 0 and 4, an unclosed
-  comment, two entries of `a@1.0.0` with different integrities, and a `packages` key equal to a
+  comment, and a `packages` key equal to a
   workspace's name holding a `file:` folder ("Loader refusals", L2759) each fail evaluation, and
   the cases of an invalid `name` or `workspace_target_name` fail on the `npm.translate_lock` tag,
   so the ruleset resolves no graph.
@@ -775,6 +779,7 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_declared_nowhere` | the root's optional `bin-sunos` (`os: sunos`, a bin) and `nomatch-aix-ppc64` (`cpu: ppc64`), workspace `w`'s non-optional `nomatch-sunos-x64` and optional `bin-sunos`: declared dependencies the store links on no platform class, each keeping its `:node_modules/<package>` target | BC-7; SC-005 | T111 |
 | `conformance_member_chain` | the root's `chain-cli` (a bin) depends on member `chain-w1`, which declares the registry package `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members across two workspace boundaries) | T123 |
 | `conformance_member_workspace_chain` | the root's `chain-cli` depends on member `chain-w1`, which declares member `chain-mid` by `workspace:*`, which declares `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members through a `workspace:` link and more than one further member) | T131 |
+| `conformance_member_alias` | `conformance_registry_to_workspace`'s layout, whose member's target `pkg` is an `alias` of a target in the fixture's root package that carries the member's files | BC-4 (a member's target that is an alias) | T146 |
 
 T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
 its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
@@ -811,7 +816,9 @@ Each BC of Part 5 is first recorded as a conformance difference (`tdd-log.md`), 
 carry-over. Existing tests asserting a non-Bun behavior are changed and listed (FR-016): at least
 `missing_peer` (fails today, links nothing for `state` after), the `resolve_test.bzl` cases on
 per-key instances of one `name@version` (BC-6), `_NPM_DOC`'s "A non-optional dependency is carried
-whatever its `os`, `cpu` and `libc` say" (BC-7).
+whatever its `os`, `cpu` and `libc` say" (BC-7). T148 (BC-17) changed `conflict.test.ts`, which
+asserted that two rows of one `name@version` with different integrity or URL fail evaluation, and
+removed that case from `lockfile_errors.test.ts`.
 
 ## Part 4: Fields and key forms the carried-over algorithm reads
 
@@ -834,6 +841,8 @@ New accesses:
 | L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284; writer L1184–L1240) | E14 | C-WSOPTPEERS (T075) |
 | L34 | top-level `configVersion` (read only to refuse what Bun refuses, T125) | LOCK L1861–L1869 (writer L373: a whole number) | E15 | C-ROOTFIELDS (T130) |
 | L35 | top-level `trustedDependencies` (read only to refuse what Bun refuses, T125) | LOCK L1871–L1888 (writer L510–L527: an array of the names) | E15 | C-ROOTFIELDS (T130) |
+| L36 | a git or GitHub row's `.bun-tag`, the slot after its info object (read only to refuse what Bun refuses, T147) | LOCK L2671–L2722 (writer L860–L894: the `resolved` tag, for GitHub the root folder of the tarball, REPO L125–L130) | E16 | C-ROWTAIL (T147) |
+| L37 | the integrity after a tarball row's info object or a git or GitHub row's tag (read only to refuse what Bun refuses, T147) | LOCK L2724–L2735, L1688–L1711 (writer L799–L818, L889–L893: written only when supported) | E16 | C-ROWTAIL (T147) |
 
 The list is closed (T050): every `root.get(...)`/`value.get(...)`/`info.get(...)` of LOCK
 L1797–3543 at `bun-v1.4.4`, and each slot of a `packages` row, is an access with a canary or read by
@@ -854,13 +863,15 @@ Bun and deciding no binding:
 | `packages`, its keys and row order | L2308, L2929, L2993 | L7, L8, L21, L25, L29 |
 | slot 0 | L2375–L2432 | L9, L22 |
 | an npm row's slots 1–3 | L2433–L2476, L2636–L2669 | L10, L11, L12 |
+| an npm row's slots after 3 | never read | not read: a row of more slots is read by its first 4 (BC-18, T149) |
 | slot 1 of any other row | L2557–L2591 | L31 |
 | `bundled` | L2351 | L26 |
 | `os`, `cpu`, `libc` | L2594–L2602 | L15, C-LIBC |
 | `hasInstallScript` | L2606 | decides no binding (lifecycle scripts, ID-1) |
 | `bin`, `binDir` | L1714–L1721, BIN L193–L263 | L16 (`binDir` decides no binding: which files are bins) |
 | the root row's `{ bin, binDir }` | L2612–L2634 | decides no binding (the root's own bins) |
-| a git or GitHub row's `.bun-tag` | L2671–L2720 | decides no binding ("Not carried over") |
+| a git or GitHub row's `.bun-tag` | L2671–L2722 | L36 (read only to refuse what Bun refuses; decides no binding, "Not carried over") |
+| the integrity of a tarball, git or GitHub row | L2724–L2735 | L37 (read only to refuse what Bun refuses; these rows are not fetched, ID-4) |
 | `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies` of a row or workspace | L3405–L3490 | L6, L13, L14, L30, L32 |
 | `optionalPeers`, `unresolved` | L3372–L3400 | L14, L23, L24, L33 |
 
@@ -901,10 +912,10 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L2313 | Expected an object (`packages`) | refused | `_CONTAINER_REFUSALS` L2313 (red first) |
 | L2339, L2368, L2380, L2394, L2403, L2427, L2434, L2445, L2536, L2558, L2569, L2640, L2643 | the row refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | not refused | not written: the writer prints the object (L751–L778); not read (the root's own bins, table above) |
-| L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused for an unknown algorithm | `_LOADER_REFUSALS` L2650; a malformed digest of a known algorithm is not written: the writer prints the digest it decoded, base64-encoded again (INTEGRITY L245–L266), and is not decoded here (Part 2, "Not carried over") |
+| L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused, from lockfileVersion 2, where no whitespace-separated entry has a known algorithm and a digest `Integrity::parse_entry` accepts (standard base64 without padding, at most the algorithm's length, zero bits after the last byte; INTEGRITY L88–L164, BASE64 L548–L641); before 2 Bun warns and loads | `_LOADER_REFUSALS` L2650; `lockfile_test.bzl` `_INTEGRITY_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147) |
 | L2664 (L2652–L2669) | Missing integrity hash for npm package resolved to a tarball URL outside the configured registry | not refused; the row is unfetched (ID-4) | **ID-5** (user, 2026-11-21, Part 6): Bun's configured registry comes from `bunfig.toml` (`install.registry`, `install.scopes`), the environment and `.npmrc` (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only the `npmrc` attribute's `.npmrc` (FR-003), so it cannot tell which URLs are under the configured registry. It loads such a lockfile and a target that needs the row fails analysis (ID-4), as `restricted` and `integration/workspaces/multi_nointegrity` show for rows without integrity (`conformance_test`, ID-4) |
-| L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | not refused | not written: the writer prints the resolved commit (L884–L888); `.bun-tag` is not read (Part 2, "Not carried over") |
-| L2721 (L1688–L1711) | Unsupported or malformed integrity hash (a tarball or git row) | not refused | not written: the writer prints such an integrity only when it is supported (L814, L889); not read (ID-4: these rows are not fetched) |
+| L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | refused: a missing or non-string slot on every lockfile, a tag over 256 bytes on every lockfile, and one `is_safe_resolved_tag` rejects (REPO L114–L123) for a GitHub row on every lockfile and for a git row from lockfileVersion 2 | `lockfile_test.bzl` `_GIT_TAG_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147); canary C-ROWTAIL |
+| L2733 (L1688–L1711) | Unsupported or malformed integrity hash (a tarball, git or GitHub row) | refused as L2650; a slot that is not a string is skipped, as Bun skips it | `_INTEGRITY_REFUSALS` (L2733 rows) and `row_tail_accepted_test` (red first, T147); canary C-ROWTAIL |
 | L2759 | Duplicate package path | refused | `bun_lockfile_test.bzl` (T031), `lockfile_errors.test.ts` (T035) |
 | L2843, L2908, L3010 | Failed to resolve … dependency (`dependency_resolution_failure`, L3302–L3345) | refused | `_LOADER_REFUSALS`, one row each |
 | L2888 | Workspace and dependency name too long | not refused | not written: `./<workspace>/<dependency>` must exceed the path buffer (4,096 bytes on Linux), but each name is a directory under `node_modules`, at most 255 bytes on every supported file system |
@@ -953,6 +964,17 @@ BC-1 to BC-5 are the spec's. Found while planning:
 - **BC-7 (new): non-optional dependencies on another platform**. Bun skips a dependency whose package
   `is_disabled` for the platform, optional or not (S7; `libc` only for optional ones); `_NPM_DOC` says
   a non-optional one is carried whatever its `os`, `cpu` and `libc` say.
+
+Found by the eighth Claude review (2026-11-22), each a lockfile the pinned Bun installs and `main`
+fails to evaluate, so no graph comparison shows it:
+
+- **BC-17: two rows of one `name@version` with different integrity or URL**. Bun's
+  `append_package_dedupe` (LOCKFILE L2684–L2711) returns the package the first row appended, whose
+  `meta` keeps that row's integrity and URL; the pinned Bun installs such a lockfile, requesting
+  the package once from the first row's URL (`tdd-log.md` T148). The ruleset failed evaluation.
+- **BC-18: an npm row with more than 4 slots**. Bun reads slots 1–3 by index (LOCK L2433–L2669) and
+  never looks past them; the pinned Bun loads rows of 5 and 7 slots (`tdd-log.md` T149). The
+  reader required exactly 4.
 
 ## Part 6: Decisions for the user
 
@@ -1100,6 +1122,49 @@ target to carry; the member's npm package records are not compared, as no root-m
 member with npm dependencies to test it on (constitution II), and a member whose files are copied
 gets its records through the same `BunLibraryInfo` unless a rule drops them on purpose.
 
+**T146 decided by the lead, under the user's delegation (2026-11-22)**: the eighth Claude review
+found that a member whose `workspace_target_name` target is an `alias` failed BC-4's check, because
+`run.bzl` compared the member's label with the labels `declared_targets_aspect` collects, and Bazel
+reports a target reached through an alias under the label of the target the alias names (checked
+on Bazel 9.2.0 in `/tmp/bun006-alias-probe`: both `Target.label` in the depending rule and the
+aspect's `target.label` are the named target's, the aspect is not applied to the alias, and
+`Target` has no field holding the alias's label). The hub cannot resolve the alias itself: it does
+not depend on the member's target, so that a member that depends on the package forms no cycle
+(BC-4). The member is therefore also recognized by its `package.json`, the source file
+`<member package>:package.json`: a collected target whose files are all in the copy tree (T124,
+T140) counts as the member's target where its label is the member's or its files hold that
+`package.json`. The link still points at the member's package, the directory of that `package.json`,
+where Bun's member is and where the copy tree puts the file, rather than at the package of the target
+the alias names, which can hold none of the member's files (in `conformance_member_alias` it is the
+fixture's root package). A `workspace:` link (`npm_package.bzl` `_npm_member_link`) keeps feature
+003's rule, the package of the target Bazel reports; for an alias of a target in the member's own
+package, both are the member's package.
+
+**T147 decided by the lead, under the user's delegation (2026-11-22)**: the eighth Claude review
+found that the loader read an npm row's integrity only for its algorithm and a git or GitHub row's
+`.bun-tag` not at all, so it loaded lockfiles the pinned Bun refuses (FR-004). `Integrity::parse`
+is carried over with the standard-base64 decoder it calls (BASE64, Part 1, the same tag's
+`src/base64/lib.rs`): an entry counts where its digest is standard base64 without padding of at
+most the algorithm's length, so a shorter digest loads, as the pinned Bun loads `sha512-AA`. The
+tag and the integrity after the info object of a tarball, git or GitHub row (L36, L37) are read
+only to refuse; they decide no binding. The pinned Bun loaded or refused each of 75 texts as
+`Integrity::parse_entry`, `parse_integrity` and `is_safe_resolved_tag` read (`tdd-log.md` T147),
+and canary C-ROWTAIL pins the form it writes, through a GitHub dependency served on the loopback
+registry with `GITHUB_API_URL` (which the pinned Bun's GitHub download reads, E16); a `git+` row
+would need a git executable, which the canaries do not run (constitution III), and the writer
+prints both forms in one branch (LOCK L860–L894). The refusals reach a lockfile with a git or
+GitHub row too, which rules_bun does not fetch (FR-010, ID-4) but whose dependencies it links
+(BC-8).
+
+**T148 and T149 decided by the lead, under the user's delegation (2026-11-22)**: the eighth Claude
+review found that the ruleset failed evaluation of two lockfile forms the pinned Bun installs. Both
+are numbered as Behavior Changes (BC-17, BC-18, Part 5) before the fix, as the spec requires of a
+difference no BC explains. BC-17 follows the loader the carry-over already has: the package of a
+`name@version` is the first row's (`_append_package_dedupe`), so the extension's check that every
+row agree on the download is removed, and the package repository downloads from the first row's
+URL with its integrity, as the pinned Bun does. `conflict.test.ts` now builds both lockfiles and
+checks the one request; the conformance test compares the pinned Bun's install of each.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on
@@ -1163,3 +1228,7 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   lockfile gets `ConfigVersion::CURRENT`, lockfile.rs L558) and `"trustedDependencies": ["a"]`
   (LOCK L510–L527); a `--frozen-lockfile` install loads that text and keeps it. With either field
   removed from the held lockfile, a frozen install keeps the text without it.
+- **E16** (C-ROWTAIL, T147): with `GITHUB_API_URL` set to a local server, `bun add
+  github:o/r#<commit>` requested `/repos/o/r/tarball/<commit>` and wrote
+  `"r": ["r@github:o/r#0123456", {}, "o-r-0123456", "sha512-…"]`; a tarball URL dependency is written
+  `["<name>@<url>", {…}, "sha512-…"]` (E12). A frozen install loads both.

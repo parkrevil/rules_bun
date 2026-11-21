@@ -104,7 +104,7 @@ def _filter_test_impl(ctx):
     dev = _resolved(
         env,
         '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"a": "1.0.0"}}}, "packages": {' +
-        '"a": ["a@1.0.0", "", {"devDependencies": {"b": "1.0.0"}}, "sha512-a"], "b": ["b@1.0.0", "", {}, "sha512-b"]}}',
+        '"a": ["a@1.0.0", "", {"devDependencies": {"b": "1.0.0"}}, "sha512-aA"], "b": ["b@1.0.0", "", {}, "sha512-bA"]}}',
     )
     a = dev.pkg_map["a"]
     asserts.true(env, is_filtered_dependency_or_workspace(dev, dependency_ids(dev, a)[0], a, linux))
