@@ -314,10 +314,11 @@ def _all(names):
 
 _NAMES = {"cpu": _CPU_NAMES, "libc": _LIBC_NAMES, "os": _OS_NAMES}
 
-# A target `os` or `cpu` that Bun does not name (an unmapped Bazel platform, `netbsd`, `riscv64`):
-# Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists for it. It gets a bit that no
-# package names and that "every value" includes, which is npm's rule for an unknown value, as on
-# `main`: a package without the field, with `any`, or with negations only matches it.
+# A target `os` or `cpu` that Bun does not name (an unmapped Bazel platform; `platforms.bzl` gives
+# `netbsd` and `riscv64`, which it maps, their own bits, T112): Bun refuses such a `--os` or
+# `--cpu`, so no Bun behavior exists for it. It gets a bit that no package names and that "every
+# value" includes, as `main`'s rule read such a platform: a package without the field, with `any`,
+# or with negations only matches it.
 _UNNAMED = 1 << 15
 _ALL = {kind: _all(names) | (_UNNAMED if kind != "libc" else 0) for kind, names in _NAMES.items()}
 

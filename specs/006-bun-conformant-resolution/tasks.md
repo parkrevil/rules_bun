@@ -1097,7 +1097,7 @@ The fourth Claude review before the final gate found these; the lead rejected th
 (the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and
 recorded in `tdd-log.md`.
 
-- [ ] T111 CRITICAL: a declared dependency the store links on no platform class gets no
+- [X] T111 CRITICAL: a declared dependency the store links on no platform class gets no
   `:node_modules/<package>` target (`bun/private/resolve.bzl` about L366–L394 builds links only from
   the store's holder edges), against the naming rule (`bun/private/npm_extension.bzl` about
   L468–L470: one target "for each package that workspace package declares"), P4, FR-014 and SC-005.
@@ -1110,7 +1110,7 @@ recorded in `tdd-log.md`.
   on the platform classes where the store links nothing, as `main`'s empty optional targets are;
   check every generated target name of `main` against the branch for the fixtures (SC-005), per
   P4 / FR-014 / SC-005 (contradicts)
-- [ ] T112 A package restricted to an `os` or `cpu` Bun does not name (`cpu: ["riscv64"]`,
+- [X] T112 A package restricted to an `os` or `cpu` Bun does not name (`cpu: ["riscv64"]`,
   `@esbuild/linux-riscv64`; `os: ["netbsd"]`) is disabled on every class, including a
   linux/riscv64 or netbsd target: `bun/private/bun_install_types.bzl` (about L358) maps such a
   target value to `_UNNAMED`, and about L394–L398 read such a package value as matching nothing,
@@ -1119,7 +1119,7 @@ recorded in `tdd-log.md`.
   `bun/tests/npm/platforms_test.bzl` cases red first, then match a package value Bun does not name
   as npm's rule does on the target that names it; align `_NPM_DOC`'s list of values that match no
   platform, per research R3 / FR-015 (contradicts)
-- [ ] T113 `e2e/smoke/bun.lock` is resolved by the ruleset's tests but not compared with the pinned
+- [X] T113 `e2e/smoke/bun.lock` is resolved by the ruleset's tests but not compared with the pinned
   Bun (search roots in `bun/tests/npm/conformance/conformance.test.ts` about L93 and
   `bun/tests/npm/fixture_results.bzl` `_projects`; the exclusion stated at `_NPM_DOC` about L503),
   against spec P2 ("every project the ruleset's tests resolve"). Compare it (a copy or a reference

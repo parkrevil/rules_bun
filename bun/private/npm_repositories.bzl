@@ -472,8 +472,11 @@ def _compatible(link):
     \"\"\"`target_compatible_with` of the bins of a link: where the platform select carries its root.
 
     A declared optional package with `os`, `cpu` or `libc` is absent elsewhere (research R8;
-    feature 004 research R11), and so are its bins (FR-016).
+    feature 004 research R11), and so are its bins (FR-016); a link the store makes on no platform
+    has no root, and its bins are compatible with none (feature 006 T111).
     \"\"\"
+    if link["root"] == None and link["root_select"] == None:
+        return [Label("@platforms//:incompatible")]
     if link["root_select"] != None:
         return select({{
             (k if k.startswith("//conditions:") else Label("//:" + k)): [] if root else [Label("@platforms//:incompatible")]

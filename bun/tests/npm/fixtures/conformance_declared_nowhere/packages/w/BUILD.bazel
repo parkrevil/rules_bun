@@ -1,0 +1,8 @@
+load("@npm_conformance_declared_nowhere//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# A workspace member of the fixture project.
+
+npm_link_all_packages()
+
+conformance_files()

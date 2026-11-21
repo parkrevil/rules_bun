@@ -1,0 +1,11 @@
+{
+  "name": "conformance-declared-nowhere",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "optionalDependencies": {
+    "bin-sunos": "1.0.0",
+    "nomatch-aix-ppc64": "1.0.0"
+  }
+}

@@ -36,6 +36,7 @@ _CONFORMANCE_DATA = [
     "//bun/tests/npm/registry/archives",
     "//bun/tests/npm/scale:conformance_files",
     "@npm_fixture_results//:graphs.json",
+    "@npm_fixture_results//e2e/smoke:files",
 ]
 
 _CONFORMANCE_DEPS = [

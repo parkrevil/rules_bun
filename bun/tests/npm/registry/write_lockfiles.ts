@@ -138,6 +138,11 @@ const CONFORMANCE_LOAD = 'load("//bun/tests/npm/conformance:files.bzl", "conform
 // The conformance test copies every file of a project (bun/tests/npm/conformance/files.bzl).
 const STUB_BUILD = `${CONFORMANCE_LOAD}\n# A workspace member of the fixture project.\n\nconformance_files()\n`;
 
+// A workspace member that links its packages from the fixture's hub (feature 006 T111).
+function memberBuild(hub: string): string {
+  return `load("@${hub}//:defs.bzl", "npm_link_all_packages")\n${CONFORMANCE_LOAD}\n# A workspace member of the fixture project.\n\nnpm_link_all_packages()\n\nconformance_files()\n`;
+}
+
 function overridesProject(manifest: Record<string, unknown>, check: (lock: Lockfile) => void): Project {
   return {
     files: () => ({ "package.json": json({ name: "overrides", private: true, dependencies: { a: "1.0.0" }, ...manifest }) }),
@@ -483,7 +488,7 @@ const projects: Record<string, Project> = {
         optionalDependencies: { b: "^3.0.0" },
       }),
       "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { a: "1.0.0" }, optionalDependencies: { q: "^3.0.0" } }),
-      "packages/w/BUILD.bazel": STUB_BUILD,
+      "packages/w/BUILD.bazel": memberBuild("npm_conformance_unresolved"),
     }),
     check(lock) {
       assert(JSON.stringify(lock.packages["opt-user"]?.[2]?.unresolved) === '["state"]', "opt-user's unresolved is not [state]");
@@ -509,7 +514,7 @@ const projects: Record<string, Project> = {
         optionalDependencies: { x: "^9.0.0" },
         peerDependencies: { q: "^9.0.0" },
       }),
-      "packages/w/BUILD.bazel": STUB_BUILD,
+      "packages/w/BUILD.bazel": memberBuild("npm_conformance_unbound"),
     }),
     check(lock) {
       for (const name of ["state", "r", "x", "q"]) assert(!(name in lock.packages), `bun.lock has a key ${name}`);
@@ -672,6 +677,33 @@ const projects: Record<string, Project> = {
     check(lock) {
       assert(slot0(lock, "plat-p") === "plat-p@2.0.0", "the root's plat-p is not plat-p@2.0.0");
       assert(lock.packages["plat-p"][2]?.os === "darwin", "plat-p@2.0.0 is not restricted to darwin");
+    },
+  },
+  // T111: dependencies of the root and of a workspace that the store links on no platform class:
+  // the root's optional bin-sunos (os sunos, with a bin) and nomatch-aix-ppc64 (cpu ppc64), the
+  // workspace's non-optional nomatch-sunos-x64 (BC-7) and optional bin-sunos. Each still gets its
+  // `:node_modules/<package>` target, which carries nothing.
+  conformance_declared_nowhere: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-declared-nowhere",
+        private: true,
+        workspaces: ["packages/*"],
+        optionalDependencies: { "bin-sunos": "1.0.0", "nomatch-aix-ppc64": "1.0.0" },
+      }),
+      "packages/w/package.json": json({
+        name: "w",
+        version: "1.0.0",
+        dependencies: { "nomatch-sunos-x64": "1.0.0" },
+        optionalDependencies: { "bin-sunos": "1.0.0" },
+      }),
+      "packages/w/BUILD.bazel": memberBuild("npm_conformance_declared_nowhere"),
+    }),
+    check(lock) {
+      assert(lock.packages["bin-sunos"]?.[2]?.os === "sunos", "bin-sunos is not restricted to sunos");
+      assert(lock.packages["bin-sunos"]?.[2]?.bin?.["sunos-bin"] === "cli.js", "bin-sunos has no bin sunos-bin");
+      assert(lock.packages["nomatch-aix-ppc64"]?.[2]?.cpu === "ppc64", "nomatch-aix-ppc64 is not restricted to ppc64");
+      assert(lock.packages["nomatch-sunos-x64"]?.[2]?.os === "sunos", "nomatch-sunos-x64 is not restricted to sunos");
     },
   },
   // BC-13, BC-14 (T096): Bun's platform rule. rule-user's optional rule-linux-any (os

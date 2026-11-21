@@ -323,6 +323,35 @@ npm.translate_lock(
     bun_lock = "//bun/tests/npm/fixtures/conformance_platform_edge:bun.lock",
 )
 
+# Dependencies of the root and of workspaces that the store links on no target platform (feature
+# 006 T111: an optional or non-optional package no platform matches, BC-7; an optional dependency
+# under `unresolved`, BC-1; an optional or peer dependency without a key, BC-3 and BC-5): each
+# keeps its `:node_modules/<package>` target, which carries nothing.
+npm.translate_lock(
+    name = "npm_conformance_declared_nowhere",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_declared_nowhere:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_conformance_platform",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_platform:bun.lock",
+)
+npm.replace_package(
+    package = "plat-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:plat-user@1.0.0.tgz",
+)
+npm.translate_lock(
+    name = "npm_conformance_unbound",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_unbound:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_conformance_unresolved",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_unresolved:bun.lock",
+)
+npm.replace_package(
+    package = "opt-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:opt-user@1.0.0.tgz",
+)
+
 # A dependency whose store entry differs by target platform (feature 006 BC-12).
 npm.translate_lock(
     name = "npm_conformance_platform_peer",
@@ -379,7 +408,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_platform_rule", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_platform_peer_1_4_2", "npm_platform_rule_raw", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_declared_nowhere", "npm_conformance_platform", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_platform_rule", "npm_conformance_registry_to_workspace", "npm_conformance_unbound", "npm_conformance_unresolved", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_platform_peer_1_4_2", "npm_platform_rule_raw", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.

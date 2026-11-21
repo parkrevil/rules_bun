@@ -5,11 +5,7 @@ toolchain registration (`toolchains_repo.bzl`, `repositories.bzl`) and npm packa
 (`npm_repositories.bzl`) both derive from it.
 """
 
-load(":bun_install_types.bzl", "LIBC_ALL", "meta_is_disabled", "negatable_from_json_value", "platform_value")
-
-# Bun's "every value" of an absent `os` and `cpu` field.
-_ALL_OS = negatable_from_json_value("os", None)
-_ALL_CPU = negatable_from_json_value("cpu", None)
+load(":bun_install_types.bzl", "LIBC_ALL", "meta_is_disabled", "negatable_from_json_value", "platform_names", "platform_value")
 
 # npm `os` and `cpu` values -> `@platforms` constraint names (@platforms 1.1.0 `os/BUILD` and
 # `cpu/BUILD`). A value not listed, such as `sunos`, matches no Bazel platform.
@@ -32,6 +28,76 @@ NPM_CPU = {
     "s390x": "s390x",
     "x64": "x86_64",
 }
+
+def _npm_only(kind, table):
+    """The values of `table` Bun does not name, each with its own bit above Bun's."""
+    return {name: 1 << (16 + i) for i, name in enumerate([n for n in sorted(table.keys()) if n not in platform_names(kind)])}
+
+# The npm values `NPM_OS` and `NPM_CPU` map that Bun's `negatable_names!` tables do not name
+# (`netbsd`, `riscv64`): Bun refuses such a `--os` or `--cpu` (CLI L37-L64), so no Bun behavior
+# exists for a target with one (research R3, T112).
+_NPM_ONLY = {"cpu": _npm_only("cpu", NPM_CPU), "libc": {}, "os": _npm_only("os", NPM_OS)}
+
+def npm_only_names(kind):
+    """The npm values the hub selects on that Bun does not name.
+
+    This is the adapter (ID-2): `NPM_OS` and `NPM_CPU` map them to `@platforms` constraints, and
+    Bun has no behavior for a target with one (research R3, T112).
+
+    Args:
+        kind: `os`, `cpu` or `libc`.
+
+    Returns:
+        The sorted names.
+    """
+    return sorted(_NPM_ONLY[kind].keys())
+
+def _check_list(value, values):
+    """npm's `os` and `cpu` rule: npm-install-checks `checkList` (v9.0.0, `lib/index.js` at fcba600c2e4d).
+
+    This is the adapter: npm's rule, which `main` applied to every value (`git show
+    main:bun/private/platforms.bzl` `check_list`). A sole `any` matches; a `!<v>` equal to `value`
+    fails; otherwise a positive entry equal to `value` matches, and a list of negated entries only
+    matches everything else.
+    """
+    if values == ["any"]:
+        return True
+    negated = 0
+    match = False
+    for entry in values:
+        if entry.startswith("!"):
+            negated += 1
+            if entry[1:] == value:
+                return False
+        elif entry == value:
+            match = True
+    return match or negated == len(values)
+
+def package_platforms(kind, value):
+    """The bit set a package's `os`, `cpu` or `libc` field allows on the hub's target platforms.
+
+    This is the adapter (ID-2): Bun's `negatable_from_json_value` decides every value Bun names;
+    for each value the hub selects on that Bun does not name (`npm_only_names`), on which Bun has no
+    behavior, the field is read as npm's `checkList` reads it, as on `main` (research R3, T112). An
+    absent field allows every value.
+
+    Args:
+        kind: `os`, `cpu` or `libc`.
+        value: The field's JSON value: a string, a list, or `None` when the field is absent.
+
+    Returns:
+        The bit set.
+    """
+    bits = negatable_from_json_value(kind, value)
+    values = [value] if type(value) == "string" else [item for item in value if type(item) == "string"] if type(value) == "list" else []
+    for name, bit in _NPM_ONLY[kind].items():
+        if value == None or _check_list(name, values):
+            bits |= bit
+    return bits
+
+# The "every value" of an absent `os` and `cpu` field.
+_ALL_OS = package_platforms("os", None)
+_ALL_CPU = package_platforms("cpu", None)
 
 # npm `libc` values -> constraint values of //bun/platforms/libc (feature 004 research R11).
 NPM_LIBC = {
@@ -105,6 +171,9 @@ def platform_bits(platform):
 
     Bun: src/install/PackageManager/PackageManagerOptions.rs L1174–L1176 @ bun-v1.4.4
 
+    A value Bun does not name that the hub selects on gets its own bit (`npm_only_names`), which
+    `package_platforms` sets as npm's rule does (T112).
+
     Args:
         platform: A `platform_tuples()` tuple.
 
@@ -112,7 +181,11 @@ def platform_bits(platform):
         `struct(cpu, os, libc)`.
     """
     os, cpu, libc = platform
-    return struct(cpu = platform_value("cpu", cpu), os = platform_value("os", os), libc = platform_value("libc", libc))
+    return struct(
+        cpu = _NPM_ONLY["cpu"].get(cpu) or platform_value("cpu", cpu),
+        os = _NPM_ONLY["os"].get(os) or platform_value("os", os),
+        libc = platform_value("libc", libc),
+    )
 
 def platform_classes(lockfile):
     """The platform tuples grouped by what `Meta::is_disabled` leaves out (research R3).

@@ -4,11 +4,11 @@ research R11 for libc, which Bun 1.4.4 writes)."""
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun:defs.bzl", "BunLibraryInfo", "bun_binary")
-load("//bun/private:bun_install_types.bzl", "BEHAVIOR", "LIBC_ALL", "libc_for_dependency", "meta_is_disabled", "negatable_from_json_value", "platform_value")
+load("//bun/private:bun_install_types.bzl", "BEHAVIOR", "LIBC_ALL", "libc_for_dependency", "meta_is_disabled", "platform_names", "platform_value")
 load("//bun/private:bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load("//bun/private:bun_tree.bzl", "hoist")
 load("//bun/private:lockfile.bzl", "read_lockfile")
-load("//bun/private:platforms.bzl", "platform_bits", "platform_classes", "platform_tuples")
+load("//bun/private:platforms.bzl", "NPM_CPU", "NPM_OS", "npm_only_names", "package_platforms", "platform_bits", "platform_classes", "platform_tuples")
 
 _BASIC = "//bun/tests/npm/fixtures/basic:node_modules/"
 _AIX = "//bun/tests/npm/fixtures/aix:node_modules/aix-user"
@@ -51,9 +51,9 @@ _platform_classes_test = unittest.make(_platform_classes_test_impl)
 def _carried_on(platform, os = None, cpu = None, libc = None, behavior = BEHAVIOR.OPTIONAL):
     """Whether a package with these fields is carried on a platform tuple, as the resolver decides."""
     meta = struct(
-        os = negatable_from_json_value("os", os),
-        arch = negatable_from_json_value("cpu", cpu),
-        libc = negatable_from_json_value("libc", libc),
+        os = package_platforms("os", os),
+        arch = package_platforms("cpu", cpu),
+        libc = package_platforms("libc", libc),
     )
     bits = platform_bits(platform)
     return not meta_is_disabled(meta, bits.cpu, bits.os, libc_for_dependency(bits.libc, behavior))
@@ -87,6 +87,29 @@ def _bun_rule_test_impl(ctx):
     asserts.true(env, _carried_on(linux, libc = ["glibc"]))
     asserts.true(env, _carried_on(darwin, libc = ["glibc"]))
     asserts.true(env, _carried_on(linux_musl, libc = ["glibc"], behavior = BEHAVIOR.PROD))
+
+    # An `os` or `cpu` the hub selects on that Bun does not name (T112): Bun refuses it as a
+    # target, so a package's list is read for it as npm's `checkList` reads it, as on `main`; on
+    # the values Bun names, Bun's reading decides (a value it does not name matches none of them).
+    for kind, table in [("os", NPM_OS), ("cpu", NPM_CPU)]:
+        for value in sorted(table.keys()):
+            asserts.true(env, value in platform_names(kind) or value in npm_only_names(kind), "{} {} is named by Bun or read as npm reads it".format(kind, value))
+    riscv64 = ("linux", "riscv64", None)
+    netbsd = ("netbsd", "x64", None)
+    asserts.true(env, _carried_on(riscv64, cpu = ["riscv64"]), "cpu riscv64 on riscv64")
+    asserts.false(env, _carried_on(linux, cpu = ["riscv64"]), "cpu riscv64 on x64")
+    asserts.false(env, _carried_on(riscv64, cpu = ["!riscv64"]), "cpu !riscv64 on riscv64")
+    asserts.true(env, _carried_on(linux, cpu = ["!riscv64"]), "cpu !riscv64 on x64")
+    asserts.false(env, _carried_on(riscv64, cpu = ["x64"]), "cpu x64 on riscv64")
+    asserts.true(env, _carried_on(riscv64, cpu = ["x64", "riscv64"]), "cpu x64, riscv64 on riscv64")
+    asserts.true(env, _carried_on(riscv64), "no cpu on riscv64")
+    asserts.true(env, _carried_on(netbsd, os = ["netbsd"]), "os netbsd on netbsd")
+    asserts.false(env, _carried_on(linux, os = ["netbsd"]), "os netbsd on linux")
+    asserts.false(env, _carried_on(netbsd, os = ["!netbsd"]), "os !netbsd on netbsd")
+    asserts.true(env, _carried_on(netbsd, os = ["!win32"]), "os !win32 on netbsd")
+    asserts.true(env, _carried_on(netbsd, os = ["any"]), "os any on netbsd")
+    asserts.false(env, _carried_on(netbsd, os = ["linux", "any"]), "os linux, any on netbsd: npm's checkList")
+    asserts.equals(env, [("netbsd", None, None)] + [("netbsd", c, None) for c in sorted(NPM_CPU.keys())], [t for t in platform_tuples() if _carried_on(t, os = ["netbsd"])])
     return unittest.end(env)
 
 _bun_rule_test = unittest.make(_bun_rule_test_impl)

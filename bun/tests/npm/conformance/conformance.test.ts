@@ -44,6 +44,12 @@ const BUN_1_4_2 = "bun/tests/npm/conformance/bun_1_4_2";
 const ACCEPTED = "bun/tests/npm/conformance/accepted";
 const REFUSED = "bun/tests/npm/conformance/refused";
 const ARCHIVES = `${MAIN}/bun/tests/npm/registry/archives`;
+// The consumer module's project (T113). `e2e` is no package of the root module, so the
+// npm_fixture_results extension copies its bun.lock and package.json; the oracle serves it the
+// archives of fixtures/jsx, which fetch_react.ts took from the registry for the same three package
+// versions and integrities.
+const E2E = "e2e/smoke";
+const E2E_ARCHIVES = `${MAIN}/bun/tests/npm/fixtures/jsx/archives`;
 
 // Projects the oracle cannot install, each with the reason (research R9): only a project whose
 // lockfile Bun refuses to load. The ruleset must refuse each as well (spec Edge Cases, FR-004).
@@ -81,7 +87,11 @@ function repoMapping(apparent: string): string {
   throw new Error(`the runfiles repository mapping names no ${apparent}`);
 }
 
-const graphs = JSON.parse(readFileSync(rlocation(`${repoMapping("npm_fixture_results")}/graphs.json`), "utf8")) as Record<string, RulesetSide>;
+const RESULTS_REPO = repoMapping("npm_fixture_results");
+const graphs = JSON.parse(readFileSync(rlocation(`${RESULTS_REPO}/graphs.json`), "utf8")) as Record<string, RulesetSide>;
+
+/** A project's directory in the runfiles. */
+const projectDir = (project: string) => (project === E2E ? `${RESULTS_REPO}/${E2E}` : `${MAIN}/${project}`);
 
 /** The projects the runfiles hold: directories with a bun.lock (research R9). */
 function projectsInRunfiles(): string[] {
@@ -102,11 +112,13 @@ function projectsInRunfiles(): string[] {
   const scale = rlocationList(`${MAIN}/${SCALE}`);
   for (const dir of [SCALE, SCALE_PLATFORM]) if (scale.includes(`${MAIN}/${dir}/bun.lock`)) found.add(dir);
   for (const dir of lockfiles(INTEGRATION)) found.add(dir);
+  if (rlocationList(`${RESULTS_REPO}/${E2E}`).includes(`${RESULTS_REPO}/${E2E}/bun.lock`)) found.add(E2E);
   return [...found].sort();
 }
 
 /** The archives the loopback registry serves for a project. */
 function archivesFor(project: string, scaleDir: (platform: boolean) => string): string[] {
+  if (project === E2E) return rlocationList(E2E_ARCHIVES).filter((path) => path.endsWith(".tgz")).map((path) => rlocation(path));
   const fixture = rlocationList(ARCHIVES)
     .filter((path) => path.endsWith(".tgz"))
     // A variant archive (`<store name>+<variant>`, pack.ts) is a second archive of a version.
@@ -179,7 +191,7 @@ for (const project of projects) {
         // Asserted, not skipped: the oracle's loader must still refuse it, and so must the
         // ruleset, which never links a graph for a lockfile Bun does not install (spec Edge
         // Cases), with an error naming the bun.lock label as every refusal of its reader does.
-        await expect(installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir))).rejects.toThrow(LOADER_REFUSAL);
+        await expect(installWithBun(projectDir(project), archivesFor(project, scaleDir))).rejects.toThrow(LOADER_REFUSAL);
         const side = graphs[project];
         const refused = "error" in side && side.error.startsWith(`${project}/bun.lock: `);
         if (!refused) differences.push(`${project}: Bun refuses the lockfile, the ruleset ${"error" in side ? `fails without naming ${project}/bun.lock (${side.error})` : "links it"}`);
@@ -187,7 +199,7 @@ for (const project of projects) {
         return;
       }
       const files = Object.fromEntries(Object.entries(EXTRA_FILES[project] ?? {}).map(([url, path]) => [url, rlocation(path)]));
-      const installed = await installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir), { files });
+      const installed = await installWithBun(projectDir(project), archivesFor(project, scaleDir), { files });
       const bun = readBunGraph(installed.dir, installed.workspaces);
       const side = graphs[project];
       let difference: string | undefined;

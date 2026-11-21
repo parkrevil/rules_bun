@@ -420,7 +420,10 @@ the test that shows it:
   write such a list as they read it (no `os` for `["linux", "any"]`, `"linux"` for `["any",
   "linux"]`), so only a lockfile written otherwise holds one (`platform_rule_test.bzl`, the
   hand-written `bun/tests/npm/conformance/accepted/platform_rule_raw/bun.lock`, which the
-  conformance test compares with both oracles; T096, T110).
+  conformance test compares with both oracles; T096, T110). On a target platform whose `os` or
+  `cpu` Bun does not name but the hub selects on (`netbsd`, `riscv64`), Bun has no rule, so the
+  list is read as npm's `checkList` reads it, as on `main` (`platforms_test.bzl` `bun_rule_test`;
+  the lead, under the user's delegation, 2026-11-21, T112).
 - **BC-14**: on a platform other than Linux, a package's `libc` excludes nothing, as Bun's
   `Meta::is_disabled` reads it; `main` lets `libc` match no other OS (research R3; user,
   2026-11-21; `conformance_platform_rule`, `platform_rule_test.bzl`, T096).
@@ -440,6 +443,11 @@ the test that shows it:
   entry (research R4 "An entry's alias"). `main` binds the dependency once for every platform
   (`p`'s `q` to `q-darwin@1.0.0` everywhere); the branch failed evaluation there until T107, as
   the former ID-7 stated (the lead, under the user's delegation, 2026-11-21, T107).
+
+Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
+target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin
+targets are compatible with no platform, as `main`'s target of an optional package no platform
+matches is (P4, FR-014, SC-005; the lead, under the user's delegation, 2026-11-21, T111).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

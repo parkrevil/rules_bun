@@ -1,0 +1,10 @@
+{
+  "name": "bin-sunos",
+  "version": "1.0.0",
+  "bin": {
+    "sunos-bin": "cli.js"
+  },
+  "os": [
+    "sunos"
+  ]
+}

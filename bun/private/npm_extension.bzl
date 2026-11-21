@@ -353,12 +353,13 @@ def _translate(module_ctx, tag, replacements):
         package = "/".join([p for p in [lock_dir, path] if p])
         targets = {}
         for alias, link in aliases.items():
-            # The roots of a link whose root differs by platform are one package under different
-            # peer bindings (feature 006 BC-12; `resolve.bzl` fails roots of different packages,
-            # T097), so any of them names its bins and fetch status.
-            root = resolution.value.instances[link.root or sorted(link.roots.keys())[0]]
-            entry_bins = entries[root.key].bin if root.status == "ok" else {}
-            bins = bin_targets("{}@{}".format(root.name, root.version), entry_bins)
+            # The package the link names its bins after (`resolve.bzl`): its root, or the one
+            # package of the roots of a link whose root differs by platform (feature 006 BC-12;
+            # `resolve.bzl` fails roots of different packages, T097), or, for a link the store
+            # makes on no platform, the package the dependency resolves to (T111).
+            entry = entries[link.key] if link.key else None
+            entry_bins = entry.bin if entry else {}
+            bins = bin_targets("{}@{}".format(entry.name, entry.version) if entry else alias, entry_bins)
             if bins.error:
                 fail("rules_bun: {}: {}".format(file, bins.error))
             originals = {target_name(b): b for b in entry_bins}
@@ -500,9 +501,8 @@ Resolution: the hub links what the pinned Bun 1.4.4's isolated install (`bun ins
 lockfile loader, hoister, lockfile clean and isolated store, and a conformance test
 (`bun/tests/npm/conformance`) compares, for every `bun.lock` under `bun/tests/npm/fixtures/`,
 `bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/`,
-`bun/tests/npm/scale/` and `bun/tests/integration/workspaces/` (not `e2e/smoke`'s, whose registry
-packages the offline test has no archives of), each link with the one Bun's install makes on the
-test's platform, and that the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
+`bun/tests/npm/scale/` and `bun/tests/integration/workspaces/`, and `e2e/smoke`'s, each link with
+the one Bun's install makes on the test's platform, and that the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
 CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners `ubuntu-latest`, `macos-latest` and
 `windows-latest`, with Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2
 writes (`conformance_1_4_2_test`), each comparing its runner's platform class; a statement here
@@ -515,7 +515,9 @@ platforms (a package providing a peer is excluded on some), the link or the pack
 entry by target platform; a
 peer resolves to the version a dependent above it provides, else to the version the lockfile lists;
 a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
-linked; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
+linked; a package the root or a workspace declares that the store links on no target platform (one
+no platform matches, or one not linked as just said) keeps its `:node_modules/<package>` target,
+which carries nothing, and its bin targets are compatible with no platform; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
 dependency excluded on a target platform is not linked from that package there, also where the
 target holds that dependency through another link. A link to a workspace member that the store
 would make on some target platforms only, and a dependency of the root or a workspace that it
@@ -541,8 +543,13 @@ platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_jso
 through `select()` on `@platforms`. A list allows the values it names; `!<value>` removes one, and
 a list of removals only allows every other value (`["!win32"]`); `any` allows every value unless a
 value Bun knows follows it (`["linux", "any"]` matches every OS, `["any", "linux"]` only Linux);
-`none`, or only values Bun does not know, allows none. A value with no `@platforms` constraint,
-such as `sunos` or `ppc64`, matches no target platform. An optional dependency's `libc` (`glibc` or
+`none`, or only values Bun does not know, allows none of the values Bun knows. A value with no
+`@platforms` constraint, such as `sunos` or `ppc64`, matches no target platform. Bun knows no
+`netbsd` and no `riscv64`, which `@platforms` has, and refuses them as the platform to install for,
+so on a target platform with one of them the list is read as npm reads it (`checkList`, as rules_bun
+did before Bun's rule): it allows that value when it names it, when it holds only removals and
+none names it, or when it is `any` alone (`["riscv64"]` allows `riscv64`, `["linux", "any"]` does
+not allow `netbsd`). An optional dependency's `libc` (`glibc` or
 `musl`, which Bun 1.4.4 writes) is matched against the target platform's
 `@rules_bun//bun/platforms/libc:libc` constraint (`Libc::is_match`, resolver_hooks.rs L876–L880):
 on a Linux platform with `@rules_bun//bun/platforms/libc:glibc` or `:musl`, only the entries whose

@@ -1,0 +1,32 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-declared-nowhere",
+      "optionalDependencies": {
+        "bin-sunos": "1.0.0",
+        "nomatch-aix-ppc64": "1.0.0",
+      },
+    },
+    "packages/w": {
+      "name": "w",
+      "version": "1.0.0",
+      "dependencies": {
+        "nomatch-sunos-x64": "1.0.0",
+      },
+      "optionalDependencies": {
+        "bin-sunos": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "bin-sunos": ["bin-sunos@1.0.0", "http://127.0.0.1:28761/bin-sunos/-/bin-sunos-1.0.0.tgz", { "os": "sunos", "bin": { "sunos-bin": "cli.js" } }, "sha512-4hlDLeBQ7613I1damygttPHytZG7anHLZoe0Uoy5FzcXDYD/en16uWi2WeHKBeWaVbZiMahgCR3ZBosfAeb1HA=="],
+
+    "nomatch-aix-ppc64": ["nomatch-aix-ppc64@1.0.0", "http://127.0.0.1:28761/nomatch-aix-ppc64/-/nomatch-aix-ppc64-1.0.0.tgz", { "os": "aix", "cpu": "ppc64" }, "sha512-7ZCgWHsp1FI2hRUXzakcc7KKR+90MUuQqRPe5SgRD0BMeOUoR4o1hVDHTTi+R/4NYjt9I3ng79UH34S2xR4RZA=="],
+
+    "nomatch-sunos-x64": ["nomatch-sunos-x64@1.0.0", "http://127.0.0.1:28761/nomatch-sunos-x64/-/nomatch-sunos-x64-1.0.0.tgz", { "os": "sunos", "cpu": "x64" }, "sha512-0NxMgvPUDNaWVcMBSRTefoGAth9v8gr0MIaQvsEyJ5Xo07p5SgywZowJa/wBFFF6KW478M22PajmS1260Rt9rA=="],
+
+    "w": ["w@workspace:packages/w"],
+  }
+}

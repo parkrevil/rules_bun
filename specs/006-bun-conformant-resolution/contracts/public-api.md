@@ -10,7 +10,9 @@ adds, removes and renames nothing (FR-014, P4).
 Every rule, macro, provider, module extension, tag class, attribute and generated target name of
 features 001–005 stays. `:node_modules/<package>` and `:node_modules/<package>/bin/<bin>` keep their
 names. Repositories named `<name>__...` (instance IDs) are not public API (`_NPM_DOC`) and may
-change.
+change. Every package the root or a workspace declares keeps its `:node_modules/<package>` target,
+also one the store links on no target platform (BC-1, BC-3, BC-5, BC-7), which then carries nothing
+and whose bin targets are compatible with no platform (T111).
 
 ## What a consumer can observe
 
@@ -33,7 +35,7 @@ spec's.
 | A dependency listed in a package's `bundleDependencies` | linked from the `<package>/<dep>` key | not linked; the package carries its own copy | BC-10 |
 | A target reaching two store entries of one `name@version` that differ by peer bindings | analysis fails ("a target holds one instance of each package version") | both carried, each in its own store directory `<name>@<version>+<peer hash>` | BC-11 |
 | A dependency of the root or a workspace that the store binds to different entries on different platform classes | evaluation fails (on the branch before BC-12; on `main` one binding for every platform) | linked per target platform through `select()` on the `[os, cpu, libc]` classes; a package entry's dependency bound by platform is BC-16's | BC-12 |
-| A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29 | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
+| A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29; on a target `os` or `cpu` Bun does not name (`netbsd`, `riscv64`), by npm's rule as on `main` (T112) | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
 | A package's dependency the store links on some platform classes only, held by the target through another link on others | linked from the package wherever the target holds it | linked from the package only where the store links it (`select()` on the instance's edges) | BC-15 |
 | A package's dependency that the store binds to different store entries on different platform classes (one package under other peer bindings) | one binding for every platform (on the branch before T107, evaluation fails: the former ID-7) | linked per target platform through `select()` on the instance's edges (`edge_targets`) | BC-16 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-6, and the CI runner labels the tests ran on | — |

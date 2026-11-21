@@ -5,6 +5,7 @@ load(":bun_lockfile_test.bzl", "bun_lockfile_test_suite")
 load(":bun_semver_test.bzl", "bun_semver_test_suite")
 load(":bun_tree_test.bzl", "bun_tree_test_suite")
 load(":compare_test.bzl", "compare_test_suite")
+load(":declared_test.bzl", "declared_test_suite")
 load(":generated_test.bzl", "generated_test_suite")
 load(":glob_test.bzl", "glob_test_suite")
 load(":jsonc_test.bzl", "jsonc_test_suite")
@@ -25,6 +26,8 @@ load(":workspaces_test.bzl", "workspaces_test_suite")
 bins_test_suite(name = "bins")
 
 compare_test_suite(name = "compare")
+
+declared_test_suite(name = "declared")
 
 generated_test_suite(name = "generated")
 

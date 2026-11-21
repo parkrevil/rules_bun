@@ -28,7 +28,6 @@ load(
     "dependency_sort_key",
     "dependency_version",
     "is_safe_install_folder_name",
-    "negatable_from_json_value",
     "repository_with_resolved",
     "resolution_eql",
     "resolution_from_text_lockfile",
@@ -38,6 +37,7 @@ load(
     "version_tag_infer",
 )
 load(":bun_semver.bzl", "parse_query", "parse_version", "query_intersects", "query_is_star", "query_satisfies")
+load(":platforms.bzl", "package_platforms")
 
 # `invalid_package_id`.
 INVALID = -1
@@ -94,13 +94,16 @@ def _meta(info, is_workspace):
 
     Bun: src/install/lockfile/bun.lock.rs L2593–L2604 @ bun-v1.4.4
     Bun: src/install/lockfile/Package/Meta.rs L51–L66 @ bun-v1.4.4
+
+    Each field is read by `negatable_from_json_value` through the adapter's `package_platforms`
+    (`platforms.bzl`), which adds npm's reading for the target values Bun does not name (T112).
     """
     if is_workspace or info == None:
-        return struct(os = negatable_from_json_value("os", None), arch = negatable_from_json_value("cpu", None), libc = 0)
+        return struct(os = package_platforms("os", None), arch = package_platforms("cpu", None), libc = 0)
     return struct(
-        os = negatable_from_json_value("os", info.os if info.os else None),
-        arch = negatable_from_json_value("cpu", info.cpu if info.cpu else None),
-        libc = negatable_from_json_value("libc", info.libc if info.libc else None),
+        os = package_platforms("os", info.os if info.os else None),
+        arch = package_platforms("cpu", info.cpu if info.cpu else None),
+        libc = package_platforms("libc", info.libc if info.libc else None),
     )
 
 def _package(name, resolution, off, length, meta, key = "", entry = None):

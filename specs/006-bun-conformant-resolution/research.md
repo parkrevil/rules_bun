@@ -162,7 +162,7 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | the digest of an `integrity` | INTEGRITY L99–L120 | its base64 is not decoded; an unknown algorithm is still refused (LOCK L1688–L1711). A malformed digest decides no link; rules_bun verifies the digest when it downloads (feature 003 FR-021) |
 | the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry comes from `bunfig.toml`, the environment and `.npmrc`, of which the ruleset reads only the `npmrc` attribute (FR-003). rules_bun refuses to fetch any row without integrity (FR-010, ID-4). Not reproduced: ID-5 (user, 2026-11-21; Part 4, "Loader refusals"; Part 6) |
 | the `.bun-tag` of a git or GitHub row | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); not read |
-| a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists; the adapter (ID-2) gives it a value no package names, npm's rule for an unknown value (`bun_install_types.bzl` `platform_value`) |
+| a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists. For one the hub selects on (`NPM_OS`, `NPM_CPU`: `netbsd`, `riscv64`) the adapter (ID-2) gives the value its own bit and reads a package's list for it as npm's `checkList` does, as `main` did (`platforms.bzl` `package_platforms`, `npm_only_names`, `platform_bits`; T112); a platform with no npm value gets a bit no package names that "every value" includes (`bun_install_types.bzl` `platform_value`) |
 
 ### Walks outside the carry-over (T049)
 
@@ -438,6 +438,16 @@ class, so the common case costs one store.
 **Alternatives**: one store, platform conditions on edges (today's `_closure`) — rejected: wrong
 when a disabled package changes a peer binding or a dedupe.
 
+**Targets Bun does not name (T112)**: `NPM_OS` maps `netbsd` and `NPM_CPU` maps `riscv64` to
+`@platforms` constraints, which Bun's `negatable_names!` tables do not name (resolver_hooks.rs
+L795–L965) and its `--os`/`--cpu` refuse (CLI L37–L64), so Bun has no behavior for such a target.
+Bun's `Negatable` reads such a value in a package's list as unrecognized, so `cpu: ["riscv64"]`
+(`@esbuild/linux-riscv64`) would match no platform, including the linux/riscv64 target it is for.
+The adapter gives each such value its own bit and reads a package's list for it with npm's
+`checkList`, the rule `main` applied to every value (`git show main:bun/private/platforms.bzl`
+`check_list`); Bun's reading still decides every value Bun names. `platforms_test.bzl`
+`bun_rule_test` checks both and that every `NPM_OS`/`NPM_CPU` value is either Bun's or one of these.
+
 **BC-13 and BC-14 on lockfiles (T096)**: Bun 1.4.4 and 1.4.2 write a package's `os` list as they
 read it: `rule-linux-any` (`["linux", "any"]` in its `package.json`) gets no `os`, `rule-any-linux`
 (`["any", "linux"]`) gets `"linux"` (`conformance_platform_rule`, both writers), so npm's
@@ -462,6 +472,19 @@ classes written as `[os, cpu, libc]` requirements, which `npm_repositories.bzl` 
 other (Bun installs them); the reason still makes the instance's target fail analysis and tags
 links `manual`, as today. Today their dependencies are not followed; that becomes a non-difference
 in the graph and changes no generated target name.
+
+**Declared dependencies the store links nowhere (T111)**. `_NPM_DOC`'s naming rule gives every
+package the root or a workspace declares its `:node_modules/<package>` target, and `main` made one
+for each (`git show main:bun/private/resolve.bzl` `_workspace_children`), while the store has a
+holder edge only where it links the dependency. A declared dependency the store links on no
+platform class (an optional or non-optional package no platform matches, BC-7; an optional
+dependency under `unresolved`, BC-1; an optional or peer dependency without a key, BC-3, BC-5) gets
+a link with no root that reaches nothing, as `main`'s link of an optional package no platform
+matches reaches nothing; its bin targets are named after the package the cleaned lockfile binds
+the dependency to (`resolutions[dep_id]`, LOCK L2923–L3023), when that is a package rules_bun
+fetches, and are compatible with no platform. `declared_test.bzl`, the fixtures' `names_test`
+(`generated_names.bzl`), and a comparison of every `:node_modules/...` name of `main` with the
+branch (`tdd-log.md`, T111).
 
 **Bindings that differ by platform class (T077)**. The store's first pass skips a dependency whose
 package `is_disabled` for the platform (ISO L1032–L1047, through TREE L1313–L1405), so a skipped
@@ -608,9 +631,15 @@ prints `failed to parse lockfile: 'bun.lock'`, `report_lockfile_load_error`, not
 install) and that the ruleset fails it with an error naming the `bun.lock` label (T109; spec Edge
 Cases: no graph for a lockfile Bun does not install). Each corpus project has a
 Bun 1.4.2 lockfile or a reason in `not_applicable_1_4_2.ts`, which the test asserts (T095).
-`e2e/smoke/bun.lock` is not compared: its registry packages (`react`, `react-dom`, `scheduler`)
-have no archives in the offline loopback registry, and `_NPM_DOC` names the compared directories
-(T098).
+`e2e/smoke`, the consumer module's project, is compared as well (T113, which supersedes T098's
+exclusion): `e2e` is no package of the root module (`REPO.bazel` `ignore_directories`), so the dev
+extension `fixture_results.bzl` reads its `bun.lock` and `package.json` from the source tree with
+`module_ctx.read`, resolves it into `graphs.json`, and writes the two files to
+`@npm_fixture_results//e2e/smoke:files`, which the test installs; the loopback registry serves it
+the archives of `bun/tests/npm/fixtures/jsx/archives`, which `fetch_react.ts` downloaded from
+`https://registry.npmjs.org` for the same three package versions (`react`, `react-dom`,
+`scheduler`) and verified against the integrity their packuments publish, the integrity both
+lockfiles record. `_NPM_DOC` names the compared directories.
 
 ### R10. Bun 1.4.2 (US5)
 
@@ -925,6 +954,22 @@ binds the alias once for every platform (verified in a worktree of `main` on tha
 `p`'s `q` is `q-darwin@1.0.0` on every platform), so the change is one in what a consumer's build
 links and is numbered **BC-16**; ID-7 is removed. The lockfile and BC-13's hand-written one move
 to `bun/tests/npm/conformance/accepted/`, which both conformance runs compare (T110).
+
+**T111 decided by the lead, under the user's delegation (2026-11-21)**: the fourth Claude review
+found that a declared dependency the store links on no platform class lost its
+`:node_modules/<package>` target, which `main` generated (P4, FR-014, SC-005). Every declared
+dependency now has its target; where the store links it nowhere the target carries nothing and its
+bins are compatible with no platform (R4 "Declared dependencies the store links nowhere"). What
+such a target links is BC-1's, BC-3's, BC-5's or BC-7's change; no target name changes, so no new
+BC is numbered.
+
+**T112 decided by the lead, under the user's delegation (2026-11-21)**: the fourth Claude review
+found that a package restricted to `riscv64` or `netbsd` was disabled on every target, including
+the one it is for. Bun has no behavior for such a target (it refuses it as `--cpu`/`--os`), so
+there is no Bun result to follow; npm's `checkList` is the rule research R3 records for these
+values and the one `main` applied. The adapter reads a list with it for those values only (R3
+"Targets Bun does not name"); for those values the branch now reads a list as `main` does, so no
+BC is numbered, and BC-13 states the exception.
 
 ## Part 7: Evidence log
 

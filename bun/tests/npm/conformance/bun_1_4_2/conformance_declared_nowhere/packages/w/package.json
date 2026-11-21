@@ -1,0 +1,10 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "nomatch-sunos-x64": "1.0.0"
+  },
+  "optionalDependencies": {
+    "bin-sunos": "1.0.0"
+  }
+}

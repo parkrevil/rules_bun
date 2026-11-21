@@ -10,9 +10,12 @@ It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph 
 of every project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
 every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/` and its
 platform variant `bun/tests/npm/scale/platform/`, every
-`bun.lock` under `bun/tests/integration/workspaces/`, and every directory under
+`bun.lock` under `bun/tests/integration/workspaces/`, every directory under
 `bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/` and
-`bun/tests/npm/conformance/refused/`.
+`bun/tests/npm/conformance/refused/`, and `e2e/smoke`, the consumer module's project (feature 006
+T113). `e2e` is no package of this module (`REPO.bazel` `ignore_directories`), so the conformance
+test reads that project's `bun.lock` and `package.json` from the copies this extension writes to
+`@npm_fixture_results//e2e/smoke`.
 """
 
 load("//bun/private:lockfile.bzl", "read_lockfile")
@@ -22,14 +25,24 @@ load("//bun/tests/npm/conformance:graph.bzl", "conformance_graphs", "platform_tu
 # Starlark has no `while`; the directory walk is bounded by this.
 _LIMIT = 1 << 20
 
+# The consumer module's project, which the root module's tests cannot read as a package (T113).
+_E2E = "e2e/smoke"
+
 def _results_repo_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel", 'exports_files(["graphs.json"])\n')
     repository_ctx.file("results.bzl", repository_ctx.attr.content)
     repository_ctx.file("graphs.json", repository_ctx.attr.graphs)
+    for name, text in repository_ctx.attr.e2e.items():
+        repository_ctx.file("{}/{}".format(_E2E, name), text)
+    repository_ctx.file(_E2E + "/BUILD.bazel", 'filegroup(\n    name = "files",\n    srcs = {},\n    visibility = ["//visibility:public"],\n)\n'.format(repr(sorted(repository_ctx.attr.e2e.keys()))))
 
 _results_repo = repository_rule(
     implementation = _results_repo_impl,
-    attrs = {"content": attr.string(), "graphs": attr.string()},
+    attrs = {
+        "content": attr.string(),
+        "e2e": attr.string_dict(doc = "The `e2e/smoke` project's files the oracle installs: name -> text."),
+        "graphs": attr.string(),
+    },
 )
 
 def _lockfiles_under(directory):
@@ -63,6 +76,7 @@ def _projects(root):
     integration = root.get_child("bun/tests/integration/workspaces")
     for project in _lockfiles_under(integration):
         projects["bun/tests/integration/workspaces/" + str(project)[len(str(integration)) + 1:]] = project
+    projects[_E2E] = root.get_child(_E2E)
     return projects
 
 def _graphs(module_ctx, root):
@@ -113,9 +127,11 @@ def _fixture_results_impl(module_ctx):
         label = Label(lock)
         results[key] = _result(module_ctx, module_ctx.path(label).dirname, "{}/{}".format(label.package, label.name))
     root = module_ctx.path(Label("//:MODULE.bazel")).dirname
+    e2e = root.get_child(_E2E)
     _results_repo(
         name = "npm_fixture_results",
         content = "RESULTS = json.decode({})\n".format(repr(json.encode(results))),
+        e2e = {name: module_ctx.read(e2e.get_child(name)) for name in ["bun.lock", "package.json"]},
         graphs = json.encode_indent(_graphs(module_ctx, root)) + "\n",
     )
     return module_ctx.extension_metadata(reproducible = True)

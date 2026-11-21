@@ -1,8 +1,23 @@
+load("@npm_conformance_unbound//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm:generated_names.bzl", "generated_names_test")
 load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 exports_files([
     "bun.lock",
     "package.json",
 ])
+
+# T111 (feature 006): every declared dependency has its target, also one the store links on no
+# platform class; //bun/tests/npm:declared checks that such a target carries nothing.
+npm_link_all_packages()
+
+generated_names_test(
+    name = "names_test",
+    expected = [
+        "node_modules/a",
+        "node_modules/r",
+        "node_modules/state",
+    ],
+)
 
 conformance_files()
