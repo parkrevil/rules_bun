@@ -1,0 +1,8 @@
+{
+  "name": "stale-link",
+  "private": true,
+  "dependencies": {
+    "b": "1.0.0",
+    "phantom-user": "1.0.0"
+  }
+}

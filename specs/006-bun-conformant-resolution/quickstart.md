@@ -15,7 +15,7 @@ bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors
 Expected: PASS, with the test log listing every project compared (all of `bun/tests/npm/fixtures/`,
 the `conformance_*` corpus, `scale` and `scale/platform`, `bun/tests/integration/workspaces/*`,
 `bun/tests/npm/conformance/bun_1_4_2/*`, `bun/tests/npm/conformance/accepted/*`, `e2e/smoke`), the
-not-applicable projects (`stale_link` and `bun/tests/npm/conformance/refused/*`, each of which both
+not-applicable projects (`bun/tests/npm/conformance/refused/*`, each of which both
 Bun and the ruleset must refuse) with their reasons, the exclusions `ID-1`, `ID-2`, `ID-3`, `ID-4` by name, and `0 differences`.
 ID-5 and ID-6 exclude nothing (no compared lockfile reaches them; spec "Intentional Differences").
 Every BC-1…BC-16 difference recorded red in `tdd-log.md` is gone.

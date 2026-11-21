@@ -1394,3 +1394,17 @@ red first and recorded in `tdd-log.md`.
   `bun/tests/npm/conformance/accepted/`, compared with both oracles). Then check that every task ID
   the spec's "Behavior Changes" cites has its rows in the body, per spec "Behavior Changes" ("listed
   again in the PR with the test that shows it") / SC-003 (partial)
+
+---
+
+## Phase 31: Convergence
+
+- [X] T143 Bring spec P2 ("For every project the ruleset's tests resolve, the pinned Bun installs
+  the same lockfile") and research R9 "Coverage" to the projects the conformance test compares: the
+  inner workspaces that `bun/tests/integration/conflict.test.ts`, `registries.test.ts`,
+  `credentials.test.ts`, `rename.test.ts` and `lockfile_errors.test.ts` write with hand-written
+  `bun.lock` texts (two entries of one `name@version`, per-test registries, credentials, renamed
+  files, refusals) are resolved by the ruleset's tests, but neither conformance run compares them and
+  R9 neither lists nor excludes them. Compare those Bun installs, or record each in R9 with the
+  reason it is not compared and narrow P2's wording to R9's projects, as T113 settled `e2e/smoke`,
+  per spec P2 / FR-009 (partial)

@@ -16,16 +16,20 @@ const ARCHIVES = ["b@1.0.0", "phantom-user@1.0.0"].map((p) => rlocation(`_main/b
 
 const inner = new Inner("stale_link", { npmArchives: ARCHIVES });
 afterAll(() => inner.close());
-const lockfile = readFileSync(join(inner.dir, "bun.lock"), "utf8");
+// The workspace's bun.lock, where phantom-user declares b, and edited/bun.lock, the same lockfile
+// after phantom-user lost that dependency; the conformance test compares both with the pinned
+// Bun's install (feature 006 T143).
+const declaredLockfile = readFileSync(join(inner.dir, "bun.lock"), "utf8");
+const editedLockfile = readFileSync(join(inner.dir, "edited", "bun.lock"), "utf8");
 
 test(
   "a link left by an earlier build fails the launch naming it",
   async () => {
-    inner.write("bun.lock", lockfile.replace("{PHANTOM_INFO}", '{ "dependencies": { "b": "1.0.0" } }'));
+    inner.write("bun.lock", declaredLockfile);
     const declared = await inner.run(["test", "//:phantom_test", "--test_output=errors"]);
     expect(declared.exitCode, declared.stdout + declared.stderr).toBe(0);
 
-    inner.write("bun.lock", lockfile.replace("{PHANTOM_INFO}", "{}"));
+    inner.write("bun.lock", editedLockfile);
     const stale = await inner.run(["test", "//:phantom_test", "--test_output=errors"]);
     // Windows paths use "\\".
     const output = (stale.stdout + stale.stderr).replaceAll("\\", "/");

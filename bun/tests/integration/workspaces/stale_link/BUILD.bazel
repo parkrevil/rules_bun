@@ -5,8 +5,8 @@ exports_files(["bun.lock"])
 
 npm_link_all_packages()
 
-# phantom-user requires b; the lockfile the test writes decides whether it
-# declares it.
+# phantom-user requires b; bun.lock declares it, edited/bun.lock, which the
+# test writes over bun.lock, does not.
 bun_test(
     name = "phantom_test",
     srcs = ["phantom.test.ts"],

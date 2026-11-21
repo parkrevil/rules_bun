@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "rename",
+      "dependencies": {
+        "case-build": "1.0.0",
+        "rename-collision": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "case-build": ["case-build@1.0.0", "{REGISTRY}/case-build/-/case-build-1.0.0.tgz", {}, "sha512-FRa7p5AoiZtMH/Hh5eWJfN4p+ccWc/xXqRrO3KkuDFXG8VlNuIwXk7HW0fiwYyfusAoejKSzv7R97sVgvsQrsQ=="],
+
+    "rename-collision": ["rename-collision@1.0.0", "{REGISTRY}/rename-collision/-/rename-collision-1.0.0.tgz", {}, "sha512-VM/JGkDcCRc1i4bbtp2mqY0CkKsfZBU+APygfuORRwS1mc6ORpJkEWYGEKXDlfSVMjvQ9I+HG4RaJDGwjYiJeQ=="],
+  }
+}

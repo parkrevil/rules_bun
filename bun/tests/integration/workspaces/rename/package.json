@@ -1,0 +1,8 @@
+{
+  "name": "rename",
+  "private": true,
+  "dependencies": {
+    "case-build": "1.0.0",
+    "rename-collision": "1.0.0"
+  }
+}

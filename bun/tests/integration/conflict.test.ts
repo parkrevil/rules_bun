@@ -3,34 +3,29 @@
 // because one package repository serves every entry of a name@version.
 
 import { afterAll, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
 const inner = new Inner("conflict");
 afterAll(() => inner.close());
 
-const A = "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ==";
 const B = "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w==";
-const C = "sha512-ixBAWXVphpPrhrRBi/pi1fdOz72WYFOI6JR2W7xxOhhPNM9dUDtqjYOB7qme4wCjLwcJKzGJt3vGmA3x1MyoWw==";
 const OTHER = "sha512-/b1IpgijxGDDhzGXLX7uNz9MRXh4yXD6Q1sra8gGGFlmw+Q3L2mluSOUR/3lGLlPYW8IPVPyIvK1A8IeK/wO+w==";
 
-function lockfile(nested: [string, string]): string {
-  const url = (p: string) => `${inner.registry.url}/${p}/-/${p}-1.0.0.tgz`;
-  return JSON.stringify({
-    lockfileVersion: 2,
-    workspaces: { "": { name: "conflict", dependencies: { a: "1.0.0", c: "1.0.0" } } },
-    packages: {
-      a: ["a@1.0.0", url("a"), { dependencies: { b: "^1.0.0" } }, A],
-      b: ["b@1.0.0", url("b"), {}, B],
-      c: ["c@1.0.0", url("c"), { dependencies: { b: "^1.0.0" } }, C],
-      "c/b": ["b@1.0.0", nested[0], {}, nested[1]],
-    },
-  });
-}
+// The committed lockfile (workspaces/conflict/bun.lock, which the conformance test compares with
+// the pinned Bun's install, feature 006 T143), whose "c/b" entry repeats b's.
+const CONSISTENT = readFileSync(join(inner.dir, "bun.lock"), "utf8");
+const NESTED = `"c/b": ["b@1.0.0", "${inner.registry.url}/b/-/b-1.0.0.tgz", {}, "${B}"]`;
+if (!CONSISTENT.includes(NESTED)) throw new Error(`workspaces/conflict/bun.lock holds no ${NESTED}`);
+
+/** The committed lockfile with the "c/b" entry's URL and integrity replaced. */
+const lockfile = (nested: [string, string]) => CONSISTENT.replace(NESTED, `"c/b": ["b@1.0.0", "${nested[0]}", {}, "${nested[1]}"]`);
 
 test(
   "consistent entries evaluate",
   async () => {
-    inner.write("bun.lock", lockfile([`${inner.registry.url}/b/-/b-1.0.0.tgz`, B]));
+    inner.write("bun.lock", CONSISTENT);
     const result = await inner.run(["query", "//..."]);
     expect(result.exitCode, result.stderr).toBe(0);
   },

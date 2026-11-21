@@ -64,8 +64,9 @@ inferred from fixture outputs.
 ### P2. The pinned Bun is the oracle
 
 Conformance is shown by running the pinned Bun, not by reasoning about it. For every project the
-ruleset's tests resolve, the pinned Bun installs the same lockfile and the two linked dependency
-graphs must be equal. A difference is a failing test, never a reviewer's discovery.
+ruleset's tests resolve, except those research R9 names with the reason they are not compared,
+the pinned Bun installs the same lockfile and the two linked dependency graphs must be equal. A
+difference is a failing test, never a reviewer's discovery.
 
 ### P3. Differences are listed, or they are defects
 

@@ -664,7 +664,7 @@ The test's projects are every directory under `bun/tests/npm/fixtures/` holding 
 the lockfiles Bun refuses to load under `bun/tests/npm/conformance/refused/`, written by hand
 (T099). The extension and the test enumerate the same directories; a
 project present on one side only fails the test (FR-009, US2-4). A project the oracle cannot install
-(`stale_link`, a template; each `refused/` project) is listed in the test with its reason, the list
+(each `refused/` project) is listed in the test with its reason, the list
 is asserted exactly, and for each the test asserts that Bun's loader refuses it (the install
 prints `failed to parse lockfile: 'bun.lock'`, `report_lockfile_load_error`, not just any failed
 install) and that the ruleset fails it with an error naming the `bun.lock` label (T109; spec Edge
@@ -679,6 +679,39 @@ the archives of `bun/tests/npm/fixtures/jsx/archives`, which `fetch_react.ts` do
 `https://registry.npmjs.org` for the same three package versions (`react`, `react-dom`,
 `scheduler`) and verified against the integrity their packuments publish, the integrity both
 lockfiles record. `_NPM_DOC` names the compared directories.
+
+The integration tests that wrote their lockfiles inline (T143, decided by the lead under the
+user's delegation, 2026-11-21: compare every one the ruleset resolves, record the rest).
+`conflict.test.ts`, `registries.test.ts`, `credentials.test.ts`, `rename.test.ts` and
+`stale_link.test.ts` now take every lockfile the ruleset resolves from a committed `bun.lock`
+(`workspaces/conflict`; `workspaces/registries`, which both registry tests use;
+`workspaces/rename`; `workspaces/stale_link` and `workspaces/stale_link/edited`, the two lockfiles
+`stale_link.test.ts` filled in from a template that Bun could not load and the test listed as not
+applicable), which this test compares as it compares every `bun.lock` under
+`bun/tests/integration/workspaces/`; a case changes only a row's download URL (the registry tests,
+each replacement checked to match) or writes one of the lockfiles below. The other integration
+tests read a committed `bun.lock` listed above (a fixture, or `scale`'s, with their URLs
+rewritten). Not compared, each with its reason:
+
+- `conflict.test.ts`, the two lockfiles whose `c/b` entry records another integrity or another URL
+  than `b`'s: the ruleset fails evaluation naming both entries (one package repository serves every
+  entry of a `name@version`), so it resolves no graph.
+- `credentials.test.ts`, the cases (a)–(l): a URL with user information in `bun.lock`,
+  `package.json` or `.npmrc` fails evaluation without being printed (feature 005 FR-002), so the
+  ruleset resolves no graph.
+- `credentials.test.ts`, the lockfile with the row `g@git+ssh://git@host/r.git#abc`: the ruleset
+  resolves it (the row unfetched, ID-4), but the oracle's install is offline against the loopback
+  registry (FR-007), which serves no git repository, so the pinned Bun cannot install it.
+- `lockfile_errors.test.ts`, every lockfile: a `bun.lockb`, `lockfileVersion` 0 and 4, an unclosed
+  comment, two entries of `a@1.0.0` with different integrities, and a `packages` key equal to a
+  workspace's name holding a `file:` folder ("Loader refusals", L2759) each fail evaluation, and
+  the cases of an invalid `name` or `workspace_target_name` fail on the `npm.translate_lock` tag,
+  so the ruleset resolves no graph.
+
+The Starlark unit tests (`bun/tests/npm/*_test.bzl`) resolve lockfile texts written in the test,
+without the `package.json` files and archives an install needs: they are unit tests of the reader
+and the resolver, not projects. Spec P2's exceptions are the lockfiles listed above as not
+compared.
 
 ### R10. Bun 1.4.2 (US5)
 

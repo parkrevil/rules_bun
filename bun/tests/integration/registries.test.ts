@@ -6,7 +6,7 @@
 // in a generated file or in `bazel mod show_repo`.
 
 import { afterAll, expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Credential, type Registry, startRegistry } from "../support/npm_registry.ts";
 import { rlocation } from "../support/spawn.ts";
@@ -23,35 +23,26 @@ afterAll(async () => {
   for (const cleanup of cleanups) await cleanup();
 });
 
-// The lockfile the pinned Bun 1.4.4 wrote for package.json, with the URL of
-// each entry as the case gives it.
-function lockfile(urls: { a: string; s: string; b: string }): string {
-  return `{
-  "lockfileVersion": 2,
-  "configVersion": 1,
-  "workspaces": {
-    "": {
-      "name": "registries",
-      "dependencies": {
-        "@scope/s": "1.0.0",
-        "a": "1.0.0",
-      },
-    },
-  },
-  "packages": {
-    "@scope/s": ["@scope/s@1.0.0", "${urls.s}", { "bin": { "s-tool": "bin/tool.js", "s-other": "bin/other.mjs" } }, "sha512-yheIQXrDjpHFnPCmpw3UMtdnT49N7FqMINYsC1Tn/CAd2TOy3ifAovqygST//457xmijie1M2tqXHyrnvAwdHw=="],
-
-    "a": ["a@1.0.0", "${urls.a}", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
-
-    "b": ["b@1.0.0", "${urls.b}", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+// The committed lockfile the pinned Bun 1.4.4 wrote for package.json
+// (workspaces/registries/bun.lock, which the conformance test compares with the
+// pinned Bun's install, feature 006 T143), with the URL of each entry as the case
+// gives it; nothing else changes.
+function lockfile({ inner, committed }: Setup, urls: { a: string; s: string; b: string }): string {
+  let text = committed;
+  const rows: [string, string][] = [["@scope/s", urls.s], ["a", urls.a], ["b", urls.b]];
+  for (const [name, url] of rows) {
+    const from = `"${tarball(inner.registry.url, name, "1.0.0")}"`;
+    if (!text.includes(from)) throw new Error(`workspaces/registries/bun.lock holds no ${from}`);
+    text = text.replace(from, `"${url}"`);
   }
-}
-`;
+  return text;
 }
 
 interface Setup {
   inner: Inner;
   second: Registry;
+  /** The committed bun.lock as the session assembled it. */
+  committed: string;
 }
 
 // An inner workspace with the main loopback server and a second one on another
@@ -62,7 +53,7 @@ function setup(credential: Credential | undefined, home: Record<string, string>)
   for (const [name, text] of Object.entries(home)) writeFileSync(join(homeDir, name), text);
   const inner = new Inner("registries", { npmArchives: ARCHIVES, env: { HOME: homeDir, USERPROFILE: homeDir, NETRC: undefined } });
   cleanups.push(() => inner.close(), () => second.stop());
-  return { inner, second };
+  return { inner, second, committed: readFileSync(join(inner.dir, "bun.lock"), "utf8") };
 }
 
 const tarball = (registry: string, name: string, version: string) =>
@@ -78,10 +69,11 @@ const requested = (registry: Registry, path: string) =>
 test(
   "US7-1: a full URL in bun.lock is requested there",
   async () => {
-    const { inner, second } = setup(undefined, {});
+    const session = setup(undefined, {});
+    const { inner, second } = session;
     const main = inner.registry.url;
     inner.write(".npmrc", "");
-    inner.write("bun.lock", lockfile({ a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
+    inner.write("bun.lock", lockfile(session, { a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
     const result = await inner.run(["build", "//:node_modules/a"]);
     expect(result.exitCode, result.stderr).toBe(0);
     expect(requested(second, "/a/-/a-1.0.0.tgz")).toEqual([200]);
@@ -95,10 +87,11 @@ test(
 test(
   "US7-6: a scope the passed .npmrc maps is requested from that registry",
   async () => {
-    const { inner, second } = setup(undefined, {});
+    const session = setup(undefined, {});
+    const { inner, second } = session;
     const main = inner.registry.url;
     inner.write(".npmrc", `@scope:registry=${second.url}/\n`);
-    inner.write("bun.lock", lockfile({ a: tarball(main, "a", "1.0.0"), s: "", b: tarball(main, "b", "1.0.0") }));
+    inner.write("bun.lock", lockfile(session, { a: tarball(main, "a", "1.0.0"), s: "", b: tarball(main, "b", "1.0.0") }));
     const result = await inner.run(["build", "//:node_modules/@scope/s"]);
     expect(result.exitCode, result.stderr).toBe(0);
     expect(requested(second, "/@scope/s/-/s-1.0.0.tgz")).toEqual([200]);
@@ -111,12 +104,13 @@ test(
 test(
   "US7-4: a .netrc in the home directory supplies the registry's credential",
   async () => {
-    const { inner, second } = setup(CREDENTIAL, {
+    const session = setup(CREDENTIAL, {
       ".netrc": "machine 127.0.0.1\nlogin rules-bun-user\npassword SECRET-NETRC\n",
     });
+    const { inner, second } = session;
     const main = inner.registry.url;
     inner.write(".npmrc", "");
-    inner.write("bun.lock", lockfile({ a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
+    inner.write("bun.lock", lockfile(session, { a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
     const result = await inner.run(["build", "//:node_modules/a"]);
     console.log(result.stderr.split("\n").filter((l) => /ERROR|Error/.test(l)).join("\n"));
     expect(result.exitCode, result.stderr).toBe(0);
@@ -130,11 +124,12 @@ test(
 test(
   "US7-7: authentication values in an .npmrc are not used",
   async () => {
-    const { inner, second } = setup(CREDENTIAL, { ".npmrc": "_authToken=SECRET-HOME-NPMRC\n" });
+    const session = setup(CREDENTIAL, { ".npmrc": "_authToken=SECRET-HOME-NPMRC\n" });
+    const { inner, second } = session;
     const main = inner.registry.url;
     const host = second.url.replace(/^http:/, "");
     inner.write(".npmrc", `${host}/:_authToken=SECRET-NPMRC\n_auth=${btoa("rules-bun-user:SECRET-NPMRC")}\n`);
-    inner.write("bun.lock", lockfile({ a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
+    inner.write("bun.lock", lockfile(session, { a: tarball(second.url, "a", "1.0.0"), s: tarball(main, "@scope/s", "1.0.0"), b: tarball(main, "b", "1.0.0") }));
     const result = await inner.run(["build", "//:node_modules/a"]);
     console.log(result.stderr.split("\n").filter((l) => /ERROR|Error/.test(l)).join("\n"));
     expect(result.exitCode).not.toBe(0);

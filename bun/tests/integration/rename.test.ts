@@ -4,12 +4,14 @@
 // that already holds the safe name a file is renamed to fails the fetch with
 // the collision diagnostic of _make_addressable (specs/005-review-defect-fixes
 // T088). Linux only: on a case-insensitive file system the two names of
-// case-build@1.0.0 are one file once extracted.
+// case-build@1.0.0 are one file once extracted. The workspace's committed bun.lock
+// holds both packages, and each test builds one, so only its archive is fetched; the
+// conformance test compares that bun.lock with the pinned Bun's install (feature 006
+// T143).
 
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { integrity, tarballPath } from "../support/npm_registry.ts";
 import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
@@ -19,23 +21,9 @@ afterAll(() => inner.close());
 
 const errorLine = (stderr: string) => stderr.split("\n").find((l) => l.startsWith("Error in fail:")) ?? stderr;
 
-function project(name: string) {
-  const bytes = readFileSync(archive(`${name}@1.0.0`));
-  inner.write("package.json", JSON.stringify({ name: "rename", private: true, dependencies: { [name]: "1.0.0" } }));
-  inner.write(
-    "bun.lock",
-    JSON.stringify({
-      lockfileVersion: 2,
-      workspaces: { "": { name: "rename", dependencies: { [name]: "1.0.0" } } },
-      packages: { [name]: [`${name}@1.0.0`, inner.registry.url + tarballPath(name, "1.0.0"), {}, integrity(bytes, "sha512")] },
-    }),
-  );
-}
-
 test(
   "BUILD and build in one directory get two safe names, each mapped back",
   async () => {
-    project("case-build");
     const result = await inner.run(["build", "//:node_modules/case-build"]);
     expect(result.exitCode, result.stderr).toBe(0);
     assertOffline(inner.log);
@@ -69,7 +57,6 @@ test(
 test(
   "a safe name the archive already holds fails with the collision diagnostic",
   async () => {
-    project("rename-collision");
     const result = await inner.run(["build", "//:node_modules/rename-collision"]);
     console.log(errorLine(result.stderr));
     expect(result.exitCode).not.toBe(0);

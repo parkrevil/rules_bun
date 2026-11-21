@@ -23,30 +23,15 @@ afterAll(async () => {
   for (const cleanup of cleanups) await cleanup();
 });
 
-// The lockfile the pinned Bun 1.4.4 wrote for the workspace's package.json,
-// with a's URL on `aRegistry`.
-function lockfile(main: string, aRegistry: string): string {
-  return `{
-  "lockfileVersion": 2,
-  "configVersion": 1,
-  "workspaces": {
-    "": {
-      "name": "registries",
-      "dependencies": {
-        "@scope/s": "1.0.0",
-        "a": "1.0.0",
-      },
-    },
-  },
-  "packages": {
-    "@scope/s": ["@scope/s@1.0.0", "${main}/@scope/s/-/s-1.0.0.tgz", { "bin": { "s-tool": "bin/tool.js", "s-other": "bin/other.mjs" } }, "sha512-yheIQXrDjpHFnPCmpw3UMtdnT49N7FqMINYsC1Tn/CAd2TOy3ifAovqygST//457xmijie1M2tqXHyrnvAwdHw=="],
-
-    "a": ["a@1.0.0", "${aRegistry}/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
-
-    "b": ["b@1.0.0", "${main}/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
-  }
-}
-`;
+// The committed lockfile the pinned Bun 1.4.4 wrote for the workspace's package.json
+// (workspaces/registries/bun.lock, which the conformance test compares with the
+// pinned Bun's install, feature 006 T143), as `session` assembled it, with a's URL
+// on `aRegistry`; nothing else changes.
+function lockfile(session: Inner, aRegistry: string): string {
+  const committed = readFileSync(join(session.dir, "bun.lock"), "utf8");
+  const from = `"${session.registry.url}/a/-/a-1.0.0.tgz"`;
+  if (!committed.includes(from)) throw new Error(`workspaces/registries/bun.lock holds no ${from}`);
+  return committed.replace(from, `"${aRegistry}/a/-/a-1.0.0.tgz"`);
 }
 
 function registry(archives: (string | ArchiveSpec)[], bearer?: string): Registry {
@@ -60,7 +45,7 @@ function inner(origin: Registry, downloaderConfig?: (loopback: string) => string
   const session = new Inner("registries", { npmArchives: ARCHIVES, env: { HOME: home, USERPROFILE: home, NETRC: undefined }, downloaderConfig });
   cleanups.push(() => session.close());
   session.write(".npmrc", "");
-  session.write("bun.lock", lockfile(session.registry.url, origin.url));
+  session.write("bun.lock", lockfile(session, origin.url));
   return session;
 }
 
@@ -302,12 +287,11 @@ test(
   async () => {
     const session = evaluation();
     const before = session.log.length;
-    session.write(
-      "package.json",
-      JSON.stringify({ name: "registries", private: true, description: "literal :// contact alice@example.com", dependencies: { a: "1.0.0" } }, null, 2),
-    );
+    // The committed workspace, whose bun.lock the conformance test compares (feature 006 T143).
+    session.assemble("registries", session.dir);
+    const manifest = JSON.parse(readFileSync(join(session.dir, "package.json"), "utf8"));
+    session.write("package.json", JSON.stringify({ ...manifest, description: "literal :// contact alice@example.com" }, null, 2));
     session.write(".npmrc", "");
-    session.write("bun.lock", workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${session.registry.url}/a/-/a-1.0.0.tgz", {}, ${A}],`));
     const result = await session.run(["query", "//:node_modules/a"]);
     expect(result.exitCode, result.stderr).toBe(0);
     assertOffline(session.log.slice(before));

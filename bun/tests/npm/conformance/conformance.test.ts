@@ -54,8 +54,6 @@ const E2E_ARCHIVES = `${MAIN}/bun/tests/npm/fixtures/jsx/archives`;
 // Projects the oracle cannot install, each with the reason (research R9): only a project whose
 // lockfile Bun refuses to load. The ruleset must refuse each as well (spec Edge Cases, FR-004).
 export const NOT_APPLICABLE: Record<string, string> = {
-  "bun/tests/integration/workspaces/stale_link":
-    "its bun.lock is a template whose {PHANTOM_INFO} stale_link.test.ts fills in, so Bun cannot load it as written",
   [`${REFUSED}/patch_path`]: 'its patchedDependencies value is not a string, which Bun\'s loader refuses ("Expected a string", bun.lock.rs L1910); written by hand, as no Bun writes it',
 };
 
