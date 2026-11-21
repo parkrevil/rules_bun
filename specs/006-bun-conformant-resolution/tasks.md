@@ -972,7 +972,7 @@ recorded in `tdd-log.md`.
   that a listed one has none. Fail the test on either, with an English message naming the project;
   show it red (a project without a 1.4.2 lockfile), then green, per US5 scenario 2 / FR-013
   (contradicts)
-- [ ] T096 BC-13 and BC-14 have no red record (`tdd-log.md` about L150: "green on the first run"),
+- [X] T096 BC-13 and BC-14 have no red record (`tdd-log.md` about L150: "green on the first run"),
   and no corpus project exercises them (every `libc` row has `os: linux`; no `["linux", "any"]`).
   Add tests that pin Bun's reading (`os: ["linux", "any"]` and its reverse; an optional package
   with `libc` on a darwin class), run them on `main`'s code in a worktree to record red, then green

@@ -1,0 +1,7 @@
+{
+  "name": "platform-rule-raw",
+  "private": true,
+  "dependencies": {
+    "rule-user": "1.0.0"
+  }
+}

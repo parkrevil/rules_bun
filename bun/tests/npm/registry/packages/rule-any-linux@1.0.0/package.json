@@ -1,0 +1,9 @@
+{
+  "name": "rule-any-linux",
+  "version": "1.0.0",
+  "main": "index.js",
+  "os": [
+    "any",
+    "linux"
+  ]
+}

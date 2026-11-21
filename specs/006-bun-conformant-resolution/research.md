@@ -438,6 +438,15 @@ class, so the common case costs one store.
 **Alternatives**: one store, platform conditions on edges (today's `_closure`) — rejected: wrong
 when a disabled package changes a peer binding or a dedupe.
 
+**BC-13 and BC-14 on lockfiles (T096)**: Bun 1.4.4 and 1.4.2 write a package's `os` list as they
+read it: `rule-linux-any` (`["linux", "any"]` in its `package.json`) gets no `os`, `rule-any-linux`
+(`["any", "linux"]`) gets `"linux"` (`conformance_platform_rule`, both writers), so npm's
+`checkList` and Bun's `Negatable` read a Bun-written list alike and BC-13 shows only on a lockfile
+written otherwise (`bun/tests/npm/platform_rule_raw/bun.lock`, by hand). BC-14 shows on the
+Bun-written lockfile: `rule-libc-glibc` (`libc` `glibc`, no `os`) is carried on darwin and Windows.
+`platform_rule_test.bzl` checks both lockfiles on four platforms; run on `main`'s resolver it fails
+on darwin and Windows (`tdd-log.md`).
+
 ### R4. Adapter to today's output
 
 `resolve.bzl` maps each store entry (union over classes, keyed by package and peer bindings) to an

@@ -1,0 +1,10 @@
+{
+  "name": "rule-user",
+  "version": "1.0.0",
+  "main": "index.js",
+  "optionalDependencies": {
+    "rule-any-linux": "1.0.0",
+    "rule-libc-glibc": "1.0.0",
+    "rule-linux-any": "1.0.0"
+  }
+}

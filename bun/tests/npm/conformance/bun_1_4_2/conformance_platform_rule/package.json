@@ -1,0 +1,7 @@
+{
+  "name": "conformance-platform-rule",
+  "private": true,
+  "dependencies": {
+    "rule-user": "1.0.0"
+  }
+}

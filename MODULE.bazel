@@ -290,6 +290,33 @@ npm.replace_package(
     replacement = "//bun/tests/npm/registry/archives:member-user@1.0.0.tgz",
 )
 
+# Bun's platform rule (feature 006 BC-13, BC-14, T096), as Bun writes it and with the os lists of
+# the packages' package.json files, written by hand.
+npm.translate_lock(
+    name = "npm_conformance_platform_rule",
+    bun_lock = "//bun/tests/npm/fixtures/conformance_platform_rule:bun.lock",
+)
+npm.translate_lock(
+    name = "npm_platform_rule_raw",
+    bun_lock = "//bun/tests/npm/platform_rule_raw:bun.lock",
+)
+npm.replace_package(
+    package = "rule-any-linux@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:rule-any-linux@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "rule-libc-glibc@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:rule-libc-glibc@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "rule-linux-any@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:rule-linux-any@1.0.0.tgz",
+)
+npm.replace_package(
+    package = "rule-user@1.0.0",
+    replacement = "//bun/tests/npm/registry/archives:rule-user@1.0.0.tgz",
+)
+
 # An edge the store has on some target platforms only (feature 006 T101).
 npm.translate_lock(
     name = "npm_conformance_platform_edge",
@@ -345,7 +372,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_platform_rule", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_platform_rule_raw", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.

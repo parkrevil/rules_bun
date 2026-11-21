@@ -13,6 +13,7 @@ load(":lockfile_test.bzl", "lockfile_test_suite")
 load(":naming_test.bzl", "naming_test_suite")
 load(":npmrc_test.bzl", "npmrc_test_suite")
 load(":overrides_test.bzl", "overrides_test_suite")
+load(":platform_rule_test.bzl", "platform_rule_test_suite")
 load(":platforms_test.bzl", "platforms_test_suite")
 load(":resolve_test.bzl", "resolve_test_suite")
 load(":uniqueness_test.bzl", "uniqueness_test_suite")
@@ -42,6 +43,8 @@ npmrc_test_suite(name = "npmrc")
 overrides_test_suite(name = "overrides")
 
 platforms_test_suite(name = "platforms")
+
+platform_rule_test_suite(name = "platform_rule")
 
 resolve_test_suite(name = "resolve")
 

@@ -1,0 +1,8 @@
+{
+  "name": "rule-libc-glibc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "libc": [
+    "glibc"
+  ]
+}

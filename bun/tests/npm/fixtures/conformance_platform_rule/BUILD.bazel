@@ -1,0 +1,12 @@
+load("@npm_conformance_platform_rule//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+# feature 006 BC-13, BC-14 (T096): Bun's platform rule; //bun/tests/npm:platform_rule reads it.
+npm_link_all_packages()
+
+conformance_files()

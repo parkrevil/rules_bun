@@ -414,10 +414,13 @@ the test that shows it:
   error (ID-7).
 - **BC-13**: a package's `os` or `cpu` list is read as Bun's `Negatable` reads it, where `any`
   and the order of entries can decide differently from npm's `checkList` (`["linux", "any"]`:
-  every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21).
+  every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21). Bun 1.4.4 and 1.4.2
+  write such a list as they read it (no `os` for `["linux", "any"]`, `"linux"` for `["any",
+  "linux"]`), so only a lockfile written otherwise holds one (`platform_rule_test.bzl`, the
+  hand-written `bun/tests/npm/platform_rule_raw/bun.lock`; T096).
 - **BC-14**: on a platform other than Linux, a package's `libc` excludes nothing, as Bun's
   `Meta::is_disabled` reads it; `main` lets `libc` match no other OS (research R3; user,
-  2026-11-21).
+  2026-11-21; `conformance_platform_rule`, `platform_rule_test.bzl`, T096).
 - **BC-15**: a package's dependency that the store links on some platform classes only (an
   optional dependency excluded on the others) is linked from that package only on those target
   platforms, also where the target holds the dependency through another link

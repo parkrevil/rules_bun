@@ -674,6 +674,20 @@ const projects: Record<string, Project> = {
       assert(lock.packages["plat-p"][2]?.os === "darwin", "plat-p@2.0.0 is not restricted to darwin");
     },
   },
+  // BC-13, BC-14 (T096): Bun's platform rule. rule-user's optional rule-linux-any (os
+  // ["linux", "any"]: every OS), rule-any-linux (["any", "linux"]: Linux only) and rule-libc-glibc
+  // (libc glibc, no os: every OS but Linux with another libc).
+  conformance_platform_rule: {
+    files: () => ({
+      "package.json": json({ name: "conformance-platform-rule", private: true, dependencies: { "rule-user": "1.0.0" } }),
+    }),
+    check(lock) {
+      // Bun writes the os list as it reads it: no os for ["linux", "any"], "linux" for ["any", "linux"].
+      assert(lock.packages["rule-linux-any"]?.[2]?.os === undefined, "rule-linux-any has an os");
+      assert(lock.packages["rule-any-linux"]?.[2]?.os === "linux", "rule-any-linux's os is not linux");
+      assert(lock.packages["rule-libc-glibc"]?.[2]?.libc === "glibc", "rule-libc-glibc's libc is not glibc");
+    },
+  },
   // FR-009: overrides of the ranges of a peer (state) and of a peer a dependency provides (q).
   conformance_overrides: {
     files: () => ({

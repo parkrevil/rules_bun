@@ -1,0 +1,21 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "platform-rule-raw",
+      "dependencies": {
+        "rule-user": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "rule-any-linux": ["rule-any-linux@1.0.0", "http://127.0.0.1:28761/rule-any-linux/-/rule-any-linux-1.0.0.tgz", { "os": ["any", "linux"] }, "sha512-i06d1EJYOh2Vml+x0ZgDUd0WBy4Usxg6UWmIDNDrjAc+8jKJwQ/MUKXTAuB3/aZwn3Q1tGjEyn42jyzGMQsr/A=="],
+
+    "rule-libc-glibc": ["rule-libc-glibc@1.0.0", "http://127.0.0.1:28761/rule-libc-glibc/-/rule-libc-glibc-1.0.0.tgz", { "libc": "glibc" }, "sha512-4aG8Das9mb8rSvhLzxT7FU9fWX2l4MPzHf4yBbaiiuHU6WySD29MQ3kT+aBF+UU7SEkHwN04xPsW9gjtfUM3Vw=="],
+
+    "rule-linux-any": ["rule-linux-any@1.0.0", "http://127.0.0.1:28761/rule-linux-any/-/rule-linux-any-1.0.0.tgz", { "os": ["linux", "any"] }, "sha512-xpo4m6PirAtKA1z/Iq+1+73MhdL1FGy0Vvd2C+nuD9DLKue4v5f35lVvU8ryyOVvlQA8S+IIOylccXlEvuTnNQ=="],
+
+    "rule-user": ["rule-user@1.0.0", "http://127.0.0.1:28761/rule-user/-/rule-user-1.0.0.tgz", { "optionalDependencies": { "rule-any-linux": "1.0.0", "rule-libc-glibc": "1.0.0", "rule-linux-any": "1.0.0" } }, "sha512-VD95Z0SPnB6MUMXCimpShqBAU4d3JyIyooojZ5pc8j+1GR1lP4mhwwEpGzQETBUnxUoxlZp9Azlm2+256sFrKg=="],
+  }
+}
