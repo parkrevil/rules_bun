@@ -806,6 +806,12 @@ options:
   entry order in `os`/`cpu` lists and `libc` off Linux, are numbered as Behavior Changes, so every
   difference from `main` is stated (as D3).
 
+**Final gate rejected by the user (2026-11-21)** to fix the Claude review's findings first: a bin's
+private member (T089), member links merged across platform classes (T090), R10 against the empty
+1.4.2 not-applicable list (T091), a displaced `MODULE.bazel` comment (T092), and BC-11's wording
+(the store directory takes Bun's form, not Bun's hash value; corrected in the spec). The CI runner
+labels in `_NPM_DOC` stay with T062/T067.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on

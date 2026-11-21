@@ -894,3 +894,38 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   --noenable_runfiles --spawn_strategy=local`, and Q1 (`conformance_test`, `0 differences`); in
   `e2e/smoke/` `bazel test //...`; record each in `tdd-log.md`; report a failure, do not widen the
   task (AGENTS.md), per FR-018 / SC-006 (partial)
+
+---
+
+## Phase 17: Final review (2026-11-21)
+
+The workflow's Claude review before the final gate found these; the user rejected the gate on
+2026-11-21 to fix them first (research Part 6). Each is written red first and recorded in
+`tdd-log.md`.
+
+- [ ] T089 BC-4 for bins with a private member: `bun/private/npm_repositories.bzl` (about L490) gives
+  `npm_bin` the members as `members = [Label(m) …]`, so Bazel checks the visibility of each member's
+  `bun_library` from the hub, and a member at the default private visibility makes
+  `:node_modules/<package>/bin/<bin>` fail analysis; the only fixture
+  (`bun/tests/npm/fixtures/conformance_registry_to_workspace/packages/member-lib/BUILD.bazel`) is
+  public. Add a test with a private member, red first; then make the bin link the member without
+  requiring a visibility the consumer did not grant, or, if Bazel offers no supported way, fail with
+  an English message naming the member target and the visibility to add, and state it in
+  `_NPM_DOC` and spec BC-4; record green, per BC-4 / US1 (contradicts)
+- [ ] T090 `bun/private/resolve.bzl` (about L234 and L273) merges workspace-member links of the
+  platform classes with `merged.members.update(...)` without the conflict check ordinary edges get
+  (L231–L233): a member bound on only some classes applies on every platform, and an alias bound to a
+  member on one class and a package on another is both, so `run.bzl` declares one
+  `.store/<dir>/node_modules/<alias>` link twice. Add `bun/tests/npm/resolve_test.bzl` cases, red
+  first, then treat member links per class as BC-12 treats edges (selected by platform, or the
+  existing English error where R4 shows the pinned Bun cannot write the layout); record green, per
+  BC-12 / FR-015 (contradicts)
+- [ ] T091 Research R10 (`research.md` about L570) says projects Bun 1.4.2 cannot write are listed
+  (example: an unlinked workspace), but `bun/tests/npm/conformance/not_applicable_1_4_2.ts` is empty
+  and `tdd-log.md` (about L110) records that 1.4.2 wrote `conformance_alias_workspace`. Establish
+  with the 1.4.2 oracle which corpus projects 1.4.2 refuses or links differently; if some exist,
+  list them with their reasons so US5 acceptance scenario 2 is exercised, otherwise correct R10 and
+  state in `tdd-log.md` that no project is not applicable; per US5 / FR-014 (contradicts)
+- [ ] T092 `MODULE.bazel` L293–L294: move the comment "Excludes files that rules_bun renames, by their
+  archive names (FR-033)" back above the `npm_renamed` tag it describes, below the inserted
+  `npm_conformance_platform_peer` block (unrequested)

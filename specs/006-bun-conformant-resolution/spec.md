@@ -386,8 +386,10 @@ the test that shows it:
   package carries its own copy, as Bun links nothing for it; `main` links it from the
   `<package>/<dep>` key (`conformance_bundled`). Found at T017.
 - **BC-11**: two store entries of one `name@version` that differ by peer bindings are both carried
-  into a target that reaches both, each in its own store directory named as Bun names it
-  (`<name>@<version>+<peer hash>`, Store.rs L450–L466); `main` fails analysis of that target ("a
+  into a target that reaches both, each in its own store directory in the form of Bun's
+  (`<name>@<version>+<peer hash>`, Store.rs L450–L466); the hash value is the ruleset's own (Starlark
+  `hash` of the peer bindings, with a counter on a collision), not Bun's Wyhash, and nothing reads
+  it; `main` fails analysis of that target ("a
   target holds one instance of each package version") (`basic`, `conformance_peer_contexts`,
   `integration/workspaces/fetch`; user, 2026-11-21, T076).
 - **BC-12**: an alias the pinned Bun's store binds to different packages on different platform
