@@ -357,6 +357,69 @@ def _edge_fields(instance):
 
     return field(None), field(dependency_keys), field(peers)
 
+def _linked_members(link, instances):
+    """The workspace members the instances of a package link reach link by path, on any platform."""
+    reached = link["closure"] + list((link["optional"] or {}).keys())
+    return [m for i in reached for m in instances[i].get("members", {}).values()]
+
+def _member_edges(links, instances):
+    """Workspace package -> the members its package links link by path, and the packages they reach.
+
+    Args:
+        links: Bazel package -> alias -> link, of every workspace package of the lockfile.
+        instances: Instance ID -> instance, as the hub's `instances` attribute holds them.
+
+    Returns:
+        Bazel package -> `(members, packages)`: the canonical labels of the members the package's
+        links reach by path, and the Bazel packages of those members and of its `workspace:` links.
+    """
+    edges = {}
+    for package, aliases in links.items():
+        members = {}
+        packages = {}
+        for link in aliases.values():
+            if "workspace" in link:
+                packages[Label(link["workspace"]).package] = True
+                continue
+            for member in _linked_members(link, instances):
+                members[member] = True
+                packages[Label(member).package] = True
+        edges[package] = (members, packages)
+    return edges
+
+def _bin_members(link, edges, instances):
+    """The workspace member targets a bin of `link` needs (feature 006 BC-4, T123).
+
+    The members the link's instances link by path, and, to a fixed point, those that the package
+    links of these members' own workspace packages (and of the members those reach through
+    `workspace:` links) link by path: a member's target carries the packages of its `deps`, whose
+    member links the bin must declare too, and the hub knows them only from `package.json`.
+
+    Args:
+        link: The package link, as `links` holds it.
+        edges: `_member_edges` of the lockfile's links.
+        instances: Instance ID -> instance, as the hub's `instances` attribute holds them.
+
+    Returns:
+        The sorted canonical labels of the member targets.
+    """
+    members = {m: True for m in _linked_members(link, instances)}
+    visited = {}
+    frontier = [Label(m).package for m in members]
+
+    # Each round visits at least one workspace package not visited before, or ends the walk.
+    for _ in range(len(edges) + 1):
+        following = []
+        for package in frontier:
+            if package in visited:
+                continue
+            visited[package] = True
+            reached, packages = edges.get(package, ({}, {}))
+            members.update(reached)
+            following.extend(packages.keys())
+        frontier = following
+    return sorted(members.keys())
+
 def _npm_hub_repository_impl(repository_ctx):
     instances = json.decode(repository_ctx.attr.instances)
     build = ['load("{}", "npm_instance", "npm_unsupported")\n'.format(_NPM_PACKAGE_BZL)]
@@ -420,13 +483,16 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 """.format(name = repr(name), constraints = repr(constraints)))
+    edges = _member_edges(links, instances)
     for aliases in links.values():
         for link in aliases.values():
             if "workspace" not in link:
-                # The workspace members the link's instances link by path (BC-4), on any platform:
-                # a bin target has no deps to declare them in, so the hub declares them for it.
-                reached = link["closure"] + list((link["optional"] or {}).keys())
-                link["members"] = sorted({m: True for i in reached for m in instances[i].get("members", {}).values()}.keys())
+                # A bin target has no deps to declare the workspace members its packages link by
+                # path in (BC-4), so the hub declares them for it.
+                link["members"] = _bin_members(link, edges, instances)
+    for aliases in links.values():
+        for link in aliases.values():
+            if "workspace" not in link:
                 link["select"] = _selections(link.pop("optional")) if link["optional"] else None
                 roots = link.pop("roots")
                 link["root_select"] = _root_selections(roots) if roots else None

@@ -80,9 +80,24 @@ test("a holder on one side only differs", () => {
 });
 
 test("a package at no registry version is identified by its name", () => {
-  const bun: Graph = { holders: { "": { local: "e:0" } }, entries: [entry("local", "1.0.0")] };
+  // Bun's store directory of a `file:` package is not DOC-ISO's `<package>@<version>` form.
+  const bun: Graph = { holders: { "": { local: "e:0" } }, entries: [{ ...entry("local", "1.0.0"), registry: false }] };
   const ruleset: Graph = { holders: { "": { local: "e:0" } }, entries: [entry("local", "file:local")] };
   expect(compare("p", ruleset, bun)).toBeUndefined();
+});
+
+test("a registry entry bound where Bun binds a non-registry one of its name and version differs (T127)", () => {
+  // The root's foo is file:./vendor/foo, whose package.json says 1.0.0; d1 and d2 depend on the
+  // registry's foo@1.0.0. The ruleset binds d2's foo to the root's file: foo.
+  const bun: Graph = {
+    holders: { "": { foo: "e:0", d1: "e:1", d2: "e:2" } },
+    entries: [{ ...entry("foo", "1.0.0"), registry: false }, entry("d1", "1.0.0", { foo: "e:3" }), entry("d2", "1.0.0", { foo: "e:3" }), entry("foo", "1.0.0")],
+  };
+  const ruleset: Graph = {
+    holders: { "": { foo: "e:0", d1: "e:1", d2: "e:2" } },
+    entries: [entry("foo", "file:vendor/foo"), entry("d1", "1.0.0", { foo: "e:3" }), entry("d2", "1.0.0", { foo: "e:0" }), entry("foo", "1.0.0")],
+  };
+  expect(compare("p", ruleset, bun)).toBe('p: d2@1.0.0 links "foo" to foo@file:vendor/foo, Bun links it to foo@1.0.0');
 });
 
 test("an entry whose status fails analysis in the ruleset differs", () => {

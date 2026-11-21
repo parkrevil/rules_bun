@@ -364,10 +364,12 @@ the test that shows it:
   the build; it is not linked.
 - **BC-4**: a registry package's dependency on a workspace member is linked to that member, by
   path; a target whose closure holds such a link must declare the member's target in its `deps`
-  (transitively), or analysis fails naming the package, the dependency and the member's target, as
+  (transitively, through targets that pass its `BunLibraryInfo` on: not through a `srcs`, `data` or
+  `tools` attribute or a target without `BunLibraryInfo`, T124), or analysis fails naming the package, the dependency and the member's target, as
   Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
   (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
-  package's dependencies link to (T081). The bin is declared in the package that calls
+  package's dependencies link to (T081), and, through any number of members, the members that the
+  packages those members declare link to (T123). The bin is declared in the package that calls
   `npm_link_all_packages`, so each such member's target must be visible to that package, the
   visibility a target there needs to have it in its `deps`; otherwise the build fails with Bazel's
   visibility error naming the member's target and the bin target, as no supported API lets a target

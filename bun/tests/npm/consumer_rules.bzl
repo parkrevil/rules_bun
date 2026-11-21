@@ -11,13 +11,23 @@ def _consumer_library_impl(ctx):
         DefaultInfo(files = depset(ctx.files.srcs)),
     ]
 
-# A library built by a consumer's own rule.
+# A library built by a consumer's own rule. It passes nothing of `extras` on (T124).
 consumer_library = rule(
     implementation = _consumer_library_impl,
     attrs = {
         "data": attr.label_list(allow_files = True),
+        "extras": attr.label_list(),
         "srcs": attr.label_list(allow_files = True),
     },
+)
+
+def _consumer_carrier_impl(ctx):
+    return [DefaultInfo(files = depset(transitive = [t[DefaultInfo].files for t in ctx.attr.targets]))]
+
+# A consumer's rule that provides no `BunLibraryInfo`, so it carries none of its targets' (T124).
+consumer_carrier = rule(
+    implementation = _consumer_carrier_impl,
+    attrs = {"targets": attr.label_list()},
 )
 
 def _consumer_wrapper_impl(ctx):

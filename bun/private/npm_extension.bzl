@@ -475,9 +475,13 @@ Generated targets (public API, under these naming rules):
   depend on that target (so a member that depends on the package forms no dependency cycle), and a
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
   `deps`, directly or through other targets, whatever rules build them (any rule returning
-  `BunLibraryInfo`), or its analysis fails naming the package, the dependency and the target to
+  `BunLibraryInfo`), as long as each passes the `BunLibraryInfo` on: a target reached through a
+  `srcs`, `data` or `tools` attribute, or through a target that does not return `BunLibraryInfo`,
+  is not counted. Otherwise its analysis fails naming the package, the dependency and the target to
   add. A bin target (below) has no `deps`: the hub gives it the
-  targets of the workspace members its package's dependencies link to, on any platform. The bin
+  targets of the workspace members its package's dependencies link to, on any platform, and of the
+  members that the packages those members declare in their `package.json` link to, through any
+  number of members. The bin
   target is declared in the package that calls `npm_link_all_packages`, so each of those member
   targets must be visible to that package, as it must be to any target there that has it in its
   `deps` (for the root package, `visibility = ["//:__pkg__"]` on the member's target); otherwise
@@ -505,12 +509,10 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 `bun/tests/npm/scale/` and `bun/tests/integration/workspaces/`, and `e2e/smoke`'s, each link with
 the one Bun's install makes on the test's platform, and checks that the ruleset refuses each of
 those lockfiles Bun refuses to load, among them every one under
-`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string). It runs
-in the `test` job of rules_bun's CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners
-`ubuntu-latest`, `macos-latest` and
-`windows-latest`, with Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2
-writes (`conformance_1_4_2_test`), each comparing its runner's platform class; a statement here
-holds once a CI run of the change passes. So one package version is one
+`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string), with
+Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2 writes
+(`conformance_1_4_2_test`), each comparing the platform class of the machine it runs on. Both have
+passed on Linux x64; on macOS and Windows the comparison is unverified. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
 (`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a

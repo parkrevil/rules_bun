@@ -206,6 +206,18 @@ def read_lockfile(text, file):
              "the versions Bun 1.4.4 writes: run `bun install` with Bun 1.4.4 and commit bun.lock").format(file, version),
         )
 
+    # Bun refuses a `configVersion` that is not a number, or is a fraction or below 0 (LOCK
+    # L1860-L1869, ConfigVersion.rs `from_expr`), and a `trustedDependencies` that is not an array
+    # of strings (LOCK L1871-L1888); neither decides a binding, and the value is not printed (T125).
+    config_version = lock.get("configVersion")
+    if config_version != None and (type(config_version) not in ["int", "float"] or config_version < 0 or config_version != int(config_version)):
+        return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"configVersion\"): Invalid \"configVersion\". Expected a number".format(file))
+    trusted = lock.get("trustedDependencies")
+    if trusted != None and type(trusted) != "list":
+        return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"trustedDependencies\"): Expected an array".format(file))
+    if [name for name in (trusted or []) if type(name) != "string"]:
+        return _error("{}: Bun 1.4.4 refuses to load this lockfile (an entry of the field \"trustedDependencies\"): Expected a string".format(file))
+
     # Bun refuses a lockfile whose containers are not objects (LOCK L1899-L1906, L1934-L1941,
     # L2037-L2063, L2100-L2116, L2309-L2318); the value is not printed.
     for field in ["patchedDependencies", "overrides", "catalog", "catalogs", "packages"]:  # L20, L18, L19, L7

@@ -171,6 +171,10 @@ def _catalog_find(catalogs, catalog_name, dep_name):
         return None
 
     def in_group(name):
+        """The entry of `dep_name` in the catalog group `name`, or None.
+
+        Bun: src/install/lockfile/CatalogMap.rs L83–L96 @ bun-v1.4.4
+        """
         if not has_groups or name not in catalogs.groups:
             return None
         return catalogs.groups[name].get(dep_name)
@@ -972,6 +976,10 @@ def _resolve_rows(lockfile, lock, members, bundled_pkgs, file):
     pkg_map = lockfile.pkg_map
 
     def linked_member(dep):
+        """The workspace member a peer's range matches, which the loader links the peer to, or None.
+
+        Bun: src/install/lockfile/bun.lock.rs L2793–L2807 @ bun-v1.4.4
+        """
         found = version_based_peer_range(lockfile, dep)
         if found == None or found[0].tag != VERSION_TAG.NPM:
             return None
@@ -983,9 +991,17 @@ def _resolve_rows(lockfile, lock, members, bundled_pkgs, file):
         return None
 
     def peer_by_version(dep):
+        """The package a peer binds to by version, as hoisting binds it again later.
+
+        Bun: src/install/lockfile/bun.lock.rs L2809–L2819 @ bun-v1.4.4
+        """
         return resolve_peer_dep_version_based(lockfile, dep)
 
     def own_peer(dep):
+        """A peer's own binding: the member its range matches, else the package by version.
+
+        Bun: src/install/lockfile/bun.lock.rs L2820–L2820 @ bun-v1.4.4
+        """
         member = linked_member(dep)
         return member if member != None else peer_by_version(dep)
 

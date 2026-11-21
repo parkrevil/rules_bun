@@ -87,8 +87,8 @@ carried. Each package can
 load, by Node's `node_modules` lookup, exactly its own dependencies and resolved peers, and the
 workspace package's `node_modules` holds only that package's direct links; importing anything else
 fails with Bun's module-not-found error, or with the load guard's error when a copy is reachable.
-rules_bun does not read the lockfile's `configVersion`, so a lockfile written for Bun's hoisted
-installs gets this layout too, and code that relies on a hoisted, undeclared package fails. Peers
+rules_bun does not act on the lockfile's `configVersion` (it only refuses a value Bun refuses to
+load), so a lockfile written for Bun's hoisted installs gets this layout too, and code that relies on a hoisted, undeclared package fails. Peers
 resolve as the pinned Bun's isolated install resolves them (the `npm` extension's Resolution): to
 the version a dependent above the package provides, else to the version the lockfile lists; a peer
 nothing provides is absent. That paragraph names where rules_bun links differently on purpose
@@ -327,8 +327,9 @@ def _member_links(ctx, root, deps, instances, kept):
 
     The hub links such a dependency by path only, to the member's package, where the files of the
     member's target are copied; the target must declare the member's target (in its `deps`,
-    directly or through another target, built by any rule that provides `BunLibraryInfo`; the
-    labels come from `declared_targets_aspect`), else analysis fails naming it.
+    directly or through other targets that provide `BunLibraryInfo` and pass it on, built by any
+    rule; the labels come from `declared_targets_aspect`, which skips the attributes that carry
+    files, T124), else analysis fails naming it.
 
     Returns:
         `(outputs, paths)`: the links and their paths relative to the copy-tree root.

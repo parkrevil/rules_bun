@@ -595,6 +595,10 @@ def _to_range(tag, wildcard, parsed, floor):
     first_minor = minor if minor != None else 0
 
     def first_of_partial(pre):
+        """The comparator at the first version of a partial version, with the prerelease `pre`.
+
+        Bun: src/semver/SemverQuery.rs L710–L718 @ bun-v1.4.4
+        """
         return _comparator(op, _version(major = first_major, minor = first_minor, pre = pre))
 
     if wildcard == "none":
@@ -669,6 +673,10 @@ def parse_query(text, floor = _EMPTY_FLOOR):
     i = 0
 
     def skip_spaces(i):
+        """The index of the first character from `i` on that is not a space, as each space loop does.
+
+        Bun: src/semver/SemverQuery.rs L801–L803 @ bun-v1.4.4
+        """
         for _ in range(n):
             if i < n and text[i] == " ":
                 i += 1

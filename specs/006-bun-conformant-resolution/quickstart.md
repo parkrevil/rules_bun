@@ -59,7 +59,8 @@ bazel test //bun/tests/canary/npm/... --test_env=RULES_BUN_CANARY_RED=1   # each
 
 ## Q6. Traceability (US3, SC-004)
 
-Every `def` of `bun/private/bun_*.bzl` and `bun/private/resolve.bzl`, and the resolver functions
+Every `def` of `bun/private/bun_*.bzl` and `bun/private/resolve.bzl`, top-level or nested in
+another function (T128), and the resolver functions
 of `bun/private/platforms.bzl` (`ONLY.platforms` in `citations.test.ts`), has a docstring line
 `Bun: <file> L<a>–L<b> @ bun-v1.4.4` naming a file of research Part 1; in `resolve.bzl` and
 `platforms.bzl` a function may instead state that it is the adapter (research R3, R4). A function
@@ -71,7 +72,7 @@ bazel test //bun/tests/npm/conformance:citations_test --test_output=all
 bazel test //bun/tests/npm/conformance:citations_test --test_env=RULES_BUN_CITATIONS_RED=1 --test_output=errors   # fails naming _red_mode
 ```
 
-Expected: PASS, with `204 functions checked in 7 modules` in the log.
+Expected: PASS, with `222 functions checked in 7 modules` in the log (204 top-level, 18 nested).
 
 ## Q7. Public surface unchanged (SC-005)
 

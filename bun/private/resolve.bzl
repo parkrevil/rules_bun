@@ -390,6 +390,10 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     by_mask = {}
 
     def conditions(mask):
+        """The `select` conditions of the platforms of the classes in `mask`, made once per mask.
+
+        This is the adapter (research R4): Bun links for one platform, the hub for each class.
+        """
         if mask not in by_mask:
             by_mask[mask] = _conditions([t for index, platforms in enumerate(classes) if mask & (1 << index) for t in platforms])
         return by_mask[mask]

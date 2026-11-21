@@ -1,0 +1,10 @@
+{
+  "name": "chain-cli",
+  "version": "1.0.0",
+  "bin": {
+    "chain-cli": "cli.js"
+  },
+  "dependencies": {
+    "chain-w1": "^1.0.0"
+  }
+}

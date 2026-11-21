@@ -1,0 +1,8 @@
+{
+  "name": "chain-helper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "chain-w2": "^1.0.0"
+  }
+}

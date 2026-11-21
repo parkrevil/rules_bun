@@ -345,6 +345,10 @@ def _hoist_root_resolves_elsewhere(b, hoist_root, package_id, name):
         return False
 
     def resolves_elsewhere(pkg_id):
+        """Whether a dependency of `pkg_id` named `name` resolves to another package than `package_id`.
+
+        Bun: src/install/lockfile/Tree.rs L2077–L2088 @ bun-v1.4.4
+        """
         for dep_id in dependency_ids(b.lockfile, pkg_id):
             dep = b.deps[dep_id]
             if dep.name == name and not behavior_is_bundled(dep.behavior):
@@ -354,6 +358,10 @@ def _hoist_root_resolves_elsewhere(b, hoist_root, package_id, name):
         return False
 
     def nested_in(tree_id, tree_owner):
+        """The packages of `tree_owner`'s regular dependencies placed in its own tree `tree_id`.
+
+        Bun: src/install/lockfile/Tree.rs L2090–L2103 @ bun-v1.4.4
+        """
         own = b.packages[tree_owner].dependencies
         found = []
         for dep_id in b.tree_rows[tree_id]:
@@ -418,11 +426,19 @@ def _hoist_level(b, this_id, as_defined, hoist_root_id, package_id, input_dep_id
             return _result(_HOISTED)
 
         def is_in_peer_range():
+            """Whether the dependency's npm range holds the npm version of the placed package `res_id`.
+
+            Bun: src/install/lockfile/Tree.rs L1870–L1881 @ bun-v1.4.4
+            """
             version = catalogs_resolve_range(b.lockfile, dependency)
             resolution = b.packages[res_id].resolution
             return version.tag == VERSION_TAG.NPM and resolution.tag == RESOLUTION_TAG.NPM and query_satisfies(version.npm.version, resolution.value)
 
         def is_always_linked(row):
+            """Whether every platform installs the dependency `row`: it is neither optional nor bundled.
+
+            Bun: src/install/lockfile/Tree.rs L1882–L1884 @ bun-v1.4.4
+            """
             return not behavior_is_optional(row.behavior) and not behavior_is_bundled(row.behavior)
 
         if _in_slice(input_dep_range, placed_dep):
@@ -558,9 +574,18 @@ def _process_subtree(b, self_id, dependency_id, hoist_root_id):
     sort_buf = sorted(range(resolution_list.off, resolution_list.off + resolution_list.len), key = lambda d: dependency_sort_key(deps[d]))
 
     def hoist_dep(root_id, pkg_id, dep_id):
+        """Hoists the dependency `dep_id`, resolved to `pkg_id`, from the hoist root `root_id`.
+
+        Bun: src/install/lockfile/Tree.rs L1526–L1535 @ bun-v1.4.4
+        """
         return _hoist_dependency(b, next_id, root_id, pkg_id, dep_id, resolution_list)
 
     def stays_on(res_id, dep_id):
+        """Whether resolving `dep_id` to `res_id` needs no other pass of the walk.
+
+        Bun: src/install/lockfile/Tree.rs L1536–L1553 @ bun-v1.4.4
+        """
+
         # Nothing reads a resolution before the first walk of the package that lists it.
         return first_walk and not b.state["bundle_placed"] and hoist_dep(hoist_root_id, res_id, dep_id).kind == _HOISTED
 

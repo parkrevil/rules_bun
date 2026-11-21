@@ -217,10 +217,12 @@ binding-relevant Bun steps are unaccounted.
 | `bun_semver.bzl` `_range_satisfies` | `src/semver/SemverRange.rs` L101–L118 |
 | `bun_semver.bzl` `_range_satisfies_pre` | `src/semver/SemverRange.rs` L120–L157 |
 | `bun_semver.bzl` `_to_range` | `src/semver/SemverQuery.rs` L602–L743 |
+| `bun_semver.bzl` `first_of_partial` (nested in `_to_range`, T128) | `src/semver/SemverQuery.rs` L710–L718 |
 | `bun_semver.bzl` `_or_range` | `src/semver/SemverQuery.rs` L519–L538 |
 | `bun_semver.bzl` `_and_range` | `src/semver/SemverQuery.rs` L510–L517; `src/semver/SemverQuery.rs` L324–L345 |
 | `bun_semver.bzl` `_null_set_group` | `src/semver/SemverQuery.rs` L480–L486 |
 | `bun_semver.bzl` `parse_query` | `src/semver/SemverQuery.rs` L767–L769; `src/semver/SemverQuery.rs` L777–L1030 |
+| `bun_semver.bzl` `skip_spaces` (nested in `parse_query`, T128) | `src/semver/SemverQuery.rs` L801–L803 |
 | `bun_semver.bzl` `query_satisfies` | `src/semver/SemverQuery.rs` L540–L547; `src/semver/SemverQuery.rs` L259–L300; `src/semver/SemverQuery.rs` L122–L156 |
 | `bun_semver.bzl` `query_is_star` | `src/semver/SemverQuery.rs` L495–L503 |
 | `bun_semver.bzl` `_raise` | `src/semver/intersects.rs` L22–L34 |
@@ -295,6 +297,7 @@ binding-relevant Bun steps are unaccounted.
 | `bun_lockfile.bzl` `dependency_ids` | `src/install_types/resolver_hooks.rs` L133–L140 |
 | `bun_lockfile.bzl` `_parse_catalog` | `src/install/lockfile/bun.lock.rs` L1727–L1795 |
 | `bun_lockfile.bzl` `_catalog_find` | `src/install/lockfile/CatalogMap.rs` L54–L115 |
+| `bun_lockfile.bzl` `in_group` (nested in `_catalog_find`, T128) | `src/install/lockfile/CatalogMap.rs` L83–L96 |
 | `bun_lockfile.bzl` `catalogs_resolve_range` | `src/install/lockfile/CatalogMap.rs` L195–L207 |
 | `bun_lockfile.bzl` `_strip_reference` | `src/install/lockfile/CatalogMap.rs` L209–L237 |
 | `bun_lockfile.bzl` `_parse_package_segment` | `src/install/lockfile/override_selector.rs` L25–L52 |
@@ -326,6 +329,9 @@ binding-relevant Bun steps are unaccounted.
 | `bun_lockfile.bzl` `_integrity_is_supported` | `src/install/integrity.rs` L88–L120; `src/install/integrity.rs` L291–L324 |
 | `bun_lockfile.bzl` `load_lockfile` | `src/install/lockfile/bun.lock.rs` L1797–L3034 |
 | `bun_lockfile.bzl` `_resolve_rows` | `src/install/lockfile/bun.lock.rs` L2765–L3025 |
+| `bun_lockfile.bzl` `linked_member` (nested in `_resolve_rows`, T128) | `src/install/lockfile/bun.lock.rs` L2793–L2807 |
+| `bun_lockfile.bzl` `peer_by_version` (nested in `_resolve_rows`, T128) | `src/install/lockfile/bun.lock.rs` L2809–L2819 |
+| `bun_lockfile.bzl` `own_peer` (nested in `_resolve_rows`, T128) | `src/install/lockfile/bun.lock.rs` L2820–L2820 |
 | `bun_lockfile.bzl` `tag_workspace_links` | `src/install/lockfile.rs` L2313–L2429 |
 | `bun_lockfile.bzl` `rebind_peers_to_printed_packages` | `src/install/lockfile/bun.lock.rs` L3243–L3295 |
 | `bun_lockfile.bzl` `lockfile_resolve` | `src/install/lockfile.rs` L1615–L1625 |
@@ -356,10 +362,16 @@ binding-relevant Bun steps are unaccounted.
 | `bun_tree.bzl` `_bind_peer` | `src/install/lockfile/Tree.rs` L871–L883 |
 | `bun_tree.bzl` `_bind_pending_peers` | `src/install/lockfile/Tree.rs` L843–L849 |
 | `bun_tree.bzl` `_hoist_root_resolves_elsewhere` | `src/install/lockfile/Tree.rs` L2053–L2143 |
+| `bun_tree.bzl` `resolves_elsewhere` (nested in `_hoist_root_resolves_elsewhere`, T128) | `src/install/lockfile/Tree.rs` L2077–L2088 |
+| `bun_tree.bzl` `nested_in` (nested in `_hoist_root_resolves_elsewhere`, T128) | `src/install/lockfile/Tree.rs` L2090–L2103 |
 | `bun_tree.bzl` `_hoist_level` | `src/install/lockfile/Tree.rs` L1782–L2016 |
+| `bun_tree.bzl` `is_in_peer_range` (nested in `_hoist_level`, T128) | `src/install/lockfile/Tree.rs` L1870–L1881 |
+| `bun_tree.bzl` `is_always_linked` (nested in `_hoist_level`, T128) | `src/install/lockfile/Tree.rs` L1882–L1884 |
 | `bun_tree.bzl` `_hoist_bottom` | `src/install/lockfile/Tree.rs` L2018–L2050 |
 | `bun_tree.bzl` `_hoist_dependency` | `src/install/lockfile/Tree.rs` L1778–L2051 |
 | `bun_tree.bzl` `_process_subtree` | `src/install/lockfile/Tree.rs` L1411–L1776 |
+| `bun_tree.bzl` `hoist_dep` (nested in `_process_subtree`, T128) | `src/install/lockfile/Tree.rs` L1526–L1535 |
+| `bun_tree.bzl` `stays_on` (nested in `_process_subtree`, T128) | `src/install/lockfile/Tree.rs` L1536–L1553 |
 | `bun_tree.bzl` `hoist` | `src/install/lockfile.rs` L1645–L1725; `src/install/lockfile/Tree.rs` L1250–L1303 |
 | `bun_tree.bzl` `is_filtered_dependency_or_workspace` | `src/install/lockfile/Tree.rs` L1313–L1405 |
 | `bun_isolated_store.bzl` `_dependency_is_contained_folder` | `src/install/isolated_install.rs` L392–L405 |
@@ -370,6 +382,11 @@ binding-relevant Bun steps are unaccounted.
 | `bun_isolated_store.bzl` `_peers_eql` | `src/install/isolated_install/Store.rs` L218–L232 |
 | `bun_isolated_store.bzl` `_named` | `src/install/isolated_install.rs` L471–L492 |
 | `bun_isolated_store.bzl` `build_store` | `src/install/isolated_install.rs` L510–L1470; `src/install/isolated_install.rs` L494–L508 |
+| `bun_isolated_store.bzl` `is_contained_folder` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L544–L544 |
+| `bun_isolated_store.bzl` `is_filtered` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L1035–L1044 |
+| `bun_isolated_store.bzl` `is_unlinked_member` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L717–L720 |
+| `bun_isolated_store.bzl` `resolve_up` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L829–L856 |
+| `bun_isolated_store.bzl` `is_omitted_peer` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L998–L1003 |
 | `resolve.bzl` `_error` | the adapter (research R4) |
 | `resolve.bzl` `unsupported_reason` | the adapter (research R4) |
 | `resolve.bzl` `_target_safe` | the adapter (research R4) |
@@ -384,6 +401,7 @@ binding-relevant Bun steps are unaccounted.
 | `resolve.bzl` `_differing_member` | the adapter (research R4) |
 | `resolve.bzl` `class_member_conflict` | the adapter (research R4): a member link that differs by platform class (BC-4, BC-12) |
 | `resolve.bzl` `resolve` | the adapter (research R4) |
+| `resolve.bzl` `conditions` (nested in `resolve`, T128) | the adapter (research R4) |
 | `resolve.bzl` `_mask` | the adapter (research R4) |
 | `resolve.bzl` `_conditions` | the adapter (research R4) |
 | `platforms.bzl` `_npm_only` | the adapter (research R3, ID-2): a bit for each `NPM_OS`/`NPM_CPU` value Bun does not name (T112) |
@@ -607,7 +625,13 @@ For each holder, each symlink in its `node_modules` (scoped names one level down
 entries skipped) is a link; its `realpath` is a store directory (target = that entry) or a
 workspace directory (target = that workspace). An entry's identity is the `name` and `version` of
 the `package.json` in `node_modules/.bun/<dir>/node_modules/<name>` (npm's format), never parsed
-from the directory name. On Windows `realpath` resolves Bun's junctions the same way.
+from the directory name. The directory tells only whether the entry is a registry package (T127):
+DOC-ISO names a package's store directory `<package>@<version>` (a scope's `/` written `+`, as
+Store.rs does), to which Bun appends `+<peer hash>`; Bun names the directory of a package from
+another resolution after that resolution (`foo@file+vendor+foo` for `file:./vendor/foo`, seen with
+the pinned Bun, Linux x64, 2026-11-21), so an entry whose directory is not the registry form of
+its `package.json` is labelled by its name only, as the ruleset labels an entry whose version is not
+an exact version (R8). On Windows `realpath` resolves Bun's junctions the same way.
 
 ### R8. The ruleset's graph and the comparison
 
@@ -617,7 +641,8 @@ from `resolve.bzl`'s output — the same function the hub uses. The test picks t
 (`process.platform`, `process.arch`, and on Linux the C library as canary C-LIBC detects it).
 
 Equality (FR-008): both graphs are labelled digraphs (holders labelled by path, entries by
-`name@version`, edges by dependency name). The test refines a partition of the disjoint union
+`name@version`, or by name for a package from another resolution, on each side by its own
+resolution, R7 and T127; edges by dependency name). The test refines a partition of the disjoint union
 (start: labels; refine by sorted `(edge name, class of target)`) until stable; the graphs are equal
 iff every class has as many Bun nodes as ruleset nodes and every holder's class holds one node of
 each side. This compares entry counts (a package with two peer contexts must be two entries on both
@@ -808,8 +833,8 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L1816 | Missing lockfile version | refused | `_LOADER_REFUSALS` L1816 |
 | L1829 | Invalid lockfile version | refused | `_LOADER_REFUSALS` L1829 |
 | L1855 | Unsupported lockfile version | refused | `_LOADER_REFUSALS` L1855; `versions_test`; `lockfile_errors.test.ts` |
-| L1864 | Invalid "configVersion". Expected a number | not refused | not written: the writer prints a number (L373); not read (decides no binding, table above) |
-| L1875, L1884 | Expected an array / a string (`trustedDependencies`) | not refused | not written: the writer prints an array of strings (L510–L527); not read (ID-1) |
+| L1864 | Invalid "configVersion". Expected a number | refused | `_LOADER_REFUSALS` L1864, three rows: a string, a fraction and a number below 0, which ConfigVersion.rs `from_expr` maps to none (red first, T125); a whole number above 1 and `1.0` are read as Bun reads them (`config_version_test`). The value decides no binding (table above) |
+| L1875, L1884 | Expected an array / a string (`trustedDependencies`) | refused | `_LOADER_REFUSALS` L1875, L1884 (red first, T125); an array of strings is read (`config_version_test`). The value decides no binding (ID-1) |
 | L1901 | Expected an object (`patchedDependencies`) | refused | `_CONTAINER_REFUSALS` L1901 (red first) |
 | L1910 | Expected a string (a patch path) | refused | `_CONTAINER_REFUSALS` L1910 (red first, T099); `conformance/refused/patch_path`, which the conformance test checks Bun and the ruleset both refuse; canary C-PATCHED pins the value as a string |
 | L1936 | Expected an object (`overrides`) | refused | `_CONTAINER_REFUSALS` L1936 (red first) |

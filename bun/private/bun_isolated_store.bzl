@@ -203,9 +203,17 @@ def build_store(lockfile, platform):
     contained, nested_folders = contained_folders(lockfile)
 
     def is_contained_folder(dep_id):
+        """Whether the dependency `dep_id` is a folder its declarer contains.
+
+        Bun: src/install/isolated_install.rs L544–L544 @ bun-v1.4.4
+        """
         return dep_id in contained
 
     def is_filtered(dep_id, parent_pkg_id):
+        """Whether the store leaves out the dependency `dep_id` of `parent_pkg_id` on `platform`.
+
+        Bun: src/install/isolated_install.rs L1035–L1044 @ bun-v1.4.4
+        """
         return is_filtered_dependency_or_workspace(lockfile, dep_id, parent_pkg_id, platform)
 
     leaking_peers, peer_names = _leaking_peers(lockfile, platform, is_contained_folder)
@@ -227,6 +235,10 @@ def build_store(lockfile, platform):
         root_folder = {d: True for d in lockfile.hoisted_dependencies[tree.dependencies.off:tree.dependencies.off + tree.dependencies.len]}
 
     def is_unlinked_member(dep_id):
+        """Whether `dep_id` is a workspace dependency the root's folder does not place.
+
+        Bun: src/install/isolated_install.rs L717–L720 @ bun-v1.4.4
+        """
         return behavior_is_workspace(dependencies[dep_id].behavior) and root_folder != None and dep_id not in root_folder
 
     nodes = []
@@ -234,7 +246,10 @@ def build_store(lockfile, platform):
     node_queue = [(INVALID, INVALID, 0)]
 
     def resolve_up(start, name):
-        """The package an ancestor of `start` (or `start`) provides `name` with, for the context."""
+        """The package an ancestor of `start` (or `start`) provides `name` with, for the context.
+
+        Bun: src/install/isolated_install.rs L829–L856 @ bun-v1.4.4
+        """
         curr = start
         for _ in range(len(nodes) + 1):
             if curr == INVALID:
@@ -344,6 +359,11 @@ def build_store(lockfile, platform):
         features = dependency_features(packages[entry_pkg_id].resolution.tag)
 
         def is_omitted_peer(dep):
+            """Whether `dep` is a peer the features omit, which an ancestor still provides and links.
+
+            Bun: src/install/isolated_install.rs L998–L1003 @ bun-v1.4.4
+            """
+
             # Under `--omit=peer` the copy an ancestor provides is installed anyway, and is linked.
             return behavior_is_peer(dep.behavior) and not behavior_is_placed(dep.behavior, features)
 

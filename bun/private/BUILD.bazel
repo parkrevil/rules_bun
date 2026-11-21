@@ -55,6 +55,7 @@ bzl_library(
     srcs = ["run.bzl"],
     deps = [
         ":library",
+        ":providers",
         "@bazel_lib//lib:copy_directory",
         "@bazel_lib//lib:copy_file",
         "@bazel_skylib//lib:shell",
@@ -82,6 +83,7 @@ bzl_library(
         ":bun_isolated_store",
         ":bun_lockfile",
         ":bun_tree",
+        ":lockfile",
         ":platforms",
     ],
 )
@@ -96,6 +98,7 @@ bzl_library(
         ":npm_repositories",
         ":npmrc",
         ":resolve",
+        ":urls",
         ":workspaces",
     ],
 )
@@ -165,6 +168,7 @@ bzl_library(
     deps = [
         ":bun_install_types",
         ":bun_semver",
+        ":platforms",
     ],
 )
 

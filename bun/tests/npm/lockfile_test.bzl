@@ -41,6 +41,11 @@ def _config_version_test_impl(ctx):
     asserts.true(env, '"configVersion": 0,' in text, "the hoisted fixture has configVersion 0")
     asserts.equals(env, None, RESULTS["hoisted"]["lockfile"]["error"])
     asserts.equals(env, _read(text.replace('"configVersion": 0,', '"configVersion": 1,')), _read(text))
+
+    # Bun reads a whole number above 1 as 1 and 1.0 as 1 (ConfigVersion.rs `from_expr`, T125), and
+    # takes an array of strings as `trustedDependencies` (LOCK L1871-L1888).
+    for accepted in ['"configVersion": 2,', '"configVersion": 1.0,', '"configVersion": 0, "trustedDependencies": ["a"],']:
+        asserts.equals(env, _read(text), _read(text.replace('"configVersion": 0,', accepted)), accepted)
     return unittest.end(env)
 
 def _invalid_test_impl(ctx):
@@ -321,6 +326,11 @@ _LOADER_REFUSALS = [
     ("L1816", '{"workspaces": {"": {}}, "packages": {}}', ["lockfileVersion"]),
     ("L1829", '{"lockfileVersion": "2", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["lockfileVersion"]),
     ("L1855", '{"lockfileVersion": 4, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["lockfileVersion 4"]),
+    ("L1864", '{"lockfileVersion": 2, "configVersion": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"configVersion"', "Expected a number"]),
+    ("L1864", '{"lockfileVersion": 2, "configVersion": 1.5, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"configVersion"', "Expected a number"]),
+    ("L1864", '{"lockfileVersion": 2, "configVersion": -1, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"configVersion"', "Expected a number"]),
+    ("L1875", '{"lockfileVersion": 2, "trustedDependencies": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"trustedDependencies"', "Expected an array"]),
+    ("L1884", '{"lockfileVersion": 2, "trustedDependencies": ["a", ["SECRET"]], "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"trustedDependencies"', "Expected a string"]),
     ("L1946", '{"lockfileVersion": 2, "overrides": {"": "1.0.0"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["overrides", "Expected a non-empty string"]),
     ("L1968", '{"lockfileVersion": 2, "overrides": {"a": "ftp://example.com/a.tgz"}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Invalid override version"]),
     ("L1978", '{"lockfileVersion": 2, "overrides": {"a": 1}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['overrides "a"', "Expected a string or an object"]),

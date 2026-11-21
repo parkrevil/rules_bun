@@ -539,6 +539,26 @@ const projects: Record<string, Project> = {
       assert(lock.packages["member-user"][2].dependencies?.["member-lib"] === "^1.0.0", "member-user does not depend on member-lib");
     },
   },
+  // BC-4 across two workspace boundaries (T123): the root's chain-cli (with a bin) depends on the
+  // member chain-w1, which declares the registry package chain-helper, which depends on the member
+  // chain-w2; a bin of chain-cli needs both members.
+  conformance_member_chain: {
+    files: () => ({
+      "package.json": json({ name: "conformance-member-chain", private: true, workspaces: ["packages/*"], dependencies: { "chain-cli": "1.0.0" } }),
+      "packages/chain-w1/package.json": json({ name: "chain-w1", version: "1.0.0", main: "index.js", dependencies: { "chain-helper": "1.0.0" } }),
+      "packages/chain-w1/index.js": 'module.exports = { name: `chain-w1 ${require("chain-helper").name}` };\n',
+      "packages/chain-w1/BUILD.bazel": STUB_BUILD,
+      "packages/chain-w2/package.json": json({ name: "chain-w2", version: "1.0.0", main: "index.js" }),
+      "packages/chain-w2/index.js": 'module.exports = { name: "chain-w2" };\n',
+      "packages/chain-w2/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "chain-w1") === "chain-w1@workspace:packages/chain-w1", "chain-w1 is not the workspace");
+      assert(slot0(lock, "chain-w2") === "chain-w2@workspace:packages/chain-w2", "chain-w2 is not the workspace");
+      assert(lock.packages["chain-cli"][2].dependencies?.["chain-w1"] === "^1.0.0", "chain-cli does not depend on chain-w1");
+      assert(lock.packages["chain-helper"][2].dependencies?.["chain-w2"] === "^1.0.0", "chain-helper does not depend on chain-w2");
+    },
+  },
   // FR-009, BC-5: a non-optional and an optional peer nothing provides (no version of state
   // matches ^3.0.0), in the root's and a workspace's tree.
   conformance_unprovided_peer: {

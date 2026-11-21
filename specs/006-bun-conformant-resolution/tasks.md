@@ -1230,40 +1230,40 @@ The fifth review before the final gate (Claude and Codex, branch-wide) found the
 rejected the gate to fix them (the lead, under the user's delegation, 2026-11-21). Each is written
 red first and recorded in `tdd-log.md`.
 
-- [ ] T123 Codex: a bin's workspace members are collected across the first workspace boundary only
+- [X] T123 Codex: a bin's workspace members are collected across the first workspace boundary only
   (`bun/private/npm_repositories.bzl` about L428–L429): for `cli → W1 → helper → W2` (W1 declares
   the registry package `helper`, which depends on member W2) only W1 is collected, so
   `_member_links` fails for W2 and the bin has no `deps` to supply it. Add the bin integration test
   red first, then collect members to a fixed point across package and member links, per BC-4
   (contradicts)
-- [ ] T124 Codex: the member aspect (`bun/private/library.bzl` about L43–L54) collects member labels
+- [X] T124 Codex: the member aspect (`bun/private/library.bzl` about L43–L54) collects member labels
   through every attribute, including `data` and tools, without checking that the member's
   `BunLibraryInfo` reaches the program, so a member reached only through a wrapper's `data` passes
   the declaration check while its `package.json` and npm dependencies are missing from the copy
   tree. Add the regression red first, then count a member only where its `BunLibraryInfo` is
   carried into the layout, else fail with the existing "add … to its deps" message, per BC-4
   (contradicts)
-- [ ] T125 `bun/private/lockfile.bzl` (about L211) does not check `configVersion` (a number, Bun
+- [X] T125 `bun/private/lockfile.bzl` (about L211) does not check `configVersion` (a number, Bun
   LOCK L1861–L1869) or `trustedDependencies` (an array of strings, L1871–L1888), which Bun refuses
   ("failed to parse lockfile"), so the ruleset links a graph for a lockfile Bun does not install.
   Add `lockfile_test.bzl` cases red first and fail naming the `bun.lock` label and the field;
   update research Part 4's refusal inventory (about L811–L833), per FR-004 / spec Edge Cases
   (contradicts)
-- [ ] T126 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L509–L513) names `ubuntu-latest`,
+- [X] T126 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L509–L513) names `ubuntu-latest`,
   `macos-latest` and `windows-latest` before any CI run; every recorded run is Linux x64 (WSL).
   Name only where the test ran and state the rest as unverified until T067 fills it from the PR's
   CI run, per Constitution II / FR-017 (contradicts)
-- [ ] T127 `bun/tests/npm/conformance/graph.ts` (about L132, L185) gives every entry of a name the
+- [X] T127 `bun/tests/npm/conformance/graph.ts` (about L132, L185) gives every entry of a name the
   same label once any entry of it has a non-registry version, so a wrong link between a `file:`
   `foo` and registry `foo@1.0.0` entries compares equal. Add a `graph_test_ts` case red first
   (the root's `foo: "file:./vendor/foo"`, two dependents of `foo@1.0.0`, one misbound), then label
   each entry by its own resolution, per P2 / FR-008 (contradicts)
-- [ ] T128 `bun/tests/npm/conformance/citations.test.ts` (about L67) checks top-level `def`s only;
+- [X] T128 `bun/tests/npm/conformance/citations.test.ts` (about L67) checks top-level `def`s only;
   18 nested functions (`resolve.bzl` about L392 `conditions`, `bun_isolated_store.bzl` about L236
   `resolve_up`, `bun_tree.bzl`, `bun_lockfile.bzl` …) are neither counted nor checked. Show red,
   then check nested functions (citing Bun's lines or marked as the adapter) and fill research Part
   2's map, per FR-002 / SC-004 (partial)
-- [ ] T129 `bun/private/BUILD.bazel`: `:resolve` (about L78–L87) lacks `:lockfile`, which
+- [X] T129 `bun/private/BUILD.bazel`: `:resolve` (about L78–L87) lacks `:lockfile`, which
   `resolve.bzl` loads, and `:bun_lockfile` (about L163–L169) lacks `:platforms`, which
   `bun_lockfile.bzl` loads; add them and check every `bzl_library` against its file's `load`s
   (unrequested)

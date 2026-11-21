@@ -5,10 +5,11 @@
 // the toolchain's Bun; any other fails analysis naming the reason; `bazel build
 // //...` builds no bin target (feature 005 FR-012, research D1). A bin of a package that depends on
 // a workspace member links the member as Bun links it, and needs the member visible to the package
-// that calls npm_link_all_packages() (feature 006 BC-4).
+// that calls npm_link_all_packages() (feature 006 BC-4), also a member reached through another
+// member's packages (T123).
 
 import { afterAll, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
@@ -16,7 +17,10 @@ import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 const FIXTURES = "_main/bun/tests/npm/fixtures";
 const archive = (p: string) => rlocation(`_main/bun/tests/npm/registry/archives/${p}.tgz`);
 const inner = new Inner("bins", {
-  npmArchives: [archive("node-bin@1.0.0"), archive("single-bin@1.0.0"), archive("dirbin@1.0.0"), archive("member-user@1.0.0"), archive("b@2.0.0")],
+  npmArchives: [
+    archive("node-bin@1.0.0"), archive("single-bin@1.0.0"), archive("dirbin@1.0.0"), archive("member-user@1.0.0"), archive("b@2.0.0"),
+    archive("chain-cli@1.0.0"), archive("chain-helper@1.0.0"),
+  ],
 });
 afterAll(() => inner.close());
 
@@ -160,6 +164,35 @@ test(
     const visible = await inner.run(["run", "//:node_modules/member-user/bin/member-user"]);
     expect(visible.exitCode, visible.stderr).toBe(0);
     expect(visible.stdout.trim()).toBe("member-user member-lib");
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "BC-4: a bin reaches a workspace member through another member's package (T123)",
+  async () => {
+    // chain-cli -> member chain-w1 -> registry chain-helper -> member chain-w2.
+    project("conformance_member_chain");
+    // The earlier tests' member-lib would be a workspace member of this project too.
+    rmSync(join(inner.dir, "packages"), { recursive: true, force: true });
+    for (const member of ["chain-w1", "chain-w2"]) {
+      for (const file of ["package.json", "index.js"]) {
+        inner.write(`packages/${member}/${file}`, fixture(`conformance_member_chain/packages/${member}/${file}`));
+      }
+    }
+    inner.write(
+      "packages/chain-w1/BUILD.bazel",
+      'load("@npm//:defs.bzl", "npm_link_all_packages")\nload("@rules_bun//bun:defs.bzl", "bun_library")\n\nnpm_link_all_packages()\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//visibility:public"],\n    deps = [":node_modules/chain-helper"],\n)\n',
+    );
+    inner.write(
+      "packages/chain-w2/BUILD.bazel",
+      'load("@rules_bun//bun:defs.bzl", "bun_library")\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//visibility:public"],\n)\n',
+    );
+    const result = await inner.run(["run", "//:node_modules/chain-cli/bin/chain-cli"]);
+    console.log(errorLine(result.stderr));
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout.trim()).toBe("chain-cli chain-w1 chain-helper chain-w2");
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,

@@ -1,6 +1,7 @@
 // Every function of the rebuilt resolver names the Bun source lines it carries over (feature 006
-// FR-002, SC-004, quickstart Q6): each `def` of `bun/private/bun_*.bzl` and `resolve.bzl`, and the
-// resolver functions of `platforms.bzl` (research R3), has a docstring line
+// FR-002, SC-004, quickstart Q6): each `def` of `bun/private/bun_*.bzl` and `resolve.bzl`, top-level
+// or nested in another function (T128), and the resolver functions of `platforms.bzl` (research
+// R3), has a docstring line
 // `Bun: <file> L<a>–L<b> @ bun-v1.4.4` naming a file of research Part 1; in `resolve.bzl` and
 // `platforms.bzl` a function may instead state that it is the adapter (research R3, R4).
 //
@@ -64,8 +65,9 @@ interface Uncited {
 
 function uncited(module: string, text: string): Uncited[] {
   const found: Uncited[] = [];
-  const defs = [...text.matchAll(/^def (\w+)\([^)]*\):\n((?: {4}"""[\s\S]*?"""\n)?)/gm)];
-  for (const [, name, docstring] of defs) {
+  // A nested function's docstring is indented one level below its `def`.
+  const defs = [...text.matchAll(/^( *)def (\w+)\([^)]*\):\n((?:\1 {4}"""[\s\S]*?"""\n)?)/gm)];
+  for (const [, , name, docstring] of defs) {
     if (ONLY[module] && !ONLY[module].has(name)) {
       continue;
     }
@@ -94,7 +96,7 @@ test("every function of the resolver cites Bun's lines at bun-v1.4.4", () => {
       text += '\ndef _red_mode(x):\n    """A function that cites nothing."""\n    return x\n';
       console.log("red mode: an uncited function _red_mode added to resolve.bzl");
     }
-    functions += [...text.matchAll(/^def (\w+)\(/gm)].filter(([, name]) => !ONLY[module] || ONLY[module].has(name)).length;
+    functions += [...text.matchAll(/^ *def (\w+)\(/gm)].filter(([, name]) => !ONLY[module] || ONLY[module].has(name)).length;
     all.push(...uncited(module, text));
   }
   console.log(`${functions} functions checked in ${MODULES.length} modules`);

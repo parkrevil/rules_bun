@@ -16,6 +16,10 @@ export interface Entry {
   status?: string;
   /** Ruleset side only: `status` is because rules_bun does not fetch the entry (ID-4). */
   unfetched?: boolean;
+  /** Bun side only: `false` when Bun's store directory is not DOC-ISO's `<package>@<version>` form
+   * of the entry's name and version, so Bun installed it from another resolution (`file:`, a
+   * tarball URL, git); absent for a registry package (T127). */
+  registry?: boolean;
 }
 
 export interface Graph {
@@ -68,7 +72,10 @@ function ownFolders(nodeModules: string): Map<string, string> {
  * Reads the graph Bun's isolated install linked in `dir` (research R7): holders are the root and
  * each workspace path; entries are the store directories `node_modules/.bun/<dir>` except
  * `node_modules/.bun/node_modules` (ID-3); an entry's identity is the `name` and `version` of its
- * package's `package.json`, never its directory name.
+ * package's `package.json`, never its directory name. The directory tells only whether the entry is
+ * a registry package: DOC-ISO names its store directory `<package>@<version>` (a scope's `/` written
+ * `+`), to which Bun appends `+<peer hash>` for a package with peers; any other name is of a package
+ * installed from another resolution (T127).
  */
 export function readBunGraph(dir: string, workspaces: string[]): Graph {
   const entries: Entry[] = [];
@@ -84,7 +91,9 @@ export function readBunGraph(dir: string, workspaces: string[]): Graph {
         const manifest = JSON.parse(readFileSync(join(real, "package.json"), "utf8"));
         index.set(real, entries.length);
         ownLinks.push({ entry: entries.length, nodeModules, own });
-        entries.push({ name: manifest.name, version: manifest.version, links: {} });
+        const registryDir = `${String(manifest.name).replace("/", "+")}@${manifest.version}`;
+        const registry = storeDir === registryDir || storeDir.startsWith(`${registryDir}+`);
+        entries.push({ name: manifest.name, version: manifest.version, links: {}, ...(registry ? {} : { registry: false }) });
       }
     }
   }
@@ -122,14 +131,22 @@ interface Node {
 // version, so the ruleset cannot know the one the package.json Bun installed holds.
 const EXACT_VERSION = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
 
-function nodes(side: Node["side"], graph: Graph, byName: Set<string>): Map<string, Node> {
+/** Whether an entry is a registry package: by its version in the ruleset, by its store directory in
+ * Bun (`readBunGraph`). */
+function isRegistry(side: Node["side"], entry: Entry): boolean {
+  return side === "bun" ? entry.registry !== false : EXACT_VERSION.test(entry.version);
+}
+
+function nodes(side: Node["side"], graph: Graph): Map<string, Node> {
   const result = new Map<string, Node>();
   const id = (target: Target) => `${side}:${target.startsWith("w:") ? `h:${target.slice(2)}` : target}`;
   const ids = (links: Record<string, Target>) => Object.fromEntries(Object.entries(links).map(([name, t]) => [name, id(t)]));
   for (const [path, links] of Object.entries(graph.holders)) result.set(`${side}:h:${path}`, { side, label: `h:${path}`, holder: path, links: ids(links) });
   graph.entries.forEach((entry, i) => {
-    // A package the ruleset holds at no registry version is identified by its name on both sides.
-    const label = byName.has(entry.name) ? `e:${entry.name}@(not a registry version)` : `e:${entry.name}@${entry.version}`;
+    // Each entry is labelled by its own resolution (T127): a registry package by its name and
+    // version, any other by its name only, on both sides, as the ruleset does not know the version
+    // the package.json Bun installed for it holds.
+    const label = isRegistry(side, entry) ? `e:${entry.name}@${entry.version}` : `e:${entry.name}@(not a registry version)`;
     result.set(`${side}:e:${i}`, { side, label, entry, links: ids(entry.links) });
   });
   return result;
@@ -182,8 +199,7 @@ function describe(all: Map<string, Node>, node: Node | undefined, except?: strin
  * equal, otherwise the first difference in the contract's failure text (FR-012).
  */
 export function compare(project: string, ruleset: Graph, bun: Graph): string | undefined {
-  const byName = new Set(ruleset.entries.filter((e) => !EXACT_VERSION.test(e.version)).map((e) => e.name));
-  const all = new Map([...nodes("ruleset", ruleset, byName), ...nodes("bun", bun, byName)]);
+  const all = new Map([...nodes("ruleset", ruleset), ...nodes("bun", bun)]);
   const classes = refine(all);
   const paths = [...new Set([...Object.keys(ruleset.holders), ...Object.keys(bun.holders)])].sort();
   for (const path of paths) {
