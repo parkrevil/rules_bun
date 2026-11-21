@@ -394,6 +394,11 @@ the test that shows it:
   classes is linked per target platform, through `select()` on the `[os, cpu, libc]` classes the
   hub already selects optional links by (`conformance_platform_peer`,
   `conformance_platform_peer_workspace`; user, 2026-11-21, T077).
+- **BC-13**: a package's `os` or `cpu` list is read as Bun's `Negatable` reads it, where `any`
+  and the order of entries can decide differently from npm's `checkList` (`["linux", "any"]`:
+  every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21).
+- **BC-14**: on a platform other than Linux, a package's `libc` excludes nothing, as Bun's
+  `Meta::is_disabled` reads it; `main` lets `libc` match no other OS (research R3; user, 2026-11-21).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

@@ -37,8 +37,8 @@ repository root.
   steps, same order, same names where Starlark allows; Bun's ID-indexed arrays stay lists indexed
   by the same IDs, research R1). Nothing is fitted to a fixture's output (P1). Starlark has no
   `while` and no recursion: each Bun loop is a `for` over `range(_LIMIT)` with an explicit stack or
-  queue, and exhausting `_LIMIT` returns an English error naming the stage, as `resolve.bzl` does
-  on `main`.
+  queue. Exhausting `_LIMIT` (2^30) ends the loop without an error, as `main`'s `resolve.bzl`
+  loops do; no evaluation reaches it and no test can (user, 2026-11-21, research Part 6, T087).
 - "Record red" / "record green" means: append to `specs/006-bun-conformant-resolution/tdd-log.md`
   one row with the task ID, the test target, the exact command, the platform it ran on, the result
   and a short excerpt of the failure text (red) or the pass line (green). A red that fails for a
@@ -873,14 +873,15 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
   tests and their registration, as T047 removes every function of `main`'s resolver it replaces, or
   record in research Part 2 the non-test use that keeps them; run `bazel run //:gazelle` and
   `bazel test //bun/tests/npm/...`, per T047 / plan Source Code (unrequested)
-- [ ] T087 Exhausting `_LIMIT` falls through silently in every carried-over loop
+- [X] T087 Exhausting `_LIMIT` falls through silently in every carried-over loop
   (`bun/private/bun_lockfile.bzl` L1170, L1212, L1231, L1437; `bun/private/bun_tree.bzl` L701;
   `bun/private/bun_isolated_store.bzl` L127, L252, L443; `bun/private/resolve.bzl` L123), against the
   "Carry over" convention ("exhausting `_LIMIT` returns an English error naming the stage, as
   `resolve.bzl` does on `main`"); T054's review left them without the user's decision. Make each
   return that error, or stop and report so the user decides to keep them (T054: unreachable within
   an evaluation) and record the decision in research Part 6, per tasks.md Conventions / T054
-  (contradicts)
+  (contradicts). The user decided on 2026-11-21 to keep the loops as they are; the convention above
+  now says so (research Part 6)
 
 ---
 

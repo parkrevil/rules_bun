@@ -796,6 +796,16 @@ option:
 - T083: `.specify/workflows/overlays/speckit/rules-bun.yml` (57a1326) ships in this feature's PR,
   listed in the PR body as outside feature 006's scope.
 
+**T087 and the platform rule's differences decided by the user (2026-11-21)**, on the recommended
+options:
+- T087: the 9 loops bounded by `_LIMIT` (2^30) stay as they are and end without an error, as
+  `main`'s resolver loops do (`git show main:bun/private/resolve.bzl` L275, L332, L365): no
+  evaluation reaches the bound, and an error no test can reach would break constitution II. The
+  "Carry over" convention in `tasks.md` is corrected to say so.
+- BC-13 and BC-14: the two differences from `main` that Bun's platform rule (R3) brings, `any` and
+  entry order in `os`/`cpu` lists and `libc` off Linux, are numbered as Behavior Changes, so every
+  difference from `main` is stated (as D3).
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on

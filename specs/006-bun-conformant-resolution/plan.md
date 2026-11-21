@@ -29,7 +29,8 @@ the user approved all of them at the plan gate on 2026-10-29. The conformance te
 2026-10-30; ID-4 (unfetched entries fail analysis, constitution III), BC-11 (peer-hashed store
 directories), BC-12 (per-platform roots through `select()`), ID-5 (Bun's registry-dependent
 integrity refusal not reproduced) and ID-6 (Bun's default `linkWorkspacePackages`) were approved on
-2026-11-21, so the Behavior Changes are BC-1…BC-12 and the Intentional Differences ID-1…ID-6.
+2026-11-21, as were BC-13 and BC-14 (Bun's platform rule, research R3), so the Behavior Changes
+are BC-1…BC-14 and the Intentional Differences ID-1…ID-6.
 
 ## Technical Context
 
@@ -96,7 +97,7 @@ specs/006-bun-conformant-resolution/
 ├── data-model.md        # Phase 1: Bun's lockfile/tree/store model as carried over
 ├── quickstart.md        # Phase 1: validation runs Q1–Q9
 ├── contracts/
-│   ├── public-api.md         # what consumers observe (BC-1…BC-12)
+│   ├── public-api.md         # what consumers observe (BC-1…BC-14)
 │   └── conformance-graph.md  # graph JSON, oracle procedure, test interface
 ├── tdd-log.md           # implementation: each BC's difference before the fix
 └── tasks.md             # /speckit-tasks
@@ -141,7 +142,7 @@ next to the fixtures they read.
 ## Phases after this plan
 
 1. Conformance test, oracle, corpus, canaries and the ruleset-side graph export, on `main`'s
-   resolver: Q1 must fail exactly with BC-1…BC-12 (and any further difference, added to the spec
+   resolver: Q1 must fail exactly with BC-1…BC-14 (and any further difference, added to the spec
    before it is fixed); recorded in `tdd-log.md`.
 2. Carry-over in Bun's order: semver → install types → loader → resolve/hoist → clean → store →
    adapter; each step unit-tested and cited.
