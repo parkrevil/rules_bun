@@ -1206,3 +1206,18 @@ recorded in `tdd-log.md`.
   may state that it is the adapter; give `bazel test //bun/tests/npm/conformance:citations_test`
   and its expected output (`204 functions checked in 7 modules`), per plan (quickstart) / US3 /
   SC-004 (partial)
+
+---
+
+## Phase 26: Convergence
+
+- [X] T122 Bring quickstart Q7 to SC-005 and the check T111 made: its expected result ("names of
+  `:node_modules/...` targets are equal for every project without a BC; differences are only those
+  the BCs list") lets a Behavior Change remove or rename a target, while spec P4, FR-014, SC-005 and
+  `contracts/public-api.md` ("adds, removes and renames nothing") allow none, and since T111 every
+  declared dependency keeps its target. State that every `:node_modules/...` name of `main` exists
+  on the branch for every project, the branch only adding names (new fixtures and packages, and hubs
+  whose evaluation fails on `main`, BC-3), and give T111's procedure (a worktree of `main` with the
+  new fixtures, their hubs, `files.bzl` and archives copied in; `bazel query '//bun/tests/...' |
+  grep ':node_modules/'` on both; `diff` shows only `>` lines), per plan (quickstart) / SC-005
+  (partial)

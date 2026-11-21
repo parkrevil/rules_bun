@@ -75,10 +75,26 @@ Expected: PASS, with `204 functions checked in 7 modules` in the log.
 
 ## Q7. Public surface unchanged (SC-005)
 
-Compare `bazel query 'kind(".*", @npm//...)'`-style target lists of every root hub, and
-`bazel mod show_extension @rules_bun//bun:extensions.bzl%npm`, on `main` and on the branch: names
-of `:node_modules/...` targets are equal for every project without a BC; differences are only those
-the BCs list.
+Every `:node_modules/...` target name of `main` exists on the branch, for every project; the branch
+only adds names: those of the fixtures and packages it adds, and of hubs whose evaluation fails on
+`main` (`conformance_unbound`, BC-3). No BC removes or renames a target (P4, FR-014,
+`contracts/public-api.md`): since T111 every declared dependency keeps its target, also one a BC
+leaves unlinked on every platform (spec "Behavior Changes").
+
+```sh
+# in a worktree of main, with the branch's new fixtures, their hubs, files.bzl and archives copied in
+bazel query '//bun/tests/...' | grep ':node_modules/' | sort > /tmp/q7-main.txt
+# on the branch
+bazel query '//bun/tests/...' | grep ':node_modules/' | sort > /tmp/q7-branch.txt
+diff /tmp/q7-main.txt /tmp/q7-branch.txt
+# in e2e/smoke, on main and on the branch
+bazel mod show_extension @rules_bun//bun:extensions.bzl%npm
+```
+
+Expected: `diff` prints only `>` lines (T111: `main`'s 96 names, all on the branch's 112); each root
+fixture hub's `defs.bzl` defines the same public symbols on both (`npm_link_all_packages`), only
+instance IDs (`<name>@<version>__<h>`, not public API) differing; `show_extension` output is equal
+except the checkout path (T064).
 
 ## Q8. Completion gates (FR-018, SC-006)
 
