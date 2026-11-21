@@ -94,7 +94,8 @@ diff /tmp/q7-main.txt /tmp/q7-branch.txt
 bazel mod show_extension @rules_bun//bun:extensions.bzl%npm
 ```
 
-Expected: `diff` prints only `>` lines (T111: `main`'s 96 names, all on the branch's 112); each root
+Expected: `diff` prints only `>` lines (T111: `main`'s 96 names, all on the branch's 112; T159: the
+same 112 plus `conformance_member_alias`'s two, 114); each root
 fixture hub's `defs.bzl` defines the same public symbols on both (`npm_link_all_packages`), only
 instance IDs (`<name>@<version>__<h>`, not public API) differing; `show_extension` output is equal
 except the checkout path (T064).

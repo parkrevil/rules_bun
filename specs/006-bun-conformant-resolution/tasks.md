@@ -1556,7 +1556,7 @@ behavior from `main` is listed as a BC before it is fixed.
 
 ## Phase 36: Convergence
 
-- [ ] T159 Re-run Q7's target-name comparison on the final code and bring `quickstart.md` Q7 to it:
+- [X] T159 Re-run Q7's target-name comparison on the final code and bring `quickstart.md` Q7 to it:
   its expected output ("`main`'s 96 names, all on the branch's 112", `tdd-log.md` T111) predates
   T146's `conformance_member_alias` fixture, and `bazel query '//bun/tests/...' | grep
   ':node_modules/'` now lists 114 names on the branch
