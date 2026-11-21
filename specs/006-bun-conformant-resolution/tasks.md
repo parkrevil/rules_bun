@@ -912,7 +912,7 @@ The workflow's Claude review before the final gate found these; the user rejecte
   requiring a visibility the consumer did not grant, or, if Bazel offers no supported way, fail with
   an English message naming the member target and the visibility to add, and state it in
   `_NPM_DOC` and spec BC-4; record green, per BC-4 / US1 (contradicts)
-- [ ] T090 `bun/private/resolve.bzl` (about L234 and L273) merges workspace-member links of the
+- [X] T090 `bun/private/resolve.bzl` (about L234 and L273) merges workspace-member links of the
   platform classes with `merged.members.update(...)` without the conflict check ordinary edges get
   (L231–L233): a member bound on only some classes applies on every platform, and an alias bound to a
   member on one class and a package on another is both, so `run.bzl` declares one
@@ -926,6 +926,6 @@ The workflow's Claude review before the final gate found these; the user rejecte
   with the 1.4.2 oracle which corpus projects 1.4.2 refuses or links differently; if some exist,
   list them with their reasons so US5 acceptance scenario 2 is exercised, otherwise correct R10 and
   state in `tdd-log.md` that no project is not applicable; per US5 / FR-014 (contradicts)
-- [ ] T092 `MODULE.bazel` L293–L294: move the comment "Excludes files that rules_bun renames, by their
+- [X] T092 `MODULE.bazel` L293–L294: move the comment "Excludes files that rules_bun renames, by their
   archive names (FR-033)" back above the `npm_renamed` tag it describes, below the inserted
   `npm_conformance_platform_peer` block (unrequested)

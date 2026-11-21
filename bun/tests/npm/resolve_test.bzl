@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun/private:lockfile.bzl", "read_lockfile")
 load("//bun/private:platforms.bzl", "platform_tuples")
-load("//bun/private:resolve.bzl", "resolve")
+load("//bun/private:resolve.bzl", "class_member_conflict", "resolve")
 
 def _plain(value):
     return json.decode(json.encode(value))
@@ -321,6 +321,47 @@ def _platform_entry_error_test_impl(ctx):
     asserts.true(env, result.error != None and 'the store links "p" of host@1.0.0 to different packages on different platforms' in result.error, result.error)
     return unittest.end(env)
 
+def _graph(holders = {}, nodes = {}):
+    return struct(
+        holders = {path: struct(links = h[0], members = h[1]) for path, h in holders.items()},
+        nodes = {key: struct(edges = n[0], members = n[1], peers = {}) for key, n in nodes.items()},
+    )
+
+def _member_conflict(graphs):
+    return class_member_conflict(graphs, "inline/bun.lock", lambda key: "pkg{}@1.0.0".format(key[0]))
+
+def _platform_member_test_impl(ctx):
+    env = unittest.begin(ctx)
+    key = (3, ())
+    other = (4, ())
+
+    # A member link one entry has on every class it exists on is no conflict (BC-4).
+    same = _graph(nodes = {key: ({}, {"m": "packages/m"})}, holders = {"": ({}, {"m": "packages/m"})})
+    asserts.equals(env, None, _member_conflict([same, same]))
+
+    # An entry that exists on one class only keeps that class's member links.
+    asserts.equals(env, None, _member_conflict([same, _graph(holders = {"": ({}, {"m": "packages/m"})})]))
+
+    # An entry's member link on some of the classes it exists on would apply on every platform.
+    absent = _graph(nodes = {key: ({}, {})}, holders = {"": ({}, {"m": "packages/m"})})
+    error = _member_conflict([same, absent])
+    asserts.equals(env, 'inline/bun.lock: the store links "m" of pkg3@1.0.0 to different packages on different platforms, which rules_bun cannot express', error)
+
+    # An alias bound to a member on one class and to a package on another would be both.
+    package = _graph(nodes = {key: ({"m": other}, {})}, holders = {"": ({}, {"m": "packages/m"})})
+    asserts.equals(env, error, _member_conflict([same, package]))
+
+    # Two members for one alias.
+    moved = _graph(nodes = {key: ({}, {"m": "packages/n"})}, holders = {"": ({}, {"m": "packages/m"})})
+    asserts.equals(env, error, _member_conflict([same, moved]))
+
+    # The same for a workspace's own dependencies (the holders).
+    held = _graph(nodes = {key: ({}, {"m": "packages/m"})}, holders = {"packages/w": ({"m": other}, {})})
+    asserts.equals(env, 'inline/bun.lock: the store links "m" of the workspace "packages/w" to different packages on different platforms, which rules_bun cannot express', _member_conflict([_graph(nodes = {key: ({}, {"m": "packages/m"})}, holders = {"packages/w": ({}, {"m": "packages/m"})}), held]))
+    root = _graph(nodes = {key: ({}, {"m": "packages/m"})}, holders = {"": ({}, {})})
+    asserts.equals(env, 'inline/bun.lock: the store links "m" of the root workspace to different packages on different platforms, which rules_bun cannot express', _member_conflict([same, root]))
+    return unittest.end(env)
+
 basic_links_test = unittest.make(_basic_links_test_impl)
 workspace_test = unittest.make(_workspace_test_impl)
 alias_edge_test = unittest.make(_alias_edge_test_impl)
@@ -337,6 +378,7 @@ peer_instances_test = unittest.make(_peer_instances_test_impl)
 unfetched_test = unittest.make(_unfetched_test_impl)
 platform_holder_test = unittest.make(_platform_holder_test_impl)
 platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
+platform_member_test = unittest.make(_platform_member_test_impl)
 
 def resolve_test_suite(name):
     unittest.suite(
@@ -357,4 +399,5 @@ def resolve_test_suite(name):
         unfetched_test,
         platform_holder_test,
         platform_entry_error_test,
+        platform_member_test,
     )

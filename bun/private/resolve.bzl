@@ -33,6 +33,9 @@ _NAME_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 
 _LIMIT = 1 << 30
 
+# A holder a class does not reach: no links, no members.
+_NO_HOLDER = struct(links = {}, members = {})
+
 def _error(message):
     """This is the adapter: an error as a value."""
     return struct(value = None, error = message)
@@ -180,6 +183,47 @@ def _label(lockfile, pkg_id):
     package = lockfile.packages[pkg_id]
     return "{}@{}".format(package.name, package.entry.version if package.entry else package.resolution.value)
 
+def _differing_member(held):
+    """This is the adapter: the first alias whose member link is not the same in every one of `held`."""
+    aliases = sorted({alias: True for h in held for alias in h.members.keys()}.keys())
+    for alias in aliases:
+        if len({h.members.get(alias): True for h in held}) != 1:
+            return alias
+    return None
+
+def class_member_conflict(graphs, file, describe):
+    """The error for a workspace-member link that differs by platform class, or `None`.
+
+    This is the adapter: the hub links a member by path on every platform (feature 006 BC-4), so
+    an entry's or a holder's member link must be the same on every class the entry or holder
+    exists on, or it would apply on every platform, and an alias bound to a member on one class and
+    to a package on another would be linked as both. The pinned Bun writes no such lockfile: a
+    workspace row has no `os`, `cpu` or `libc` (LOCK L2593–L2604), so no class disables a member,
+    and a peer the lookup binds to a member on one class only is part of the entry's key (research
+    R4 "Bindings that differ by platform class"); this check keeps the merge from hiding one, with
+    the error an entry's alias bound by platform gets (BC-12).
+
+    Args:
+        graphs: The `_class_graph` of each platform class.
+        file: The lockfile's name, for errors.
+        describe: Entry key -> the package, for errors.
+
+    Returns:
+        An English error, or `None`.
+    """
+    error = "{}: the store links \"{}\" of {} to different packages on different platforms, which rules_bun cannot express"
+    paths = sorted({path: True for graph in graphs for path in graph.holders.keys()}.keys())
+    for path in paths:
+        alias = _differing_member([graph.holders.get(path, _NO_HOLDER) for graph in graphs])
+        if alias != None:
+            return error.format(file, alias, 'the workspace "{}"'.format(path) if path else "the root workspace")
+    keys = sorted({key: True for graph in graphs for key in graph.nodes.keys()}.keys())
+    for key in keys:
+        alias = _differing_member([graph.nodes[key] for graph in graphs if key in graph.nodes])
+        if alias != None:
+            return error.format(file, alias, describe(key))
+    return None
+
 def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     """Resolves a read lockfile into package instances and per-workspace links.
 
@@ -222,6 +266,9 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
         if store.error:
             return _error(store.error)
         graphs.append(_class_graph(bun, store.value))
+    conflict = class_member_conflict(graphs, file, lambda key: _label(bun, key[0]))
+    if conflict:
+        return _error(conflict)
 
     # Instances: entries merged over the classes by package and peers.
     nodes = {}

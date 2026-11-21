@@ -501,8 +501,9 @@ peer resolves to the version a dependent above it provides, else to the version 
 a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
 linked; a dependency a package bundles (`bundleDependencies`) is not linked. A package whose own
 dependency the store would bind to different packages on different target platforms fails
-evaluation naming the package and the dependency; no lockfile the pinned Bun writes is known to
-reach that. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
+evaluation naming the package and the dependency, and so does a link to a workspace member that
+the store would make on some target platforms only; no lockfile the pinned Bun writes is known to
+reach either. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
 selected by the target platform, not by the machine that runs Bun (ID-2); Bun's hoisted
 `node_modules/.bun/node_modules` and the root fallback, through which a package can import what it
 does not declare, are not reproduced, so only declared dependencies resolve (ID-3); an entry

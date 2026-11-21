@@ -482,6 +482,17 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   reaching it was found, so it keeps its error (`the store links "<alias>" of <package> to
   different packages on different platforms, which rules_bun cannot express`); `resolve_test.bzl`
   `platform_entry_error_test` reaches it with a hand-written lockfile.
+- **A member link** (T090): the hub links a workspace member by path on every platform (BC-4),
+  so a member link of an entry or a holder must be the same on every class that entry or holder
+  exists on. The pinned Bun writes no lockfile where it is not: a workspace row has no `os`, `cpu`
+  or `libc` (LOCK L2593–L2604, `bun_lockfile.bzl` `_meta`), so no class disables a member and
+  `behavior_is_placed` does not depend on the platform; a non-peer dependency resolves to one
+  package on every class; a peer bound to a member on some classes only is part of the entry's
+  key, so it makes another entry, as above. `class_member_conflict` checks it before the classes
+  are merged, so a merge no longer applies a member on every platform or links an alias as a
+  member and a package; it fails with the entry error's text (`of <package>`, `of the workspace
+  "<path>"`, `of the root workspace`). `resolve_test.bzl` `platform_member_test` reaches it with
+  per-class graphs written by hand.
 
 ### R5. npm ranges: carry over Bun's semver
 
