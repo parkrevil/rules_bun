@@ -4,13 +4,18 @@
 // package is scoped, and one package holds a file at a deep path. The root
 // project depends on the 100 packages of the first layer.
 //
+// The platform variant (feature 006 T100, plan R13) adds an esbuild-like set of
+// per-platform optional packages (`os` and `cpu`, and `libc` on Linux x64 and
+// arm64) under `scale-native`, which every tenth package depends on, so that
+// each platform class of the resolver builds its own store.
+//
 // `writeArchives(dir)` writes the archives with fixed mtimes, modes and gzip
 // level, so the same archives, and the integrity bun.lock records, come out of
 // every run; the scale test regenerates them at test time. Run by hand with the
 // pinned Bun from the repository root to write bun.lock and package.json next to
-// this file:
+// this file, or, with --platform, the variant's into platform/:
 //
-//   $(bazel info output_base)/external/+bun+bun_linux-x64/bun bun/tests/npm/scale/generate.ts
+//   $(bazel info output_base)/external/+bun+bun_linux-x64/bun bun/tests/npm/scale/generate.ts [--platform]
 
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,6 +34,43 @@ export interface ScalePackage {
   name: string;
   version: string;
   dependencies: string[];
+  optionalDependencies?: string[];
+  os?: string[];
+  cpu?: string[];
+  libc?: string[];
+}
+
+export const NATIVE = "scale-native";
+
+// The variant's per-platform packages, as esbuild publishes them: `[os, cpu, libc]`.
+const NATIVE_TARGETS: [string, string, string?][] = [
+  ["aix", "ppc64"],
+  ["android", "arm"],
+  ["android", "arm64"],
+  ["android", "x64"],
+  ["darwin", "arm64"],
+  ["darwin", "x64"],
+  ["freebsd", "arm64"],
+  ["freebsd", "x64"],
+  ["linux", "arm"],
+  ["linux", "arm64", "glibc"],
+  ["linux", "arm64", "musl"],
+  ["linux", "ia32"],
+  ["linux", "riscv64"],
+  ["linux", "s390x"],
+  ["linux", "x64", "glibc"],
+  ["linux", "x64", "musl"],
+  ["netbsd", "x64"],
+  ["openbsd", "arm64"],
+  ["openbsd", "x64"],
+  ["sunos", "x64"],
+  ["win32", "arm64"],
+  ["win32", "ia32"],
+  ["win32", "x64"],
+];
+
+function nativeName([os, cpu, libc]: [string, string, string?]): string {
+  return `@scale/native-${os}-${cpu}${libc ? `-${libc}` : ""}`;
 }
 
 export function packageName(layer: number, k: number): string {
@@ -36,14 +78,22 @@ export function packageName(layer: number, k: number): string {
   return k % 4 === 0 ? `@scale/${id}` : `scale-${id}`;
 }
 
-/** The packages in a fixed order, each with the names it depends on. */
-export function scalePackages(): ScalePackage[] {
+/** The packages in a fixed order, each with the names it depends on; `platform` adds the variant's. */
+export function scalePackages(platform = false): ScalePackage[] {
   const packages: ScalePackage[] = [];
   for (let layer = 0; layer < LAYERS; layer++) {
     for (let k = 0; k < WIDTH; k++) {
       const next = layer + 1 < LAYERS ? [k, (7 * k + 3) % WIDTH, (13 * k + 5) % WIDTH] : [];
       const dependencies = [...new Set(next)].sort((x, y) => x - y).map((j) => packageName(layer + 1, j));
+      if (platform && k % 10 === 0) dependencies.push(NATIVE);
       packages.push({ name: packageName(layer, k), version: "1.0.0", dependencies });
+    }
+  }
+  if (platform) {
+    packages.push({ name: NATIVE, version: "1.0.0", dependencies: [], optionalDependencies: NATIVE_TARGETS.map(nativeName) });
+    for (const target of NATIVE_TARGETS) {
+      const [os, cpu, libc] = target;
+      packages.push({ name: nativeName(target), version: "1.0.0", dependencies: [], os: [os], cpu: [cpu], ...(libc ? { libc: [libc] } : {}) });
     }
   }
   return packages;
@@ -62,6 +112,10 @@ function archive(pkg: ScalePackage, deep: boolean): Uint8Array {
     version: pkg.version,
     main: "index.js",
     dependencies: Object.fromEntries(pkg.dependencies.map((d) => [d, "^1.0.0"])),
+    ...(pkg.optionalDependencies ? { optionalDependencies: Object.fromEntries(pkg.optionalDependencies.map((d) => [d, "1.0.0"])) } : {}),
+    ...(pkg.os ? { os: pkg.os } : {}),
+    ...(pkg.cpu ? { cpu: pkg.cpu } : {}),
+    ...(pkg.libc ? { libc: pkg.libc } : {}),
   };
   const entries: TarEntry[] = [
     { name: "package/package.json", type: "file", data: encoder.encode(JSON.stringify(manifest, null, 2) + "\n"), mode: 0o644 },
@@ -72,20 +126,20 @@ function archive(pkg: ScalePackage, deep: boolean): Uint8Array {
 }
 
 /** Writes every archive to `dir` as `<store name>.tgz` and returns their paths. */
-export function writeArchives(dir: string): string[] {
+export function writeArchives(dir: string, platform = false): string[] {
   mkdirSync(dir, { recursive: true });
-  const packages = scalePackages();
-  return packages.map((pkg, i) => {
+  const deep = packageName(LAYERS - 1, WIDTH - 1);
+  return scalePackages(platform).map((pkg) => {
     const path = join(dir, `${pkg.name.replace("/", "+")}@${pkg.version}.tgz`);
-    writeFileSync(path, archive(pkg, i === packages.length - 1));
+    writeFileSync(path, archive(pkg, pkg.name === deep));
     return path;
   });
 }
 
-async function main() {
+async function main(platform: boolean) {
   const work = mkdtempSync(join(tmpdir(), "rules-bun-scale-"));
   try {
-    const registry = startRegistry({ archives: writeArchives(join(work, "archives")), port: FIXTURE_PORT });
+    const registry = startRegistry({ archives: writeArchives(join(work, "archives"), platform), port: FIXTURE_PORT });
     try {
       const project = join(work, "project");
       mkdirSync(project);
@@ -99,9 +153,11 @@ async function main() {
       const [stderr, exitCode] = await Promise.all([new Response(child.stderr).text(), child.exited]);
       if (exitCode !== 0) throw new Error(`bun install failed: ${stderr}`);
       const lock = readFileSync(join(project, "bun.lock"), "utf8");
-      writeFileSync(join(import.meta.dir, "bun.lock"), lock);
-      writeFileSync(join(import.meta.dir, "package.json"), rootManifest());
-      const packages = scalePackages();
+      const out = platform ? join(import.meta.dir, "platform") : import.meta.dir;
+      mkdirSync(out, { recursive: true });
+      writeFileSync(join(out, "bun.lock"), lock);
+      writeFileSync(join(out, "package.json"), rootManifest());
+      const packages = scalePackages(platform);
       const edges = packages.reduce((n, p) => n + p.dependencies.length, 0);
       const keys = Object.keys(Bun.JSONC.parse(lock).packages).length;
       console.log(`packages ${packages.length}, edges ${edges}, bun.lock package keys ${keys}`);
@@ -113,4 +169,4 @@ async function main() {
   }
 }
 
-if (import.meta.main) await main();
+if (import.meta.main) await main(process.argv.includes("--platform"));

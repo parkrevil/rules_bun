@@ -3,7 +3,9 @@
 // regenerated under TEST_TMPDIR with bun/tests/npm/scale/generate.ts, so the
 // inner build's integrity check is also the check that the generator is
 // deterministic (tasks.md decision 8). Every value is printed; the plan's
-// bounds are asserted on Linux.
+// bounds are asserted on Linux. The platform variant (feature 006 T100), whose
+// per-platform packages make each platform class build its own store, is
+// evaluated only: the bound applies to it as well.
 
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
@@ -21,12 +23,17 @@ const packages = scalePackages();
 const P = packages.length;
 const E = packages.reduce((n, p) => n + p.dependencies.length, 0);
 const L = WIDTH;
+const platformPackages = scalePackages(true);
+const PLATFORM_P = platformPackages.length;
+const PLATFORM_NATIVE = platformPackages.filter((p) => p.os).length;
 
 const inner = new Inner("scale", { npmArchives: writeArchives(join(process.env.TEST_TMPDIR!, "scale-archives")) });
 afterAll(() => inner.close());
 
 const BASE = readFileSync(join(inner.dir, "MODULE.bazel"), "utf8");
 const TAG = 'npm = use_extension("@rules_bun//bun:extensions.bzl", "npm")\nnpm.translate_lock(name = "npm_scale", bun_lock = "//:bun.lock")\nuse_repo(npm, "npm_scale")\n';
+const PLATFORM_TAG =
+  'npm = use_extension("@rules_bun//bun:extensions.bzl", "npm")\nnpm.translate_lock(name = "npm_scale_platform", bun_lock = "//platform:bun.lock")\nuse_repo(npm, "npm_scale_platform")\n';
 const DEPS = Array.from({ length: WIDTH }, (_, k) => `        ":node_modules/${packageName(0, k)}",`).join("\n");
 const BUILD = `load("@npm_scale//:defs.bzl", "npm_link_all_packages")
 load("@rules_bun//bun:defs.bzl", "bun_binary")
@@ -148,16 +155,25 @@ test(
     const lock = readFileSync(rlocation("_main/bun/tests/npm/scale/bun.lock"), "utf8");
     inner.write("bun.lock", lock.replaceAll(/http:\/\/127\.0\.0\.1:\d+/g, inner.registry.url));
     inner.write("package.json", readFileSync(rlocation("_main/bun/tests/npm/scale/package.json")));
+    // The variant is evaluated only, so its archives, whose names the base fixture's share, are not served.
+    const platformLock = readFileSync(rlocation("_main/bun/tests/npm/scale/platform/bun.lock"), "utf8");
+    inner.write("platform/bun.lock", platformLock.replaceAll(/http:\/\/127\.0\.0\.1:\d+/g, inner.registry.url));
+    inner.write("platform/package.json", readFileSync(rlocation("_main/bun/tests/npm/scale/platform/package.json")));
+    inner.write("platform/BUILD.bazel", "");
     inner.write("BUILD.bazel", 'load("@rules_bun//bun:defs.bzl", "bun_binary")\n\nbun_binary(\n    name = "baseline",\n    entry_point = "elapsed.ts",\n)\n');
 
     await modDeps(BASE); // the first server start and module resolution
     const without: number[] = [];
     const withTag: number[] = [];
+    const withPlatform: number[] = [];
     for (let i = 0; i < 3; i++) {
       without.push(await modDeps(BASE));
+      withPlatform.push(await modDeps(BASE + "\n" + PLATFORM_TAG));
+      // Last, so that the build below sees the base fixture's tag.
       withTag.push(await modDeps(BASE + "\n" + TAG));
     }
     const evaluation = median(withTag) - median(without);
+    const platformEvaluation = median(withPlatform) - median(without);
 
     inner.write("BUILD.bazel", BUILD);
     const scaleActions = actionCount((await bazel(["aquery", "--output=jsonproto", "//:scale"])).stdout);
@@ -179,6 +195,7 @@ test(
       [
         `packages P = ${P}, edges E = ${E}, direct links L = ${L}`,
         `extension evaluation: ${evaluation.toFixed(0)} ms (bazel mod deps median with the tag ${median(withTag).toFixed(0)} ms [${withTag.map((t) => t.toFixed(0)).join(", ")}], without ${median(without).toFixed(0)} ms [${without.map((t) => t.toFixed(0)).join(", ")}])`,
+        `platform variant (${PLATFORM_P} packages, ${PLATFORM_NATIVE} per-platform): extension evaluation ${platformEvaluation.toFixed(0)} ms (median with its tag ${median(withPlatform).toFixed(0)} ms [${withPlatform.map((t) => t.toFixed(0)).join(", ")}])`,
         `actions of //:scale: ${scaleActions}; P + E + L + A = ${P + E + L + A} (A = ${A}, the actions of //:baseline)`,
         `bazel build //:scale after analysis (the store copies and links): ${copyWall.toFixed(0)} ms; store files ${bytes.total} bytes, ${bytes.unlinked} of them not hardlinked`,
         `launcher start: //:scale median ${median(scaleLaunch)} ms [${scaleLaunch.join(", ")}], //:baseline median ${median(baselineLaunch)} ms [${baselineLaunch.join(", ")}], overhead ${overhead} ms`,
@@ -189,6 +206,7 @@ test(
     expect(scaleActions).toBe(P + E + L + A);
     if (process.platform === "linux") {
       expect(evaluation).toBeLessThanOrEqual(MAX_EVALUATION_MS);
+      expect(platformEvaluation).toBeLessThanOrEqual(MAX_EVALUATION_MS);
       expect(overhead).toBeLessThanOrEqual(MAX_LAUNCH_OVERHEAD_MS);
     }
     assertOffline(inner.log);

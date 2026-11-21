@@ -25,7 +25,7 @@ load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_peer")
 load(":bun_isolated_store.bzl", "build_store")
 load(":bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load(":bun_tree.bzl", "hoist")
-load(":platforms.bzl", "platform_bits", "platform_classes", "platform_tuples")
+load(":platforms.bzl", "platform_bits", "platform_classes")
 
 _ALGORITHMS = ["sha256", "sha384", "sha512"]
 
@@ -123,18 +123,33 @@ def _class_graph(lockfile, store):
         nodes[keys[entry_id]] = struct(edges = links, members = members, peers = peers)
     return struct(holders = holders, nodes = nodes)
 
-def _reached(graph, root):
-    """This is the adapter: the entry keys reachable from `root` in one class."""
-    seen = {root: True}
-    queue = [root]
+def _reached(edges, roots):
+    """This is the adapter: the classes of each entry key reachable from `roots` in each class.
+
+    One walk serves every platform class: each class is a bit, an edge carries the classes whose
+    store has it, and a key is reached in a class when a path of that class's edges leads to it,
+    so the classes a key is reached in are propagated along the edges until nothing grows.
+
+    Args:
+        edges: Entry key -> list of `(target key, class mask)`.
+        roots: Entry key -> the classes it is the root in.
+
+    Returns:
+        Entry key -> the classes it is reached in, as a bit mask.
+    """
+    reached = dict(roots)
+    queue = list(roots.keys())
     for i in range(_LIMIT):
         if i >= len(queue):
             break
-        for target in graph.nodes[queue[i]].edges.values():
-            if target not in seen:
-                seen[target] = True
+        mask = reached[queue[i]]
+        for target, edge_mask in edges[queue[i]]:
+            old = reached.get(target, 0)
+            new = old | (mask & edge_mask)
+            if new != old:
+                reached[target] = new
                 queue.append(target)
-    return seen
+    return reached
 
 def _hex16(value):
     """This is the adapter: `value` as 16 lowercase hexadecimal digits, Bun's `{:016x}`."""
@@ -322,19 +337,27 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     # the store binds to different entries on different platform classes (a peer provider that is
     # disabled on some, research R4 "Bindings that differ by platform class") has one root per
     # class, which the hub selects by platform (feature 006 BC-12).
-    tuples_of = [platforms for platforms in classes]
-    all_tuples = len(platform_tuples())
+    every_class = (1 << len(graphs)) - 1
+    edge_masks = {
+        key: [(target, _mask(node.edge_classes[alias])) for alias, target in node.edges.items()]
+        for key, node in nodes.items()
+    }
+    by_mask = {}
+
+    def conditions(mask):
+        if mask not in by_mask:
+            by_mask[mask] = _conditions([t for index, platforms in enumerate(classes) if mask & (1 << index) for t in platforms])
+        return by_mask[mask]
+
     links = {path: {} for path in lockfile.workspaces.keys()}
     members = {path: {} for path in lockfile.workspaces.keys()}
     roots = {}
-    reach = {}
     for index, graph in enumerate(graphs):
         for path, holder in graph.holders.items():
             members.setdefault(path, {}).update(holder.members)
             for alias, root in holder.links.items():
-                roots.setdefault((path, alias), {}).setdefault(root, []).extend(tuples_of[index])
-                for key in _reached(graph, root):
-                    reach.setdefault((path, alias), {}).setdefault(key, []).extend(tuples_of[index])
+                by_root = roots.setdefault((path, alias), {})
+                by_root[root] = by_root.get(root, 0) | (1 << index)
     for (path, alias), by_root in sorted(roots.items()):
         if len({key[0]: True for key in by_root.keys()}) > 1:
             # Per-platform roots are one package under other peer bindings, so the link's bins
@@ -345,17 +368,24 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             return _error("{}: the store links \"{}\" of {} to different packages on different platforms, which rules_bun cannot express".format(file, alias, holder))
         closure = []
         optional = {}
-        for key, platforms in reach[(path, alias)].items():
-            if len(platforms) == all_tuples:
+        for key, mask in _reached(edge_masks, by_root).items():
+            if mask == every_class:
                 closure.append(ids[key])
             else:
-                optional[ids[key]] = _conditions(platforms)
+                optional[ids[key]] = conditions(mask)
         if len(by_root) == 1:
             link = struct(alias = alias, root = ids[by_root.keys()[0]], roots = {}, closure = sorted(closure), optional = optional)
         else:
-            link = struct(alias = alias, root = None, roots = {ids[key]: _conditions(platforms) for key, platforms in by_root.items()}, closure = sorted(closure), optional = optional)
+            link = struct(alias = alias, root = None, roots = {ids[key]: conditions(mask) for key, mask in by_root.items()}, closure = sorted(closure), optional = optional)
         links.setdefault(path, {})[alias] = link
     return struct(value = struct(instances = instances, links = links, members = members), error = None)
+
+def _mask(indexes):
+    """This is the adapter: class indexes as a bit mask."""
+    mask = 0
+    for index in indexes:
+        mask = mask | (1 << index)
+    return mask
 
 def _conditions(platforms):
     """This is the adapter: platform tuples as the sorted `[os, cpu, libc]` lists the hub selects by."""

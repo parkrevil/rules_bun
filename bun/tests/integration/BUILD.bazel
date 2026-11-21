@@ -366,6 +366,8 @@ bun_test(
     data = [
         "//bun/tests/npm/scale:bun.lock",
         "//bun/tests/npm/scale:package.json",
+        "//bun/tests/npm/scale:platform/bun.lock",
+        "//bun/tests/npm/scale:platform/package.json",
     ],
     tags = ["requires-network"],
     deps = [

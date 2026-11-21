@@ -4,6 +4,8 @@ load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 exports_files([
     "bun.lock",
     "package.json",
+    "platform/bun.lock",
+    "platform/package.json",
 ])
 
 bun_library(

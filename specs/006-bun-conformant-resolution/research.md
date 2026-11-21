@@ -667,6 +667,16 @@ on the branch goes into the PR, with `--starlark_cpu_profile` output if the bran
 bound fails, work stops and the measurement is reported; no shortcut that departs from Bun's
 structure is taken to meet it.
 
+The `scale` fixture has no `os`, `cpu` or `libc`, so it measures one platform class. Its platform
+variant (T100, `bun/tests/npm/scale/platform/`, `generate.ts --platform`) adds 23 esbuild-like
+per-platform packages under `scale-native`, which every tenth package depends on, so the store is
+built for 22 classes; `scale_test` asserts the same bound on its evaluation. With the adapter
+walking each holder's links once per class it measured 10,295 ms, over the bound. The adapter's
+walk (`resolve.bzl` `_reached`, not one of Bun's stages) now propagates each entry's classes as a
+bit mask in one walk; its output is unchanged (`graphs.json` and the unit tests' results were
+identical, so every test depending on them stayed cached), and the variant measures 4,810 ms, the
+`scale` fixture 1,759 ms (`tdd-log.md` T100).
+
 ### R14. Behavior changes and existing tests
 
 Each BC of Part 5 is first recorded as a conformance difference (`tdd-log.md`), then fixed by the
@@ -885,6 +895,12 @@ found that the adapter kept an edge when any platform class had it. Each edge no
 classes and the hub selects it by platform (R4 "An edge"). `main` carries an instance's edges
 without conditions as well (`git show main:bun/private/resolve.bzl` L422–L441), so the change is
 one in what a consumer's build links and is numbered **BC-15** (as D3).
+
+**T100 decided by the lead, under the user's delegation (2026-11-21)**: the platform variant of
+`scale_test` exceeded the 10,000 ms bound (10,295 ms). R13 forbids a shortcut that departs from
+Bun's structure; the time was in the adapter's per-class walk of each link, which is not Bun's, so
+that walk was made one walk over class bit masks with unchanged output (R13), rather than raising
+the bound or stopping.
 
 ## Part 7: Evidence log
 

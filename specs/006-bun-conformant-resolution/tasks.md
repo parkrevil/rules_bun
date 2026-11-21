@@ -993,7 +993,7 @@ recorded in `tdd-log.md`.
   ("never link a graph for a lockfile Bun does not install"); `stale_link` passes only because its
   template is not valid JSON. Check the ruleset's refusal as well, red first with a lockfile Bun
   refuses that is valid JSON, per FR-004 / spec Edge Cases (partial)
-- [ ] T100 `scale_test` measures one platform class only: `resolve.bzl` (about L264–L268) builds the
+- [X] T100 `scale_test` measures one platform class only: `resolve.bzl` (about L264–L268) builds the
   store once per class, and the scale fixture has no `os`, `cpu` or `libc`. Add a scale variant
   with platform-specific packages (an esbuild-like set of about 20 per-platform optional packages
   under many dependents) so every class builds its store, keep the 10 s bound (plan R13), and
