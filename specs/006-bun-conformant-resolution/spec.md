@@ -352,8 +352,10 @@ test on a lockfile Bun 1.4.2 writes):
   reads no `bunfig.toml` (FR-003); a project setting it to `false`, where Bun binds such a range to
   an npm row (LOCKFILE L2247–L2249), links differently (user, 2026-11-21, T054).
 - **ID-7 A package's dependency bound by platform**: where the store binds one dependency of a
-  package entry (not of the root or a workspace, which BC-12 links per platform) to different
-  packages on different platform classes, the ruleset fails evaluation ("the store links
+  package entry (the root's and a workspace's are BC-12's, which links them per platform where
+  they are one package under other peer bindings and fails evaluation, on lockfiles the pinned Bun
+  does not write, where they are different packages or a member link differs by platform class) to
+  different packages on different platform classes, the ruleset fails evaluation ("the store links
   "<alias>" of <package> to different packages on different platforms, which rules_bun cannot
   express") while Bun installs it. Bun 1.4.4 was not seen writing such a lockfile; Bun 1.4.2 writes
   one for `conformance_platform_peer` in 5 of 6 runs (T091). The error is loud, not a wrong link;
@@ -406,12 +408,23 @@ the test that shows it:
   it; `main` fails analysis of that target ("a
   target holds one instance of each package version") (`basic`, `conformance_peer_contexts`,
   `integration/workspaces/fetch`; user, 2026-11-21, T076).
-- **BC-12**: an alias the pinned Bun's store binds to different packages on different platform
-  classes is linked per target platform, through `select()` on the `[os, cpu, libc]` classes the
-  hub already selects optional links by (`conformance_platform_peer`,
-  `conformance_platform_peer_workspace`; user, 2026-11-21, T077). This holds for a dependency of
-  the root or a workspace; a package entry's dependency bound by platform keeps an evaluation
-  error (ID-7).
+- **BC-12**: a dependency of the root or a workspace that the pinned Bun's store binds to
+  different store entries of one package on different platform classes (other peer bindings, a
+  peer's provider being excluded on some) is linked per target platform, through `select()` on the
+  `[os, cpu, libc]` classes the hub already selects optional links by (`conformance_platform_peer`,
+  `conformance_platform_peer_workspace`; user, 2026-11-21, T077). Two cases fail evaluation
+  instead, naming the package, the root or the workspace and the dependency ("the store links
+  "<alias>" of <holder> to different packages on different platforms, which rules_bun cannot
+  express"), because one link has one set of bins and one fetch status, and a member link is made
+  by path on every platform (BC-4): such a dependency bound to different packages (T097,
+  `resolve_test.bzl` `platform_root_package_test`, a hand-written `<workspace>/<dep>` row), and a
+  link of a package, the root or a workspace to a workspace member that the store makes on some
+  platform classes only, or makes to a package on others (T090, `platform_member_test`, per-class
+  graphs written by hand). No lockfile the pinned Bun writes reaches either (research R4 "A
+  holder's alias", "A member link"): it writes no `<workspace>/<dep>` row when the root has a row
+  of that name, so a workspace's peer binds the root's one package; and a workspace row has no
+  `os`, `cpu` or `libc`, so no platform class disables a member. A package entry's dependency bound
+  by platform to different packages keeps an evaluation error (ID-7).
 - **BC-13**: a package's `os` or `cpu` list is read as Bun's `Negatable` reads it, where `any`
   and the order of entries can decide differently from npm's `checkList` (`["linux", "any"]`:
   every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21). Bun 1.4.4 and 1.4.2

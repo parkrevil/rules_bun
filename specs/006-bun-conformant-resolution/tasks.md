@@ -1010,3 +1010,18 @@ recorded in `tdd-log.md`.
   combined closure a run sees, then carry each edge's platform classes and select edges for the
   target platform before layout (as BC-12 selects roots); record green, per P1 / FR-008 / BC-12
   (contradicts)
+
+---
+
+## Phase 20: Convergence
+
+- [X] T102 Bring spec "Behavior Changes" BC-12 and "Intentional Differences" ID-7 in line with the
+  outcome of T090 and T097, which `contracts/public-api.md` ("Diagnostics added") and research R4
+  ("A holder's alias", "A member link") already state: BC-12 selects by target platform an alias of
+  the root or a workspace that the store binds to different store entries of one package (other
+  peer bindings), while `bun/private/resolve.bzl` (about L362–L368, T097) fails evaluation where
+  those roots are different packages and `class_member_conflict` (T090) fails it where a
+  workspace-member link differs by platform class, neither reached by a lockfile Bun writes. Today
+  BC-12 says "different packages … is linked per target platform" and ID-7's "(not of the root or a
+  workspace, which BC-12 links per platform)" says the same, so the spec lists neither failure. State
+  both in the spec with R4's reason, per spec P3 / BC-12 / FR-015 (contradicts)
