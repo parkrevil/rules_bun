@@ -887,7 +887,7 @@ Task: "platform-class cases in bun/tests/npm/platforms_test.bzl"
 
 ## Phase 16: Convergence
 
-- [ ] T088 After T087 changes `bun/private/bun_lockfile.bzl`, `bun/private/bun_tree.bzl`,
+- [X] T088 After T087 changes `bun/private/bun_lockfile.bzl`, `bun/private/bun_tree.bzl`,
   `bun/private/bun_isolated_store.bzl` and `bun/private/resolve.bzl`, run the completion gates
   again on the final code before T066 (T065's records predate it): in the root
   `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...`, `bazel test //...
