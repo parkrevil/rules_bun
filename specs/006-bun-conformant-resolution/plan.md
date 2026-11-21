@@ -32,7 +32,9 @@ integrity refusal not reproduced) and ID-6 (Bun's default `linkWorkspacePackages
 2026-11-21, as were BC-13 and BC-14 (Bun's platform rule, research R3); BC-15 (an edge linked
 only where the store links it, T101) was decided by the lead under the user's delegation on
 2026-11-21, as was BC-16 (a package's dependency linked per platform, T107, which replaced the
-former ID-7), so the Behavior Changes are BC-1…BC-16 and the Intentional Differences ID-1…ID-6.
+former ID-7), and ID-8 (declared workspace members, BC-4) and ID-9 (BC-12's two evaluation
+failures) were decided by the lead under the user's delegation on 2026-11-22, so the Behavior
+Changes are BC-1…BC-16 and the Intentional Differences ID-1…ID-9 (ID-7 withdrawn).
 
 ## Technical Context
 

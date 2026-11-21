@@ -480,7 +480,8 @@ Generated targets (public API, under these naming rules):
   in the program's copy tree, so a target reached through a `srcs`, `data`, `tools`, `entry_point`
   or `preload` attribute, through a target that does not return `BunLibraryInfo`, or through a rule
   whose `BunLibraryInfo` leaves out the member's files is not counted. Otherwise its analysis fails
-  naming the package, the dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
+  naming the package, the dependency and the target to add, where Bun links the member with no
+  such declaration (ID-8, below). A bin target (below) has no `deps`: the hub gives it the
   targets of the workspace members its package's dependencies link to, on any platform, and of the
   members that the packages those members declare in their `package.json` link to, through any
   number of members. The bin
@@ -530,8 +531,8 @@ dependency excluded on a target platform is not linked from that package there, 
 target holds that dependency through another link. A link to a workspace member that the store
 would make on some target platforms only, and a dependency of the root or a workspace that it
 would bind to different packages on different target platforms, fail evaluation naming the
-package or workspace and the dependency; no lockfile the pinned Bun writes is known to reach
-them. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
+package or workspace and the dependency, where Bun installs them (ID-9); no lockfile the pinned
+Bun writes is known to reach them. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
 selected by the target platform, not by the machine that runs Bun (ID-2); Bun's hoisted
 `node_modules/.bun/node_modules` and the root fallback, through which a package can import what it
 does not declare, are not reproduced, so only declared dependencies resolve (ID-3); an entry
@@ -541,8 +542,11 @@ integrity is loaded, since rules_bun reads no `bunfig.toml` or environment to kn
 and a target that needs the entry fails analysis as under ID-4 (ID-5); and dependencies bind as
 under Bun's default `[install] linkWorkspacePackages = true`, since rules_bun reads no
 `bunfig.toml`: where a project sets it to `false`, Bun links an npm range on a workspace's name to
-a registry package, rules_bun to the workspace (ID-6). The conformance test exercises ID-1 to
-ID-4; no lockfile it compares reaches ID-5 or ID-6.
+a registry package, rules_bun to the workspace (ID-6); a target that runs a package linking a
+workspace member must declare the member's target, which Bun does not ask for, since Bazel builds
+only what a target declares (ID-8, above); and the two layouts above fail evaluation (ID-9). The
+conformance test exercises ID-1 to ID-4; analysis tests check ID-8; no lockfile it compares
+reaches ID-5, ID-6 or ID-9.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
 platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's

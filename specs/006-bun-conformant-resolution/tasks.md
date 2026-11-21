@@ -1419,13 +1419,13 @@ Differences ID-8 and ID-9, research Part 4's split table) and left the rest here
 the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with T067. Each is written red
 first and recorded in `tdd-log.md`.
 
-- [ ] T144 `bun/private/lockfile.bzl` (about L113) crashes evaluation with a bare Starlark error
+- [X] T144 `bun/private/lockfile.bzl` (about L113) crashes evaluation with a bare Starlark error
   (`dict(value)`) when a row's `bin` is neither `null`, a string nor an object (`5`, `["x"]`),
   while research Part 4 (about L926–L928) records that Bun skips such a value and loads the
   lockfile. Confirm Bun's reading against `Bin.rs` at `bun-v1.4.4` and the pinned Bun, add
   `lockfile_test.bzl` cases red first, then read such a `bin` as Bun does (cited), per FR-004 /
   spec Edge Cases (contradicts)
-- [ ] T145 Bring the docs to ID-1…ID-9 (ID-7 withdrawn): `plan.md`, `data-model.md`,
+- [X] T145 Bring the docs to ID-1…ID-9 (ID-7 withdrawn): `plan.md`, `data-model.md`,
   `quickstart.md`, `contracts/public-api.md`, `contracts/conformance-graph.md`, `_NPM_DOC` and
   `bun_binary`'s doc in `bun/private/run.bzl` name ID-8 (declared workspace members, BC-4) and
   ID-9 (BC-12's two evaluation failures) where they list the Intentional Differences, and T066's PR

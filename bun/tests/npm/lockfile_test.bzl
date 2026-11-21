@@ -470,6 +470,44 @@ def _null_accepted_test_impl(ctx):
         asserts.equals(env, plain, read, field)
     return unittest.end(env)
 
+# Feature 006 T144: `bin` values the pinned Bun 1.4.4 loads (`tdd-log.md` T144). Bun reads `bin` with
+# `Bin::parse_append` (bin.rs L193-L229): a string that is not empty gives one bin named after the
+# package, an object gives its entries (`parse_append_object`, L231-L263), and any other value gives
+# none. The reader crashed evaluation on a number, an array or a boolean (`dict(value)`).
+_BIN_VALUES = [
+    ('"cli.js"', {"a": "cli.js"}),
+    ('""', {}),
+    ("5", {}),
+    ('["cli.js"]', {}),
+    ("true", {}),
+]
+
+# An object's entry whose value is not a string is skipped, as npm's normalize-package-bin does
+# (`parse_append_object`, bin.rs L237-L238); the reader kept it.
+_BIN_OBJECTS = [
+    ("{}", {}),
+    ('{"p": 5}', {}),
+    ('{"p": "cli.js", "q": 5}', {"p": "cli.js"}),
+    ('{"p": "cli.js", "q": "x.js", "r": ["x.js"]}', {"p": "cli.js", "q": "x.js"}),
+    ('{"p": "cli.js", "q": null}', {"p": "cli.js"}),
+]
+
+def _check_bins(env, cases):
+    for value, expected in cases:
+        read = _read(_inline('"a": ["a@1.0.0", "", {"bin": %s}, "sha512-x"]' % value))
+        asserts.equals(env, None, read["error"], value)
+        asserts.equals(env, expected, read["value"]["entries"]["a"]["bin"], value)
+
+def _bin_values_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_bins(env, _BIN_VALUES)
+    return unittest.end(env)
+
+def _bin_objects_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_bins(env, _BIN_OBJECTS)
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -489,6 +527,8 @@ container_refusals_test = unittest.make(_container_refusals_test_impl)
 null_refusals_test = unittest.make(_null_refusals_test_impl)
 null_container_refusals_test = unittest.make(_null_container_refusals_test_impl)
 null_accepted_test = unittest.make(_null_accepted_test_impl)
+bin_values_test = unittest.make(_bin_values_test_impl)
+bin_objects_test = unittest.make(_bin_objects_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -512,4 +552,6 @@ def lockfile_test_suite(name):
         null_refusals_test,
         null_container_refusals_test,
         null_accepted_test,
+        bin_values_test,
+        bin_objects_test,
     )

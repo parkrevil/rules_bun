@@ -33,6 +33,7 @@ code, not against this plan.
 | INSTALL | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/install/PackageManager/install_with_manager.rs | the order of the stages in an install (S0) |
 | ISO-142, LOCK-142, TREE-142 | the same files at `bun-v1.4.2` | the 1.4.2 oracle (R10) |
 | DEP, RES, NPM, CATALOG, OVERRIDE, SELECTOR, PKG, OPTIONS, CLI, HOSTED, REPO, INTEGRITY, INSTALLER, INTERSECTS, STRINGS | the same tag's `src/install/dependency.rs`, `resolution.rs`, `npm.rs`, `lockfile/CatalogMap.rs`, `lockfile/OverrideMap.rs`, `lockfile/override_selector.rs`, `lockfile/Package.rs`, `PackageManager/PackageManagerOptions.rs`, `PackageManager/CommandLineArguments.rs`, `hosted_git_info.rs`, `repository.rs`, `integrity.rs`, `PackageInstaller.rs`, `src/semver/intersects.rs`, `src/bun_core/string/immutable.rs` | the types and helpers the stages above call: dependency versions and `Tag::infer`, resolutions and their order, `os`/`cpu`/`libc` sets, catalogs, overrides, `Package::clone`, the install's default features, `--os`/`--cpu`, repository and integrity parsing, `alias_is_safe_install_target`, range intersection, string helpers. Fetched while carrying over (T037–T045), each range re-read at the tag before it is cited |
+| BIN | https://github.com/oven-sh/bun/blob/bun-v1.4.4/src/install/bin.rs (1,981 lines) | how a row's `bin` is read: `Bin::parse_append` L193–L229, `parse_append_object` L231–L263 (T144) |
 | DOC-ISO | https://bun.com/docs/install/isolated | the layout the oracle reads: `node_modules/.bun/<package>@<version>/node_modules/…` and the symlinks into it (R7) |
 | BLOG | https://bun.com/blog/bun-lock-text-lockfile | the format outline bun.com links to; it describes none of the fields Part 4 marks new |
 | PRIOR | the earlier attempt's research, committed as `prior-research.md` in this directory | S1–S8 of that file, re-read at the tag: every line range it cites for LOCK and TREE was found unchanged (`bun.lock.rs` and `Tree.rs` are byte-identical to its copies) |
@@ -857,7 +858,7 @@ Bun and deciding no binding:
 | `bundled` | L2351 | L26 |
 | `os`, `cpu`, `libc` | L2594–L2602 | L15, C-LIBC |
 | `hasInstallScript` | L2606 | decides no binding (lifecycle scripts, ID-1) |
-| `bin`, `binDir` | L1714–L1721 | L16 (`binDir` decides no binding: which files are bins) |
+| `bin`, `binDir` | L1714–L1721, BIN L193–L263 | L16 (`binDir` decides no binding: which files are bins) |
 | the root row's `{ bin, binDir }` | L2612–L2634 | decides no binding (the root's own bins) |
 | a git or GitHub row's `.bun-tag` | L2671–L2720 | decides no binding ("Not carried over") |
 | `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies` of a row or workspace | L3405–L3490 | L6, L13, L14, L30, L32 |
@@ -931,7 +932,15 @@ loaded the texts for `configVersion`, `trustedDependencies`, the dependency maps
 texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads
 `null` where it reads one type and skips any other value: `os`, `cpu`, `libc`
 (`negatable_from_json_value`, npm.rs L850–L865, gives every platform), `bin` and `bundled` (L2351);
-the reader reads each as missing (`null_accepted_test`).
+the reader reads each as missing (`null_accepted_test`). Any other `bin` Bun loads too (T144):
+`parse_bin` hands the value to `Bin::parse_append` (BIN L193–L229), which reads a string that is not
+empty as one bin named after the package, an object as its entries whose value is a string
+(`parse_append_object` L231–L263; npm's normalize-package-bin skips the others), and anything else,
+an empty string, a number, an array, a boolean, as no bin. The pinned Bun loaded each of 12 such
+rows and linked exactly those bins (`bun install --frozen-lockfile`, Linux x64, 2026-11-22). The
+reader crashed evaluation with a bare Starlark error on a number, an array or a boolean and kept an
+empty string and an object's other entries; it now reads `bin` as Bun does (`lockfile_test.bzl`
+`bin_values_test`, `bin_objects_test`).
 
 ## Part 5: Differences found so far
 

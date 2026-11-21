@@ -105,12 +105,17 @@ def _dependencies(obj, field, file, owner):
     return dict(value), None
 
 def _bin(name, value):
-    """`bin` as a name-to-path map; a string `bin` is named after the package without its scope."""
-    if value == None:
-        return {}
+    """`bin` as a name-to-path map, read as Bun's `Bin::parse_append` reads it (bin.rs L193-L263).
+
+    A string that is not empty is one bin named after the package without its scope; an object
+    gives its entries whose value is a string (npm's normalize-package-bin skips the others); any
+    other value, `null` included, gives no bin, and Bun loads the lockfile (T139, T144).
+    """
     if type(value) == "string":
-        return {name.split("/")[-1]: value}
-    return dict(value)
+        return {name.split("/")[-1]: value} if value else {}
+    if type(value) == "dict":
+        return {key: path for key, path in value.items() if type(path) == "string"}
+    return {}
 
 def _entry(key, entry, file):
     if type(entry) != "list" or len(entry) == 0 or type(entry[0]) != "string":  # L7, L9

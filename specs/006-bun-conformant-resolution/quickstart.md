@@ -17,7 +17,9 @@ the `conformance_*` corpus, `scale` and `scale/platform`, `bun/tests/integration
 `bun/tests/npm/conformance/bun_1_4_2/*`, `bun/tests/npm/conformance/accepted/*`, `e2e/smoke`), the
 not-applicable projects (`bun/tests/npm/conformance/refused/*`, each of which both
 Bun and the ruleset must refuse) with their reasons, the exclusions `ID-1`, `ID-2`, `ID-3`, `ID-4` by name, and `0 differences`.
-ID-5 and ID-6 exclude nothing (no compared lockfile reaches them; spec "Intentional Differences").
+ID-5, ID-6 and ID-9 exclude nothing (no compared lockfile reaches them), nor does ID-8 (the graph
+links a workspace member as Bun does; analysis tests check its declaration); spec "Intentional
+Differences".
 Every BC-1…BC-16 difference recorded red in `tdd-log.md` is gone.
 
 ## Q2. Red mode (FR-011, SC-003)

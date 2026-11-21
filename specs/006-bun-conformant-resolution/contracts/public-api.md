@@ -18,8 +18,9 @@ and whose bin targets are compatible with no platform (T111).
 
 Only where the ruleset linked something other than the pinned Bun (FR-015). Each BC row is covered
 by the conformance test (a difference before, none after) and listed in the PR; the R3 row by
-`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-6 are the
-spec's.
+`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-9 (ID-7
+withdrawn) are the spec's: ID-8 is BC-4's declared workspace members, ID-9 the two evaluation
+failures below (BC-12).
 
 | Surface | Before (`main`) | After | BC |
 |---|---|---|---|
@@ -38,7 +39,7 @@ spec's.
 | A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29; on a target `os` or `cpu` Bun does not name (`netbsd`, `riscv64`), by npm's rule as on `main` (T112) | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
 | A package's dependency the store links on some platform classes only, held by the target through another link on others | linked from the package wherever the target holds it | linked from the package only where the store links it (`select()` on the instance's edges) | BC-15 |
 | A package's dependency that the store binds to different store entries on different platform classes (one package under other peer bindings) | one binding for every platform (on the branch before T107, evaluation fails: the former ID-7) | linked per target platform through `select()` on the instance's edges (`edge_targets`) | BC-16 |
-| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-6, and the CI runner labels the tests ran on | — |
+| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-9 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
 
@@ -53,14 +54,15 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
 - a malformed `unresolved` or `optionalPeers`, `null` included (T139), fails naming the entry and
   the field without printing its value;
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails
-  analysis naming the package, the dependency and the member's target to add to its `deps`;
+  analysis naming the package, the dependency and the member's target to add to its `deps`
+  (ID-8);
 - a package, the root or a workspace whose link to a workspace member the store makes on some
   platform classes only, or makes to a package on others, fails evaluation naming it and the
   dependency (T090; no Bun-written lockfile reaches it, research R4 "A member link"), and so does
   the root or a workspace whose dependency the store binds to different packages, not only to
   other peer bindings of one package, on different platform classes (T097; no Bun-written
-  lockfile reaches it, research R4 "A holder's alias"). The failure of a package's dependency
-  bound by platform (the former ID-7) is gone (BC-16).
+  lockfile reaches it, research R4 "A holder's alias"). These two failures are ID-9. The failure of
+  a package's dependency bound by platform (the former ID-7) is gone (BC-16).
 
 Diagnostics that change: BC-3's and BC-5's evaluation failures disappear; the analysis failure of
 two instances of one package version in one target now applies only to instances with one store
