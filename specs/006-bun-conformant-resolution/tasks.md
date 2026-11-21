@@ -955,8 +955,8 @@ The workflow's Claude review before the final gate found these; the user rejecte
 ## Phase 19: Second final review (2026-11-21)
 
 The second Claude review before the final gate found these; the lead rejected the gate to fix them
-(the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and recorded in
-`tdd-log.md`.
+(the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and
+recorded in `tdd-log.md`.
 
 - [ ] T094 BC-4's member check counts only targets carrying the private `BunDeclaredTargetsInfo`
   (`bun/private/run.bzl` about L342–L344, `bun/private/library.bzl` about L51–L54), while
