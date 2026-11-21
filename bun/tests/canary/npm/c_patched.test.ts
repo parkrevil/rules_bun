@@ -1,6 +1,7 @@
 // Canary C-PATCHED (FR-010, research L20, R13): `bun patch --commit` writes
 // `patchedDependencies` keyed `name@version`, which unsupported_reason matches
-// against each entry's name and version.
+// against each entry's name and version, each value a string (the patch path),
+// which read_lockfile checks as Bun's loader does (feature 006 T099).
 
 import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -43,6 +44,8 @@ test("bun patch --commit writes patchedDependencies keyed name@version", async (
     const lock = Bun.JSONC.parse(readFileSync(join(dir, "bun.lock"), "utf8")) as Record<string, any>;
     const keys = Object.keys(lock.patchedDependencies ?? {});
     if (JSON.stringify(keys) !== JSON.stringify(["r@1.0.0"])) canaryFail("C-PATCHED", ACCESS, READER, LOCKFILE_SOURCE, keys);
+    const values = Object.values(lock.patchedDependencies ?? {}).map((value) => typeof value);
+    if (JSON.stringify(values) !== JSON.stringify(["string"])) canaryFail("C-PATCHED", ACCESS, READER, LOCKFILE_SOURCE, values);
   } finally {
     registry.stop();
   }

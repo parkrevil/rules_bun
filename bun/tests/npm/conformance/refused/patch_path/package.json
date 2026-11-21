@@ -1,0 +1,10 @@
+{
+  "name": "refused-patch-path",
+  "private": true,
+  "dependencies": {
+    "b": "1.0.0"
+  },
+  "patchedDependencies": {
+    "b@1.0.0": "patches/b@1.0.0.patch"
+  }
+}

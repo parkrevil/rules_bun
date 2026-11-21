@@ -966,7 +966,7 @@ recorded in `tdd-log.md`.
   and analysis asks to "add" a member already in `deps`; bins go through the same check (`run.bzl`
   about L536). Add analysis tests for both, red first; count every declared target that reaches the
   member's `BunLibraryInfo`; record green, per BC-4 / US1 scenario 4 (contradicts)
-- [ ] T095 The Bun 1.4.2 run takes its projects from `bun_1_4_2/` only
+- [X] T095 The Bun 1.4.2 run takes its projects from `bun_1_4_2/` only
   (`bun/tests/npm/conformance/conformance.test.ts` about L118–L131): nothing checks that each
   `fixtures/conformance_*` project has a 1.4.2 lockfile or is listed in `NOT_APPLICABLE_1_4_2`, nor
   that a listed one has none. Fail the test on either, with an English message naming the project;
@@ -984,11 +984,11 @@ recorded in `tdd-log.md`.
   limited to darwin; `w`'s `p` is `p@2` on darwin and `p@1` elsewhere, through
   `write_lockfiles.ts`); if it reproduces, take bins and status per platform target (`select()`),
   otherwise record with Bun's lines why the pinned Bun cannot write it, per BC-12 (partial)
-- [ ] T098 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L497) says the conformance test covers
+- [X] T098 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L497) says the conformance test covers
   "every lockfile of rules_bun's tests", but `e2e/smoke/bun.lock` is not compared
   (`conformance.test.ts` about L74–L92). Compare it, or state exactly which lockfiles are
   compared, per Constitution II / FR-017 (contradicts)
-- [ ] T099 For a not-applicable project the test checks only that Bun refuses it
+- [X] T099 For a not-applicable project the test checks only that Bun refuses it
   (`conformance.test.ts` about L138–L141), not that the ruleset refuses it too, as the spec requires
   ("never link a graph for a lockfile Bun does not install"); `stale_link` passes only because its
   template is not valid JSON. Check the ruleset's refusal as well, red first with a lockfile Bun

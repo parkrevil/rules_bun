@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "refused-patch-path",
+      "dependencies": {
+        "b": "1.0.0"
+      }
+    }
+  },
+  "patchedDependencies": {
+    "b@1.0.0": 1
+  },
+  "packages": {
+    "b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="]
+  }
+}

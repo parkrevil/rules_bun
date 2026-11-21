@@ -211,6 +211,11 @@ def read_lockfile(text, file):
     for field in ["patchedDependencies", "overrides", "catalog", "catalogs", "packages"]:  # L20, L18, L19, L7
         if lock.get(field) != None and type(lock[field]) != "dict":
             return _error("{}: the field \"{}\" is not an object; run `bun install` to rewrite bun.lock".format(file, field))
+
+    # Bun refuses a patch path that is not a string (LOCK L1908-L1915); the value is not printed.
+    for key, path in (lock.get("patchedDependencies") or {}).items():  # L20
+        if type(path) != "string":
+            return _error("{}: the patch of \"{}\" in \"patchedDependencies\" is not a string; run `bun install` to rewrite bun.lock".format(file, key))
     if type(lock.get("workspaces")) != "dict":  # L3
         return _error("{}: the lockfile has no \"workspaces\" object; run `bun install` to rewrite bun.lock".format(file))
 

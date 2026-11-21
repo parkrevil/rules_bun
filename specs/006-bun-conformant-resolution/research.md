@@ -580,10 +580,16 @@ fixed project to another entry; the test must fail naming it.
 The test's projects are every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`
 (the corpus included, R11), `bun/tests/npm/scale/`, each `bun.lock` under
 `bun/tests/integration/workspaces/`, and the 1.4.2-written lockfiles under
-`bun/tests/npm/conformance/bun_1_4_2/` (R10). The extension and the test enumerate the same directories; a
+`bun/tests/npm/conformance/bun_1_4_2/` (R10), and the lockfiles Bun refuses to load under
+`bun/tests/npm/conformance/refused/`, written by hand (T099). The extension and the test enumerate the same directories; a
 project present on one side only fails the test (FR-009, US2-4). A project the oracle cannot install
-(e.g. `manifest_mismatch`, whose `package.json` disagrees with the lockfile on purpose) is listed in
-the test with its reason, and the list is asserted exactly.
+(`stale_link`, a template; each `refused/` project) is listed in the test with its reason, the list
+is asserted exactly, and for each the test asserts that Bun refuses it and that the ruleset fails
+it too (spec Edge Cases: no graph for a lockfile Bun does not install). Each corpus project has a
+Bun 1.4.2 lockfile or a reason in `not_applicable_1_4_2.ts`, which the test asserts (T095).
+`e2e/smoke/bun.lock` is not compared: its registry packages (`react`, `react-dom`, `scheduler`)
+have no archives in the offline loopback registry, and `_NPM_DOC` names the compared directories
+(T098).
 
 ### R10. Bun 1.4.2 (US5)
 
@@ -730,7 +736,7 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L1864 | Invalid "configVersion". Expected a number | not refused | not written: the writer prints a number (L373); not read (decides no binding, table above) |
 | L1875, L1884 | Expected an array / a string (`trustedDependencies`) | not refused | not written: the writer prints an array of strings (L510–L527); not read (ID-1) |
 | L1901 | Expected an object (`patchedDependencies`) | refused | `_CONTAINER_REFUSALS` L1901 (red first) |
-| L1910 | Expected a string (a patch path) | not refused | not written: the writer prints each path as a JSON string (L528–L549); L20 reads the keys only |
+| L1910 | Expected a string (a patch path) | refused | `_CONTAINER_REFUSALS` L1910 (red first, T099); `conformance/refused/patch_path`, which the conformance test checks Bun and the ruleset both refuse; canary C-PATCHED pins the value as a string |
 | L1936 | Expected an object (`overrides`) | refused | `_CONTAINER_REFUSALS` L1936 (red first) |
 | L1946, L1968, L1978, L1986, L1992, L2007, L2027 | the `overrides` refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L1738, L1746, L1765 | the `parse_catalog` refusals | refused | `_LOADER_REFUSALS`, one row each |

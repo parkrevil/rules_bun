@@ -10,7 +10,7 @@ It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph 
 of every project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
 every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/`, every
 `bun.lock` under `bun/tests/integration/workspaces/`, and every directory under
-`bun/tests/npm/conformance/bun_1_4_2/`.
+`bun/tests/npm/conformance/bun_1_4_2/` and `bun/tests/npm/conformance/refused/`.
 """
 
 load("//bun/private:lockfile.bzl", "read_lockfile")
@@ -48,7 +48,7 @@ def _lockfiles_under(directory):
 def _projects(root):
     """Repository-relative directory -> path of every project the conformance test compares."""
     projects = {}
-    for base in ["bun/tests/npm/fixtures", "bun/tests/npm/conformance/bun_1_4_2"]:
+    for base in ["bun/tests/npm/fixtures", "bun/tests/npm/conformance/bun_1_4_2", "bun/tests/npm/conformance/refused"]:
         directory = root.get_child(base)
         if not directory.exists:
             continue

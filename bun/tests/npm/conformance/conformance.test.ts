@@ -37,13 +37,15 @@ const FIXTURES = "bun/tests/npm/fixtures";
 const SCALE = "bun/tests/npm/scale";
 const INTEGRATION = "bun/tests/integration/workspaces";
 const BUN_1_4_2 = "bun/tests/npm/conformance/bun_1_4_2";
+const REFUSED = "bun/tests/npm/conformance/refused";
 const ARCHIVES = `${MAIN}/bun/tests/npm/registry/archives`;
 
 // Projects the oracle cannot install, each with the reason (research R9): only a project whose
-// package.json disagrees with its lockfile on purpose, or whose lockfile Bun refuses to load.
+// lockfile Bun refuses to load. The ruleset must refuse each as well (spec Edge Cases, FR-004).
 export const NOT_APPLICABLE: Record<string, string> = {
   "bun/tests/integration/workspaces/stale_link":
     "its bun.lock is a template whose {PHANTOM_INFO} stale_link.test.ts fills in, so Bun cannot load it as written",
+  [`${REFUSED}/patch_path`]: 'its patchedDependencies value is not a string, which Bun\'s loader refuses ("Expected a string", bun.lock.rs L1910); written by hand, as no Bun writes it',
 };
 
 // Tarballs a project's lockfile names at another URL than the registry's own, served as the
@@ -77,12 +79,12 @@ function projectsInRunfiles(): string[] {
     rlocationList(`${MAIN}/${base}`)
       .filter((path) => path.endsWith("/bun.lock"))
       .map((path) => path.slice(MAIN.length + 1, -"/bun.lock".length));
-  for (const base of [FIXTURES, BUN_1_4_2]) {
+  for (const base of [FIXTURES, BUN_1_4_2, REFUSED]) {
     let listed: string[] = [];
     try {
       listed = lockfiles(base);
     } catch {
-      // bun_1_4_2 may hold no project yet.
+      // bun_1_4_2 or refused may hold no project yet.
     }
     for (const dir of listed) if (dir.split("/").length === base.split("/").length + 1) found.add(dir);
   }
@@ -116,6 +118,7 @@ function redirectOneEdge(graph: Graph): string {
 }
 
 const projects = projectsInRunfiles().filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`));
+// The 1.4.2 run compares only the lockfiles Bun 1.4.2 wrote.
 const notApplicable: Record<string, string> = MODE_1_4_2
   ? Object.fromEntries(Object.entries(NOT_APPLICABLE_1_4_2).map(([name, reason]) => [`${BUN_1_4_2}/${name}`, reason]))
   : NOT_APPLICABLE;
@@ -131,13 +134,40 @@ test("every project is on both sides (FR-009, US2-4)", () => {
   if (!MODE_1_4_2) for (const project of Object.keys(NOT_APPLICABLE)) expect(projects).toContain(project);
 });
 
+test("every corpus project has a Bun 1.4.2 lockfile or a reason (US5-2, FR-013)", () => {
+  // Every project, whichever Bun runs the test.
+  const all = projectsInRunfiles();
+  const corpus = all.filter((p) => p.startsWith(`${FIXTURES}/conformance_`)).map((p) => p.slice(FIXTURES.length + 1));
+  const written = all.filter((p) => p.startsWith(`${BUN_1_4_2}/`)).map((p) => p.slice(BUN_1_4_2.length + 1));
+  const problems: string[] = [];
+  for (const name of corpus) {
+    const listed = name in NOT_APPLICABLE_1_4_2;
+    if (written.includes(name) && listed) problems.push(`${name}: has a Bun 1.4.2 lockfile and is listed as not applicable to Bun 1.4.2`);
+    if (!written.includes(name) && !listed) {
+      problems.push(`${name}: has no Bun 1.4.2 lockfile under ${BUN_1_4_2}/ and is not listed in NOT_APPLICABLE_1_4_2; run write_lockfiles.ts --bun-1-4-2 ${name} with Bun 1.4.2`);
+    }
+  }
+  for (const name of [...written, ...Object.keys(NOT_APPLICABLE_1_4_2)]) {
+    if (!corpus.includes(name)) problems.push(`${name}: is no corpus project under ${FIXTURES}/`);
+  }
+  expect(problems).toEqual([]);
+});
+
+test("every refused lockfile is not applicable (T099)", () => {
+  for (const project of projectsInRunfiles().filter((p) => p.startsWith(`${REFUSED}/`))) expect(Object.keys(NOT_APPLICABLE)).toContain(project);
+});
+
 for (const project of projects) {
   test(
     project,
     async () => {
       if (project in notApplicable) {
-        // Asserted, not skipped: the oracle must still refuse it.
+        // Asserted, not skipped: the oracle must still refuse it, and so must the ruleset, which
+        // never links a graph for a lockfile Bun does not install (spec Edge Cases).
         await expect(installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir))).rejects.toThrow();
+        const side = graphs[project];
+        if (!("error" in side)) differences.push(`${project}: Bun refuses the lockfile, the ruleset links it`);
+        expect("error" in side, `${project}: Bun refuses the lockfile, the ruleset links it`).toBe(true);
         return;
       }
       const files = Object.fromEntries(Object.entries(EXTRA_FILES[project] ?? {}).map(([url, path]) => [url, rlocation(path)]));

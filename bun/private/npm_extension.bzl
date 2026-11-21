@@ -497,8 +497,11 @@ Repositories named `<name>__...` and other targets of the hub are not public API
 Resolution: the hub links what the pinned Bun 1.4.4's isolated install (`bun install
 --frozen-lockfile --linker isolated`) links from the same `bun.lock`: rules_bun carries over Bun's own
 lockfile loader, hoister, lockfile clean and isolated store, and a conformance test
-(`bun/tests/npm/conformance`) compares, for every lockfile of rules_bun's tests, each link with the
-one Bun's install makes on the test's platform. So one package version is one
+(`bun/tests/npm/conformance`) compares, for every `bun.lock` under `bun/tests/npm/fixtures/`,
+`bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/scale/` and
+`bun/tests/integration/workspaces/` (not `e2e/smoke`'s, whose registry packages the offline test
+has no archives of), each link with the one Bun's install makes on the test's platform, and that
+the ruleset refuses each lockfile there Bun refuses to load. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
 (`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a

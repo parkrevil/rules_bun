@@ -363,6 +363,7 @@ _LOADER_REFUSALS = [
 # the root workspace's `name` (T079, red first).
 _CONTAINER_REFUSALS = [
     ("L1901", '{"lockfileVersion": 2, "patchedDependencies": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["patchedDependencies"]),
+    ("L1910", '{"lockfileVersion": 2, "patchedDependencies": {"b@1.0.0": ["SECRET"]}, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["patchedDependencies", '"b@1.0.0"', "string"]),
     ("L1936", '{"lockfileVersion": 2, "overrides": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["overrides"]),
     ("L2039", '{"lockfileVersion": 2, "catalog": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalog"]),
     ("L2058", '{"lockfileVersion": 2, "catalogs": "SECRET", "workspaces": {"": {"name": "x"}}, "packages": {}}', ["catalogs"]),

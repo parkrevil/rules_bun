@@ -1,0 +1,7 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# Lockfiles the pinned Bun refuses to load, written by hand, since no Bun writes them (feature 006
+# T099). The conformance test lists each as not applicable and checks that Bun and the ruleset
+# both refuse it.
+
+conformance_files()
