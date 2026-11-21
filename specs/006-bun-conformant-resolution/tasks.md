@@ -1025,3 +1025,30 @@ recorded in `tdd-log.md`.
   BC-12 says "different packages … is linked per target platform" and ID-7's "(not of the root or a
   workspace, which BC-12 links per platform)" says the same, so the spec lists neither failure. State
   both in the spec with R4's reason, per spec P3 / BC-12 / FR-015 (contradicts)
+
+---
+
+## Phase 21: Convergence
+
+- [X] T103 CRITICAL: compare `bun/tests/npm/scale/platform/` (T100's variant, whose `bun.lock` the
+  pinned Bun writes through `bun/tests/npm/scale/generate.ts --platform` and `scale_test` resolves
+  across 22 platform classes) in `conformance_test`. `_NPM_DOC`'s Resolution paragraph
+  (`bun/private/npm_extension.bzl`: "for every `bun.lock` under … `bun/tests/npm/scale/`") and
+  `bun/tests/npm/fixture_results.bzl`'s docstring claim it is compared, but `_projects` adds only
+  `bun/tests/npm/scale`. Add the project to `_projects`, serve its archives with
+  `writeArchives(dir, true)` in `bun/tests/npm/conformance/conformance.test.ts` `archivesFor`, add
+  its files to the test's `data`, and record the run in `tdd-log.md` (a difference no BC explains:
+  stop and report), per spec P2 / Constitution II / FR-017 (contradicts)
+- [X] T104 In `bun_binary`'s doc (`bun/private/run.bzl` L95), change "That paragraph names where
+  rules_bun links differently on purpose (ID-1 to ID-6)" to ID-1 to ID-7, as `_NPM_DOC`'s
+  Resolution paragraph has listed ID-7 since T093, per FR-017 / spec Intentional Differences
+  (partial)
+- [X] T105 Bring `plan.md`'s Constitution Check row VII ("BC-1…BC-12 change no released behavior",
+  L86) and "Phases after this plan" step 1 ("Q1 must fail exactly with BC-1…BC-14", L147) to
+  BC-1…BC-15, as its Summary (L34) and the spec state, per spec Behavior Changes / FR-017 (partial)
+- [ ] T106 In T066's PR body, give each Behavior Change the test that showed it before and after
+  (spec "Behavior Changes": "listed again in the PR with the test that shows it"), not only T017 and
+  T051 rows: BC-1…BC-10 their T017 red and T051 "difference gone" rows; BC-11 and BC-12 T076's and
+  T077's red rows and their T051 rows; BC-13 and BC-14 T096's red on `main` and green on the branch
+  (`platform_rule_test.bzl`, `conformance_platform_rule`); BC-15 T101's red and green
+  `conformance_test` rows, per spec Behavior Changes / SC-003 (partial)

@@ -8,7 +8,8 @@ real lockfiles through the real read path.
 
 It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph per platform class
 of every project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
-every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/`, every
+every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/` and its
+platform variant `bun/tests/npm/scale/platform/`, every
 `bun.lock` under `bun/tests/integration/workspaces/`, and every directory under
 `bun/tests/npm/conformance/bun_1_4_2/` and `bun/tests/npm/conformance/refused/`.
 """
@@ -55,7 +56,9 @@ def _projects(root):
         for project in directory.readdir():
             if project.get_child("bun.lock").exists:
                 projects["{}/{}".format(base, project.basename)] = project
-    projects["bun/tests/npm/scale"] = root.get_child("bun/tests/npm/scale")
+    scale = root.get_child("bun/tests/npm/scale")
+    projects["bun/tests/npm/scale"] = scale
+    projects["bun/tests/npm/scale/platform"] = scale.get_child("platform")
     integration = root.get_child("bun/tests/integration/workspaces")
     for project in _lockfiles_under(integration):
         projects["bun/tests/integration/workspaces/" + str(project)[len(str(integration)) + 1:]] = project

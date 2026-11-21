@@ -35,6 +35,8 @@ const MAIN = "_main";
 // Where the projects are (research R9), as repository-relative directories.
 const FIXTURES = "bun/tests/npm/fixtures";
 const SCALE = "bun/tests/npm/scale";
+// The scale fixture's platform variant (T100), whose archives generate.ts writes with `platform`.
+const SCALE_PLATFORM = `${SCALE}/platform`;
 const INTEGRATION = "bun/tests/integration/workspaces";
 const BUN_1_4_2 = "bun/tests/npm/conformance/bun_1_4_2";
 const REFUSED = "bun/tests/npm/conformance/refused";
@@ -88,13 +90,14 @@ function projectsInRunfiles(): string[] {
     }
     for (const dir of listed) if (dir.split("/").length === base.split("/").length + 1) found.add(dir);
   }
-  if (rlocationList(`${MAIN}/${SCALE}`).includes(`${MAIN}/${SCALE}/bun.lock`)) found.add(SCALE);
+  const scale = rlocationList(`${MAIN}/${SCALE}`);
+  for (const dir of [SCALE, SCALE_PLATFORM]) if (scale.includes(`${MAIN}/${dir}/bun.lock`)) found.add(dir);
   for (const dir of lockfiles(INTEGRATION)) found.add(dir);
   return [...found].sort();
 }
 
 /** The archives the loopback registry serves for a project. */
-function archivesFor(project: string, scaleDir: () => string): string[] {
+function archivesFor(project: string, scaleDir: (platform: boolean) => string): string[] {
   const fixture = rlocationList(ARCHIVES)
     .filter((path) => path.endsWith(".tgz"))
     // A variant archive (`<store name>+<variant>`, pack.ts) is a second archive of a version.
@@ -105,7 +108,9 @@ function archivesFor(project: string, scaleDir: () => string): string[] {
     .filter((path) => path.endsWith(".tgz") && path.includes("/archives/"))
     .filter((path) => !names.has(path.slice(path.lastIndexOf("/") + 1)));
   const paths = [...fixture, ...own].map((path) => rlocation(path));
-  return project === SCALE ? [...paths, ...writeArchives(scaleDir())] : paths;
+  // The two scale variants write different archives under the same names, so each has its own directory.
+  if (project === SCALE || project === SCALE_PLATFORM) return [...paths, ...writeArchives(scaleDir(project === SCALE_PLATFORM), project === SCALE_PLATFORM)];
+  return paths;
 }
 
 function redirectOneEdge(graph: Graph): string {
@@ -125,8 +130,7 @@ const notApplicable: Record<string, string> = MODE_1_4_2
 const host = hostTuple();
 const compared: string[] = [];
 const differences: string[] = [];
-let scaleArchives: string | undefined;
-const scaleDir = () => (scaleArchives ??= join(process.env.TEST_TMPDIR!, "scale-archives"));
+const scaleDir = (platform: boolean) => join(process.env.TEST_TMPDIR!, platform ? "scale-platform-archives" : "scale-archives");
 
 test("every project is on both sides (FR-009, US2-4)", () => {
   expect(Object.keys(graphs).filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`)).sort()).toEqual(projects);
