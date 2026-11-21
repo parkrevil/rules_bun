@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "the bin of an entry in bun/private/lockfile.bzl";
+const READER = "_bin in bun/private/lockfile.bzl";
 
 test("bin forms and binDir", async () => {
   const { lock } = await runInstall(

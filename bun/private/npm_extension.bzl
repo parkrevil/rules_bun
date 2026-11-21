@@ -334,6 +334,7 @@ def _translate(module_ctx, tag, replacements):
         instances[instance.id] = {
             "dependency_keys": instance.dependency_keys,
             "edge_conditions": instance.edge_conditions,
+            "edge_targets": instance.edge_targets,
             "edges": instance.edges,
             "exclude": identities[name_version].exclude,
             "integrity": identities[name_version].integrity,
@@ -498,10 +499,10 @@ Resolution: the hub links what the pinned Bun 1.4.4's isolated install (`bun ins
 --frozen-lockfile --linker isolated`) links from the same `bun.lock`: rules_bun carries over Bun's own
 lockfile loader, hoister, lockfile clean and isolated store, and a conformance test
 (`bun/tests/npm/conformance`) compares, for every `bun.lock` under `bun/tests/npm/fixtures/`,
-`bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/scale/` and
-`bun/tests/integration/workspaces/` (not `e2e/smoke`'s, whose registry packages the offline test
-has no archives of), each link with the one Bun's install makes on the test's platform, and that
-the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
+`bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/`,
+`bun/tests/npm/scale/` and `bun/tests/integration/workspaces/` (not `e2e/smoke`'s, whose registry
+packages the offline test has no archives of), each link with the one Bun's install makes on the
+test's platform, and that the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
 CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners `ubuntu-latest`, `macos-latest` and
 `windows-latest`, with Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2
 writes (`conformance_1_4_2_test`), each comparing its runner's platform class; a statement here
@@ -509,8 +510,9 @@ holds once a CI run of the change passes. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
 (`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a
-dependency of the root or a workspace to a different entry on different target platforms (a
-package providing a peer is excluded on some), the link selects that entry by target platform; a
+dependency of the root, a workspace or a package to a different entry on different target
+platforms (a package providing a peer is excluded on some), the link or the package selects that
+entry by target platform; a
 peer resolves to the version a dependent above it provides, else to the version the lockfile lists;
 a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
 linked; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
@@ -529,12 +531,8 @@ integrity is loaded, since rules_bun reads no `bunfig.toml` or environment to kn
 and a target that needs the entry fails analysis as under ID-4 (ID-5); and dependencies bind as
 under Bun's default `[install] linkWorkspacePackages = true`, since rules_bun reads no
 `bunfig.toml`: where a project sets it to `false`, Bun links an npm range on a workspace's name to
-a registry package, rules_bun to the workspace (ID-6); and a package whose own dependency the
-store binds to different packages on different target platforms fails evaluation naming the
-package and the dependency (ID-7): Bun 1.4.4 was not seen writing such a lockfile, but Bun 1.4.2
-writes one where a root dependency resolves to a package excluded on some platforms and a package's
-peer binds to it. The conformance test exercises ID-1 to ID-4; no lockfile it compares reaches ID-5
-to ID-7.
+a registry package, rules_bun to the workspace (ID-6). The conformance test exercises ID-1 to
+ID-4; no lockfile it compares reaches ID-5 or ID-6.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
 platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's

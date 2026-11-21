@@ -6,7 +6,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "find_resolution in bun/private/bun_lockfile.bzl";
+const READER = "_find_resolution in bun/private/bun_lockfile.bzl";
 
 // A key's parent path and name: "./lib/y/x" is ["./lib/y", "x"], depth 2.
 function split(key: string): { depth: number; parent: string; name: string } {

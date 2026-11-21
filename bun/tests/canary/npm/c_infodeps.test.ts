@@ -39,7 +39,7 @@ test("info dependency ranges are written as the manifest writes them", async () 
     }),
   });
   const info = lock.packages["range-user"]?.[2];
-  const reader = "the npm range parser in bun/private/bun_semver.bzl";
+  const reader = "parse_query in bun/private/bun_semver.bzl";
   if (JSON.stringify(info?.dependencies) !== JSON.stringify({ a: "~1.0.0", b: "1.0.0 - 1.9.9", c: "1.x" })) {
     canaryFail("C-INFODEPS", "info dependencies ranges", reader, LOCKFILE_SOURCE, info);
   }

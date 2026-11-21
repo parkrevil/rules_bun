@@ -442,7 +442,8 @@ when a disabled package changes a peer binding or a dedupe.
 read it: `rule-linux-any` (`["linux", "any"]` in its `package.json`) gets no `os`, `rule-any-linux`
 (`["any", "linux"]`) gets `"linux"` (`conformance_platform_rule`, both writers), so npm's
 `checkList` and Bun's `Negatable` read a Bun-written list alike and BC-13 shows only on a lockfile
-written otherwise (`bun/tests/npm/platform_rule_raw/bun.lock`, by hand). BC-14 shows on the
+written otherwise (`bun/tests/npm/conformance/accepted/platform_rule_raw/bun.lock`, by hand,
+which the conformance test compares with both oracles, T110). BC-14 shows on the
 Bun-written lockfile: `rule-libc-glibc` (`libc` `glibc`, no `os`) is carried on darwin and Windows.
 `platform_rule_test.bzl` checks both lockfiles on four platforms; run on `main`'s resolver it fails
 on darwin and Windows (`tdd-log.md`).
@@ -503,11 +504,17 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   { "os": "darwin" }]` and writes no `plat-peer-host/q`, so off darwin the root's `q` is disabled
   and `plat-peer-host`'s `p` binds its peer `q` to `q-darwin@1.0.0` on darwin and to nothing
   elsewhere, while `plat-peer-host` (no peers) is one entry; Bun 1.4.4's and 1.4.2's frozen
-  installs both accept it. The error stays (`the store links "<alias>" of <package> to different
-  packages on different platforms, which rules_bun cannot express`) as **ID-7** (the lead, under
-  the user's delegation, 2026-11-21, Part 6); `resolve_test.bzl` `platform_entry_error_test`
-  reaches it with that Bun-written lockfile (`bun/tests/npm/conformance/id_7/bun.lock`, md5
-  `4a5419e2`), which no conformance run compares.
+  installs both accept it. Expressed (BC-16, T107, replacing the former ID-7): the merged instance
+  keeps each entry an alias binds with the platform tuples it binds it on (`edge_targets`), and the
+  hub selects the instance's `edges`, `dependency_keys` and `peers` by platform as for an edge
+  (`npm_repositories.bzl` `_edge_fields`). The entries are one package: an ordinary dependency has
+  one resolution (`resolutions[dep_id]`, LOCK L2923–L3023), and a peer's package is part of the
+  entry's key (ISO L1097–L1176), so the dependency's key and bins are the same on every class and no
+  error remains for an entry's alias. `resolve_test.bzl` `platform_entry_test`, `platforms_test.bzl`
+  `entry_linux_x64_test`/`entry_darwin_aarch64_test`, `graph_test.bzl` `edge_targets_test`, the
+  runtime test `platform_peer_1_4_2_test`, and both conformance runs on that Bun-written lockfile
+  (`bun/tests/npm/conformance/accepted/platform_peer_1_4_2/bun.lock`, md5 `4a5419e2`, `0
+  differences`).
 - **A member link** (T090): the hub links a workspace member by path on every platform (BC-4),
   so a member link of an entry or a holder must be the same on every class that entry or holder
   exists on. The pinned Bun writes no lockfile where it is not: a workspace row has no `os`, `cpu`
@@ -589,12 +596,17 @@ fixed project to another entry; the test must fail naming it.
 The test's projects are every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`
 (the corpus included, R11), `bun/tests/npm/scale/`, each `bun.lock` under
 `bun/tests/integration/workspaces/`, and the 1.4.2-written lockfiles under
-`bun/tests/npm/conformance/bun_1_4_2/` (R10), and the lockfiles Bun refuses to load under
-`bun/tests/npm/conformance/refused/`, written by hand (T099). The extension and the test enumerate the same directories; a
+`bun/tests/npm/conformance/bun_1_4_2/` (R10), the lockfiles Bun installs that
+`write_lockfiles.ts` does not write with the pinned Bun under `bun/tests/npm/conformance/accepted/`
+(one Bun 1.4.2 writes, one written by hand; T107, T110), which the 1.4.2 run compares as well, and
+the lockfiles Bun refuses to load under `bun/tests/npm/conformance/refused/`, written by hand
+(T099). The extension and the test enumerate the same directories; a
 project present on one side only fails the test (FR-009, US2-4). A project the oracle cannot install
 (`stale_link`, a template; each `refused/` project) is listed in the test with its reason, the list
-is asserted exactly, and for each the test asserts that Bun refuses it and that the ruleset fails
-it too (spec Edge Cases: no graph for a lockfile Bun does not install). Each corpus project has a
+is asserted exactly, and for each the test asserts that Bun's loader refuses it (the install
+prints `failed to parse lockfile: 'bun.lock'`, `report_lockfile_load_error`, not just any failed
+install) and that the ruleset fails it with an error naming the `bun.lock` label (T109; spec Edge
+Cases: no graph for a lockfile Bun does not install). Each corpus project has a
 Bun 1.4.2 lockfile or a reason in `not_applicable_1_4_2.ts`, which the test asserts (T095).
 `e2e/smoke/bun.lock` is not compared: its registry packages (`react`, `react-dom`, `scheduler`)
 have no archives in the offline loopback registry, and `_NPM_DOC` names the compared directories
@@ -628,7 +640,8 @@ a project it cannot write or install would be listed with the reason in
 which 1.4.2's loader was read to reject, LOCK-142 L2479–2490; `unresolved`, which 1.4.2 was read
 not to write), but run with the 1.4.2 oracle, Bun 1.4.2 writes and installs every corpus project
 (T091, `tdd-log.md`), so the list is empty and no project is not applicable. Its usual lockfile
-for `conformance_platform_peer` differs from the committed one and reaches ID-7 (R4).
+for `conformance_platform_peer` differs from the committed one; both conformance runs compare it
+as `bun/tests/npm/conformance/accepted/platform_peer_1_4_2` (BC-16, R4).
 
 ### R11. The edge-case corpus
 
@@ -901,6 +914,17 @@ one in what a consumer's build links and is numbered **BC-15** (as D3).
 Bun's structure; the time was in the adapter's per-class walk of each link, which is not Bun's, so
 that walk was made one walk over class bit masks with unchanged output (R13), rather than raising
 the bound or stopping.
+
+**T107 decided by the lead, under the user's delegation (2026-11-21)**: the third Claude review
+found that the error ID-7 kept fails a case the hub can already express: the `4a5419e2`
+lockfile's `plat-peer-host` binds its `p` to two entries of one package by platform class, which
+BC-12 links per platform for the root and workspaces and BC-15's per-platform edges carry for a
+package. The edge now selects its entry by platform (R4 "An entry's alias"). No error remains for
+an entry's alias: the entries an alias binds by class are one package by construction. `main`
+binds the alias once for every platform (verified in a worktree of `main` on that lockfile:
+`p`'s `q` is `q-darwin@1.0.0` on every platform), so the change is one in what a consumer's build
+links and is numbered **BC-16**; ID-7 is removed. The lockfile and BC-13's hand-written one move
+to `bun/tests/npm/conformance/accepted/`, which both conformance runs compare (T110).
 
 ## Part 7: Evidence log
 

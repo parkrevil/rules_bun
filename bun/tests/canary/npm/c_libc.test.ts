@@ -7,7 +7,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "the libc of an entry in bun/private/lockfile.bzl";
+const READER = "_entry in bun/private/lockfile.bzl and _meta in bun/private/bun_lockfile.bzl";
 
 // Published libc of the three packages; the musl package's comes from its archive.
 function publish(name: string, doc: Record<string, any>, negatedMusl: string[]) {

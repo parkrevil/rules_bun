@@ -250,6 +250,24 @@ bun_test(
     ],
 )
 
+# Every canary's reader names exist in the file it names (feature 006 T108).
+bun_test(
+    name = "readers_test",
+    srcs = ["readers.test.ts"],
+    data = glob(["c_*.test.ts"]) + [
+        "//bun/private:bun_isolated_store",
+        "//bun/private:bun_lockfile",
+        "//bun/private:bun_semver",
+        "//bun/private:lockfile",
+        "//bun/private:npm_extension",
+        "//bun/private:npmrc",
+        "//bun/private:overrides",
+        "//bun/private:resolve",
+        "//bun/private:workspaces",
+    ],
+    deps = ["//bun/tests/support:spawn"],
+)
+
 test_suite(
     name = "canaries",
     tests = [
@@ -283,6 +301,7 @@ test_suite(
         ":c_wsname_test",
         ":c_wsoptpeers_test",
         ":c_wsversion_test",
+        ":readers_test",
     ],
 )
 

@@ -16,7 +16,7 @@ change.
 
 Only where the ruleset linked something other than the pinned Bun (FR-015). Each BC row is covered
 by the conformance test (a difference before, none after) and listed in the PR; the R3 row by
-`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-7 are the
+`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-6 are the
 spec's.
 
 | Surface | Before (`main`) | After | BC |
@@ -32,10 +32,11 @@ spec's.
 | An optional peer an ancestor's dependencies or the lockfile's own entry of that name provide | not linked | linked as the pinned Bun's isolated install links it | BC-9 |
 | A dependency listed in a package's `bundleDependencies` | linked from the `<package>/<dep>` key | not linked; the package carries its own copy | BC-10 |
 | A target reaching two store entries of one `name@version` that differ by peer bindings | analysis fails ("a target holds one instance of each package version") | both carried, each in its own store directory `<name>@<version>+<peer hash>` | BC-11 |
-| A dependency of the root or a workspace that the store binds to different entries on different platform classes | evaluation fails (on the branch before BC-12; on `main` one binding for every platform) | linked per target platform through `select()` on the `[os, cpu, libc]` classes; a package entry's dependency bound by platform still fails evaluation (ID-7, `platform_entry_error_test` on the lockfile Bun 1.4.2 writes) | BC-12 |
+| A dependency of the root or a workspace that the store binds to different entries on different platform classes | evaluation fails (on the branch before BC-12; on `main` one binding for every platform) | linked per target platform through `select()` on the `[os, cpu, libc]` classes; a package entry's dependency bound by platform is BC-16's | BC-12 |
 | A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29 | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
 | A package's dependency the store links on some platform classes only, held by the target through another link on others | linked from the package wherever the target holds it | linked from the package only where the store links it (`select()` on the instance's edges) | BC-15 |
-| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-7, and the CI runner labels the tests ran on | — |
+| A package's dependency that the store binds to different store entries on different platform classes (one package under other peer bindings) | one binding for every platform (on the branch before T107, evaluation fails: the former ID-7) | linked per target platform through `select()` on the instance's edges (`edge_targets`) | BC-16 |
+| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-6, and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
 
@@ -49,14 +50,13 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   its value;
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails
   analysis naming the package, the dependency and the member's target to add to its `deps`;
-- a package whose own dependency the store binds to different packages on different platform
-  classes fails evaluation naming the package and the dependency (ID-7: Bun 1.4.4 was not seen
-  writing such a lockfile, Bun 1.4.2 writes one, research R4); so does a package, the root or a
-  workspace whose link to a workspace member the store makes on some platform classes only, or
-  makes to a package on others (T090; no Bun-written lockfile reaches it, research R4 "A member
-  link"), and the root or a workspace whose dependency the store binds to different packages, not
-  only to other peer bindings of one package, on different platform classes (T097; no Bun-written
-  lockfile reaches it, research R4 "A holder's alias").
+- a package, the root or a workspace whose link to a workspace member the store makes on some
+  platform classes only, or makes to a package on others, fails evaluation naming it and the
+  dependency (T090; no Bun-written lockfile reaches it, research R4 "A member link"), and so does
+  the root or a workspace whose dependency the store binds to different packages, not only to
+  other peer bindings of one package, on different platform classes (T097; no Bun-written
+  lockfile reaches it, research R4 "A holder's alias"). The failure of a package's dependency
+  bound by platform (the former ID-7) is gone (BC-16).
 
 Diagnostics that change: BC-3's and BC-5's evaluation failures disappear; the analysis failure of
 two instances of one package version in one target now applies only to instances with one store

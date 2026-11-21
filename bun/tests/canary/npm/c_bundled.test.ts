@@ -4,7 +4,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "parse_into_binary_lockfile in bun/private/bun_lockfile.bzl";
+const READER = "_entry in bun/private/lockfile.bzl, _parse_append_dependencies in bun/private/bun_lockfile.bzl and _find_resolution in bun/private/bun_lockfile.bzl";
 
 test("a bundled dependency's entry is marked bundled", async () => {
   const { lock } = await runInstall(

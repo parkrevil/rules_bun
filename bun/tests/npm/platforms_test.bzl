@@ -189,6 +189,36 @@ def _make_edge(platform):
 _edge_glibc_test = _make_edge("linux_x64_glibc")
 _edge_musl_test = _make_edge("linux_x64_musl")
 
+_PLATFORM_ENTRY = "//bun/tests/npm/conformance/accepted/platform_peer_1_4_2:entry_fixture"
+
+def _without_hash(path):
+    """A store path with each `+<peer hash>` written `+<hash>`."""
+    parts = path.split("+")
+    return "+".join([parts[0]] + ["<hash>" + part[16:] for part in parts[1:]])
+
+def _entry_impl(ctx):
+    env = analysistest.begin(ctx)
+    name = analysistest.target_under_test(env).label.name
+    marker = "/{}.bun/".format(name)
+    links = []
+    for action in analysistest.target_actions(env):
+        if action.mnemonic == "UnresolvedSymlink":
+            for f in action.outputs.to_list():
+                if marker in f.path and "/.store/" in f.path:
+                    links.append(_without_hash(f.path[f.path.find(marker) + len(marker):]))
+    asserts.equals(env, ctx.attr.expected, sorted(links), "the store's dependency links")
+    return analysistest.end(env)
+
+def _make_entry(platform):
+    return analysistest.make(
+        _entry_impl,
+        attrs = {"expected": attr.string_list()},
+        config_settings = {"//command_line_option:platforms": str(Label("//bun/tests/platforms:" + platform))},
+    )
+
+_entry_linux_x64_test = _make_entry("linux_x64")
+_entry_darwin_aarch64_test = _make_entry("darwin_aarch64")
+
 _RULES = {
     "darwin_aarch64": darwin_aarch64_test,
     "darwin_x64": darwin_x64_test,
@@ -270,6 +300,20 @@ def platforms_test_suite(name):
     _edge_glibc_test(name = name + "_edge_glibc_test", target_under_test = _PLATFORM_EDGE, expected = [".store/native@1.0.0/node_modules/native-linux-x64"])
     _edge_musl_test(name = name + "_edge_musl_test", target_under_test = _PLATFORM_EDGE, expected = [".store/native@1.0.0/node_modules/native-linux-x64-musl"])
     tests += [name + "_edge_glibc_test", name + "_edge_musl_test"]
+
+    # plat-peer-host's p is the entry of p@1.0.0 that binds q to q-darwin@1.0.0 on darwin, and the
+    # one without q elsewhere, where q-darwin is disabled (BC-16): the hub selects the edge.
+    _entry_linux_x64_test(name = name + "_entry_linux_x64_test", target_under_test = _PLATFORM_ENTRY, expected = [".store/plat-peer-host@1.0.0/node_modules/p"])
+    _entry_darwin_aarch64_test(
+        name = name + "_entry_darwin_aarch64_test",
+        target_under_test = _PLATFORM_ENTRY,
+        expected = [
+            ".store/p@1.0.0+<hash>/node_modules/q",
+            ".store/plat-peer-host@1.0.0/node_modules/p",
+            ".store/plat-peer-host@1.0.0/node_modules/q",
+        ],
+    )
+    tests += [name + "_entry_linux_x64_test", name + "_entry_darwin_aarch64_test"]
 
     _platform_classes_test(name = name + "_platform_classes_test")
     tests.append(name + "_platform_classes_test")

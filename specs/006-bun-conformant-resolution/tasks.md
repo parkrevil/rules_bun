@@ -1062,7 +1062,7 @@ The third Claude review before the final gate found these; the lead rejected the
 names CI runners before a CI run is left to T067: the PR merges only once that run passes. Each is
 written red first and recorded in `tdd-log.md`.
 
-- [ ] T107 ID-7 describes another case than the one rejected: `bun/private/resolve.bzl` (about
+- [X] T107 ID-7 describes another case than the one rejected: `bun/private/resolve.bzl` (about
   L301–L302) fails any package dependency whose store entry differs by platform class, including
   one package under different peer bindings, and its only known trigger (`id_7`,
   `bun/tests/npm/resolve_test.bzl` about L306–L311) is `p@1.0.0` with peer `q` on darwin and
@@ -1073,17 +1073,17 @@ written red first and recorded in `tdd-log.md`.
   (red first with the `4a5419e2` lockfile), and keep an error only for what still cannot be
   expressed; bring the error text, spec ID-7 (or remove it and list the change as a BC), research
   R4, `_NPM_DOC` and `contracts/public-api.md` to the outcome, per P1 / P3 (contradicts)
-- [ ] T108 Two canaries name readers that moved: `bun/tests/canary/npm/c_peers.test.ts` (about L9,
+- [X] T108 Two canaries name readers that moved: `bun/tests/canary/npm/c_peers.test.ts` (about L9,
   "the peer rules in bun/private/resolve.bzl", now in `bun_lockfile.bzl` / `bun_isolated_store.bzl`)
   and `bun/tests/canary/npm/c_keypath.test.ts` (about L9, "the key walk in bun/private/resolve.bzl",
   now `_find_resolution` in `bun_lockfile.bzl`). Name the current readers; check every canary's
   `canaryFail` text against the reader it protects, per US4 scenario 1 (contradicts)
-- [ ] T109 The not-applicable check accepts any failure: `bun/tests/npm/conformance/conformance.test.ts`
+- [X] T109 The not-applicable check accepts any failure: `bun/tests/npm/conformance/conformance.test.ts`
   (about L171) uses `rejects.toThrow()` (a missing archive, a port conflict or a registry error
   pass), and the ruleset side (about L173–L175) accepts any `error`. Assert Bun's loader refusal
   by its message and the ruleset's by the English error that names the `bun.lock` label; show red
   with a project whose install fails for another reason, per spec Edge Cases / FR-004 (partial)
-- [ ] T110 `bun/tests/npm/platform_rule_raw/bun.lock` (BC-13's hand-written lockfile, resolved by
+- [X] T110 `bun/tests/npm/platform_rule_raw/bun.lock` (BC-13's hand-written lockfile, resolved by
   `bun/tests/npm/fixture_results.bzl` about L52) is outside every directory the conformance test
   scans, so its `["linux", "any"]` claim is checked only against the ruleset's own reading. Compare
   it with the pinned Bun (add it to the scanned projects, or move it under the corpus), or record

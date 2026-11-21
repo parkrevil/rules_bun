@@ -9,7 +9,9 @@ hub has consumed since feature 003, `struct(instances, links, members)`:
 - an instance is a store entry: a package with the packages its transitive peers bind to; an
   entry reached on several platform classes is one instance, its edges the union of theirs, each
   edge the store has on some of those classes only carrying the platform tuples of those
-  (`edge_conditions`, which the hub turns into `select()`);
+  (`edge_conditions`), and a dependency the store binds to different entries on different classes
+  carrying each entry with its tuples (`edge_targets`, feature 006 BC-16), which the hub turns
+  into `select()`;
 - a link is a root's or a workspace's dependency, with the instances it reaches on every platform
   (`closure`) and those it reaches on some (`optional`, instance ID -> the `[os, cpu, libc]`
   platform tuples it is reached on, which `npm_repositories.bzl` turns into `select()`), and its
@@ -254,12 +256,16 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     Returns:
         `struct(value, error)`; `value` is `struct(instances, links, members)`: `instances` maps an
         instance ID to `struct(id, name, version, store_name, peer_hash, key, edges, edge_conditions,
-        dependency_keys, peers, members, status, unfetched)` (`peer_hash`: 16 hexadecimal digits
-        naming the entry's transitive peer bindings, or `""` without peers; `edges`: alias ->
-        instance ID; `edge_conditions`: alias of `edges` -> the `[os, cpu, libc]` tuples the edge
-        holds on, for an edge the store has on some of the instance's classes only; `dependency_keys`: alias ->
-        the `bun.lock` key of the package an ordinary dependency links; `peers`: the aliases of
-        `edges` that are peers; `members`: alias -> the path of a workspace it links; `status`:
+        edge_targets, dependency_keys, peers, members, status, unfetched)` (`peer_hash`: 16
+        hexadecimal digits naming the entry's transitive peer bindings, or `""` without peers;
+        `edges`: alias -> instance ID, for a dependency the store binds to one entry;
+        `edge_conditions`: alias of `edges` -> the `[os, cpu, libc]` tuples the edge holds on, for
+        an edge the store has on some of the instance's classes only; `edge_targets`: alias ->
+        instance ID -> the tuples the alias links that instance on, for a dependency the store
+        binds to different entries on different classes, which is not in `edges`;
+        `dependency_keys`: alias -> the `bun.lock` key of the package an ordinary dependency links;
+        `peers`: the aliases of `edges` and `edge_targets` that are peers; `members`: alias -> the
+        path of a workspace it links; `status`:
         `ok`, or why the instance cannot be used; `unfetched`: whether that is because rules_bun
         does not fetch it, feature 006 ID-4), `links` maps a workspace path (`""` for the root) to
         alias -> `struct(alias, root, roots, closure, optional)` (`root`: the instance ID the
@@ -291,16 +297,19 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
 
     # Instances: entries merged over the classes by package and peers. An edge the store has on
     # some of an entry's classes only (an optional dependency disabled on the others, research R3)
-    # keeps those classes, so it is linked only there (T101).
+    # keeps those classes, so it is linked only there (T101). A dependency the store binds to
+    # different entries on different classes (a peer below it that a disabled package provides on
+    # some, research R4 "An entry's alias") keeps each entry with its classes, so each is linked
+    # only there (BC-16). Those entries are one package: an ordinary dependency has one resolution
+    # (`resolutions[dep_id]`, LOCK L2923-L3023), and a peer's package is part of the entry's key
+    # (ISO L1097-L1176), so the dependency's `bun.lock` key is the same on every class.
     nodes = {}
     for index, graph in enumerate(graphs):
         for key, node in graph.nodes.items():
-            merged = nodes.setdefault(key, struct(edges = {}, members = {}, peers = {}, classes = [], edge_classes = {}))
+            merged = nodes.setdefault(key, struct(targets = {}, members = {}, peers = {}, classes = []))
             merged.classes.append(index)
             for alias, target in node.edges.items():
-                if merged.edges.setdefault(alias, target) != target:
-                    return _error("{}: the store links \"{}\" of {} to different packages on different platforms, which rules_bun cannot express".format(file, alias, _label(bun, key[0])))
-                merged.edge_classes.setdefault(alias, []).append(index)
+                merged.targets.setdefault(alias, {}).setdefault(target, []).append(index)
             merged.members.update(node.members)
             merged.peers.update(node.peers)
     patched = getattr(lockfile, "patched", [])
@@ -319,13 +328,18 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
             store_name = "{}@{}".format(package.name.replace("/", "+"), entry.version),
             peer_hash = named.peer_hashes[key],
             key = package.key,
-            edges = {alias: ids[target] for alias, target in node.edges.items()},
-            dependency_keys = {alias: bun.packages[target[0]].key for alias, target in node.edges.items() if alias not in node.peers},
-            peers = sorted([alias for alias in node.edges.keys() if alias in node.peers]),
+            edges = {alias: ids[by_target.keys()[0]] for alias, by_target in node.targets.items() if len(by_target) == 1},
+            dependency_keys = {alias: bun.packages[by_target.keys()[0][0]].key for alias, by_target in node.targets.items() if alias not in node.peers},
+            peers = sorted([alias for alias in node.targets.keys() if alias in node.peers]),
             edge_conditions = {
-                alias: _conditions([t for index in indexes for t in classes[index]])
-                for alias, indexes in node.edge_classes.items()
-                if len(indexes) != len(node.classes)
+                alias: _conditions([t for index in by_target.values()[0] for t in classes[index]])
+                for alias, by_target in node.targets.items()
+                if len(by_target) == 1 and len(by_target.values()[0]) != len(node.classes)
+            },
+            edge_targets = {
+                alias: {ids[target]: _conditions([t for index in indexes for t in classes[index]]) for target, indexes in by_target.items()}
+                for alias, by_target in node.targets.items()
+                if len(by_target) > 1
             },
             members = dict(node.members),
             status = statuses[key],
@@ -339,7 +353,7 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     # class, which the hub selects by platform (feature 006 BC-12).
     every_class = (1 << len(graphs)) - 1
     edge_masks = {
-        key: [(target, _mask(node.edge_classes[alias])) for alias, target in node.edges.items()]
+        key: [(target, _mask(indexes)) for by_target in node.targets.values() for target, indexes in by_target.items()]
         for key, node in nodes.items()
     }
     by_mask = {}

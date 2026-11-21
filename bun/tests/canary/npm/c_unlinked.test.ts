@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "the workspace dependency resolutions of parse_into_binary_lockfile in bun/private/bun_lockfile.bzl";
+const READER = "the workspace dependency resolutions of _resolve_rows in bun/private/bun_lockfile.bzl";
 
 test("keys ./<name>/<dep> of workspaces named like a root alias", async () => {
   const { lock } = await runInstall(

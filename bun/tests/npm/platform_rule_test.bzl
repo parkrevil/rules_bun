@@ -54,7 +54,7 @@ _EXPECTED = {
 
 _TARGETS = {
     "bun_written": "//bun/tests/npm/fixtures/conformance_platform_rule:node_modules/rule-user",
-    "raw": "//bun/tests/npm/platform_rule_raw:node_modules/rule-user",
+    "raw": "//bun/tests/npm/conformance/accepted/platform_rule_raw:node_modules/rule-user",
 }
 
 def platform_rule_test_suite(name):

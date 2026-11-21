@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "parse_append_dependencies in bun/private/bun_lockfile.bzl";
+const READER = "_parse_append_dependencies in bun/private/bun_lockfile.bzl";
 
 test("unresolved optional dependencies of a package and of workspaces", async () => {
   const { lock } = await runInstall(

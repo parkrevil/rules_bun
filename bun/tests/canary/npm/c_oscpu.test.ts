@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "the os and cpu of an entry in bun/private/lockfile.bzl";
+const READER = "_entry in bun/private/lockfile.bzl and _meta in bun/private/bun_lockfile.bzl";
 
 test("os and cpu forms", async () => {
   const { lock } = await runInstall(

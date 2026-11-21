@@ -6,7 +6,7 @@
 import { test } from "bun:test";
 import { canaryFail, keysOf, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "read_lockfile in bun/private/lockfile.bzl and the peer rules in bun/private/resolve.bzl";
+const READER = "read_lockfile in bun/private/lockfile.bzl, _parse_append_dependencies in bun/private/bun_lockfile.bzl and build_store in bun/private/bun_isolated_store.bzl";
 
 test("peers, optional peers, and one entry for two peer resolutions", async () => {
   const { lock } = await runInstall(
@@ -47,6 +47,6 @@ test("info peer ranges are written as the manifest writes them", async () => {
   });
   const info = lock.packages["range-user"]?.[2];
   if (JSON.stringify(info?.peerDependencies) !== JSON.stringify({ q: ">=1.0.0 <3.0.0", state: "1.0.x" })) {
-    canaryFail("C-PEERS", "info peerDependencies ranges", "the npm range parser in bun/private/bun_semver.bzl", LOCKFILE_SOURCE, info);
+    canaryFail("C-PEERS", "info peerDependencies ranges", "parse_query in bun/private/bun_semver.bzl", LOCKFILE_SOURCE, info);
   }
 });

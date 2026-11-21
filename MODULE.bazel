@@ -298,7 +298,7 @@ npm.translate_lock(
 )
 npm.translate_lock(
     name = "npm_platform_rule_raw",
-    bun_lock = "//bun/tests/npm/platform_rule_raw:bun.lock",
+    bun_lock = "//bun/tests/npm/conformance/accepted/platform_rule_raw:bun.lock",
 )
 npm.replace_package(
     package = "rule-any-linux@1.0.0",
@@ -337,6 +337,13 @@ npm.replace_package(
     replacement = "//bun/tests/npm/registry/archives:q-darwin@1.0.0.tgz",
 )
 
+# A package's dependency whose store entry differs by target platform (feature 006 BC-16): the
+# lockfile Bun 1.4.2 writes for conformance_platform_peer in most runs.
+npm.translate_lock(
+    name = "npm_platform_peer_1_4_2",
+    bun_lock = "//bun/tests/npm/conformance/accepted/platform_peer_1_4_2:bun.lock",
+)
+
 # Excludes files that rules_bun renames, by their archive names (FR-033).
 npm.translate_lock(
     name = "npm_renamed",
@@ -372,7 +379,7 @@ npm.replace_package(
     package = "scheduler@0.27.0",
     replacement = "//bun/tests/npm/fixtures/jsx/archives:scheduler-0.27.0.tgz",
 )
-use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_platform_rule", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_platform_rule_raw", "npm_renamed", "npm_unsupported", "npm_workspace")
+use_repo(npm, "npm_aix", "npm_any_platform", "npm_basic", "npm_bins_node", "npm_conformance_platform_edge", "npm_conformance_platform_peer", "npm_conformance_platform_rule", "npm_conformance_registry_to_workspace", "npm_dependency_conflict", "npm_hoisted", "npm_jsx", "npm_missing_peer", "npm_overrides_top", "npm_platform_peer_1_4_2", "npm_platform_rule_raw", "npm_renamed", "npm_unsupported", "npm_workspace")
 
 # The downloads the Bazel-in-Bazel tests serve to their inner builds (research
 # G5, G10), for the root module only.

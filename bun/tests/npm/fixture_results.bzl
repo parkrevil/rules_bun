@@ -11,7 +11,8 @@ of every project the conformance test compares (feature 006 research R9, contrac
 every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/` and its
 platform variant `bun/tests/npm/scale/platform/`, every
 `bun.lock` under `bun/tests/integration/workspaces/`, and every directory under
-`bun/tests/npm/conformance/bun_1_4_2/` and `bun/tests/npm/conformance/refused/`.
+`bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/` and
+`bun/tests/npm/conformance/refused/`.
 """
 
 load("//bun/private:lockfile.bzl", "read_lockfile")
@@ -49,7 +50,7 @@ def _lockfiles_under(directory):
 def _projects(root):
     """Repository-relative directory -> path of every project the conformance test compares."""
     projects = {}
-    for base in ["bun/tests/npm/fixtures", "bun/tests/npm/conformance/bun_1_4_2", "bun/tests/npm/conformance/refused"]:
+    for base in ["bun/tests/npm/fixtures", "bun/tests/npm/conformance/bun_1_4_2", "bun/tests/npm/conformance/accepted", "bun/tests/npm/conformance/refused"]:
         directory = root.get_child(base)
         if not directory.exists:
             continue
@@ -76,11 +77,11 @@ def _graphs(module_ctx, root):
         graphs[name] = result if type(result) == "dict" else {"classes": result}
     return graphs
 
-# Lockfiles the unit tests read that no conformance run compares, by `RESULTS` key: `id_7` is the
-# lockfile Bun 1.4.2 writes for `conformance_platform_peer` in most runs (feature 006 T091), which
-# reaches the error feature 006's ID-7 keeps.
+# Lockfiles outside `bun/tests/npm/fixtures/` the unit tests read, by `RESULTS` key:
+# `platform_peer_1_4_2` is the lockfile Bun 1.4.2 writes for `conformance_platform_peer` in most
+# runs (feature 006 T091, BC-16).
 _EXTRA = {
-    "id_7": "//bun/tests/npm/conformance:id_7/bun.lock",
+    "platform_peer_1_4_2": "//bun/tests/npm/conformance/accepted/platform_peer_1_4_2:bun.lock",
 }
 
 def _result(module_ctx, project, file):

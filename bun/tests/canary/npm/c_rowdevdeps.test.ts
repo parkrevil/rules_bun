@@ -6,7 +6,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "read_lockfile's devDependencies (# L32) in bun/private/lockfile.bzl and parse_append_dependencies in bun/private/bun_lockfile.bzl";
+const READER = "_entry in bun/private/lockfile.bzl (devDependencies, # L32) and _parse_append_dependencies in bun/private/bun_lockfile.bzl";
 
 test("a folder package's row carries its devDependencies", async () => {
   const { lock } = await runInstall(

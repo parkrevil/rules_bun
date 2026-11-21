@@ -299,16 +299,32 @@ def _platform_holder_test_impl(ctx):
     asserts.equals(env, {}, resolution["links"][""]["q"]["roots"])
     return unittest.end(env)
 
-def _platform_entry_error_test_impl(ctx):
+def _platform_entry_test_impl(ctx):
     env = unittest.begin(ctx)
+    tuples = len(platform_tuples())
 
     # The lockfile Bun 1.4.2 writes for conformance_platform_peer in most runs (T091): its root's
     # q is q-darwin@1.0.0, disabled off darwin, so plat-peer-host's p binds its peer q to it on
-    # darwin and to nothing elsewhere, while plat-peer-host (no peers) is one entry on every
-    # platform. Bun 1.4.4 and 1.4.2 install it; the ruleset keeps the error (feature 006 ID-7).
-    result = RESULTS["id_7"]["resolution"]
-    asserts.equals(env, None, result["value"])
-    asserts.equals(env, 'bun.lock: the store links "p" of plat-peer-host@1.0.0 to different packages on different platforms, which rules_bun cannot express', result["error"])
+    # darwin and to nothing elsewhere, while plat-peer-host (no peers) is one store entry on every
+    # platform. Its p is one of two entries of p@1.0.0 by platform (feature 006 BC-16).
+    resolution = _resolution(env, "platform_peer_1_4_2")
+    link = resolution["links"][""]["plat-peer-host"]
+    asserts.equals(env, {}, link["roots"])
+    host = resolution["instances"][link["root"]]
+    asserts.false(env, "p" in host["edges"], host)
+    asserts.equals(env, "p", host["dependency_keys"].get("p"))
+    by_q = {}
+    for p_id, platforms in host["edge_targets"].get("p", {}).items():
+        q_id = resolution["instances"][p_id]["edges"].get("q")
+        by_q[_nv(resolution, q_id) if q_id else ""] = platforms
+    asserts.equals(env, ["", "q-darwin@1.0.0"], sorted(by_q.keys()))
+    asserts.equals(env, [], [t for t in by_q.get("q-darwin@1.0.0", []) if t[0] != "darwin"])
+    asserts.equals(env, [], [t for t in by_q.get("", []) if t[0] == "darwin"])
+    asserts.equals(env, tuples, len(by_q.get("", [])) + len(by_q.get("q-darwin@1.0.0", [])))
+
+    # Each entry of p is reached where it is the target: the link carries both as optional.
+    for p_id, platforms in host["edge_targets"].get("p", {}).items():
+        asserts.equals(env, platforms, link["optional"].get(p_id), p_id)
     return unittest.end(env)
 
 def _graph(holders = {}, nodes = {}):
@@ -429,7 +445,7 @@ def _platform_root_package_test_impl(ctx):
 platform_holder_test = unittest.make(_platform_holder_test_impl)
 platform_root_package_test = unittest.make(_platform_root_package_test_impl)
 platform_edge_test = unittest.make(_platform_edge_test_impl)
-platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
+platform_entry_test = unittest.make(_platform_entry_test_impl)
 platform_member_test = unittest.make(_platform_member_test_impl)
 
 def resolve_test_suite(name):
@@ -450,7 +466,7 @@ def resolve_test_suite(name):
         peer_instances_test,
         unfetched_test,
         platform_holder_test,
-        platform_entry_error_test,
+        platform_entry_test,
         platform_member_test,
         platform_edge_test,
         platform_root_package_test,

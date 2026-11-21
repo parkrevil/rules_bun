@@ -6,7 +6,7 @@ import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
 const ACCESS = "catalog and catalogs";
-const READER = "read_lockfile in bun/private/lockfile.bzl and compare_manifests in bun/private/workspaces.bzl";
+const READER = "read_lockfile in bun/private/lockfile.bzl, compare_manifests in bun/private/workspaces.bzl and _parse_catalog in bun/private/bun_lockfile.bzl";
 
 test("catalog and catalogs are written as the manifest writes them", async () => {
   const { lock } = await runInstall(

@@ -6,7 +6,7 @@
 import { test } from "bun:test";
 import { canaryFail, keysOf, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "split_key in bun/private/lockfile.bzl and the key walk in bun/private/resolve.bzl";
+const READER = "split_key in bun/private/lockfile.bzl and _find_resolution in bun/private/bun_lockfile.bzl";
 
 test("keys encode the hoisted tree", async () => {
   const { lock } = await runInstall(

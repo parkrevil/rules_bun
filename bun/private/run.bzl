@@ -92,7 +92,7 @@ installs gets this layout too, and code that relies on a hoisted, undeclared pac
 resolve as the pinned Bun's isolated install resolves them (the `npm` extension's Resolution): to
 the version a dependent above the package provides, else to the version the lockfile lists; a peer
 nothing provides is absent. That paragraph names where rules_bun links differently on purpose
-(ID-1 to ID-7), among them a `bunfig.toml` that sets `linkWorkspacePackages = false`, which
+(ID-1 to ID-6), among them a `bunfig.toml` that sets `linkWorkspacePackages = false`, which
 rules_bun does not read (ID-6), and an entry outside Bun's configured registry without integrity,
 which fails analysis of the target that needs it (ID-5). Two instances with one store directory that come from different
 lockfiles and differ fail analysis, as the `npm` extension's "Several lockfiles" states.

@@ -7,7 +7,7 @@ import { realpathSync } from "node:fs";
 import { join } from "node:path";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "parse_into_binary_lockfile and linked_member in bun/private/bun_lockfile.bzl";
+const READER = "read_lockfile in bun/private/lockfile.bzl (a workspace's version, # L28) and linked_member of _resolve_rows in bun/private/bun_lockfile.bzl";
 
 test("workspace versions and a peer bound to a workspace", async () => {
   const { dir, lock } = await runInstall(

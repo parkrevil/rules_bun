@@ -323,31 +323,39 @@ def _edge_fields(instance):
     """An instance's `edges`, `dependency_keys` and `peers` as `BUILD` text, by platform if needed.
 
     An edge the store has on some of the instance's platform classes only (`edge_conditions`,
-    feature 006 T101) is in the `select()` branches whose platform tuple it holds on, as the
+    feature 006 T101), and each entry the store binds a dependency to on some classes
+    (`edge_targets`, BC-16), is in the `select()` branches whose platform tuple it holds on, as the
     optional instances of a link are.
     """
     edges = instance["edges"]
     dependency_keys = instance["dependency_keys"]
     peers = instance["peers"]
     conditions = instance.get("edge_conditions", {})
-    if not conditions:
+    targets = instance.get("edge_targets", {})
+    if not conditions and not targets:
         return repr(edges), repr(dependency_keys), repr(peers)
     branches = {}
     tuples = [(name, os, cpu, libc) for name, (os, cpu, libc, _) in sorted(_settings().items())]
     for name, os, cpu, libc in tuples + [("//conditions:default", None, None, None)]:
-        aliases = {a: True for a in edges if a not in conditions or conditions_hold(conditions[a], os, cpu, libc)}
-        branches[name if name.startswith("//conditions:") else ":" + name] = aliases
+        selected = {a: t for a, t in edges.items() if a not in conditions or conditions_hold(conditions[a], os, cpu, libc)}
+        for alias, by_target in targets.items():
+            for target, target_conditions in by_target.items():
+                if conditions_hold(target_conditions, os, cpu, libc):
+                    selected[alias] = target
+        branches[name if name.startswith("//conditions:") else ":" + name] = selected
 
     def field(value):
-        if type(value) == "list":
-            selected = {k: [a for a in value if a in aliases] for k, aliases in branches.items()}
+        if value == None:
+            selected = {k: dict(chosen) for k, chosen in branches.items()}
+        elif type(value) == "list":
+            selected = {k: [a for a in value if a in chosen] for k, chosen in branches.items()}
         else:
-            selected = {k: {a: v for a, v in value.items() if a in aliases} for k, aliases in branches.items()}
+            selected = {k: {a: v for a, v in value.items() if a in chosen} for k, chosen in branches.items()}
         if len({repr(v): True for v in selected.values()}) == 1:
             return repr(selected.values()[0])
         return "select({})".format(repr(selected))
 
-    return field(edges), field(dependency_keys), field(peers)
+    return field(None), field(dependency_keys), field(peers)
 
 def _npm_hub_repository_impl(repository_ctx):
     instances = json.decode(repository_ctx.attr.instances)
@@ -403,7 +411,7 @@ npm_instance(
         ))
     links = json.decode(repository_ctx.attr.links)
     restricted = [link for aliases in links.values() for link in aliases.values() if link.get("optional") or link.get("roots")]
-    if restricted or [i for i in instances.values() if i.get("edge_conditions")]:
+    if restricted or [i for i in instances.values() if i.get("edge_conditions") or i.get("edge_targets")]:
         for name, (_, _, _, constraints) in sorted(_settings().items()):
             build.append("""
 config_setting(

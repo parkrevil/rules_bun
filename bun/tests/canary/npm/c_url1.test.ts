@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "the URL construction of an empty slot in bun/private/npm_extension.bzl";
+const READER = "the URL of an empty slot, package_url in bun/private/npmrc.bzl";
 const files = { "package.json": manifest({ name: "c-url1", dependencies: { "@scope/s": "1.0.0" } }) };
 
 test("slot 1 is empty for a tarball under the default registry", async () => {

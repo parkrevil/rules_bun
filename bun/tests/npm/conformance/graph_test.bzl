@@ -9,15 +9,16 @@ _LINUX_UNCONSTRAINED = ("linux", "x64", "unconstrained")
 _DARWIN = ("darwin", "arm64", None)
 _TUPLES = [_LINUX_GLIBC, _LINUX_MUSL, _LINUX_UNCONSTRAINED, _DARWIN]
 
-def _instance(name, version, edges = {}, status = "ok", unfetched = False, edge_conditions = {}):
+def _instance(name, version, edges = {}, status = "ok", unfetched = False, edge_conditions = {}, edge_targets = {}, suffix = "1"):
     return struct(
-        id = "{}@{}__1".format(name, version),
+        id = "{}@{}__{}".format(name, version, suffix),
         name = name,
         version = version,
         store_name = "{}@{}".format(name, version),
         key = name,
         edges = edges,
         edge_conditions = edge_conditions,
+        edge_targets = edge_targets,
         dependency_keys = {},
         peers = [],
         status = status,
@@ -280,6 +281,31 @@ def _edge_conditions_test_impl(ctx):
 
 edge_conditions_test = unittest.make(_edge_conditions_test_impl)
 
+def _edge_targets_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # An alias the store binds to different entries on different platform classes (`edge_targets`,
+    # feature 006 BC-16): a's p is the entry of p@1.0.0 that links q on darwin and the one without
+    # q elsewhere; each is in the graph only where its conditions hold.
+    q = _instance("q", "1.0.0")
+    p_q = _instance("p", "1.0.0", edges = {"q": q.id}, suffix = "2")
+    p = _instance("p", "1.0.0")
+    a = _instance("a", "1.0.0", edge_targets = {"p": {p_q.id: [list(_DARWIN)], p.id: [list(t) for t in _TUPLES if t != _DARWIN]}})
+    optional = {p_q.id: [list(_DARWIN)], q.id: [list(_DARWIN)], p.id: [list(t) for t in _TUPLES if t != _DARWIN]}
+    links = {"": {"a": _link("a", a.id, [a.id], optional)}}
+    classes = conformance_graphs(_resolution([a, p_q, p, q], links), _TUPLES)
+    for platform, expected in [(_LINUX_GLIBC, {}), (_DARWIN, {"q": "q@1.0.0"})]:
+        graph = _graph_for(classes, platform)
+        entry = graph["entries"][int(graph["holders"][""]["a"][2:])]
+        asserts.equals(env, ["p"], entry["links"].keys(), str(platform))
+        if "p" not in entry["links"]:
+            continue
+        p_entry = graph["entries"][int(entry["links"]["p"][2:])]
+        asserts.equals(env, expected, {k: _target(graph, v) for k, v in p_entry["links"].items()}, str(platform))
+    return unittest.end(env)
+
+edge_targets_test = unittest.make(_edge_targets_test_impl)
+
 def graph_test_suite(name):
     unittest.suite(
         name,
@@ -294,4 +320,5 @@ def graph_test_suite(name):
         roots_test,
         combined_test,
         edge_conditions_test,
+        edge_targets_test,
     )

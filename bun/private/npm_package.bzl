@@ -108,7 +108,7 @@ npm_instance = rule(
     attrs = {
         "check": attr.label(doc = "The replacement check of a replaced package.", allow_single_file = True),
         "dependency_keys": attr.string_dict(doc = "Ordinary dependency alias -> the `bun.lock` key it resolves to."),
-        "edges": attr.string_dict(doc = "Dependency alias -> instance ID; the hub selects by target platform an edge the store links on some platforms only (feature 006 BC-15)."),
+        "edges": attr.string_dict(doc = "Dependency alias -> instance ID; the hub selects by target platform an edge the store links on some platforms only (feature 006 BC-15) and the instance a dependency links where the store binds it to different instances by platform (BC-16)."),
         "exclude": attr.string_list(doc = "The sorted exclusion patterns of the package (content identity)."),
         "hub": attr.string(doc = "The hub's name, for errors."),
         "integrity": attr.string(doc = "The padded integrity the package is verified against (content identity)."),

@@ -40,8 +40,10 @@ alike. Only fields that decide a link are carried.
 
 - **Instance** = one entry, merged over platform classes by `(package, peer bindings)`: `id`
   (`name@version__<h>[__<n>]`), `name`, `version`, `store_name`, `key`, `edges` (alias → instance ID),
-  `dependency_keys`, `peers` (aliases of `edges` that are peers), `status` (`ok` or why it is not
-  fetched).
+  `edge_conditions` (alias of `edges` → the tuples an edge holds on, when not on every class,
+  BC-15), `edge_targets` (alias → instance ID → tuples, for a dependency bound to different
+  entries by class, BC-16), `dependency_keys`, `peers` (aliases that are peers), `status` (`ok` or
+  why it is not fetched).
 - **Link** `links[path][alias]` = `struct(alias, root, closure, optional)`: `closure` reached in every
   class, `optional` ID → the `[os, cpu, libc]` requirements of the classes it is reached in.
 - **Members** `members[path][alias]` → member path, for `workspace:` links.
@@ -53,7 +55,7 @@ alike. Only fields that decide a link are carried.
 | **Holder** | `path` (`""` root, else workspace path), `links` (name → node) | One per root and workspace. |
 | **Entry node** | `name`, `version`, `links` (name → node) | One per Bun store directory / ruleset instance in the host's class. |
 | **Equality** | partition refinement on the union of both graphs | Equal iff every class has as many nodes of each side and each holder matches its counterpart (research R8). |
-| **Intentional difference** | `id` (`ID-1` … `ID-7`), what it excludes | ID-1 to ID-4 are the test's only exclusions; ID-1 by `--ignore-scripts`, ID-2 by comparing the host class only, ID-3 by not reading `node_modules/.bun/node_modules`, ID-4 by skipping only the `status` of an entry marked `unfetched` (its links are compared). ID-5 (Bun's registry-dependent integrity refusal) ID-6 (Bun's default `linkWorkspacePackages`) and ID-7 (a package's dependency bound by platform) exclude nothing: no compared lockfile reaches them (the oracle refuses ID-5's lockfile; the corpus uses Bun's default; ID-7's lockfile, which Bun 1.4.2 writes, is read by an analysis test only). |
+| **Intentional difference** | `id` (`ID-1` … `ID-6`), what it excludes | ID-1 to ID-4 are the test's only exclusions; ID-1 by `--ignore-scripts`, ID-2 by comparing the host class only, ID-3 by not reading `node_modules/.bun/node_modules`, ID-4 by skipping only the `status` of an entry marked `unfetched` (its links are compared). ID-5 (Bun's registry-dependent integrity refusal) and ID-6 (Bun's default `linkWorkspacePackages`) exclude nothing: no compared lockfile reaches them (the oracle refuses ID-5's lockfile; the corpus uses Bun's default). |
 
 ## State transitions
 

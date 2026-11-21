@@ -29,6 +29,7 @@ bun_library(
 
 _CONFORMANCE_DATA = [
     "//bun/tests/integration:workspace_files",
+    "//bun/tests/npm/conformance/accepted:conformance_files",
     "//bun/tests/npm/conformance/bun_1_4_2:conformance_files",
     "//bun/tests/npm/conformance/refused:conformance_files",
     "//bun/tests/npm/fixtures:conformance_files",

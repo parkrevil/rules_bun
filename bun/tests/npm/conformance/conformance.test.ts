@@ -13,9 +13,10 @@
 // RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `workspace`'s ruleset graph (FR-011, red mode).
 //
 // Run by Bun 1.4.2 (conformance_1_4_2_test, --platforms=//bun/tests/npm/conformance:host_bun_1_4_2;
-// US5, research R10), the oracle is Bun 1.4.2 and the projects are exactly the lockfiles Bun 1.4.2
-// wrote (bun_1_4_2/); since conformance_test asserts the ruleset links them as Bun 1.4.4 does, a
-// difference there is a disagreement of the two Bun versions.
+// US5, research R10), the oracle is Bun 1.4.2 and the projects are the lockfiles Bun 1.4.2 wrote
+// for the corpus (bun_1_4_2/) and those of accepted/, which neither oracle's write_lockfiles.ts run
+// wrote; since conformance_test asserts the ruleset links them as Bun 1.4.4 does, a difference
+// there is a disagreement of the two Bun versions.
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -39,6 +40,8 @@ const SCALE = "bun/tests/npm/scale";
 const SCALE_PLATFORM = `${SCALE}/platform`;
 const INTEGRATION = "bun/tests/integration/workspaces";
 const BUN_1_4_2 = "bun/tests/npm/conformance/bun_1_4_2";
+// Lockfiles Bun installs that write_lockfiles.ts does not write with the pinned Bun (T107, T110).
+const ACCEPTED = "bun/tests/npm/conformance/accepted";
 const REFUSED = "bun/tests/npm/conformance/refused";
 const ARCHIVES = `${MAIN}/bun/tests/npm/registry/archives`;
 
@@ -49,6 +52,12 @@ export const NOT_APPLICABLE: Record<string, string> = {
     "its bun.lock is a template whose {PHANTOM_INFO} stale_link.test.ts fills in, so Bun cannot load it as written",
   [`${REFUSED}/patch_path`]: 'its patchedDependencies value is not a string, which Bun\'s loader refuses ("Expected a string", bun.lock.rs L1910); written by hand, as no Bun writes it',
 };
+
+// What a frozen install prints when Bun's text-lockfile loader refuses bun.lock
+// (`report_lockfile_load_error`, src/install/PackageManager/install_with_manager.rs L1685–L1704 @
+// bun-v1.4.4: "failed to {parse} lockfile: '{path}'"); a missing archive, a registry error or a
+// port conflict fails the install with another message.
+const LOADER_REFUSAL = "failed to parse lockfile: 'bun.lock'";
 
 // Tarballs a project's lockfile names at another URL than the registry's own, served as the
 // integration test that owns the project serves them (bun/tests/integration/multi.test.ts).
@@ -81,12 +90,12 @@ function projectsInRunfiles(): string[] {
     rlocationList(`${MAIN}/${base}`)
       .filter((path) => path.endsWith("/bun.lock"))
       .map((path) => path.slice(MAIN.length + 1, -"/bun.lock".length));
-  for (const base of [FIXTURES, BUN_1_4_2, REFUSED]) {
+  for (const base of [FIXTURES, BUN_1_4_2, ACCEPTED, REFUSED]) {
     let listed: string[] = [];
     try {
       listed = lockfiles(base);
     } catch {
-      // bun_1_4_2 or refused may hold no project yet.
+      // bun_1_4_2, accepted or refused may hold no project yet.
     }
     for (const dir of listed) if (dir.split("/").length === base.split("/").length + 1) found.add(dir);
   }
@@ -122,8 +131,9 @@ function redirectOneEdge(graph: Graph): string {
   return `the root's "${name}" redirected to ${graph.entries[other].name}@${graph.entries[other].version}`;
 }
 
-const projects = projectsInRunfiles().filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`));
-// The 1.4.2 run compares only the lockfiles Bun 1.4.2 wrote.
+// The 1.4.2 run compares only the lockfiles Bun 1.4.2 wrote for the corpus, and those of accepted/.
+const inRun = (project: string) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`) || project.startsWith(`${ACCEPTED}/`);
+const projects = projectsInRunfiles().filter(inRun);
 const notApplicable: Record<string, string> = MODE_1_4_2
   ? Object.fromEntries(Object.entries(NOT_APPLICABLE_1_4_2).map(([name, reason]) => [`${BUN_1_4_2}/${name}`, reason]))
   : NOT_APPLICABLE;
@@ -133,7 +143,7 @@ const differences: string[] = [];
 const scaleDir = (platform: boolean) => join(process.env.TEST_TMPDIR!, platform ? "scale-platform-archives" : "scale-archives");
 
 test("every project is on both sides (FR-009, US2-4)", () => {
-  expect(Object.keys(graphs).filter((project) => !MODE_1_4_2 || project.startsWith(`${BUN_1_4_2}/`)).sort()).toEqual(projects);
+  expect(Object.keys(graphs).filter(inRun).sort()).toEqual(projects);
   // A project 1.4.2 cannot write has no lockfile; any other not-applicable project is asserted below.
   if (!MODE_1_4_2) for (const project of Object.keys(NOT_APPLICABLE)) expect(projects).toContain(project);
 });
@@ -166,12 +176,14 @@ for (const project of projects) {
     project,
     async () => {
       if (project in notApplicable) {
-        // Asserted, not skipped: the oracle must still refuse it, and so must the ruleset, which
-        // never links a graph for a lockfile Bun does not install (spec Edge Cases).
-        await expect(installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir))).rejects.toThrow();
+        // Asserted, not skipped: the oracle's loader must still refuse it, and so must the
+        // ruleset, which never links a graph for a lockfile Bun does not install (spec Edge
+        // Cases), with an error naming the bun.lock label as every refusal of its reader does.
+        await expect(installWithBun(`${MAIN}/${project}`, archivesFor(project, scaleDir))).rejects.toThrow(LOADER_REFUSAL);
         const side = graphs[project];
-        if (!("error" in side)) differences.push(`${project}: Bun refuses the lockfile, the ruleset links it`);
-        expect("error" in side, `${project}: Bun refuses the lockfile, the ruleset links it`).toBe(true);
+        const refused = "error" in side && side.error.startsWith(`${project}/bun.lock: `);
+        if (!refused) differences.push(`${project}: Bun refuses the lockfile, the ruleset ${"error" in side ? `fails without naming ${project}/bun.lock (${side.error})` : "links it"}`);
+        expect(refused, `${project}: the ruleset must refuse the lockfile naming ${project}/bun.lock`).toBe(true);
         return;
       }
       const files = Object.fromEntries(Object.entries(EXTRA_FILES[project] ?? {}).map(([url, path]) => [url, rlocation(path)]));

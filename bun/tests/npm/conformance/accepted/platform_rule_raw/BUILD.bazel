@@ -1,10 +1,12 @@
 load("@npm_platform_rule_raw//:defs.bzl", "npm_link_all_packages")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
 
 # feature 006 BC-13 (T096): bun.lock is written by hand from
 # //bun/tests/npm/fixtures/conformance_platform_rule's, with the os lists of rule-linux-any
 # (["linux", "any"]) and rule-any-linux (["any", "linux"]) as their package.json files write them:
 # Bun 1.4.4 and 1.4.2 write the lists as they read them (no os, and "linux"), so no Bun writes
-# this form, which Bun still loads. //bun/tests/npm:platform_rule reads it.
+# this form, which Bun still loads and installs. //bun/tests/npm:platform_rule reads it, and the
+# conformance test compares it with Bun (T110).
 
 exports_files([
     "bun.lock",
@@ -12,3 +14,5 @@ exports_files([
 ])
 
 npm_link_all_packages()
+
+conformance_files()

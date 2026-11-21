@@ -5,7 +5,8 @@ that produces it. For each platform tuple (research R3) the graph holds what the
 a link's root (or, for a link whose root differs by platform, the root whose conditions hold) and
 its closure on every platform, an optional instance where its conditions hold, as
 `npm_repositories.bzl` selects them, and an instance's edge where its conditions hold (an edge the
-store has on some platform classes only, `edge_conditions`) and its target is carried by any link,
+store has on some platform classes only, `edge_conditions`, or one of the entries the store binds a
+dependency to by platform class, `edge_targets`) and its target is carried by any link,
 as `run.bzl` links them for a target holding every link; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
 rules_bun does not fetch it (ID-4); and, per holder, each store directory its links reach as
@@ -100,7 +101,13 @@ def _graph(value, os, cpu, libc):
         instance = instances[instance_id]
         links = {}
         edge_conditions = getattr(instance, "edge_conditions", {})
-        for alias, edge in sorted(instance.edges.items()):
+        edges = dict(instance.edges)
+        for alias, by_target in getattr(instance, "edge_targets", {}).items():
+            # The store binds this alias to different entries on different platform classes (BC-16).
+            for edge, conditions in by_target.items():
+                if conditions_hold(conditions, os, cpu, npm_libc):
+                    edges[alias] = edge
+        for alias, edge in sorted(edges.items()):
             if alias == instance.name:
                 continue
             if alias in edge_conditions and not conditions_hold(edge_conditions[alias], os, cpu, npm_libc):
@@ -140,7 +147,7 @@ def conformance_graphs(resolution, tuples):
     if resolution.error != None:
         return {"error": resolution.error}
     restricted = any([link.optional or getattr(link, "roots", {}) for links in resolution.value.links.values() for link in links.values()])
-    if not restricted and not any([getattr(i, "edge_conditions", {}) for i in resolution.value.instances.values()]):
+    if not restricted and not any([getattr(i, "edge_conditions", {}) or getattr(i, "edge_targets", {}) for i in resolution.value.instances.values()]):
         # Nothing is platform-restricted: one class, computed once.
         return [{"platforms": [list(t) for t in tuples], "graph": _graph(resolution.value, None, None, None)}]
     classes = {}

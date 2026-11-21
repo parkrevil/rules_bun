@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "parse_into_binary_lockfile in bun/private/bun_lockfile.bzl, which does not read packageExtensions";
+const READER = "load_lockfile in bun/private/bun_lockfile.bzl, which does not read packageExtensions";
 
 const PROJECT = {
   name: "c-pkgext",

@@ -322,9 +322,8 @@ writes for the corpus projects it can install, and reports zero differences.
 ### Intentional Differences
 
 The only differences between the ruleset and the pinned Bun's isolated install. The conformance
-test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 to ID-7 (the oracle refuses
-ID-5's lockfile, the corpus uses Bun's default for ID-6, and ID-7's error is pinned by an analysis
-test on a lockfile Bun 1.4.2 writes):
+test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 and ID-6 (the oracle
+refuses ID-5's lockfile, and the corpus uses Bun's default for ID-6):
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
   scripts; files those scripts would create are not compared, and the oracle install runs with
@@ -351,16 +350,6 @@ test on a lockfile Bun 1.4.2 writes):
   linkWorkspacePackages = true` (an npm range on a workspace's name binds to the workspace) and
   reads no `bunfig.toml` (FR-003); a project setting it to `false`, where Bun binds such a range to
   an npm row (LOCKFILE L2247–L2249), links differently (user, 2026-11-21, T054).
-- **ID-7 A package's dependency bound by platform**: where the store binds one dependency of a
-  package entry (the root's and a workspace's are BC-12's, which links them per platform where
-  they are one package under other peer bindings and fails evaluation, on lockfiles the pinned Bun
-  does not write, where they are different packages or a member link differs by platform class) to
-  different packages on different platform classes, the ruleset fails evaluation ("the store links
-  "<alias>" of <package> to different packages on different platforms, which rules_bun cannot
-  express") while Bun installs it. Bun 1.4.4 was not seen writing such a lockfile; Bun 1.4.2 writes
-  one for `conformance_platform_peer` in 5 of 6 runs (T091). The error is loud, not a wrong link;
-  expressing the binding is left to a later feature (the lead, under the user's delegation,
-  2026-11-21, T091).
 
 ### Behavior Changes
 
@@ -424,13 +413,14 @@ the test that shows it:
   holder's alias", "A member link"): it writes no `<workspace>/<dep>` row when the root has a row
   of that name, so a workspace's peer binds the root's one package; and a workspace row has no
   `os`, `cpu` or `libc`, so no platform class disables a member. A package entry's dependency bound
-  by platform to different packages keeps an evaluation error (ID-7).
+  by platform to different store entries is linked per platform as well (BC-16).
 - **BC-13**: a package's `os` or `cpu` list is read as Bun's `Negatable` reads it, where `any`
   and the order of entries can decide differently from npm's `checkList` (`["linux", "any"]`:
   every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21). Bun 1.4.4 and 1.4.2
   write such a list as they read it (no `os` for `["linux", "any"]`, `"linux"` for `["any",
   "linux"]`), so only a lockfile written otherwise holds one (`platform_rule_test.bzl`, the
-  hand-written `bun/tests/npm/platform_rule_raw/bun.lock`; T096).
+  hand-written `bun/tests/npm/conformance/accepted/platform_rule_raw/bun.lock`, which the
+  conformance test compares with both oracles; T096, T110).
 - **BC-14**: on a platform other than Linux, a package's `libc` excludes nothing, as Bun's
   `Meta::is_disabled` reads it; `main` lets `libc` match no other OS (research R3; user,
   2026-11-21; `conformance_platform_rule`, `platform_rule_test.bzl`, T096).
@@ -440,6 +430,16 @@ the test that shows it:
   (`conformance_platform_edge`: `native`'s optional `native-linux-x64-musl`, which the root also
   depends on, is linked from `native` on musl only); `main` links it from the package on every
   platform the target holds it (the lead, under the user's delegation, 2026-11-21, T101).
+- **BC-16**: a package's dependency that the store binds to different store entries on different
+  platform classes (one package under other peer bindings, a peer below it whose provider is
+  excluded on some) is linked per target platform, through `select()` on the package's edges
+  (`bun/tests/npm/conformance/accepted/platform_peer_1_4_2`, the lockfile Bun 1.4.2 writes for
+  `conformance_platform_peer` in 5 of 6 runs, which Bun 1.4.4 and 1.4.2 install: `plat-peer-host`'s
+  `p` binds its peer `q` to `q-darwin@1.0.0` on darwin and to nothing elsewhere). Such entries are
+  one package: an ordinary dependency has one resolution, and a peer's package is part of the
+  entry (research R4 "An entry's alias"). `main` binds the dependency once for every platform
+  (`p`'s `q` to `q-darwin@1.0.0` everywhere); the branch failed evaluation there until T107, as
+  the former ID-7 stated (the lead, under the user's delegation, 2026-11-21, T107).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

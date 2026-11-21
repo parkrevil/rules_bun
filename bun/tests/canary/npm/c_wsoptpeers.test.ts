@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "read_lockfile's workspace optionalPeers (# L33) in bun/private/lockfile.bzl and parse_append_dependencies in bun/private/bun_lockfile.bzl";
+const READER = "read_lockfile in bun/private/lockfile.bzl (a workspace's optionalPeers, # L33) and _parse_append_dependencies in bun/private/bun_lockfile.bzl";
 
 const member = (optional: boolean) =>
   manifest({

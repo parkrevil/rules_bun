@@ -6,7 +6,7 @@ import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
 const ACCESS = "overrides";
-const READER = "normalize_overrides in bun/private/overrides.bzl";
+const READER = "normalize_overrides in bun/private/overrides.bzl and _parse_overrides in bun/private/bun_lockfile.bzl";
 
 const CASES: [string, Record<string, unknown>, unknown][] = [
   ["flat", { overrides: { b: "2.0.0" } }, { b: "2.0.0" }],

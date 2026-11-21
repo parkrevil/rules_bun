@@ -5,7 +5,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "split_spec and the kind of an entry in bun/private/lockfile.bzl";
+const READER = "split_spec in bun/private/lockfile.bzl and _kind in bun/private/lockfile.bzl";
 
 test("slot 0 of each entry kind", async () => {
   const { lock, url } = await runInstall(

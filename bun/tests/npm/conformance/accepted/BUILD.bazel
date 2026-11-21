@@ -1,0 +1,7 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# Lockfiles the pinned Bun installs that bun/tests/npm/registry/write_lockfiles.ts does not write
+# with it (feature 006 T107, T110): one Bun 1.4.2 writes, one written by hand. Each project is a
+# package of its own; the conformance test compares each with both oracles.
+
+conformance_files()

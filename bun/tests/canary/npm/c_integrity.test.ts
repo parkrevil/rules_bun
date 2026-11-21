@@ -9,7 +9,7 @@ import { integrity } from "../../support/npm_registry.ts";
 import { rlocation } from "../../support/spawn.ts";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "normalize_integrity in bun/private/lockfile.bzl";
+const READER = "padded_integrity in bun/private/npm_extension.bzl";
 const ALGORITHMS = { "a@1.0.0": "sha256", "b@1.0.0": "sha384", "c@1.0.0": "sha512" } as const;
 
 /** What Bun 1.4.4 writes for a published SRI value. */

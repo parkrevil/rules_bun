@@ -6,7 +6,7 @@
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
 
-const READER = "read_lockfile's non-npm rows (# L31) in bun/private/lockfile.bzl and parse_into_binary_lockfile in bun/private/bun_lockfile.bzl";
+const READER = "_entry in bun/private/lockfile.bzl (a non-npm row, # L31) and load_lockfile in bun/private/bun_lockfile.bzl";
 
 test("the info object of a file: and a tarball-URL row is in slot 1", async () => {
   const { lock, url } = await runInstall(

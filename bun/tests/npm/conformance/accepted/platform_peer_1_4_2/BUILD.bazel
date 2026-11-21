@@ -1,0 +1,34 @@
+load("@npm_platform_peer_1_4_2//:defs.bzl", "npm_link_all_packages")
+load("//bun:defs.bzl", "bun_binary", "bun_test")
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# The lockfile Bun 1.4.2 writes for //bun/tests/npm/fixtures/conformance_platform_peer in 5 of 6 runs
+# (feature 006 T091, md5 4a5419e2): it resolves the root's q to q-darwin@1.0.0 and writes no
+# plat-peer-host/q, so plat-peer-host's p is a different store entry by platform (BC-16). Bun 1.4.4
+# and 1.4.2 both install it.
+
+exports_files([
+    "bun.lock",
+    "package.json",
+])
+
+npm_link_all_packages()
+
+# On darwin plat-peer-host's p binds its peer q to q-darwin@1.0.0; elsewhere q-darwin is disabled
+# and p binds no q.
+bun_test(
+    name = "platform_peer_1_4_2_test",
+    srcs = ["platform_peer_1_4_2.test.ts"],
+    deps = [":node_modules/plat-peer-host"],
+)
+
+# The program //bun/tests/npm:platforms's entry tests analyze (BC-16).
+bun_binary(
+    name = "entry_fixture",
+    entry_point = "entry.ts",
+    tags = ["manual"],
+    visibility = ["//bun/tests/npm:__pkg__"],
+    deps = [":node_modules/plat-peer-host"],
+)
+
+conformance_files()
