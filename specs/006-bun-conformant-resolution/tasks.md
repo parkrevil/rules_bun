@@ -1185,3 +1185,24 @@ recorded in `tdd-log.md`.
   (Bun's Wyhash, a tarball's integrity, ID-4); in "Walks outside the carry-over" make `run.bzl`
   `_check_unique` read one copy per store directory (BC-11). Check the map against every `def`
   `citations_test` checks (none missing, none extra), per US3/AC2 / SC-004 / FR-002 (partial)
+
+---
+
+## Phase 25: Convergence
+
+- [ ] T119 In T066's PR body, also give BC-7's effect on bins, found after T106 and T114 were
+  written, its T117 rows: `//bun/tests/integration:restricted_test` red on `main`'s code in a
+  worktree (`//:node_modules/bin-darwin/bin/dbin` builds for `//:linux_x64`) and green on the
+  branch (incompatible on `//:linux_x64`, buildable on `//:darwin_arm64`), next to BC-7's T017 and
+  T051 rows, per spec "Behavior Changes" (BC-7: "bins: T117") / SC-003 (partial)
+- [X] T120 Bring the docstring of `_compatible` in `bun/private/npm_repositories.bzl` (about
+  L472–L476, "A declared optional package with `os`, `cpu` or `libc` is absent elsewhere") to
+  BC-7 as T117 stated it in `_NPM_DOC`: a declared package with `os` or `cpu`, optional or not, and
+  a declared optional package with `libc`, per BC-7 / FR-017 (partial)
+- [X] T121 Bring quickstart Q6 to the check that holds: it names only `bun/private/bun_*.bzl` and
+  expects `grep -c "@ bun-v1.4.4"` to give one per `def` (today 67 citations for 53 `def`s in
+  `bun_install_types.bzl`, 63 for 54 in `bun_lockfile.bzl`), while `citations.test.ts` checks every
+  `def` of `bun_*.bzl` and `resolve.bzl` and `ONLY.platforms` of `platforms.bzl`, where a function
+  may state that it is the adapter; give `bazel test //bun/tests/npm/conformance:citations_test`
+  and its expected output (`204 functions checked in 7 modules`), per plan (quickstart) / US3 /
+  SC-004 (partial)
