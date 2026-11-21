@@ -1046,7 +1046,7 @@ recorded in `tdd-log.md`.
 - [X] T105 Bring `plan.md`'s Constitution Check row VII ("BC-1…BC-12 change no released behavior",
   L86) and "Phases after this plan" step 1 ("Q1 must fail exactly with BC-1…BC-14", L147) to
   BC-1…BC-15, as its Summary (L34) and the spec state, per spec Behavior Changes / FR-017 (partial)
-- [ ] T106 In T066's PR body, give each Behavior Change the test that showed it before and after
+- [X] T106 In T066's PR body, give each Behavior Change the test that showed it before and after
   (spec "Behavior Changes": "listed again in the PR with the test that shows it"), not only T017 and
   T051 rows: BC-1…BC-10 their T017 red and T051 "difference gone" rows; BC-11 and BC-12 T076's and
   T077's red rows and their T051 rows; BC-13 and BC-14 T096's red on `main` and green on the branch
