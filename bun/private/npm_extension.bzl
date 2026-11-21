@@ -501,7 +501,11 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 `bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/scale/` and
 `bun/tests/integration/workspaces/` (not `e2e/smoke`'s, whose registry packages the offline test
 has no archives of), each link with the one Bun's install makes on the test's platform, and that
-the ruleset refuses each lockfile there Bun refuses to load. So one package version is one
+the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
+CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners `ubuntu-latest`, `macos-latest` and
+`windows-latest`, with Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2
+writes (`conformance_1_4_2_test`), each comparing its runner's platform class; a statement here
+holds once a CI run of the change passes. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
 (`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a

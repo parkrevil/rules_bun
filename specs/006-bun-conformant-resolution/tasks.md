@@ -540,7 +540,7 @@ with reasons (Q4).
 
 **Purpose**: Documentation that claims only what the tests cover, the completion gates, the PR.
 
-- [ ] T062 [P] Rewrite the resolution part of `_NPM_DOC` in `bun/private/npm_extension.bzl`
+- [X] T062 [P] Rewrite the resolution part of `_NPM_DOC` in `bun/private/npm_extension.bzl`
   (FR-017): the ruleset links what the pinned Bun 1.4.4's isolated install links, as the
   conformance test checks; the Intentional Differences ID-1, ID-2, ID-3; remove the statements of
   the old rules (BC-7's "A non-optional dependency is carried whatever its `os`, `cpu` and `libc`
