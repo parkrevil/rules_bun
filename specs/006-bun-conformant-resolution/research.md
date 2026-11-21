@@ -878,6 +878,23 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L3000 | Invalid package path | refused | `_LOADER_REFUSALS` L3000 |
 | L3377, L3386 | Expected an array / a string (`optionalPeers`, `unresolved`) | refused | `lockfile_test.bzl` `unresolved_test`, `workspace_fields_test` (T030) |
 | L3408, L3422 | Expected an object / a string (a dependency map) | refused | `lockfile_test.bzl` `dependency_maps_test` (T080) |
+
+A present JSON `null` (T139). Bun's `get` returns a key whose value is `null` as a value (it is
+`Some`), so every site above that checks a value's type refuses `null` as it refuses any other
+value of the wrong type. `lockfile_test.bzl` `_NULL_REFUSALS` and `_NULL_CONTAINER_REFUSALS` hold
+one text per field, each with the line it fails at: `lockfileVersion` (L1829), `configVersion`
+(L1864), `trustedDependencies` (L1875), `patchedDependencies` (L1901), `overrides` (L1936),
+`catalog` (L2039), `catalogs` (L2058), `workspaces` (L2101), a workspace (L2114), a member's
+`name` (L2146) and `version` (L2164), the root's `name` (L2215), `packages` (L2313), slot 2 of a
+row (L2569), and `optionalPeers`, `unresolved` (L3377) and the four dependency maps (L3408) of the
+root, a member and a row. The pinned Bun refused each of the 29 texts with that line's message
+(`bun install --frozen-lockfile`, Linux x64, 2026-11-21). The reader read a present `null` as a
+missing key: it loaded the texts for `configVersion`, `trustedDependencies`, the dependency maps,
+`optionalPeers`, `unresolved` and a member's `version`, and evaluation crashed with a bare Starlark
+error for `patchedDependencies`, `overrides`, `catalog`, `catalogs` and `packages` (red first); the
+other texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads `null` where it reads one type and skips any other
+value: `os`, `cpu`, `libc` (`negatable_from_json_value`, npm.rs L850–L865, gives every platform),
+`bin` and `bundled` (L2351); the reader reads each as missing (`null_accepted_test`).
 | L3451 | Invalid dependency version | refused | `_LOADER_REFUSALS` L3451 |
 | L1590–L1592 (`find_resolution`) | `InvalidPackageKey` for `<key>/<dependency>` beyond the path buffer, reported as "Invalid package path" | not refused | not written: as L3470 |
 | L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
@@ -1024,6 +1041,21 @@ there is no Bun result to follow; npm's `checkList` is the rule research R3 reco
 values and the one `main` applied. The adapter reads a list with it for those values only (R3
 "Targets Bun does not name"); for those values the branch now reads a list as `main` does, so no
 BC is numbered, and BC-13 states the exception.
+
+**T140 decided by the lead, under the user's delegation (2026-11-21)**: Codex's sixth review found
+that a member counted as declared wherever `declared_targets_aspect` reached its target through an
+attribute it walks, so `consumer_library(extras = [member])`, which returns a `BunLibraryInfo`
+without the member's files, passed and the store linked an uncopied directory. The member check
+now decides from what the program's `BunLibraryInfo` carries: the aspect collects each target that
+provides `BunLibraryInfo` with that provider's `srcs` and `data` depsets, through every attribute,
+and `run.bzl` `_member_links` accepts a member only where every one of those files is in the copy
+tree (`File` identity, not path). The list of skipped attributes (T124, T132) is gone: a member in
+`srcs`, `data`, `tools`, `entry_point` or `preload` fails because its `package.json` is not copied,
+and every T124 and T132 test keeps failing with the "add … to its deps" message. "Package record"
+in T140 is read as the member's `package.json`, which `workspace_target_name`'s doc asks the member
+target to carry; the member's npm package records are not compared, as no root-module fixture has a
+member with npm dependencies to test it on (constitution II), and a member whose files are copied
+gets its records through the same `BunLibraryInfo` unless a rule drops them on purpose.
 
 ## Part 7: Evidence log
 

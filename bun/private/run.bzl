@@ -322,14 +322,28 @@ def _display(label):
     """A label as its BUILD files write it: `//pkg:name` in the main repository."""
     return "//{}:{}".format(label.package, label.name) if not label.repo_name else str(label)
 
-def _member_links(ctx, root, deps, instances, kept):
+def _in_copy_tree(target, copied):
+    """Whether every source and data file of a target's `BunLibraryInfo` is in the copy tree."""
+    return all([f in copied for f in target.srcs.to_list() + target.data.to_list()])
+
+def _member_links(ctx, root, deps, instances, kept, copied):
     """Links each carried instance's dependencies on workspace members (feature 006 BC-4).
 
     The hub links such a dependency by path only, to the member's package, where the files of the
     member's target are copied; the target must declare the member's target (in its `deps`,
-    directly or through other targets that provide `BunLibraryInfo` and pass it on, built by any
-    rule; the labels come from `declared_targets_aspect`, which skips the attributes that carry
-    files, T124), else analysis fails naming it.
+    directly or through other targets, built by any rule, that pass its `BunLibraryInfo` on), else
+    analysis fails naming it. A member counts as declared only where every source and data file of
+    its `BunLibraryInfo` (its `package.json` among them) is in the copy tree, which holds what the
+    program's `BunLibraryInfo` carries; `declared_targets_aspect` finds the member's target and its
+    files through any attribute, and the attributes walked decide nothing (T124, T140).
+
+    Args:
+        ctx: The rule context.
+        root: The copy tree's directory, relative to the target's package.
+        deps: The targets whose `BunDeclaredTargetsInfo` is searched.
+        instances: Instance key (`_key`) -> `NpmInstanceInfo`.
+        kept: The keys of the carried instances.
+        copied: Dict whose keys are the `File`s copied into the copy tree.
 
     Returns:
         `(outputs, paths)`: the links and their paths relative to the copy-tree root.
@@ -341,8 +355,11 @@ def _member_links(ctx, root, deps, instances, kept):
         instance = instances[key]
         for alias, member in sorted(instance.members.items()):
             if declared == None:
-                labels = depset(transitive = [d[BunDeclaredTargetsInfo].labels for d in deps if BunDeclaredTargetsInfo in d])
-                declared = {str(label): True for label in labels.to_list()}
+                targets = depset(transitive = [d[BunDeclaredTargetsInfo].targets for d in deps if BunDeclaredTargetsInfo in d])
+                declared = {}
+                for target in targets.to_list():
+                    if str(target.label) not in declared and _in_copy_tree(target, copied):
+                        declared[str(target.label)] = True
             if str(member) not in declared:
                 fail('{}: the npm package {} links its dependency "{}" to the workspace member {}, which this target does not declare; add {} to its deps'.format(
                     ctx.label,
@@ -356,7 +373,7 @@ def _member_links(ctx, root, deps, instances, kept):
             paths.append(path)
     return outputs, paths
 
-def _package_layout(ctx, root, deps):
+def _package_layout(ctx, root, deps, copied):
     """Lays out the packages of `deps` in the copy tree as a strict store (research R5).
 
     Each instance tree is copied once to `.store/<store directory>/node_modules/<package>`; each
@@ -368,6 +385,7 @@ def _package_layout(ctx, root, deps):
         ctx: The rule context.
         root: The copy tree's directory, relative to the target's package.
         deps: The target's `deps`.
+        copied: Dict whose keys are the `File`s copied into the copy tree.
 
     Returns:
         `struct(outputs, checks, directories, links, stores)`: the copies and links, the
@@ -414,7 +432,7 @@ def _package_layout(ctx, root, deps):
             path = ".store/{}/node_modules/{}".format(_store_path(instance), alias)
             outputs.append(_directory_link(ctx, root, path, entries[target]))
             link_paths.append(path)
-    member_outputs, member_paths = _member_links(ctx, root, deps, instances, kept)
+    member_outputs, member_paths = _member_links(ctx, root, deps, instances, kept, copied)
     outputs.extend(member_outputs)
     link_paths.extend(member_paths)
     links = {}
@@ -561,7 +579,7 @@ def _bun_run_impl(ctx, mode):
     check_no_directory(ctx.label, to_copy)
     originals = {_rlocation_path(f): f for f in to_copy}
     copies = _copy_tree(ctx, root, to_copy)
-    packages = _package_layout(ctx, root, deps)
+    packages = _package_layout(ctx, root, deps, {f: True for f in to_copy})
 
     config = {
         "copies": [[_rlocation_path(copy), originals[path].path] for path, copy in copies.items()],

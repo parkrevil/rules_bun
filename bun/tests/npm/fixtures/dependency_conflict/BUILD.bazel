@@ -1,6 +1,8 @@
 # Not unedited Bun output: bun.lock is the lockfile Bun 1.4.4 wrote for package.json with its
 # "y/x/b" entry line removed by bun/tests/npm/registry/write_lockfiles.ts, so that x@1.0.0's b
-# resolves to two versions, which the ruleset must reject (specs/004-bun-1-4-4-upgrade research R12).
+# could resolve to two versions (specs/004-bun-1-4-4-upgrade research R12). Since feature 006 BC-6
+# the ruleset accepts it: it binds x@1.0.0's b once by Bun's row evidence and links one copy of x
+# (bun/tests/npm/uniqueness_test.bzl).
 
 load("@npm_dependency_conflict//:defs.bzl", "npm_link_all_packages")
 load("//bun/tests/npm/conformance:files.bzl", "conformance_files")

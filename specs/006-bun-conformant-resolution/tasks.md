@@ -1358,7 +1358,7 @@ The sixth review before the final gate (Claude and Codex, branch-wide) found the
 rejected the gate to fix them (the lead, under the user's delegation, 2026-11-21). Each is written
 red first and recorded in `tdd-log.md`.
 
-- [ ] T139 `bun/private/lockfile.bzl` reads JSON `null` as a missing field: for dependency maps,
+- [X] T139 `bun/private/lockfile.bzl` reads JSON `null` as a missing field: for dependency maps,
   `optionalPeers`, `unresolved`, a workspace's `version`, `configVersion` and
   `trustedDependencies` it loads a lockfile Bun refuses, and for `overrides`, `catalog`,
   `catalogs`, `patchedDependencies` and `packages` evaluation crashes with a bare Starlark error
@@ -1366,7 +1366,7 @@ red first and recorded in `tdd-log.md`.
   set to `null`, checked against the pinned Bun's refusal), then tell a present `null` from an
   absent key and fail naming the `bun.lock` label and the field, per FR-004 / spec Edge Cases
   (contradicts)
-- [ ] T140 Codex: the member check still accepts a member whose files never reach the program
+- [X] T140 Codex: the member check still accepts a member whose files never reach the program
   (`bun/private/library.bzl` about L59–L64): it assumes a target returning `BunLibraryInfo`
   forwards every dependency outside the excluded attributes, but `consumer_library(extras =
   [member])` returns none of the member's files, so a `bun_test` on that wrapper and
@@ -1375,6 +1375,6 @@ red first and recorded in `tdd-log.md`.
   actually in the layout the run rule builds (from what `BunLibraryInfo` carries, not from which
   attributes an aspect walks), else fail with the existing "add … to its deps" message; keep
   T123/T124's tests green, per BC-4 (contradicts)
-- [ ] T141 `bun/tests/npm/fixtures/dependency_conflict/BUILD.bazel` and a comment in
+- [X] T141 `bun/tests/npm/fixtures/dependency_conflict/BUILD.bazel` and a comment in
   `bun/tests/npm/registry/write_lockfiles.ts` still say the ruleset must reject that lockfile;
   since BC-6 it accepts it (`uniqueness_test.bzl`). Correct both comments (unrequested)

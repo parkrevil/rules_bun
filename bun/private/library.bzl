@@ -38,19 +38,9 @@ def library_info(srcs, data, deps):
         packages = depset(transitive = [packages_of(d[BunLibraryInfo]) for d in deps]),
     )
 
-# Attributes whose targets give a target their files, not their `BunLibraryInfo`: `srcs`, `data`
-# and `tools` by Bazel's conventions (bazel.build concepts/dependencies), and `entry_point` and
-# `preload` of rules_bun's programs (`library_info` takes the `BunLibraryInfo` of `deps` only).
-_FILE_ATTRIBUTES = ["data", "entry_point", "preload", "srcs", "tools"]
-
 def _declared_targets_aspect_impl(target, ctx):
-    if BunLibraryInfo not in target:
-        # A target without `BunLibraryInfo` passes no target's `BunLibraryInfo` on (T124).
-        return [BunDeclaredTargetsInfo(labels = depset())]
     transitive = []
     for name in dir(ctx.rule.attr):
-        if name in _FILE_ATTRIBUTES:
-            continue
         value = getattr(ctx.rule.attr, name, None)
         if type(value) == "dict":
             value = list(value.keys()) + list(value.values())
@@ -58,22 +48,22 @@ def _declared_targets_aspect_impl(target, ctx):
             value = [value]
         for dep in value:
             if type(dep) == "Target" and BunDeclaredTargetsInfo in dep:
-                transitive.append(dep[BunDeclaredTargetsInfo].labels)
-    return [BunDeclaredTargetsInfo(labels = depset(
-        [target.label] if BunLibraryInfo in target else [],
-        transitive = transitive,
-    ))]
+                transitive.append(dep[BunDeclaredTargetsInfo].targets)
+    direct = []
+    if BunLibraryInfo in target:
+        info = target[BunLibraryInfo]
+        direct.append(struct(label = target.label, srcs = info.srcs, data = info.data))
+    return [BunDeclaredTargetsInfo(targets = depset(direct, transitive = transitive))]
 
 declared_targets_aspect = aspect(
     implementation = _declared_targets_aspect_impl,
     # Every attribute: a consumer's rule may build a member, or pass one on, under any name.
     attr_aspects = ["*"],
-    doc = """Collects the labels of the targets providing `BunLibraryInfo` among a target and its
-transitive dependencies, whatever rule builds them, through the targets that provide
-`BunLibraryInfo` themselves and every attribute but those that carry files (`srcs`, `data`, `tools`,
-`entry_point`, `preload`), so that a target counts only where its `BunLibraryInfo` can reach the
-program (feature 006 BC-4: a target must declare the workspace members its packages link by path;
-T124).""",
+    doc = """Collects the targets providing `BunLibraryInfo` among a target and its transitive
+dependencies, whatever rule builds them and through whatever attribute, each with the sources and
+data files its `BunLibraryInfo` holds. Whether a workspace member counts as declared is decided from
+these files, not from the attributes walked: `bun_binary` and `bun_test` accept a member only where
+every one of them is in the copy tree they build (feature 006 BC-4; T124, T140).""",
 )
 
 def library_runfiles(ctx, files, data, deps):

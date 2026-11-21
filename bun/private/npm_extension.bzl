@@ -475,10 +475,12 @@ Generated targets (public API, under these naming rules):
   depend on that target (so a member that depends on the package forms no dependency cycle), and a
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
   `deps`, directly or through other targets, whatever rules build them (any rule returning
-  `BunLibraryInfo`), as long as each passes the `BunLibraryInfo` on: a target reached through a
-  `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, or through a target that does not
-  return `BunLibraryInfo`, is not counted. Otherwise its analysis fails naming the package, the
-  dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
+  `BunLibraryInfo`), as long as each passes the `BunLibraryInfo` on: the member's target counts
+  only where every source and data file of its `BunLibraryInfo` (its `package.json` among them) is
+  in the program's copy tree, so a target reached through a `srcs`, `data`, `tools`, `entry_point`
+  or `preload` attribute, through a target that does not return `BunLibraryInfo`, or through a rule
+  whose `BunLibraryInfo` leaves out the member's files is not counted. Otherwise its analysis fails
+  naming the package, the dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
   targets of the workspace members its package's dependencies link to, on any platform, and of the
   members that the packages those members declare in their `package.json` link to, through any
   number of members. The bin

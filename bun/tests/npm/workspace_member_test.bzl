@@ -54,20 +54,24 @@ def workspace_member_test_suite(name):
     # The member reached through a consumer's rule between the program and the member (T094).
     consumer_wrapper(name = name + "_wrapper", libraries = [_MEMBER], tags = ["manual"])
 
-    # The member reached only where its `BunLibraryInfo` does not reach the program (T124): in a
-    # library's `data`, which carries the member's files but not its `package.json` or packages,
-    # and through a target that provides no `BunLibraryInfo`.
+    # The member reached only where its files do not all reach the program's copy tree (T124): in
+    # a library's `data`, which carries the member's sources but not its `package.json`, and
+    # through a target that provides no `BunLibraryInfo`.
     bun_library(name = name + "_data", data = [_MEMBER], tags = ["manual"])
     consumer_carrier(name = name + "_carrier", targets = [_MEMBER], tags = ["manual"])
     consumer_library(name = name + "_extras", extras = [name + "_carrier"], tags = ["manual"])
 
-    # The other attributes the aspect skips (T132): a library's `srcs`, and a consumer's library's
-    # `entry_point`, `preload` and `tools` (the aspect walks a program's `deps` only, so these
-    # attributes matter on a target there that returns `BunLibraryInfo`).
+    # The other attributes that carry files (T132): a library's `srcs`, and a consumer's library's
+    # `entry_point`, `preload` and `tools`, which it does not pass on. The aspect walks every
+    # attribute; each of these fails because the member's `package.json` is not copied (T140).
     bun_library(name = name + "_srcs", srcs = [_MEMBER], tags = ["manual"])
     consumer_library(name = name + "_entry_point", entry_point = _MEMBER, tags = ["manual"])
     consumer_library(name = name + "_preload", preload = [_MEMBER], tags = ["manual"])
     consumer_library(name = name + "_tools", tools = [_MEMBER], tags = ["manual"])
+
+    # The member in an attribute of a rule that returns `BunLibraryInfo` but passes none of the
+    # member's files on (T140): the member's `BunLibraryInfo` is reached, its files are not copied.
+    consumer_library(name = name + "_member_extras", extras = [_MEMBER], tags = ["manual"])
     cases = [
         ("declared", _declared_test, [_FIXTURE + ":node_modules/member-user", _MEMBER]),
         ("declared_through_rule", _declared_test, [_FIXTURE + ":node_modules/member-user", name + "_wrapper"]),
@@ -78,6 +82,7 @@ def workspace_member_test_suite(name):
         ("through_entry_point", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_entry_point"]),
         ("through_preload", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_preload"]),
         ("through_tools", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_tools"]),
+        ("through_extras", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_member_extras"]),
     ]
     tests = []
     for suffix, rule, deps in cases:

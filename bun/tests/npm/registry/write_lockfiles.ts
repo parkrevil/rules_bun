@@ -377,7 +377,8 @@ const projects: Record<string, Project> = {
   // One package version whose dependency resolves to two versions in one closure: y/x and z/x are
   // x@1.0.0, and x's b is y's b@2.0.0 under y and the root's b@1.0.0 under z. Bun 1.4.4 writes a
   // y/x/b entry that keeps x@1.0.0's b one version, so the entry line is removed, as missing_peer
-  // removes one, to give the ruleset's check a lockfile to reject (research R12).
+  // removes one (feature 004 research R12). Since feature 006 BC-6 the ruleset accepts the result:
+  // it binds x@1.0.0's b once by Bun's row evidence (uniqueness_test.bzl).
   dependency_conflict: {
     files: () => ({
       "package.json": json({ name: "dependency-conflict", private: true, dependencies: { a: "1.0.0", b: "1.0.0", x: "2.0.0", y: "1.0.0", z: "1.0.0" } }),

@@ -383,6 +383,47 @@ _CONTAINER_REFUSALS = [
     ("L2313", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": ["SECRET"]}', ["packages"]),
 ]
 
+# Feature 006 T139: JSON `null` where Bun 1.4.4's loader expects a value. Bun's `get` returns a
+# present `null` as a value, so each check below refuses it as it refuses any other value of the
+# wrong type (the pinned Bun refuses each text, `tdd-log.md` T139); the reader read a present `null`
+# as a missing key and loaded these lockfiles.
+_NULL_REFUSALS = [
+    ("L1829", '{"lockfileVersion": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ["lockfileVersion"]),
+    ("L1864", '{"lockfileVersion": 2, "configVersion": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"configVersion"', "Expected a number"]),
+    ("L1875", '{"lockfileVersion": 2, "trustedDependencies": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"trustedDependencies"', "Expected an array"]),
+    ("L2101", '{"lockfileVersion": 2, "workspaces": null, "packages": {}}', ["workspaces"]),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": null}}, "packages": {}}', ['workspace ""', '"dependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "devDependencies": null}}, "packages": {}}', ['workspace ""', '"devDependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "optionalDependencies": null}}, "packages": {}}', ['workspace ""', '"optionalDependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "peerDependencies": null}}, "packages": {}}', ['workspace ""', '"peerDependencies"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "optionalPeers": null}}, "packages": {}}', ['workspace ""', '"optionalPeers"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "unresolved": null}}, "packages": {}}', ['workspace ""', '"unresolved"']),
+    ("L2215", '{"lockfileVersion": 2, "workspaces": {"": {"name": null}}, "packages": {}}', ['workspace ""', "Expected a string"]),
+    ("L2114", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": null}, "packages": {}}', ['workspace "packages/w"']),
+    ("L2146", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": null}}, "packages": {}}', ['workspace "packages/w"', "Expected a string name property"]),
+    ("L2164", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w", "version": null}}, "packages": {}}', ['workspace "packages/w"', '"version"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w", "dependencies": null}}, "packages": {}}', ['workspace "packages/w"', '"dependencies"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w", "optionalPeers": null}}, "packages": {}}', ['workspace "packages/w"', '"optionalPeers"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w", "unresolved": null}}, "packages": {}}', ['workspace "packages/w"', '"unresolved"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"dependencies": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"dependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"devDependencies": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"devDependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"optionalDependencies": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"optionalDependencies"']),
+    ("L3408", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"peerDependencies": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"peerDependencies"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"optionalPeers": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"optionalPeers"']),
+    ("L3377", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"unresolved": null}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', '"unresolved"']),
+    ("L2569", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", null, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "slot 2"]),
+]
+
+# The top-level containers the reader crashed on with a present `null` (`dict()` of `None`,
+# `.items()` of `None`), naming no file (T139).
+_NULL_CONTAINER_REFUSALS = [
+    ("L1901", '{"lockfileVersion": 2, "patchedDependencies": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"patchedDependencies"']),
+    ("L1936", '{"lockfileVersion": 2, "overrides": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"overrides"']),
+    ("L2039", '{"lockfileVersion": 2, "catalog": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"catalog"']),
+    ("L2058", '{"lockfileVersion": 2, "catalogs": null, "workspaces": {"": {"name": "x"}}, "packages": {}}', ['"catalogs"']),
+    ("L2313", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": null}', ['"packages"']),
+]
+
 def _load_error(text):
     read = read_lockfile(text, "inline/bun.lock")
     if read.error:
@@ -407,6 +448,28 @@ def _container_refusals_test_impl(ctx):
     _check_refusals(env, _CONTAINER_REFUSALS)
     return unittest.end(env)
 
+def _null_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _NULL_REFUSALS)
+    return unittest.end(env)
+
+def _null_container_refusals_test_impl(ctx):
+    env = unittest.begin(ctx)
+    _check_refusals(env, _NULL_CONTAINER_REFUSALS)
+    return unittest.end(env)
+
+def _null_accepted_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Bun loads a present `null` where it reads only a value of one type and skips any other: `os`,
+    # `cpu` and `libc` (`negatable_from_json_value`, npm.rs L850-L865: no value, so every platform),
+    # `bin` and `bundled` (LOCK L2351); the reader reads each as a missing key (T139).
+    plain = _read(_inline('"a": ["a@1.0.0", "", {}, "sha512-x"]'))
+    for field in ["os", "cpu", "libc", "bin", "bundled"]:
+        read = _read(_inline('"a": ["a@1.0.0", "", {"%s": null}, "sha512-x"]' % field))
+        asserts.equals(env, plain, read, field)
+    return unittest.end(env)
+
 versions_test = unittest.make(_versions_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
@@ -423,6 +486,9 @@ row_fields_test = unittest.make(_row_fields_test_impl)
 dependency_maps_test = unittest.make(_dependency_maps_test_impl)
 loader_refusals_test = unittest.make(_loader_refusals_test_impl)
 container_refusals_test = unittest.make(_container_refusals_test_impl)
+null_refusals_test = unittest.make(_null_refusals_test_impl)
+null_container_refusals_test = unittest.make(_null_container_refusals_test_impl)
+null_accepted_test = unittest.make(_null_accepted_test_impl)
 
 def lockfile_test_suite(name):
     unittest.suite(
@@ -443,4 +509,7 @@ def lockfile_test_suite(name):
         dependency_maps_test,
         loader_refusals_test,
         container_refusals_test,
+        null_refusals_test,
+        null_container_refusals_test,
+        null_accepted_test,
     )

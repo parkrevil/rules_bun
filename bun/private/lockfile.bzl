@@ -75,24 +75,28 @@ def _strings(value):
         return [item for item in value if type(item) == "string"]
     return []
 
-def _names(value, file, owner, field):
+def _names(obj, field, file, owner):
     """`(names, error)` of `optionalPeers` or `unresolved`: a list of strings (LOCK L3372-L3400).
 
-    The value is not printed: the reader has not checked it.
+    Bun's `get` returns a present `null` as a value, which is not an array, so only a missing key
+    reads as no names (T139). The value is not printed: the reader has not checked it.
     """
-    if value == None:
+    if field not in obj:
         return [], None
+    value = obj[field]
     if type(value) != "list" or any([type(item) != "string" for item in value]):
         return None, "{}: {} has a field \"{}\" that is not a list of strings; run `bun install` to rewrite bun.lock".format(file, owner, field)
     return list(value), None
 
-def _dependencies(value, file, owner, field):
+def _dependencies(obj, field, file, owner):
     """`(map, error)` of a dependency map: an object whose values are strings (LOCK L3405-L3426).
 
-    Bun refuses another value ("Expected an object", "Expected a string"); the value is not printed.
+    Bun refuses another value ("Expected an object", "Expected a string"), a present `null`
+    included: only a missing key reads as no dependencies (T139). The value is not printed.
     """
-    if value == None:
+    if field not in obj:
         return {}, None
+    value = obj[field]
     if type(value) != "dict":
         return None, "{}: {} has a field \"{}\" that is not an object; run `bun install` to rewrite bun.lock".format(file, owner, field)
     for name, version in value.items():
@@ -139,15 +143,15 @@ def _entry(key, entry, file):
         info = entry[1]  # L31
 
     owner = "the packages entry \"{}\"".format(key)
-    unresolved, error = _names(info.get("unresolved"), file, owner, "unresolved")  # L23
+    unresolved, error = _names(info, "unresolved", file, owner)  # L23
     if error:
         return _error(error)
-    optional_peers, error = _names(info.get("optionalPeers"), file, owner, "optionalPeers")  # L14
+    optional_peers, error = _names(info, "optionalPeers", file, owner)  # L14
     if error:
         return _error(error)
     maps = {}
     for field in DEPENDENCY_KINDS:
-        maps[field], error = _dependencies(info.get(field), file, owner, field)  # L13, L14, L32
+        maps[field], error = _dependencies(info, field, file, owner)  # L13, L14, L32
         if error:
             return _error(error)
     bundled = info.get("bundled")  # L26: Bun skips a value that is not a boolean (LOCK L2351).
@@ -209,12 +213,13 @@ def read_lockfile(text, file):
     # Bun refuses a `configVersion` that is not a number, or is a fraction or below 0 (LOCK
     # L1860-L1869, ConfigVersion.rs `from_expr`), and a `trustedDependencies` that is not an array
     # of strings (LOCK L1871-L1888); neither decides a binding, and the value is not printed (T125).
-    # Canary C-ROOTFIELDS pins the form the pinned Bun writes for each (T130).
+    # Canary C-ROOTFIELDS pins the form the pinned Bun writes for each (T130). Bun's `get` returns
+    # a present `null` as a value, so here and below only a missing key is skipped (T139).
     config_version = lock.get("configVersion")  # L34
-    if config_version != None and (type(config_version) not in ["int", "float"] or config_version < 0 or config_version != int(config_version)):
+    if "configVersion" in lock and (type(config_version) not in ["int", "float"] or config_version < 0 or config_version != int(config_version)):
         return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"configVersion\"): Invalid \"configVersion\". Expected a number".format(file))
     trusted = lock.get("trustedDependencies")  # L35
-    if trusted != None and type(trusted) != "list":
+    if "trustedDependencies" in lock and type(trusted) != "list":
         return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"trustedDependencies\"): Expected an array".format(file))
     if [name for name in (trusted or []) if type(name) != "string"]:
         return _error("{}: Bun 1.4.4 refuses to load this lockfile (an entry of the field \"trustedDependencies\"): Expected a string".format(file))
@@ -222,7 +227,7 @@ def read_lockfile(text, file):
     # Bun refuses a lockfile whose containers are not objects (LOCK L1899-L1906, L1934-L1941,
     # L2037-L2063, L2100-L2116, L2309-L2318); the value is not printed.
     for field in ["patchedDependencies", "overrides", "catalog", "catalogs", "packages"]:  # L20, L18, L19, L7
-        if lock.get(field) != None and type(lock[field]) != "dict":
+        if field in lock and type(lock[field]) != "dict":
             return _error("{}: the field \"{}\" is not an object; run `bun install` to rewrite bun.lock".format(file, field))
 
     # Bun refuses a patch path that is not a string (LOCK L1908-L1915); the value is not printed.
@@ -239,16 +244,16 @@ def read_lockfile(text, file):
             return _error("{}: {} is not an object; run `bun install` to rewrite bun.lock".format(file, owner))
         fields = {}
         for kind in DEPENDENCY_KINDS:
-            fields[kind], error = _dependencies(workspace.get(kind), file, owner, kind)  # L3, L6
+            fields[kind], error = _dependencies(workspace, kind, file, owner)  # L3, L6
             if error:
                 return _error(error)
         workspace_version = workspace.get("version")  # L28
-        if workspace_version != None and type(workspace_version) != "string":
+        if "version" in workspace and type(workspace_version) != "string":
             return _error("{}: {} has a field \"version\" that is not a string; run `bun install` to rewrite bun.lock".format(file, owner))
-        unresolved, error = _names(workspace.get("unresolved"), file, owner, "unresolved")  # L24
+        unresolved, error = _names(workspace, "unresolved", file, owner)  # L24
         if error:
             return _error(error)
-        optional_peers, error = _names(workspace.get("optionalPeers"), file, owner, "optionalPeers")  # L33
+        optional_peers, error = _names(workspace, "optionalPeers", file, owner)  # L33
         if error:
             return _error(error)
         workspaces[path] = struct(

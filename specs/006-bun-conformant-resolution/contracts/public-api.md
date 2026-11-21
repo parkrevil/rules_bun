@@ -26,7 +26,7 @@ spec's.
 | A package's optional dependency listed under `unresolved` while another package of that name is in the tree | linked to that package | not linked | BC-1 |
 | A workspace named like a package the root aliases | links the root's or the aliased package's dependencies | links its own (`./<name>/<dep>`) | BC-2 |
 | An optional or peer dependency of the root or a workspace without a key | evaluation fails ("declares …, which bun.lock lists no entry for") | not linked; no failure | BC-3 |
-| A registry package's dependency on a workspace member | not linked | linked to the member by path, with no target dependency on it; a `bun_binary` or `bun_test` whose closure holds such a link without the member's target among its transitive `deps` (through targets that pass its `BunLibraryInfo` on: not a `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, nor a target without `BunLibraryInfo`, T124, T132) fails analysis naming the package, the dependency and the member's target; a bin target (`:node_modules/<package>/bin/<bin>`) gets those members from the hub (T081), and the members that the packages those members declare link to, through any number of members (T123), each of which must be visible to the package that calls `npm_link_all_packages`, else Bazel's visibility error names it (T089) | BC-4 |
+| A registry package's dependency on a workspace member | not linked | linked to the member by path, with no target dependency on it; a `bun_binary` or `bun_test` whose closure holds such a link without the member's target among its transitive `deps` (through targets that pass its `BunLibraryInfo` on: it counts only where every source and data file of its `BunLibraryInfo`, its `package.json` among them, is in the target's copy tree, so not through a `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, a target without `BunLibraryInfo`, or a rule that returns `BunLibraryInfo` without the member's files, T124, T132, T140) fails analysis naming the package, the dependency and the member's target; a bin target (`:node_modules/<package>/bin/<bin>`) gets those members from the hub (T081), and the members that the packages those members declare link to, through any number of members (T123), each of which must be visible to the package that calls `npm_link_all_packages`, else Bazel's visibility error names it (T089) | BC-4 |
 | A package's peer nothing provides and the lockfile does not resolve | evaluation fails (`missing_peer`) | not linked; no failure | BC-5 |
 | Two keys holding one `name@version` whose walks find different versions | one instance per key, each with its walk's version | one package, bound as Bun's row evidence decides | BC-6 |
 | A non-optional dependency whose package's `os`/`cpu` exclude the target platform | carried on every platform; its bins (`:node_modules/<package>/bin/<bin>`) compatible with every platform | not carried on that platform; its bins incompatible there, as an optional package's are (T117) | BC-7 |
@@ -48,10 +48,10 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   is not a string (T079), and a dependency map (`dependencies`, `optionalDependencies`,
   `peerDependencies`, `devDependencies`, a workspace's dependency kinds) that is not an object of
   strings (T080), and a `configVersion` that is not a whole number of at least 0 and a
-  `trustedDependencies` that is not an array of strings (T125), each naming the field without
-  printing the value;
-- a malformed `unresolved` or `optionalPeers` fails naming the entry and the field without printing
-  its value;
+  `trustedDependencies` that is not an array of strings (T125), a present JSON `null` in each of
+  these fields included (T139), each naming the field without printing the value;
+- a malformed `unresolved` or `optionalPeers`, `null` included (T139), fails naming the entry and
+  the field without printing its value;
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails
   analysis naming the package, the dependency and the member's target to add to its `deps`;
 - a package, the root or a workspace whose link to a workspace member the store makes on some
