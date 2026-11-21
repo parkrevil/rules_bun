@@ -1415,9 +1415,9 @@ red first and recorded in `tdd-log.md`.
 
 The seventh Claude review before the final gate found these; the lead rejected the gate, fixed the
 spec and research text directly (US5 scenario 2 and the 1.4.2 assumption, the Intentional
-Differences ID-8 and ID-9, research Part 4's split table) and left the rest here (the lead, under the user's delegation, 2026-11-22).
-`_NPM_DOC`'s runner labels stay with T067. Each is written red first and recorded in
-`tdd-log.md`.
+Differences ID-8 and ID-9, research Part 4's split table) and left the rest here (the lead, under
+the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with T067. Each is written red
+first and recorded in `tdd-log.md`.
 
 - [ ] T144 `bun/private/lockfile.bzl` (about L113) crashes evaluation with a bare Starlark error
   (`dict(value)`) when a row's `bin` is neither `null`, a string nor an object (`5`, `["x"]`),

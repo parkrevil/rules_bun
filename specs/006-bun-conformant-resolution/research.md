@@ -916,21 +916,22 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
 
 A present JSON `null` (T139). Bun's `get` returns a key whose value is `null` as a value (it is
-`Some`), so every site above that checks a value's type refuses `null` as it refuses any other
-value of the wrong type. `lockfile_test.bzl` `_NULL_REFUSALS` and `_NULL_CONTAINER_REFUSALS` hold
-one text per field, each with the line it fails at: `lockfileVersion` (L1829), `configVersion`
-(L1864), `trustedDependencies` (L1875), `patchedDependencies` (L1901), `overrides` (L1936),
-`catalog` (L2039), `catalogs` (L2058), `workspaces` (L2101), a workspace (L2114), a member's
-`name` (L2146) and `version` (L2164), the root's `name` (L2215), `packages` (L2313), slot 2 of a
-row (L2569), and `optionalPeers`, `unresolved` (L3377) and the four dependency maps (L3408) of the
-root, a member and a row. The pinned Bun refused each of the 29 texts with that line's message
-(`bun install --frozen-lockfile`, Linux x64, 2026-11-21). The reader read a present `null` as a
-missing key: it loaded the texts for `configVersion`, `trustedDependencies`, the dependency maps,
-`optionalPeers`, `unresolved` and a member's `version`, and evaluation crashed with a bare Starlark
-error for `patchedDependencies`, `overrides`, `catalog`, `catalogs` and `packages` (red first); the
-other texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads `null` where it reads one
-type and skips any other value: `os`, `cpu`, `libc` (`negatable_from_json_value`, npm.rs L850–L865, gives every platform),
-`bin` and `bundled` (L2351); the reader reads each as missing (`null_accepted_test`).
+`Some`), so every site above that checks a value's type refuses `null` as it refuses any other value
+of the wrong type. `lockfile_test.bzl` `_NULL_REFUSALS` and `_NULL_CONTAINER_REFUSALS` hold one text
+per field, each with the line it fails at: `lockfileVersion` (L1829), `configVersion` (L1864),
+`trustedDependencies` (L1875), `patchedDependencies` (L1901), `overrides` (L1936), `catalog`
+(L2039), `catalogs` (L2058), `workspaces` (L2101), a workspace (L2114), a member's `name` (L2146)
+and `version` (L2164), the root's `name` (L2215), `packages` (L2313), slot 2 of a row (L2569), and
+`optionalPeers`, `unresolved` (L3377) and the four dependency maps (L3408) of the root, a member and
+a row. The pinned Bun refused each of the 29 texts with that line's message (`bun install
+--frozen-lockfile`, Linux x64, 2026-11-21). The reader read a present `null` as a missing key: it
+loaded the texts for `configVersion`, `trustedDependencies`, the dependency maps, `optionalPeers`,
+`unresolved` and a member's `version`, and evaluation crashed with a bare Starlark error for
+`patchedDependencies`, `overrides`, `catalog`, `catalogs` and `packages` (red first); the other
+texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads
+`null` where it reads one type and skips any other value: `os`, `cpu`, `libc`
+(`negatable_from_json_value`, npm.rs L850–L865, gives every platform), `bin` and `bundled` (L2351);
+the reader reads each as missing (`null_accepted_test`).
 
 ## Part 5: Differences found so far
 
