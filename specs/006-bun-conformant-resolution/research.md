@@ -911,6 +911,9 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L3000 | Invalid package path | refused | `_LOADER_REFUSALS` L3000 |
 | L3377, L3386 | Expected an array / a string (`optionalPeers`, `unresolved`) | refused | `lockfile_test.bzl` `unresolved_test`, `workspace_fields_test` (T030) |
 | L3408, L3422 | Expected an object / a string (a dependency map) | refused | `lockfile_test.bzl` `dependency_maps_test` (T080) |
+| L3451 | Invalid dependency version | refused | `_LOADER_REFUSALS` L3451 |
+| L1590–L1592 (`find_resolution`) | `InvalidPackageKey` for `<key>/<dependency>` beyond the path buffer, reported as "Invalid package path" | not refused | not written: as L3470 |
+| L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
 
 A present JSON `null` (T139). Bun's `get` returns a key whose value is `null` as a value (it is
 `Some`), so every site above that checks a value's type refuses `null` as it refuses any other
@@ -925,12 +928,9 @@ root, a member and a row. The pinned Bun refused each of the 29 texts with that 
 missing key: it loaded the texts for `configVersion`, `trustedDependencies`, the dependency maps,
 `optionalPeers`, `unresolved` and a member's `version`, and evaluation crashed with a bare Starlark
 error for `patchedDependencies`, `overrides`, `catalog`, `catalogs` and `packages` (red first); the
-other texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads `null` where it reads one type and skips any other
-value: `os`, `cpu`, `libc` (`negatable_from_json_value`, npm.rs L850–L865, gives every platform),
+other texts were already refused (green on the first run). Now only a missing key is skipped. Bun loads `null` where it reads one
+type and skips any other value: `os`, `cpu`, `libc` (`negatable_from_json_value`, npm.rs L850–L865, gives every platform),
 `bin` and `bundled` (L2351); the reader reads each as missing (`null_accepted_test`).
-| L3451 | Invalid dependency version | refused | `_LOADER_REFUSALS` L3451 |
-| L1590–L1592 (`find_resolution`) | `InvalidPackageKey` for `<key>/<dependency>` beyond the path buffer, reported as "Invalid package path" | not refused | not written: as L3470 |
-| L3470 | Package path and dependency name too long | not refused | not written: the key would be a `node_modules` path beyond the 4,096-byte path buffer, which Bun's own install cannot create |
 
 ## Part 5: Differences found so far
 

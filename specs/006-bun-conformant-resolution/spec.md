@@ -209,9 +209,9 @@ writes for the corpus projects it can install, and reports zero differences.
 
 1. **Given** a corpus project's lockfile written by Bun 1.4.2, **When** the 1.4.2 conformance run
    compares it, **Then** the ruleset's resolution equals Bun 1.4.2's isolated install.
-2. **Given** a corpus project Bun 1.4.2 cannot write or install (for example an unlinked workspace,
-   which 1.4.2's loader rejects), **When** the 1.4.2 run lists its projects, **Then** that project is
-   listed as not applicable with the reason, not silently skipped.
+2. **Given** a corpus project Bun 1.4.2 cannot write or install (none today: 1.4.2 writes and
+   installs every corpus project, research R10, T091), **When** the 1.4.2 run lists its projects,
+   **Then** that project is listed as not applicable with the reason, not silently skipped.
 
 ### Edge Cases
 
@@ -323,8 +323,10 @@ writes for the corpus projects it can install, and reports zero differences.
 ### Intentional Differences
 
 The only differences between the ruleset and the pinned Bun's isolated install. The conformance
-test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 and ID-6 (the oracle
-refuses ID-5's lockfile, and the corpus uses Bun's default for ID-6):
+test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5, ID-6 and ID-9 (the oracle
+refuses ID-5's lockfile, the corpus uses Bun's default for ID-6, and no lockfile the pinned Bun
+writes reaches ID-9), and ID-8 is checked by analysis tests, not by the graph comparison. ID-7 (a
+package's dependency bound by platform) was withdrawn when BC-16 linked it:
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
   scripts; files those scripts would create are not compared, and the oracle install runs with
@@ -351,6 +353,16 @@ refuses ID-5's lockfile, and the corpus uses Bun's default for ID-6):
   linkWorkspacePackages = true` (an npm range on a workspace's name binds to the workspace) and
   reads no `bunfig.toml` (FR-003); a project setting it to `false`, where Bun binds such a range to
   an npm row (LOCKFILE L2247–L2249), links differently (user, 2026-11-21, T054).
+- **ID-8 Declared workspace members**: where a registry package links a workspace member (BC-4), a
+  target must declare the member's target in its `deps` (or analysis fails naming it), while Bun
+  links the member with no declaration, because Bazel requires everything a target uses to be
+  declared. The conformance graph links the member as Bun does; analysis tests check the
+  requirement (the lead, under the user's delegation, 2026-11-22).
+- **ID-9 Layouts the hub cannot express**: BC-12's two evaluation failures, a root or workspace
+  dependency bound to different packages by platform, and a member link the store makes on some
+  platform classes only (or to a package on others), fail evaluation where Bun would install them;
+  no lockfile the pinned Bun writes reaches either (research R4), only hand-written ones (T090,
+  T097) (the lead, under the user's delegation, 2026-11-22).
 
 ### Behavior Changes
 
@@ -499,8 +511,8 @@ Any further difference the conformance test finds is added here before it is fix
   committed, as the existing fixtures are.
 - Bun 1.4.2 is "available" wherever its archive in `versions.bzl` can be fetched as a test-only
   toolchain; it is fetched for the 1.4.2 run only (this reverses feature 004 G3's "no test downloads
-  1.4.2" for that run). Lockfiles 1.4.2 writes have no `unresolved` and no unlinked workspace, as
-  1.4.2's loader rejects the latter.
+  1.4.2" for that run). Bun 1.4.2 writes and installs every corpus project, `unresolved` and an
+  unlinked workspace among them (research R10, T091).
 - The earlier attempt's research is a starting point; every line number it cites is re-read at the
   tag before it is relied on.
 - `bin` links, `.bin` directories and file contents are out of the graph comparison; existing tests
