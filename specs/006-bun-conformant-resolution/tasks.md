@@ -903,7 +903,7 @@ The workflow's Claude review before the final gate found these; the user rejecte
 2026-11-21 to fix them first (research Part 6). Each is written red first and recorded in
 `tdd-log.md`.
 
-- [ ] T089 BC-4 for bins with a private member: `bun/private/npm_repositories.bzl` (about L490) gives
+- [X] T089 BC-4 for bins with a private member: `bun/private/npm_repositories.bzl` (about L490) gives
   `npm_bin` the members as `members = [Label(m) …]`, so Bazel checks the visibility of each member's
   `bun_library` from the hub, and a member at the default private visibility makes
   `:node_modules/<package>/bin/<bin>` fail analysis; the only fixture

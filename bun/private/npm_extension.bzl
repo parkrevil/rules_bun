@@ -472,7 +472,11 @@ Generated targets (public API, under these naming rules):
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
   `deps`, directly or through another target, or its analysis fails naming the package, the
   dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
-  targets of the workspace members its package's dependencies link to, on any platform.
+  targets of the workspace members its package's dependencies link to, on any platform. The bin
+  target is declared in the package that calls `npm_link_all_packages`, so each of those member
+  targets must be visible to that package, as it must be to any target there that has it in its
+  `deps` (for the root package, `visibility = ["//:__pkg__"]` on the member's target); otherwise
+  the build fails with Bazel's visibility error naming the member's target and the bin target.
 - `:node_modules/<package>/bin/<bin>` for each `bin` entry of such a package (a string `bin` is
   named after the package name without its scope); it runs with `bazel run` or as a build action's
   tool, with the toolchain's Bun. A bin runs when its file has a source extension or its first line

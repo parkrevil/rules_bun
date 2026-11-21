@@ -367,7 +367,12 @@ the test that shows it:
   (transitively), or analysis fails naming the package, the dependency and the member's target, as
   Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
   (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
-  package's dependencies link to (T081).
+  package's dependencies link to (T081). The bin is declared in the package that calls
+  `npm_link_all_packages`, so each such member's target must be visible to that package, the
+  visibility a target there needs to have it in its `deps`; otherwise the build fails with Bazel's
+  visibility error naming the member's target and the bin target, as no supported API lets a target
+  use another without a visibility it grants (T089, as feature 005 FR-020 does for a
+  `replace_package` archive).
 - **BC-5**: a peer nothing provides no longer fails the build; it is not linked.
 - **BC-6**: one package per `name@version`: two keys holding one `name@version` are one package,
   whose dependencies are bound once, as Bun's row evidence decides, not one instance per key with

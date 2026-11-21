@@ -4,7 +4,8 @@
 // A bin that is a JavaScript program for Node or Bun by its #! line runs with
 // the toolchain's Bun; any other fails analysis naming the reason; `bazel build
 // //...` builds no bin target (feature 005 FR-012, research D1). A bin of a package that depends on
-// a workspace member links the member as Bun links it (feature 006 BC-4).
+// a workspace member links the member as Bun links it, and needs the member visible to the package
+// that calls npm_link_all_packages() (feature 006 BC-4).
 
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
@@ -128,6 +129,37 @@ test(
     const result = await inner.run(["run", "//:node_modules/member-user/bin/member-user"]);
     expect(result.exitCode, result.stderr).toBe(0);
     expect(result.stdout.trim()).toBe("member-user member-lib");
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "BC-4: a bin whose member is not visible to the linking package fails with Bazel's visibility error",
+  async () => {
+    project("conformance_registry_to_workspace");
+    for (const file of ["package.json", "index.js"]) {
+      inner.write(`packages/member-lib/${file}`, fixture(`conformance_registry_to_workspace/packages/member-lib/${file}`));
+    }
+    // The member at the default visibility, its own package only (bazel.build concepts/visibility).
+    inner.write(
+      "packages/member-lib/BUILD.bazel",
+      'load("@rules_bun//bun:defs.bzl", "bun_library")\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n)\n',
+    );
+    const result = await inner.run(["build", "//:node_modules/member-user/bin/member-user"]);
+    console.log(result.stderr.split("\n").find((line) => line.includes("visib")));
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("target '//packages/member-lib:pkg' is not visible from");
+    expect(result.stderr).toContain("target '//:node_modules/member-user/bin/member-user'");
+
+    // Visible to the package that calls npm_link_all_packages(), the bin runs.
+    inner.write(
+      "packages/member-lib/BUILD.bazel",
+      'load("@rules_bun//bun:defs.bzl", "bun_library")\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//:__pkg__"],\n)\n',
+    );
+    const visible = await inner.run(["run", "//:node_modules/member-user/bin/member-user"]);
+    expect(visible.exitCode, visible.stderr).toBe(0);
+    expect(visible.stdout.trim()).toBe("member-user member-lib");
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,
