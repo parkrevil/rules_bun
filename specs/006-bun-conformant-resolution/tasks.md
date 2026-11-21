@@ -1267,3 +1267,67 @@ red first and recorded in `tdd-log.md`.
   `resolve.bzl` loads, and `:bun_lockfile` (about L163–L169) lacks `:platforms`, which
   `bun_lockfile.bzl` loads; add them and check every `bzl_library` against its file's `load`s
   (unrequested)
+
+---
+
+## Phase 27: Convergence
+
+- [X] T130 CRITICAL: pin by canary the two `bun.lock` fields T125 made the ruleset read.
+  `read_lockfile` in `bun/private/lockfile.bzl` (about L209–L219) now reads the values of
+  `configVersion` and `trustedDependencies` to refuse a form Bun refuses, but neither field is in
+  the format material bun.com links (feature 003 research: the blog post names `lockfileVersion`,
+  `workspaces` and `packages` only), no canary in `bun/tests/canary/npm` pins the form the pinned
+  Bun writes, and research Part 4's closed list (about L796–L797) still says each "decides no
+  binding" without an access ID. Add a canary through `support.ts` that asserts the pinned Bun
+  writes `configVersion` as a whole number ≥ 0 and `trustedDependencies` as an array of strings,
+  names `read_lockfile in bun/private/lockfile.bzl`, and has a red mode; give both an access row
+  in Part 4 with the writer lines (LOCK L373, L510–L527), the reader lines and the evidence; record
+  red and green in `tdd-log.md`, per Constitution V / FR-005 / FR-006 (contradicts)
+- [X] T131 Cover the rest of `_bin_members`' walk (`bun/private/npm_repositories.bzl` about
+  L365–L420, T123): `bins_test`'s T123 case reaches one member through another member's package
+  (`chain-w1` → `chain-helper` → `chain-w2`), but no test reaches a member through a member's
+  `workspace:` link (the Bazel package `_member_edges` adds for it) or through more than one
+  further member, while `_NPM_DOC`, spec BC-4 and the BC-4 row of `contracts/public-api.md` state
+  "through any number of members". Add a case (a member that declares another by `workspace:`,
+  whose package links a third member), red first with `_member_edges` ignoring `workspace:` links,
+  then green; or narrow the three statements to what the test covers, per BC-4 / FR-017 (partial)
+- [X] T132 Bring the T124 statements to `declared_targets_aspect` and test the attributes they
+  name: `_FILE_ATTRIBUTES` (`bun/private/library.bzl` about L41–L44) skips `srcs`, `data`,
+  `tools`, `entry_point` and `preload`, while `_NPM_DOC` (`bun/private/npm_extension.bzl` about
+  L478–L480), spec BC-4 and the BC-4 row of `contracts/public-api.md` name `srcs`, `data` and
+  `tools` only, and `bun/tests/npm/workspace_member_test.bzl` covers `data` (`through_data`) and a
+  target without `BunLibraryInfo` (`through_carrier`) only. Name all five in the three statements,
+  and add `workspace_member_test` cases for a member reached through `srcs`, `entry_point` and
+  `preload` (and `tools` through a rule in `bun/tests/npm/consumer_rules.bzl`), each failing with
+  the "add … to its deps" message, per BC-4 / FR-017 (partial)
+- [ ] T133 In T066's PR body, also give BC-4's extensions found after T106, T114 and T119 were
+  written, their T123 and T124 rows: `//bun/tests/integration:bins_test`'s T123 case red ("the hub
+  gives the bin `chain-w1` only") and green, with `conformance_member_chain` compared in both
+  conformance runs; `//bun/tests/npm:workspace_member` `through_data` and `through_carrier` red
+  and green; next to BC-4's T017 and T051 rows, per spec "Behavior Changes" (BC-4: T123, T124) /
+  SC-003 (partial)
+- [X] T134 Add T125's refusals to `contracts/public-api.md` "Diagnostics added": a `configVersion`
+  that is not a whole number ≥ 0 and a `trustedDependencies` that is not an array of strings, each
+  naming the `bun.lock` label and the field without its value, next to T079's and T080's, per plan
+  (contracts) / FR-004 (partial)
+
+---
+
+## Phase 28: Convergence
+
+- [X] T135 Run the unsandboxed gate on the final code, `bazel test //... --noenable_runfiles
+  --spawn_strategy=local --keep_going` in the root: T130–T132 added `c_rootfields_test`, a
+  `bins_test` case, four `workspace_member` cases and the corpus project
+  `conformance_member_workspace_chain` that `conformance_test` compares, and T130–T134's gate rows
+  in `tdd-log.md` record the sandboxed `bazel test //...` only (the last unsandboxed row is
+  T123–T129's); record the run in `tdd-log.md`; report a failure, do not widen the task (AGENTS.md),
+  per FR-018 / SC-006 (partial)
+- [X] T136 Complete research R11's corpus table in `specs/006-bun-conformant-resolution/research.md`:
+  it lists 11 of the 22 `bun/tests/npm/fixtures/conformance_*` projects. Add a row (layout, the BC
+  or edge case it exercises, the task that added it) for `conformance_bundled` (BC-10, T006),
+  `conformance_unfetched` (BC-8, T069), `conformance_unresolved_peer` (spec Edge Cases, T074),
+  `conformance_platform_peer` and `conformance_platform_peer_workspace` (BC-12, T077),
+  `conformance_platform_root_package` (T097), `conformance_platform_rule` (BC-13, BC-14, T096),
+  `conformance_platform_edge` (BC-15, T101), `conformance_declared_nowhere` (T111),
+  `conformance_member_chain` (BC-4, T123) and `conformance_member_workspace_chain` (BC-4, T131),
+  each checked against its `write_lockfiles.ts` entry, per plan (research R11) / FR-009 (partial)

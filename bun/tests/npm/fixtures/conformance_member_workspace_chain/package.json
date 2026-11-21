@@ -1,0 +1,10 @@
+{
+  "name": "conformance-member-workspace-chain",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "chain-cli": "1.0.0"
+  }
+}

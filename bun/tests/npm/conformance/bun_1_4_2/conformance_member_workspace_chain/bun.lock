@@ -1,0 +1,41 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-member-workspace-chain",
+      "dependencies": {
+        "chain-cli": "1.0.0",
+      },
+    },
+    "packages/chain-mid": {
+      "name": "chain-mid",
+      "version": "1.0.0",
+      "dependencies": {
+        "chain-helper": "1.0.0",
+      },
+    },
+    "packages/chain-w1": {
+      "name": "chain-w1",
+      "version": "1.0.0",
+      "dependencies": {
+        "chain-mid": "workspace:*",
+      },
+    },
+    "packages/chain-w2": {
+      "name": "chain-w2",
+      "version": "1.0.0",
+    },
+  },
+  "packages": {
+    "chain-cli": ["chain-cli@1.0.0", "http://127.0.0.1:28761/chain-cli/-/chain-cli-1.0.0.tgz", { "dependencies": { "chain-w1": "^1.0.0" }, "bin": { "chain-cli": "cli.js" } }, "sha512-XhV0BDcwPPR4ikQfwANdCNTZi3AlWYutFJ27siuKvL3trdcHE3+tHE1iMuxE7FkLO6J96HdohvuEzjFJ+onzRQ=="],
+
+    "chain-helper": ["chain-helper@1.0.0", "http://127.0.0.1:28761/chain-helper/-/chain-helper-1.0.0.tgz", { "dependencies": { "chain-w2": "^1.0.0" } }, "sha512-yMyppfUV5g9/XBP0Tu6nKtwcbN07KAl87W9v45pUA8ekkbVZDIAuecY5N37rrn+ccZsfFahGI9+Mw54Q4aK6VA=="],
+
+    "chain-mid": ["chain-mid@workspace:packages/chain-mid"],
+
+    "chain-w1": ["chain-w1@workspace:packages/chain-w1"],
+
+    "chain-w2": ["chain-w2@workspace:packages/chain-w2"],
+  }
+}

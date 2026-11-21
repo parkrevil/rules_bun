@@ -718,20 +718,33 @@ New projects in `write_lockfiles.ts`, written under `bun/tests/npm/fixtures/conf
 it exists for. New archives are packed by `pack.ts`, never served by altering a packument, so the
 oracle's tarballs carry the dependencies the lockfile records.
 
-| Project | FR-009 layout | Expected difference before (BC) |
-|---|---|---|
-| `conformance_alias_workspace` | workspace `lib` and `@scope/lib`, root aliases `lib: npm:a@1.0.0`, `@scope/lib: npm:c@1.0.0` (PRIOR U4) | BC-2 |
-| `conformance_unresolved` | package and workspace optional dependencies listed under `unresolved` (PRIOR E1, E7, E9; archive `opt-user@1.0.0`) | BC-1 |
-| `conformance_unbound` | optional and peer dependencies without a key, root and workspace (PRIOR E3, E10) | BC-3 |
-| `conformance_registry_to_workspace` | a registry package depending on a workspace member's name, resolved to the member | BC-4 |
-| `conformance_unprovided_peer` | a non-optional and an optional peer nothing provides | BC-5 |
-| `conformance_nested` | nested and hoisted keys of one `name@version` with different walks (`dependency_conflict`'s shape, deeper) | BC-6 |
-| `conformance_peer_contexts` | one package reached under two peer providers (two entries) and under one (deduped) | — |
-| `conformance_shared_peer` | two packages with an unprovided peer on one name (S5) | — |
-| `conformance_platform` | a non-optional and an optional dependency restricted to another OS | BC-7 |
-| `conformance_overrides`, `conformance_catalog` | an override of a peer's range; a `catalog:` peer | — |
+| Project | FR-009 layout | BC or edge case it exercises | Added by |
+|---|---|---|---|
+| `conformance_alias_workspace` | workspace `lib` and `@scope/lib`, root aliases `lib: npm:a@1.0.0`, `@scope/lib: npm:c@1.0.0` (PRIOR U4) | BC-2 | T007 |
+| `conformance_unresolved` | package and workspace optional dependencies listed under `unresolved` (PRIOR E1, E7, E9; archive `opt-user@1.0.0`) | BC-1 | T007 |
+| `conformance_unbound` | optional and peer dependencies without a key, root and workspace (PRIOR E3, E10) | BC-3 | T007 |
+| `conformance_registry_to_workspace` | a registry package depending on a workspace member's name, resolved to the member | BC-4 | T007 |
+| `conformance_unprovided_peer` | a non-optional and an optional peer nothing provides | BC-5 | T007 |
+| `conformance_nested` | nested and hoisted keys of one `name@version` with different walks (`dependency_conflict`'s shape, deeper) | BC-6 | T007 |
+| `conformance_peer_contexts` | one package reached under two peer providers (two entries) and under one (deduped) | — | T007 |
+| `conformance_shared_peer` | two packages with an unprovided peer on one name (S5) | — | T007 |
+| `conformance_platform` | a non-optional and an optional dependency restricted to another OS | BC-7 | T007 |
+| `conformance_overrides`, `conformance_catalog` | an override of a peer's range; a `catalog:` peer | — | T007 |
+| `conformance_bundled` | `bundler@1.0.0` with `bundleDependencies`, whose bundled `b` Bun writes as `bundler/b` with `bundled: true`, beside the root's `b@2.0.0` | BC-10 | T006 |
+| `conformance_unfetched` | `a@1.0.0` patched with `bun patch` (an entry Bun does not fetch, `unsupported_reason`), with its dependency `b ^1.0.0` | BC-8 | T069 |
+| `conformance_unresolved_peer` | `ident-a`'s peer `state` whose only provider on its chain is `opt-user`'s optional `state ^3.0.0`, listed under `unresolved`, while `state2-user` holds `state@2.0.0` and the root declares no `state` | spec Edge Cases | T074 |
+| `conformance_platform_peer` | `plat-peer-host`'s `p`, whose peer `q` is provided up the chain by `plat-peer-host`'s optional `q: npm:q-darwin@1.0.0` (darwin) and by the root's `q@1.0.0` elsewhere | BC-12 | T077 |
+| `conformance_platform_peer_workspace` | workspace `w`'s `p`, whose peer `q` is provided by `w`'s optional `q: npm:q-darwin@1.0.0` (darwin) and by the root's `q@1.0.0` elsewhere | BC-12 | T077 |
+| `conformance_platform_root_package` | workspace `w`'s peer `plat-p: ^1.0.0` and the root's optional `plat-p@2.0.0`, restricted to darwin, whose bins differ from `plat-p@1.0.0`'s: a link whose root could be a different package by platform, which Bun's lockfile binds to the root's one package | BC-12 (the case Bun does not write) | T097 |
+| `conformance_platform_rule` | `rule-user`'s optional `rule-linux-any` (`os: ["linux", "any"]`), `rule-any-linux` (`["any", "linux"]`) and `rule-libc-glibc` (`libc: glibc`, no `os`) | BC-13, BC-14 | T096 |
+| `conformance_platform_edge` | `native`'s optional `native-linux-x64-musl` (`libc: musl`), which the root depends on as well | BC-15 | T101 |
+| `conformance_declared_nowhere` | the root's optional `bin-sunos` (`os: sunos`, a bin) and `nomatch-aix-ppc64` (`cpu: ppc64`), workspace `w`'s non-optional `nomatch-sunos-x64` and optional `bin-sunos`: declared dependencies the store links on no platform class, each keeping its `:node_modules/<package>` target | BC-7; SC-005 | T111 |
+| `conformance_member_chain` | the root's `chain-cli` (a bin) depends on member `chain-w1`, which declares the registry package `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members across two workspace boundaries) | T123 |
+| `conformance_member_workspace_chain` | the root's `chain-cli` depends on member `chain-w1`, which declares member `chain-mid` by `workspace:*`, which declares `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members through a `workspace:` link and more than one further member) | T131 |
 
-The existing `overrides_*`, `catalog`, `hoisted`, `workspace*`, `missing_peer` fixtures also count.
+T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
+its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
+`overrides_*`, `catalog`, `hoisted`, `workspace*`, `missing_peer` fixtures also count.
 
 ### R12. Canaries
 
@@ -785,6 +798,8 @@ New accesses:
 | L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, git, GitHub, `link:`) | LOCK L2346, L2557–L2591 (writer L720–L728) | `unsupported` (`local`, `tb`); E12 | C-ROWINFO (T075) |
 | L32 | a row's `devDependencies` | LOCK L1478–L1483, L3405–L3490 (writer L950–L1004 for a folder, resolver_hooks.rs L1251–L1256 `Features::FOLDER`) | E13 | C-ROWDEVDEPS (T075) |
 | L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284; writer L1184–L1240) | E14 | C-WSOPTPEERS (T075) |
+| L34 | top-level `configVersion` (read only to refuse what Bun refuses, T125) | LOCK L1861–L1869 (writer L373: a whole number) | E15 | C-ROOTFIELDS (T130) |
+| L35 | top-level `trustedDependencies` (read only to refuse what Bun refuses, T125) | LOCK L1871–L1888 (writer L510–L527: an array of the names) | E15 | C-ROOTFIELDS (T130) |
 
 The list is closed (T050): every `root.get(...)`/`value.get(...)`/`info.get(...)` of LOCK
 L1797–3543 at `bun-v1.4.4`, and each slot of a `packages` row, is an access with a canary or read by
@@ -793,8 +808,8 @@ Bun and deciding no binding:
 | Bun reads | Lines | Access |
 |---|---|---|
 | `lockfileVersion` | L1815 | L2 |
-| `configVersion` | L1861 | decides no binding (the default linker of a later install; this one is `--linker isolated`) |
-| `trustedDependencies` | L1872 | decides no binding (lifecycle scripts, ID-1) |
+| `configVersion` | L1861 | L34 (read only to refuse what Bun refuses; the value decides no binding: the default linker of a later install, and this one is `--linker isolated`) |
+| `trustedDependencies` | L1872 | L35 (read only to refuse what Bun refuses; the value decides no binding: lifecycle scripts, ID-1) |
 | `patchedDependencies` | L1899 | L20 (a patched package is unfetched, ID-4) |
 | `packageExtensions` | L1928 | L27 (not read: the rows carry the extended dependencies) |
 | `overrides` | L1934 | L18 |
@@ -1068,3 +1083,8 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   `peerDependenciesMeta { q: { optional: true } }` is written as
   `"packages/w": { "name": "w", "version": "1.0.0", "peerDependencies": { "q": "^1.0.0" },
   "optionalPeers": ["q"] }`; without the meta, no `optionalPeers`.
+- **E15** (C-ROOTFIELDS, T130): a project declaring `dependencies { a: "1.0.0" }` and
+  `trustedDependencies: ["a"]` is written as `"configVersion": 1` (LOCK L373; a project without a
+  lockfile gets `ConfigVersion::CURRENT`, lockfile.rs L558) and `"trustedDependencies": ["a"]`
+  (LOCK L510–L527); a `--frozen-lockfile` install loads that text and keeps it. With either field
+  removed from the held lockfile, a frozen install keeps the text without it.

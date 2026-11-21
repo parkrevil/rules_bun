@@ -476,9 +476,9 @@ Generated targets (public API, under these naming rules):
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
   `deps`, directly or through other targets, whatever rules build them (any rule returning
   `BunLibraryInfo`), as long as each passes the `BunLibraryInfo` on: a target reached through a
-  `srcs`, `data` or `tools` attribute, or through a target that does not return `BunLibraryInfo`,
-  is not counted. Otherwise its analysis fails naming the package, the dependency and the target to
-  add. A bin target (below) has no `deps`: the hub gives it the
+  `srcs`, `data`, `tools`, `entry_point` or `preload` attribute, or through a target that does not
+  return `BunLibraryInfo`, is not counted. Otherwise its analysis fails naming the package, the
+  dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
   targets of the workspace members its package's dependencies link to, on any platform, and of the
   members that the packages those members declare in their `package.json` link to, through any
   number of members. The bin

@@ -6,7 +6,8 @@
 // //...` builds no bin target (feature 005 FR-012, research D1). A bin of a package that depends on
 // a workspace member links the member as Bun links it, and needs the member visible to the package
 // that calls npm_link_all_packages() (feature 006 BC-4), also a member reached through another
-// member's packages (T123).
+// member's packages (T123), and through a member's `workspace:` link and more than one further
+// member (T131).
 
 import { afterAll, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync } from "node:fs";
@@ -193,6 +194,40 @@ test(
     console.log(errorLine(result.stderr));
     expect(result.exitCode, result.stderr).toBe(0);
     expect(result.stdout.trim()).toBe("chain-cli chain-w1 chain-helper chain-w2");
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "BC-4: a bin reaches a workspace member through a member's workspace: link and two further members (T131)",
+  async () => {
+    // chain-cli -> member chain-w1 -workspace:-> member chain-mid -> registry chain-helper -> member chain-w2.
+    project("conformance_member_workspace_chain");
+    // The earlier tests' members would be workspace members of this project too.
+    rmSync(join(inner.dir, "packages"), { recursive: true, force: true });
+    for (const member of ["chain-w1", "chain-mid", "chain-w2"]) {
+      for (const file of ["package.json", "index.js"]) {
+        inner.write(`packages/${member}/${file}`, fixture(`conformance_member_workspace_chain/packages/${member}/${file}`));
+      }
+    }
+    const library = (deps: string) =>
+      `load("@npm//:defs.bzl", "npm_link_all_packages")\nload("@rules_bun//bun:defs.bzl", "bun_library")\n\nnpm_link_all_packages()\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//visibility:public"],\n    deps = [${deps}],\n)\n`;
+    // chain-w1 links chain-mid's target through its `workspace:` dependency.
+    inner.write("packages/chain-w1/BUILD.bazel", library('":node_modules/chain-mid"'));
+    inner.write("packages/chain-mid/BUILD.bazel", library('":node_modules/chain-helper"'));
+    inner.write(
+      "packages/chain-w2/BUILD.bazel",
+      'load("@rules_bun//bun:defs.bzl", "bun_library")\n\nbun_library(\n    name = "pkg",\n    srcs = ["index.js"],\n    data = ["package.json"],\n    visibility = ["//visibility:public"],\n)\n',
+    );
+    // The T123 test's build left chain-w1's link to chain-helper in the output tree, which the
+    // launcher refuses as an earlier build's link until `bazel clean` (feature 003 T122).
+    const clean = await inner.run(["clean"]);
+    expect(clean.exitCode, clean.stderr).toBe(0);
+    const result = await inner.run(["run", "//:node_modules/chain-cli/bin/chain-cli"]);
+    console.log(errorLine(result.stderr));
+    expect(result.exitCode, result.stderr).toBe(0);
+    expect(result.stdout.trim()).toBe("chain-cli chain-w1 chain-mid chain-helper chain-w2");
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,

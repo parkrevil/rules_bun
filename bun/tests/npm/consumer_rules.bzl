@@ -11,13 +11,17 @@ def _consumer_library_impl(ctx):
         DefaultInfo(files = depset(ctx.files.srcs)),
     ]
 
-# A library built by a consumer's own rule. It passes nothing of `extras` on (T124).
+# A library built by a consumer's own rule. It passes nothing of `extras`, `entry_point`, `preload`
+# or `tools` on (T124, T132).
 consumer_library = rule(
     implementation = _consumer_library_impl,
     attrs = {
         "data": attr.label_list(allow_files = True),
+        "entry_point": attr.label(allow_files = True),
         "extras": attr.label_list(),
+        "preload": attr.label_list(allow_files = True),
         "srcs": attr.label_list(allow_files = True),
+        "tools": attr.label_list(cfg = "exec"),
     },
 )
 

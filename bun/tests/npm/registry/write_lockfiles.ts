@@ -559,6 +559,37 @@ const projects: Record<string, Project> = {
       assert(lock.packages["chain-helper"][2].dependencies?.["chain-w2"] === "^1.0.0", "chain-helper does not depend on chain-w2");
     },
   },
+  // BC-4 through a `workspace:` link and more than one further member (T131): chain-cli depends on
+  // the member chain-w1, which declares the member chain-mid by `workspace:`, which declares
+  // chain-helper, which depends on the member chain-w2; a bin of chain-cli needs chain-w1 and
+  // chain-w2 (chain-w1's target carries chain-mid).
+  conformance_member_workspace_chain: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-member-workspace-chain",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { "chain-cli": "1.0.0" },
+      }),
+      "packages/chain-w1/package.json": json({ name: "chain-w1", version: "1.0.0", main: "index.js", dependencies: { "chain-mid": "workspace:*" } }),
+      "packages/chain-w1/index.js": 'module.exports = { name: `chain-w1 ${require("chain-mid").name}` };\n',
+      "packages/chain-w1/BUILD.bazel": STUB_BUILD,
+      "packages/chain-mid/package.json": json({ name: "chain-mid", version: "1.0.0", main: "index.js", dependencies: { "chain-helper": "1.0.0" } }),
+      "packages/chain-mid/index.js": 'module.exports = { name: `chain-mid ${require("chain-helper").name}` };\n',
+      "packages/chain-mid/BUILD.bazel": STUB_BUILD,
+      "packages/chain-w2/package.json": json({ name: "chain-w2", version: "1.0.0", main: "index.js" }),
+      "packages/chain-w2/index.js": 'module.exports = { name: "chain-w2" };\n',
+      "packages/chain-w2/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      for (const member of ["chain-w1", "chain-mid", "chain-w2"]) {
+        assert(slot0(lock, member) === `${member}@workspace:packages/${member}`, `${member} is not the workspace`);
+      }
+      assert(lock.workspaces["packages/chain-w1"].dependencies?.["chain-mid"] === "workspace:*", "chain-w1 does not declare chain-mid by workspace:");
+      assert(lock.packages["chain-cli"][2].dependencies?.["chain-w1"] === "^1.0.0", "chain-cli does not depend on chain-w1");
+      assert(lock.packages["chain-helper"][2].dependencies?.["chain-w2"] === "^1.0.0", "chain-helper does not depend on chain-w2");
+    },
+  },
   // FR-009, BC-5: a non-optional and an optional peer nothing provides (no version of state
   // matches ^3.0.0), in the root's and a workspace's tree.
   conformance_unprovided_peer: {

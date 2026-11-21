@@ -364,8 +364,8 @@ the test that shows it:
   the build; it is not linked.
 - **BC-4**: a registry package's dependency on a workspace member is linked to that member, by
   path; a target whose closure holds such a link must declare the member's target in its `deps`
-  (transitively, through targets that pass its `BunLibraryInfo` on: not through a `srcs`, `data` or
-  `tools` attribute or a target without `BunLibraryInfo`, T124), or analysis fails naming the package, the dependency and the member's target, as
+  (transitively, through targets that pass its `BunLibraryInfo` on: not through a `srcs`, `data`,
+  `tools`, `entry_point` or `preload` attribute or a target without `BunLibraryInfo`, T124, T132), or analysis fails naming the package, the dependency and the member's target, as
   Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
   (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
   package's dependencies link to (T081), and, through any number of members, the members that the

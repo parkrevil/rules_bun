@@ -60,12 +60,24 @@ def workspace_member_test_suite(name):
     bun_library(name = name + "_data", data = [_MEMBER], tags = ["manual"])
     consumer_carrier(name = name + "_carrier", targets = [_MEMBER], tags = ["manual"])
     consumer_library(name = name + "_extras", extras = [name + "_carrier"], tags = ["manual"])
+
+    # The other attributes the aspect skips (T132): a library's `srcs`, and a consumer's library's
+    # `entry_point`, `preload` and `tools` (the aspect walks a program's `deps` only, so these
+    # attributes matter on a target there that returns `BunLibraryInfo`).
+    bun_library(name = name + "_srcs", srcs = [_MEMBER], tags = ["manual"])
+    consumer_library(name = name + "_entry_point", entry_point = _MEMBER, tags = ["manual"])
+    consumer_library(name = name + "_preload", preload = [_MEMBER], tags = ["manual"])
+    consumer_library(name = name + "_tools", tools = [_MEMBER], tags = ["manual"])
     cases = [
         ("declared", _declared_test, [_FIXTURE + ":node_modules/member-user", _MEMBER]),
         ("declared_through_rule", _declared_test, [_FIXTURE + ":node_modules/member-user", name + "_wrapper"]),
         ("undeclared", _undeclared_test, [_FIXTURE + ":node_modules/member-user"]),
         ("through_data", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_data"]),
         ("through_carrier", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_extras"]),
+        ("through_srcs", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_srcs"]),
+        ("through_entry_point", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_entry_point"]),
+        ("through_preload", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_preload"]),
+        ("through_tools", _undeclared_test, [_FIXTURE + ":node_modules/member-user", name + "_tools"]),
     ]
     tests = []
     for suffix, rule, deps in cases:

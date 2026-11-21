@@ -209,10 +209,11 @@ def read_lockfile(text, file):
     # Bun refuses a `configVersion` that is not a number, or is a fraction or below 0 (LOCK
     # L1860-L1869, ConfigVersion.rs `from_expr`), and a `trustedDependencies` that is not an array
     # of strings (LOCK L1871-L1888); neither decides a binding, and the value is not printed (T125).
-    config_version = lock.get("configVersion")
+    # Canary C-ROOTFIELDS pins the form the pinned Bun writes for each (T130).
+    config_version = lock.get("configVersion")  # L34
     if config_version != None and (type(config_version) not in ["int", "float"] or config_version < 0 or config_version != int(config_version)):
         return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"configVersion\"): Invalid \"configVersion\". Expected a number".format(file))
-    trusted = lock.get("trustedDependencies")
+    trusted = lock.get("trustedDependencies")  # L35
     if trusted != None and type(trusted) != "list":
         return _error("{}: Bun 1.4.4 refuses to load this lockfile (the field \"trustedDependencies\"): Expected an array".format(file))
     if [name for name in (trusted or []) if type(name) != "string"]:
