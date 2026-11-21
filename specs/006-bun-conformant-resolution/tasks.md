@@ -1130,7 +1130,7 @@ recorded in `tdd-log.md`.
 
 ## Phase 23: Convergence
 
-- [ ] T114 In T066's PR body, also give the tests that showed each change found after T106 was
+- [X] T114 In T066's PR body, also give the tests that showed each change found after T106 was
   written: BC-16 its T107 rows (red on `main`'s resolver in a worktree with the `4a5419e2`
   lockfile; green `resolve`, `platforms`, `graph` and `conformance_test`); BC-13's extension to
   `netbsd` and `riscv64` its T112 rows (`platforms_bun_rule_test` red and green); the kept
@@ -1190,7 +1190,7 @@ recorded in `tdd-log.md`.
 
 ## Phase 25: Convergence
 
-- [ ] T119 In T066's PR body, also give BC-7's effect on bins, found after T106 and T114 were
+- [X] T119 In T066's PR body, also give BC-7's effect on bins, found after T106 and T114 were
   written, its T117 rows: `//bun/tests/integration:restricted_test` red on `main`'s code in a
   worktree (`//:node_modules/bin-darwin/bin/dbin` builds for `//:linux_x64`) and green on the
   branch (incompatible on `//:linux_x64`, buildable on `//:darwin_arm64`), next to BC-7's T017 and
@@ -1300,7 +1300,7 @@ red first and recorded in `tdd-log.md`.
   and add `workspace_member_test` cases for a member reached through `srcs`, `entry_point` and
   `preload` (and `tools` through a rule in `bun/tests/npm/consumer_rules.bzl`), each failing with
   the "add … to its deps" message, per BC-4 / FR-017 (partial)
-- [ ] T133 In T066's PR body, also give BC-4's extensions found after T106, T114 and T119 were
+- [X] T133 In T066's PR body, also give BC-4's extensions found after T106, T114 and T119 were
   written, their T123 and T124 rows: `//bun/tests/integration:bins_test`'s T123 case red ("the hub
   gives the bin `chain-w1` only") and green, with `conformance_member_chain` compared in both
   conformance runs; `//bun/tests/npm:workspace_member` `through_data` and `through_carrier` red
@@ -1336,13 +1336,13 @@ red first and recorded in `tdd-log.md`.
 
 ## Phase 29: Convergence
 
-- [ ] T137 In T066's PR body, give every test change `tdd-log.md` records as "FR-016 change", not
+- [X] T137 In T066's PR body, give every test change `tdd-log.md` records as "FR-016 change", not
   only T048's: also T039's (`bun/tests/npm/lockfile_test.bzl` `kinds_test`, BC-8), T076's
   (`bun/tests/npm/uniqueness_test.bzl` `peer`, `peer_chain`, BC-11) and T077's
   (`bun/tests/npm/resolve_test.bzl` `platform_holder_error_test`, now `platform_holder_test`,
   BC-12), each with the BC it follows; T066 names "the FR-016 list of changed tests (T048)" only,
   per FR-016 (partial)
-- [ ] T138 In T066's PR body, also give the BC-4 tests T131 and T132 added after T133 was written,
+- [X] T138 In T066's PR body, also give the BC-4 tests T131 and T132 added after T133 was written,
   next to T133's rows: `//bun/tests/integration:bins_test`'s T131 case (red with `_member_edges`
   ignoring `workspace:` links, green restored) and `conformance_member_workspace_chain` compared in
   both conformance runs, which show "through any number of members"; and
@@ -1378,3 +1378,19 @@ red first and recorded in `tdd-log.md`.
 - [X] T141 `bun/tests/npm/fixtures/dependency_conflict/BUILD.bazel` and a comment in
   `bun/tests/npm/registry/write_lockfiles.ts` still say the ruleset must reject that lockfile;
   since BC-6 it accepts it (`uniqueness_test.bzl`). Correct both comments (unrequested)
+
+---
+
+## Phase 30: Convergence
+
+- [X] T142 In T066's PR body, also give the tests of the spec's "Behavior Changes" that no PR-body
+  task names yet (T066, T106, T114, T119, T133, T137, T138), each with its `tdd-log.md` rows next to
+  its BC: BC-4 T081 (`//bun/tests/npm:workspace_member` `bin_test` red and green,
+  `//bun/tests/integration:bins_test`), T089 (`bins_test` "a bin whose member is not visible to the
+  linking package fails with Bazel's visibility error") and T140 (`workspace_member`
+  `through_extras` red and green); BC-12 T090 (`//bun/tests/npm:resolve` `platform_member_test`,
+  red with `class_member_conflict` stubbed) and T097 (`platform_root_package_test`,
+  `conformance_platform_root_package`); BC-13 T110 (`platform_rule_raw` under
+  `bun/tests/npm/conformance/accepted/`, compared with both oracles). Then check that every task ID
+  the spec's "Behavior Changes" cites has its rows in the body, per spec "Behavior Changes" ("listed
+  again in the PR with the test that shows it") / SC-003 (partial)
