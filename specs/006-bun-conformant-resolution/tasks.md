@@ -998,3 +998,15 @@ recorded in `tdd-log.md`.
   with platform-specific packages (an esbuild-like set of about 20 per-platform optional packages
   under many dependents) so every class builds its store, keep the 10 s bound (plan R13), and
   record the times in `tdd-log.md`, per SC / plan R13 (partial)
+- [ ] T101 Codex's branch review (high): `bun/private/resolve.bzl` (about L275–L280) keeps an edge
+  when any platform class has it, so platform conditions on edges are lost. Example: root
+  dependencies `a` and `b`, `a` optionally depending on `b`, `b` declaring `libc: ["musl"]`; on
+  glibc the carried-over store omits `a → b` but keeps the root's required `root → b`; after the
+  merge `a`'s edges hold `b`, and `run.bzl` (about L407–L414) links it whenever `b` is among the
+  target's instances, so declaring `b` changes what `a` sees, against the graph equality. The
+  conformance graph (`bun/tests/npm/conformance/graph.bzl` about L103) hides it by requiring both
+  ends in one link's closure, while a run combines closures. Write the glibc regression red first
+  (an analysis or integration test combining `a` and `b`), make the conformance graph reflect the
+  combined closure a run sees, then carry each edge's platform classes and select edges for the
+  target platform before layout (as BC-12 selects roots); record green, per P1 / FR-008 / BC-12
+  (contradicts)
