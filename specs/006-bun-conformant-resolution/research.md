@@ -478,10 +478,17 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   dependency's row to the root when nothing there conflicts (experiment: `plat-r-host` with
   `r: npm:r-darwin@1.0.0` and `p`'s optional peer `r` is written with the key `r`, not
   `plat-r-host/r`), so the row is on the peer's key path, the peer resolves, and the lookup marks
-  the parent; a conflicting root `r` would provide the peer on every class. No Bun-written lockfile
-  reaching it was found, so it keeps its error (`the store links "<alias>" of <package> to
-  different packages on different platforms, which rules_bun cannot express`); `resolve_test.bzl`
-  `platform_entry_error_test` reaches it with a hand-written lockfile.
+  the parent; a conflicting root `r` would provide the peer on every class. Bun 1.4.4 was not seen
+  writing a lockfile that reaches it. Bun 1.4.2 writes one: for `conformance_platform_peer`, in 5
+  of 6 runs (T091), it resolves the root's `q: "1.0.0"` to the row `"q": ["q-darwin@1.0.0", …,
+  { "os": "darwin" }]` and writes no `plat-peer-host/q`, so off darwin the root's `q` is disabled
+  and `plat-peer-host`'s `p` binds its peer `q` to `q-darwin@1.0.0` on darwin and to nothing
+  elsewhere, while `plat-peer-host` (no peers) is one entry; Bun 1.4.4's and 1.4.2's frozen
+  installs both accept it. The error stays (`the store links "<alias>" of <package> to different
+  packages on different platforms, which rules_bun cannot express`) as **ID-7** (the lead, under
+  the user's delegation, 2026-11-21, Part 6); `resolve_test.bzl` `platform_entry_error_test`
+  reaches it with that Bun-written lockfile (`bun/tests/npm/conformance/id_7/bun.lock`, md5
+  `4a5419e2`), which no conformance run compares.
 - **A member link** (T090): the hub links a workspace member by path on every platform (BC-4),
   so a member link of an entry or a holder must be the same on every class that entry or holder
   exists on. The pinned Bun writes no lockfile where it is not: a workspace row has no `os`, `cpu`
@@ -578,8 +585,12 @@ macOS and Windows. Its oracle is then a registered toolchain's Bun.
 
 Lockfiles: `write_lockfiles.ts` gains `--bun-1-4-2`, run by hand with Bun 1.4.2, writing
 `bun/tests/npm/conformance/bun_1_4_2/<project>/bun.lock` for each corpus project 1.4.2 can write;
-the others are listed with the reason (unlinked workspace: 1.4.2's loader rejects it, LOCK-142
-L2479–2490; `unresolved`: 1.4.2 does not write it).
+a project it cannot write or install would be listed with the reason in
+`bun/tests/npm/conformance/not_applicable_1_4_2.ts`. Planning expected two (an unlinked workspace,
+which 1.4.2's loader was read to reject, LOCK-142 L2479–2490; `unresolved`, which 1.4.2 was read
+not to write), but run with the 1.4.2 oracle, Bun 1.4.2 writes and installs every corpus project
+(T091, `tdd-log.md`), so the list is empty and no project is not applicable. Its usual lockfile
+for `conformance_platform_peer` differs from the committed one and reaches ID-7 (R4).
 
 ### R11. The edge-case corpus
 

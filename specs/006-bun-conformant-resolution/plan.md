@@ -30,7 +30,8 @@ the user approved all of them at the plan gate on 2026-10-29. The conformance te
 directories), BC-12 (per-platform roots through `select()`), ID-5 (Bun's registry-dependent
 integrity refusal not reproduced) and ID-6 (Bun's default `linkWorkspacePackages`) were approved on
 2026-11-21, as were BC-13 and BC-14 (Bun's platform rule, research R3), so the Behavior Changes
-are BC-1…BC-14 and the Intentional Differences ID-1…ID-6.
+are BC-1…BC-14 and the Intentional Differences ID-1…ID-7 (ID-7 decided by the lead under the
+user's delegation, 2026-11-21).
 
 ## Technical Context
 

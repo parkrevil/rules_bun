@@ -920,7 +920,7 @@ The workflow's Claude review before the final gate found these; the user rejecte
   first, then treat member links per class as BC-12 treats edges (selected by platform, or the
   existing English error where R4 shows the pinned Bun cannot write the layout); record green, per
   BC-12 / FR-015 (contradicts)
-- [ ] T091 Research R10 (`research.md` about L570) says projects Bun 1.4.2 cannot write are listed
+- [X] T091 Research R10 (`research.md` about L570) says projects Bun 1.4.2 cannot write are listed
   (example: an unlinked workspace), but `bun/tests/npm/conformance/not_applicable_1_4_2.ts` is empty
   and `tdd-log.md` (about L110) records that 1.4.2 wrote `conformance_alias_workspace`. Establish
   with the 1.4.2 oracle which corpus projects 1.4.2 refuses or links differently; if some exist,
@@ -936,7 +936,7 @@ The workflow's Claude review before the final gate found these; the user rejecte
 
 ## Phase 18: Convergence
 
-- [ ] T093 Decided (the lead, under the user's delegation, 2026-11-21, research Part 6): keep the
+- [X] T093 Decided (the lead, under the user's delegation, 2026-11-21, research Part 6): keep the
   error as ID-7 and pin it with the Bun-written `4a5419e2` lockfile, committed as the fixture of the
   analysis test that today uses a hand-written one (`platform_entry_error_test`). Settle the
   Bun-written lockfile T091 found reaching the entry error: Bun 1.4.2 writes

@@ -409,7 +409,9 @@ the test that shows it:
 - **BC-12**: an alias the pinned Bun's store binds to different packages on different platform
   classes is linked per target platform, through `select()` on the `[os, cpu, libc]` classes the
   hub already selects optional links by (`conformance_platform_peer`,
-  `conformance_platform_peer_workspace`; user, 2026-11-21, T077).
+  `conformance_platform_peer_workspace`; user, 2026-11-21, T077). This holds for a dependency of
+  the root or a workspace; a package entry's dependency bound by platform keeps an evaluation
+  error (ID-7).
 - **BC-13**: a package's `os` or `cpu` list is read as Bun's `Negatable` reads it, where `any`
   and the order of entries can decide differently from npm's `checkList` (`["linux", "any"]`:
   every OS in Bun, only Linux on `main`) (research R3; user, 2026-11-21).

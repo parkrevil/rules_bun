@@ -1,9 +1,10 @@
 """Dev-only module extension: the pure npm modules' results on the fixture projects.
 
 Starlark unit tests cannot read files, so this extension reads `bun.lock` and `package.json` of
-every project under `bun/tests/npm/fixtures/` (as the pinned Bun wrote them) with `module_ctx.read`,
-runs the readers on them, and writes the results into `@npm_fixture_results//:results.bzl`, which
-the unit tests load. The readers are thus tested on real lockfiles through the real read path.
+every project under `bun/tests/npm/fixtures/` (as the pinned Bun wrote them) and of the lockfiles
+`_EXTRA` names with `module_ctx.read`, runs the readers on them, and writes the results into
+`@npm_fixture_results//:results.bzl`, which the unit tests load. The readers are thus tested on
+real lockfiles through the real read path.
 
 It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph per platform class
 of every project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
@@ -72,29 +73,41 @@ def _graphs(module_ctx, root):
         graphs[name] = result if type(result) == "dict" else {"classes": result}
     return graphs
 
+# Lockfiles the unit tests read that no conformance run compares, by `RESULTS` key: `id_7` is the
+# lockfile Bun 1.4.2 writes for `conformance_platform_peer` in most runs (feature 006 T091), which
+# reaches the error feature 006's ID-7 keeps.
+_EXTRA = {
+    "id_7": "//bun/tests/npm/conformance:id_7/bun.lock",
+}
+
+def _result(module_ctx, project, file):
+    """The readers' results on one project directory."""
+    manifest = project.get_child("package.json")
+    text = module_ctx.read(project.get_child("bun.lock"))
+    lockfile = read_lockfile(text, file)
+    members = {}
+    for path in (lockfile.value.workspaces.keys() if lockfile.value else []):
+        member = project.get_child(path).get_child("package.json") if path else None
+        if member and member.exists:
+            members[path] = module_ctx.read(member)
+    return {
+        "text": text,
+        "lockfile": lockfile,
+        "resolution": resolve(lockfile.value) if lockfile.value else None,
+        "manifest": module_ctx.read(manifest) if manifest.exists else None,
+        "members": members,
+    }
+
 def _fixture_results_impl(module_ctx):
     fixtures = module_ctx.path(Label("//bun/tests/npm/fixtures/basic:bun.lock")).dirname.dirname
     results = {}
     for project in fixtures.readdir():
-        lock = project.get_child("bun.lock")
-        if not lock.exists:
+        if not project.get_child("bun.lock").exists:
             continue
-        file = "bun/tests/npm/fixtures/{}/bun.lock".format(project.basename)
-        manifest = project.get_child("package.json")
-        text = module_ctx.read(lock)
-        lockfile = read_lockfile(text, file)
-        members = {}
-        for path in (lockfile.value.workspaces.keys() if lockfile.value else []):
-            member = project.get_child(path).get_child("package.json") if path else None
-            if member and member.exists:
-                members[path] = module_ctx.read(member)
-        results[project.basename] = {
-            "text": text,
-            "lockfile": lockfile,
-            "resolution": resolve(lockfile.value) if lockfile.value else None,
-            "manifest": module_ctx.read(manifest) if manifest.exists else None,
-            "members": members,
-        }
+        results[project.basename] = _result(module_ctx, project, "bun/tests/npm/fixtures/{}/bun.lock".format(project.basename))
+    for key, lock in _EXTRA.items():
+        label = Label(lock)
+        results[key] = _result(module_ctx, module_ctx.path(label).dirname, "{}/{}".format(label.package, label.name))
     root = module_ctx.path(Label("//:MODULE.bazel")).dirname
     _results_repo(
         name = "npm_fixture_results",

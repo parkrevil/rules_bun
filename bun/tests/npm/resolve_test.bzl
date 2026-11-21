@@ -302,23 +302,13 @@ def _platform_holder_test_impl(ctx):
 def _platform_entry_error_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # host@1.0.0's p binds its optional peer r to host's r-darwin@1.0.0 on darwin; elsewhere that
-    # dependency is disabled and no row resolves the peer, so p links no r, while host's own entry
-    # (no peers) is one entry on every platform (T077). The pinned Bun hoists such an r to the root,
-    # so it writes no such lockfile; this one is written by hand.
-    text = json.encode({
-        "lockfileVersion": 2,
-        "workspaces": {"": {"name": "inline", "dependencies": {"host": "1.0.0"}}},
-        "packages": {
-            "host": ["host@1.0.0", "", {"dependencies": {"p": "1.0.0"}, "optionalDependencies": {"r": "npm:r-darwin@1.0.0"}}, "sha512-AAAA"],
-            "host/r": ["r-darwin@1.0.0", "", {"os": "darwin"}, "sha512-AAAA"],
-            "p": ["p@1.0.0", "", {"peerDependencies": {"r": "^1.0.0"}, "optionalPeers": ["r"]}, "sha512-AAAA"],
-        },
-    })
-    lock = read_lockfile(text, "inline/bun.lock")
-    asserts.equals(env, None, lock.error)
-    result = resolve(lock.value, "inline/bun.lock")
-    asserts.true(env, result.error != None and 'the store links "p" of host@1.0.0 to different packages on different platforms' in result.error, result.error)
+    # The lockfile Bun 1.4.2 writes for conformance_platform_peer in most runs (T091): its root's
+    # q is q-darwin@1.0.0, disabled off darwin, so plat-peer-host's p binds its peer q to it on
+    # darwin and to nothing elsewhere, while plat-peer-host (no peers) is one entry on every
+    # platform. Bun 1.4.4 and 1.4.2 install it; the ruleset keeps the error (feature 006 ID-7).
+    result = RESULTS["id_7"]["resolution"]
+    asserts.equals(env, None, result["value"])
+    asserts.equals(env, 'bun.lock: the store links "p" of plat-peer-host@1.0.0 to different packages on different platforms, which rules_bun cannot express', result["error"])
     return unittest.end(env)
 
 def _graph(holders = {}, nodes = {}):

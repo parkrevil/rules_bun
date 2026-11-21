@@ -16,7 +16,7 @@ change.
 
 Only where the ruleset linked something other than the pinned Bun (FR-015). Each BC row is covered
 by the conformance test (a difference before, none after) and listed in the PR; the R3 row by
-`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-6 are the
+`bun/tests/npm/platforms_test.bzl` `bun_rule_test`. The Intentional Differences ID-1 to ID-7 are the
 spec's.
 
 | Surface | Before (`main`) | After | BC |
@@ -32,9 +32,9 @@ spec's.
 | An optional peer an ancestor's dependencies or the lockfile's own entry of that name provide | not linked | linked as the pinned Bun's isolated install links it | BC-9 |
 | A dependency listed in a package's `bundleDependencies` | linked from the `<package>/<dep>` key | not linked; the package carries its own copy | BC-10 |
 | A target reaching two store entries of one `name@version` that differ by peer bindings | analysis fails ("a target holds one instance of each package version") | both carried, each in its own store directory `<name>@<version>+<peer hash>` | BC-11 |
-| A dependency of the root or a workspace that the store binds to different entries on different platform classes | evaluation fails (on the branch before BC-12; on `main` one binding for every platform) | linked per target platform through `select()` on the `[os, cpu, libc]` classes | BC-12 |
+| A dependency of the root or a workspace that the store binds to different entries on different platform classes | evaluation fails (on the branch before BC-12; on `main` one binding for every platform) | linked per target platform through `select()` on the `[os, cpu, libc]` classes; a package entry's dependency bound by platform still fails evaluation (ID-7, `platform_entry_error_test` on the lockfile Bun 1.4.2 writes) | BC-12 |
 | A package whose `os`, `cpu` or `libc` list npm's `checkList` and Bun's `Negatable` read differently (`["linux", "any"]`: every OS in Bun, only Linux in npm), or an optional package with `libc` on a platform other than Linux | carried by npm's rule (`checkList`; `libc` matches no other OS) | carried by Bun's rule (`Meta::is_disabled`; off Linux `libc` excludes nothing), research R3, plan gate 2026-10-29 | BC-13 (`any` and order), BC-14 (`libc` off Linux) |
-| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-6, and the CI runner labels the tests ran on | — |
+| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-7, and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
 
