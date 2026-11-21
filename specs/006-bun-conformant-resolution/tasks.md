@@ -1331,3 +1331,21 @@ red first and recorded in `tdd-log.md`.
   `conformance_platform_edge` (BC-15, T101), `conformance_declared_nowhere` (T111),
   `conformance_member_chain` (BC-4, T123) and `conformance_member_workspace_chain` (BC-4, T131),
   each checked against its `write_lockfiles.ts` entry, per plan (research R11) / FR-009 (partial)
+
+---
+
+## Phase 29: Convergence
+
+- [ ] T137 In T066's PR body, give every test change `tdd-log.md` records as "FR-016 change", not
+  only T048's: also T039's (`bun/tests/npm/lockfile_test.bzl` `kinds_test`, BC-8), T076's
+  (`bun/tests/npm/uniqueness_test.bzl` `peer`, `peer_chain`, BC-11) and T077's
+  (`bun/tests/npm/resolve_test.bzl` `platform_holder_error_test`, now `platform_holder_test`,
+  BC-12), each with the BC it follows; T066 names "the FR-016 list of changed tests (T048)" only,
+  per FR-016 (partial)
+- [ ] T138 In T066's PR body, also give the BC-4 tests T131 and T132 added after T133 was written,
+  next to T133's rows: `//bun/tests/integration:bins_test`'s T131 case (red with `_member_edges`
+  ignoring `workspace:` links, green restored) and `conformance_member_workspace_chain` compared in
+  both conformance runs, which show "through any number of members"; and
+  `//bun/tests/npm:workspace_member` `through_srcs`, `through_entry_point`, `through_preload` and
+  `through_tools` (red with `_FILE_ATTRIBUTES` set to `["data"]`, green restored), which spec BC-4
+  cites as T132, per spec "Behavior Changes" (BC-4) / SC-003 (partial)
