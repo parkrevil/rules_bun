@@ -1430,3 +1430,36 @@ first and recorded in `tdd-log.md`.
   `bun_binary`'s doc in `bun/private/run.bzl` name ID-8 (declared workspace members, BC-4) and
   ID-9 (BC-12's two evaluation failures) where they list the Intentional Differences, and T066's PR
   body lists them, per P3 / Constitution II (partial)
+
+---
+
+## Phase 32: Eighth final review (2026-11-22)
+
+Codex's branch review approved; the eighth Claude review found these, and the lead rejected the
+gate to fix them (the lead, under the user's delegation, 2026-11-22). Each is written red first and recorded in `tdd-log.md`; a change of
+behavior from `main` is listed as a BC before it is fixed.
+
+- [ ] T146 A workspace member whose target is an `alias` breaks BC-4: `bun/private/run.bzl` (about
+  L364, L373) compares the label built from `workspace_target_name` (`npm_extension.bzl` about
+  L326, `npm_package.bzl` about L95) with the labels the aspect collects, which Bazel reports as
+  the actual target's, so a target declaring the alias fails "add …:pkg to its deps", the hub's bin
+  fails, and the link points at the alias's package while files are copied under the actual one.
+  Add analysis tests with an aliased member (a program and a bin) red first, then resolve the member
+  to the target Bazel reports (as `npm_package.bzl` about L153 does with `member.label`), per BC-4 /
+  US1 scenario 4 (contradicts)
+- [ ] T147 Lockfiles Bun refuses are still loaded: an npm row's integrity whose digest is not valid
+  base64 of its algorithm's length (`bun/private/bun_lockfile.bzl` about L941 checks only the
+  algorithm; Bun `integrity.rs` L124–L160, `bun.lock.rs` L1701, lockfile v2+), and a git or GitHub
+  row whose tag is missing, not a string or unsafe (`lockfile.bzl` about L143–L148 reads slot 1
+  only; Bun L2674, L2685, L2707). Add `lockfile_test.bzl` / `bun_lockfile_test.bzl` cases red
+  first, checked against the pinned Bun, then refuse as Bun does (cited), naming the `bun.lock`
+  label, the entry and the field; update research Part 4's inventory, per FR-004 (contradicts)
+- [ ] T148 Two rows of one `name@version` with different integrity or URL fail evaluation
+  (`bun/private/npm_extension.bzl` about L272–L283), while Bun's `append_package_dedupe`
+  (`lockfile.rs` L2684–L2711) merges them into one package keeping the first row's integrity and
+  URL. List the change as a BC, write the test red first (Bun installs the lockfile), then merge as
+  Bun does (cited), per P1 / P3 (contradicts)
+- [ ] T149 An npm row with more than 4 slots is refused (`bun/private/lockfile.bzl` about L133,
+  `len(entry) != 4`), while Bun reads slots by index and ignores extra ones (`bun.lock.rs`
+  L2433–L2669). List the change as a BC, test red first against the pinned Bun, then read the row as
+  Bun does, per P1 / P3 (contradicts)
