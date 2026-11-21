@@ -1530,3 +1530,36 @@ behavior from `main` is listed as a BC before it is fixed.
   Intentional Differences nor `_NPM_DOC`'s list of intended differences. List it as ID-10 with its
   reason and decision in the spec, `_NPM_DOC`, `contracts/public-api.md` and research R9's
   `credentials.test.ts` item, and in T066's PR body, per P3 / FR-011 / FR-017 (partial)
+
+---
+
+## Phase 35: Convergence
+
+- [X] T157 Bring the remaining lists of the Intentional Differences to ID-1…ID-11 (ID-7 withdrawn):
+  `bun_binary`'s doc in `bun/private/run.bzl` (about L95, "(ID-1 to ID-6, ID-8 and ID-9)") also
+  names ID-10 (a URL holding user information in `bun.lock` fails evaluation) and ID-11 (a
+  `packages` row of a workspace in a `lockfileVersion` 0 lockfile fails evaluation), as `_NPM_DOC`'s
+  paragraph it points to now does; `contracts/conformance-graph.md`'s "Exclusions" row, which lists
+  the Intentional Differences that exclude nothing (ID-5, ID-6, ID-8, ID-9), also names ID-10 and
+  ID-11 as evaluation failures no compared lockfile reaches, per P3 / FR-017 (partial)
+- [X] T158 In T066's PR body, also give the tests of T155 and T156, next to their BC and IDs: BC-19
+  (`//bun/tests/npm:lockfile` `versions_test` and the second L2843 row of `_LOADER_REFUSALS`,
+  `bun/tests/npm/conformance/accepted/lockfile_version_0` red and green in `conformance_test` and
+  `conformance_1_4_2_test`, `refused/lockfile_version_0_member`, canary C-VER0 green and red, with
+  the `tdd-log.md` T155 rows); ID-11 (`version_0_workspace_row_test`,
+  `//bun/tests/integration:lockfile_errors_test`); and the FR-016 changes of T155
+  (`lockfile_errors.test.ts`'s `lockfileVersion` 0 case and `lockfile_test.bzl` `versions_test`,
+  which asserted that version 0 fails evaluation), per spec "Behavior Changes" ("listed again in
+  the PR with the test that shows it") / SC-003 / FR-016 (partial)
+
+---
+
+## Phase 36: Convergence
+
+- [ ] T159 Re-run Q7's target-name comparison on the final code and bring `quickstart.md` Q7 to it:
+  its expected output ("`main`'s 96 names, all on the branch's 112", `tdd-log.md` T111) predates
+  T146's `conformance_member_alias` fixture, and `bazel query '//bun/tests/...' | grep
+  ':node_modules/'` now lists 114 names on the branch
+  (`conformance_member_alias:node_modules/member-user` and its bin added). Check that `main`'s 96
+  names are all still on the branch after T146–T156, record the run in `tdd-log.md`, and update
+  Q7's count, per SC-005 / plan (quickstart Q7) (partial)

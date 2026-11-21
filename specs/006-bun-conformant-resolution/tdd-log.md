@@ -375,3 +375,8 @@ fails for a reason other than the one under test (a typo, a missing load) does n
 | T154–T156 | `//...` (root) | `bazel test //... --keep_going` | Linux x64 (WSL) | green; skipped: the 3 Windows-only canaries and `conformance_1_4_2_test` (its platform only) | `Executed 446 out of 479 tests: 475 tests pass and 4 were skipped.` |
 | T154–T156 | `//...` (root, manifest only) | `bazel test //... --noenable_runfiles --spawn_strategy=local --keep_going` | Linux x64 (WSL) | green | `Executed 475 out of 479 tests: 475 tests pass and 4 were skipped.` |
 | T154–T156 | `//...` (`e2e/smoke`) | `cd e2e/smoke && bazel test //...` | Linux x64 (WSL) | green | `Executed 0 out of 4 tests: 4 tests pass.` |
+| T157 | docs | — | — | `bun_binary`'s doc (`bun/private/run.bzl`) names ID-1 to ID-6 and ID-8 to ID-11, with ID-10 and ID-11 as evaluation failures; `contracts/conformance-graph.md`'s "Exclusions" row names ID-10 and ID-11 as evaluation failures no compared lockfile reaches | — |
+| T157–T158 | gates (root) | `bazel run //:gazelle`; `prek run --all-files` | Linux x64 (WSL) | green: gazelle changes nothing, every hook passes | `exit=0` |
+| T157–T158 | `//...` (root) | `bazel test //... --keep_going` | Linux x64 (WSL) | green; skipped: the 3 Windows-only canaries and `conformance_1_4_2_test` (its platform only) | `Executed 475 out of 479 tests: 475 tests pass and 4 were skipped.` |
+| T157–T158 | `//...` (root, manifest only) | `bazel test //... --noenable_runfiles --spawn_strategy=local --keep_going` | Linux x64 (WSL) | green | `Executed 475 out of 479 tests: 475 tests pass and 4 were skipped.` |
+| T157–T158 | `//...` (`e2e/smoke`) | `cd e2e/smoke && bazel test //...` | Linux x64 (WSL) | green | `Executed 0 out of 4 tests: 4 tests pass.` |
