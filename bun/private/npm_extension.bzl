@@ -472,8 +472,9 @@ Generated targets (public API, under these naming rules):
   member links to the member's package, where the files of that target are copied; the hub does not
   depend on that target (so a member that depends on the package forms no dependency cycle), and a
   `bun_binary` or `bun_test` whose packages hold such a dependency must have that target among its
-  `deps`, directly or through another target, or its analysis fails naming the package, the
-  dependency and the target to add. A bin target (below) has no `deps`: the hub gives it the
+  `deps`, directly or through other targets, whatever rules build them (any rule returning
+  `BunLibraryInfo`), or its analysis fails naming the package, the dependency and the target to
+  add. A bin target (below) has no `deps`: the hub gives it the
   targets of the workspace members its package's dependencies link to, on any platform. The bin
   target is declared in the package that calls `npm_link_all_packages`, so each of those member
   targets must be visible to that package, as it must be to any target there that has it in its

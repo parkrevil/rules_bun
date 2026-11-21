@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//bun:defs.bzl", "bun_test")
+load(":consumer_rules.bzl", "consumer_wrapper")
 
 _FIXTURE = "//bun/tests/npm/fixtures/conformance_registry_to_workspace"
 _MEMBER = _FIXTURE + "/packages/member-lib:pkg"
@@ -43,13 +44,18 @@ _bin_test = analysistest.make(_bin_impl)
 def workspace_member_test_suite(name):
     """Checks how targets and bins link a package's workspace-member dependency.
 
-    A target links it only when it declares the member's target; a package's bin always does.
+    A target links it only when it declares the member's target, built by any rule and reached
+    through any rule; a package's bin always does.
 
     Args:
         name: Name of the test suite and prefix of its tests.
     """
+
+    # The member reached through a consumer's rule between the program and the member (T094).
+    consumer_wrapper(name = name + "_wrapper", libraries = [_MEMBER], tags = ["manual"])
     cases = [
         ("declared", _declared_test, [_FIXTURE + ":node_modules/member-user", _MEMBER]),
+        ("declared_through_rule", _declared_test, [_FIXTURE + ":node_modules/member-user", name + "_wrapper"]),
         ("undeclared", _undeclared_test, [_FIXTURE + ":node_modules/member-user"]),
     ]
     tests = []

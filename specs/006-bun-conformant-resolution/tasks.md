@@ -958,7 +958,7 @@ The second Claude review before the final gate found these; the lead rejected th
 (the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and
 recorded in `tdd-log.md`.
 
-- [ ] T094 BC-4's member check counts only targets carrying the private `BunDeclaredTargetsInfo`
+- [X] T094 BC-4's member check counts only targets carrying the private `BunDeclaredTargetsInfo`
   (`bun/private/run.bzl` about L342–L344, `bun/private/library.bzl` about L51–L54), while
   `BunLibraryInfo` is public and a consumer's rule may return it (`bun/defs.bzl` about L70,
   `bun/private/providers.bzl` about L17–L19, `bun/tests/npm/layout_test.bzl` about L72): a member

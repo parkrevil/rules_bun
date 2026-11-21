@@ -1,7 +1,7 @@
 """Build rules of npm packages: instance trees, instances and links (research R4, R7)."""
 
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
-load(":library.bzl", "declared_targets", "packages_of")
+load(":library.bzl", "packages_of")
 load(":providers.bzl", "BunLibraryInfo", "NpmInstanceInfo", "NpmLinkInfo", "NpmPackageTreeInfo")
 
 _COPY_TO_DIRECTORY_TOOLCHAIN = "@bazel_lib//lib:copy_to_directory_toolchain_type"
@@ -158,8 +158,6 @@ def _npm_member_link(ctx):
             data = info.data,
             packages = depset([record], transitive = [packages_of(info)]),
         ),
-        # Declaring the link declares the member's target.
-        declared_targets(None, [member]),
         DefaultInfo(files = member[DefaultInfo].files, runfiles = member[DefaultInfo].default_runfiles),
     ]
 

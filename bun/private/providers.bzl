@@ -21,7 +21,7 @@ provider created without this field is read as holding none.""",
 )
 
 BunDeclaredTargetsInfo = provider(
-    doc = "Private: a target and the rules_bun targets among its transitive `deps` (feature 006 BC-4).",
+    doc = "Private: the targets providing `BunLibraryInfo` among a target and its transitive dependencies, from `declared_targets_aspect` (feature 006 BC-4).",
     fields = {
         "labels": "`depset` of `Label`.",
     },

@@ -4,7 +4,7 @@ load("@bazel_lib//lib:copy_directory.bzl", "copy_directory_bin_action")
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@hermetic_launcher//launcher:lib.bzl", "launcher")
-load(":library.bzl", "SOURCE_EXTENSIONS", "check_no_directory", "declared_targets", "library_info", "library_runfiles", "packages_of")
+load(":library.bzl", "SOURCE_EXTENSIONS", "check_no_directory", "declared_targets_aspect", "library_info", "library_runfiles", "packages_of")
 load(":providers.bzl", "BunDeclaredTargetsInfo", "BunLibraryInfo")
 
 _TARGET_TYPE = Label("//bun/toolchain:target_type")
@@ -327,7 +327,8 @@ def _member_links(ctx, root, deps, instances, kept):
 
     The hub links such a dependency by path only, to the member's package, where the files of the
     member's target are copied; the target must declare the member's target (in its `deps`,
-    directly or through another target), else analysis fails naming it.
+    directly or through another target, built by any rule that provides `BunLibraryInfo`; the
+    labels come from `declared_targets_aspect`), else analysis fails naming it.
 
     Returns:
         `(outputs, paths)`: the links and their paths relative to the copy-tree root.
@@ -609,7 +610,6 @@ def _bun_run_impl(ctx, mode):
     return [
         DefaultInfo(executable = executable, runfiles = runfiles),
         info,
-        declared_targets(ctx.label, deps),
         coverage_common.instrumented_files_info(
             ctx,
             source_attributes = {"bin": [], "binary": ["entry_point", "srcs"], "test": ["srcs"]}[mode],
@@ -631,6 +631,7 @@ source tree. A directory fails analysis.""",
     "deps": attr.label_list(
         doc = "`bun_library` targets and npm package targets (`:node_modules/<package>`) the sources import; their sources, data files and packages are copied too.",
         providers = [BunLibraryInfo],
+        aspects = [declared_targets_aspect],
     ),
     "env": attr.string_dict(
         doc = """Environment variables of the program or tests. Values are taken literally: `$(location)`
@@ -772,8 +773,9 @@ every bin target `manual` (research D1).""",
         "members": attr.label_list(
             doc = "The targets of the workspace members the package's instances link by path (feature 006 BC-4), laid out as a declaring target's `deps` are.",
             providers = [BunLibraryInfo],
+            aspects = [declared_targets_aspect],
         ),
-        "package": attr.label(doc = "The package's `:node_modules/<package>` target.", mandatory = True, providers = [BunLibraryInfo]),
+        "package": attr.label(doc = "The package's `:node_modules/<package>` target.", mandatory = True, providers = [BunLibraryInfo], aspects = [declared_targets_aspect]),
         "path": attr.string(doc = "The `bin` file's path in the package.", mandatory = True),
     },
     toolchains = _TOOLCHAINS,

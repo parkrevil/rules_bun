@@ -38,20 +38,30 @@ def library_info(srcs, data, deps):
         packages = depset(transitive = [packages_of(d[BunLibraryInfo]) for d in deps]),
     )
 
-def declared_targets(label, deps):
-    """Returns the `BunDeclaredTargetsInfo` of a target: its label and those of its `deps`.
+def _declared_targets_aspect_impl(target, ctx):
+    transitive = []
+    for name in dir(ctx.rule.attr):
+        value = getattr(ctx.rule.attr, name, None)
+        if type(value) == "dict":
+            value = list(value.keys()) + list(value.values())
+        elif type(value) != "list":
+            value = [value]
+        for dep in value:
+            if type(dep) == "Target" and BunDeclaredTargetsInfo in dep:
+                transitive.append(dep[BunDeclaredTargetsInfo].labels)
+    return [BunDeclaredTargetsInfo(labels = depset(
+        [target.label] if BunLibraryInfo in target else [],
+        transitive = transitive,
+    ))]
 
-    Args:
-        label: The target's label, or `None` for a target that is not itself declarable.
-        deps: List of the target's `deps` targets.
-
-    Returns:
-        `BunDeclaredTargetsInfo`.
-    """
-    return BunDeclaredTargetsInfo(labels = depset(
-        [label] if label else [],
-        transitive = [d[BunDeclaredTargetsInfo].labels for d in deps if BunDeclaredTargetsInfo in d],
-    ))
+declared_targets_aspect = aspect(
+    implementation = _declared_targets_aspect_impl,
+    # Every attribute: a consumer's rule may build a member, or pass one on, under any name.
+    attr_aspects = ["*"],
+    doc = """Collects the labels of the targets providing `BunLibraryInfo` among a target and its
+transitive dependencies, whatever rule builds them and through whatever attribute they are reached
+(feature 006 BC-4: a target must declare the workspace members its packages link by path).""",
+)
 
 def library_runfiles(ctx, files, data, deps):
     """Returns runfiles holding `files`, the files of `data` and the runfiles of `data` and `deps`.
@@ -75,7 +85,6 @@ def _bun_library_impl(ctx):
     check_no_directory(ctx.label, ctx.files.data)
     return [
         library_info(ctx.files.srcs, ctx.attr.data, ctx.attr.deps),
-        declared_targets(ctx.label, ctx.attr.deps),
         DefaultInfo(
             files = depset(ctx.files.srcs),
             runfiles = library_runfiles(ctx, ctx.files.srcs, ctx.attr.data, ctx.attr.deps),
