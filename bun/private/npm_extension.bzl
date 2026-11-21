@@ -13,13 +13,14 @@ translate_lock = tag_class(
     doc = """Creates the hub repository `@<name>` with the packages of one `bun.lock`.
 
 Evaluation fails with an English error naming the file and the remedy when the label names
-`bun.lockb`, when `lockfileVersion` is not 1, 2 or 3, when the file is not JSONC, when the root or
-a member `package.json` and the lockfile differ in dependencies, workspace members, catalogs or
-overrides ("run `bun install` and commit bun.lock"), when two entries of one `name@version` record
-different URLs or integrities, when the root `package.json` uses an override form rules_bun
-does not compare, and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
+`bun.lockb`, when `lockfileVersion` is not 0, 1, 2 or 3, when a `lockfileVersion` 0 lockfile has a
+`packages` row of a workspace (`<name>@workspace:<path>`; ID-11 of the `npm` extension's
+documentation), when the file is not JSONC, when the root or a member `package.json` and the
+lockfile differ in dependencies, workspace members, catalogs or overrides ("run `bun install` and
+commit bun.lock"), when the root `package.json` uses an override form rules_bun does not compare,
+and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
 (`name`, `workspaces`, the dependency fields, `overrides`, `resolutions`, `catalog`, `catalogs`),
-holds credentials, as a registry URL of `.npmrc` does. A URL is recognized by RFC 3986's syntax (a
+holds credentials, as a registry URL of `.npmrc` does (ID-10). A URL is recognized by RFC 3986's syntax (a
 scheme before `://`), wherever it stands in a string; it holds credentials when its authority holds
 user information, except the user name alone of an `ssh://` or `git+ssh://` URL, which names an
 account. An entry's download URL must be an `http` or `https` URL without user information. The
@@ -498,9 +499,10 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 `bun/tests/npm/scale/` and `bun/tests/integration/workspaces/`, and `e2e/smoke`'s, each link with
 the one Bun's install makes on the test's platform, and checks that the ruleset refuses each of
 those lockfiles Bun refuses to load, among them every one under
-`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string), with
-Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2 writes
-(`conformance_1_4_2_test`), each comparing the platform class of the machine it runs on. Both have
+`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string, and a
+`lockfileVersion` 0 workspace member that no `packages` row holds), with Bun 1.4.4 as the oracle
+and again with Bun 1.4.2 on the lockfiles Bun 1.4.2 writes and those under
+`bun/tests/npm/conformance/accepted/` (`conformance_1_4_2_test`), each comparing the platform class of the machine it runs on. Both have
 passed on Linux x64; on macOS and Windows the comparison is unverified. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
@@ -530,9 +532,17 @@ under Bun's default `[install] linkWorkspacePackages = true`, since rules_bun re
 `bunfig.toml`: where a project sets it to `false`, Bun links an npm range on a workspace's name to
 a registry package, rules_bun to the workspace (ID-6); a target that runs a package linking a
 workspace member must declare the member's target, which Bun does not ask for, since Bazel builds
-only what a target declares (ID-8, above); and the two layouts above fail evaluation (ID-9). The
-conformance test exercises ID-1 to ID-4; analysis tests check ID-8; no lockfile it compares
-reaches ID-5, ID-6 or ID-9.
+only what a target declares (ID-8, above); the two layouts above fail evaluation (ID-9); a URL
+holding user information in `bun.lock` (an entry's URL or resolution, a dependency specifier) fails
+evaluation ("Fetching", below), while the pinned Bun loads such a lockfile, since credentials come
+only from Bazel's downloader (ID-10); and a `lockfileVersion` 0 lockfile with a `packages` row of a
+workspace fails evaluation, while Bun 1.4.4 loads it, because on version 0 that row carries the
+workspace's dependencies in an object Bun's format outline does not describe and the pinned Bun
+does not write, so no test can pin how Bun writes it; `bun install` with Bun 1.4.4 rewrites such a
+lockfile as version 1, which rules_bun reads (ID-11). A `lockfileVersion` 0 lockfile without such a
+row is read as Bun reads it. The conformance test exercises ID-1 to ID-4; analysis tests check
+ID-8; no lockfile it compares reaches ID-5, ID-6 or ID-9; ID-10 and ID-11 fail evaluation, which
+`bun/tests/integration/credentials.test.ts` and `lockfile_errors.test.ts` check.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
 platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's
@@ -571,9 +581,13 @@ archive is not carried. Archives holding symbolic links are not covered by a tes
 Fetching: only the packages a requested target needs are downloaded, by Bazel's downloader, and
 verified against the lockfile's integrity. The URL is the one the lockfile records, or, for an
 empty one, `<registry>/<name>/-/<basename>-<version>.tgz` with the registry from `npmrc`, else
-`https://registry.npmjs.org`. A `--downloader_config` rewrite redirects a download to a mirror
-without changing the integrity check. Credentials come only from Bazel: `--credential_helper` and
-the user's `.netrc`; no credential enters a repository attribute or a generated file. A URL holding
+`https://registry.npmjs.org`. Where several rows of `packages` hold one `name@version`, the package
+is downloaded once, from the URL of the first of these rows in the lockfile, and verified against
+that row's integrity, as the pinned Bun installs such a lockfile; the later rows' integrity values
+and URLs are not read, also where they differ. A `--downloader_config` rewrite redirects a download
+to a mirror without changing the integrity check. Credentials come only from Bazel:
+`--credential_helper` and the user's `.netrc`; no credential enters a repository attribute or a
+generated file. A URL holding
 user information (`https://user:token@host/`) fails evaluation naming the file and the entry or
 dependency, without the URL, whether `bun.lock` (an entry's URL or resolution, a dependency
 specifier), a `package.json` or the `.npmrc` records it. The

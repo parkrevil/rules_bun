@@ -7,7 +7,10 @@ are returned as values, not raised.
 
 load(":jsonc.bzl", "jsonc_decode")
 
-SUPPORTED_VERSIONS = [1, 2, 3]
+# The versions Bun 1.4.4 loads (`Version::from_int`, src/install/lockfile/bun.lock.rs L116-L124 @
+# bun-v1.4.4); it writes 1 to 3 (L196-L266), and 0 is the version of the format outline bun.com links
+# to (https://bun.com/blog/bun-lock-text-lockfile, feature 006 BC-19).
+SUPPORTED_VERSIONS = [0, 1, 2, 3]
 
 DEPENDENCY_KINDS = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]
 
@@ -117,7 +120,7 @@ def _bin(name, value):
         return {key: path for key, path in value.items() if type(path) == "string"}
     return {}
 
-def _entry(key, entry, file):
+def _entry(key, entry, file, version):
     if type(entry) != "list" or len(entry) == 0 or type(entry[0]) != "string":  # L7, L9
         return _error("{}: the packages entry \"{}\" does not start with a \"<name>@<resolution>\" string".format(file, key))
     spec = split_spec(entry[0])  # L9, L21
@@ -141,7 +144,13 @@ def _entry(key, entry, file):
         info = entry[2]  # L11
         integrity = entry[3]  # L12
     elif kind == "workspace":
-        pass  # L22: ["<name>@workspace:<path>"]
+        # L22: ["<name>@workspace:<path>"]. On lockfileVersion 0 Bun reads the row's dependencies
+        # from an object in slot 1 (LOCK L2553-L2591), a form the format outline bun.com links to
+        # does not describe and the pinned Bun does not write, so no canary can pin it and it is
+        # not read (constitution V, feature 006 ID-11); the slot's value is not printed.
+        if version == 0:
+            return _error(("{}: the packages entry \"{}\" is a workspace row of lockfileVersion 0, which rules_bun does not read; " +
+                           "run `bun install` with Bun 1.4.4 and commit bun.lock, which writes lockfileVersion 1 or later").format(file, key))
     elif not resolution.startswith("root:"):
         # Every other resolution has its info object in slot 1 (LOCK L2557-L2591); rules_bun does not
         # fetch these (FR-010), but the dependencies they declare are linked (BC-8).
@@ -215,8 +224,8 @@ def read_lockfile(text, file):
     version = lock.get("lockfileVersion")  # L2
     if version not in SUPPORTED_VERSIONS:
         return _error(
-            ("{}: lockfileVersion {} is not supported; rules_bun reads lockfileVersion 1, 2 and 3, " +
-             "the versions Bun 1.4.4 writes: run `bun install` with Bun 1.4.4 and commit bun.lock").format(file, version),
+            ("{}: lockfileVersion {} is not supported; rules_bun reads lockfileVersion 0, 1, 2 and 3, " +
+             "the versions Bun 1.4.4 loads: run `bun install` with Bun 1.4.4 and commit bun.lock").format(file, version),
         )
 
     # Bun refuses a `configVersion` that is not a number, or is a fraction or below 0 (LOCK
@@ -277,7 +286,7 @@ def read_lockfile(text, file):
     entries = {}
     keys = []
     for key, entry in lock.get("packages", {}).items():  # L7
-        result = _entry(key, entry, file)
+        result = _entry(key, entry, file, version)
         if result.error:
             return result
         entries[key] = result.value

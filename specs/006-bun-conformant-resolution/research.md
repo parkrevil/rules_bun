@@ -164,6 +164,7 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | `HostedGitInfo::from_url` beyond the host, and the control-character check of a GitHub fragment | HOSTED L231–L326, L874–L1259; DEP L1356–L1359, L1376 | it chooses between the `git`, `github` and `tarball` tags of a URL, and refuses a GitHub literal it cannot parse or whose fragment holds a control character; the carry-over decides by the URL's host alone (`_hosted_git_tag`). The tag decides a binding only for a peer written as such a URL, bound to a git or GitHub resolution (RES L39–L49), which rules_bun does not fetch (FR-010) |
 | the registry check of an npm row's URL | LOCK L2452–L2476, L2653–L2669 | it refuses a row whose URL is outside the configured registry and has no integrity; the configured registry comes from `bunfig.toml`, the environment and `.npmrc`, of which the ruleset reads only the `npmrc` attribute (FR-003). rules_bun refuses to fetch any row without integrity (FR-010, ID-4). Not reproduced: ID-5 (user, 2026-11-21; Part 4, "Loader refusals"; Part 6) |
 | the `.bun-tag` of a git or GitHub row beyond its checks | LOCK L2671–L2720 | it is the `resolved` commit, compared only when two git rows have the same text (`Repository::eql`); read only to refuse what Bun refuses (L36, T147) |
+| the version-0 branches of a `packages` row of a workspace and of the workspaces' own resolutions | LOCK L2479–L2536, L2553–L2591, L2859–L2921 | on `lockfileVersion` 0 a member is a package only through its `packages` row, which carries the member's dependencies in an object in slot 1; rules_bun does not read that object (Part 4) and fails evaluation on such a row (ID-11), so the branches are not reached. L2263's branch is carried over (`load_lockfile`: no `workspaceOnly` package on version 0), so a member without its row fails as Bun's loader fails it (L2843, T155) |
 | a target `os` or `cpu` Bun does not name | CLI L37–L64 | Bun refuses such a `--os` or `--cpu`, so no Bun behavior exists. For one the hub selects on (`NPM_OS`, `NPM_CPU`: `netbsd`, `riscv64`) the adapter (ID-2) gives the value its own bit and reads a package's list for it as npm's `checkList` does, as `main` did (`platforms.bzl` `package_platforms`, `npm_only_names`, `platform_bits`; T112); a platform with no npm value gets a bit no package names that "every value" includes (`bun_install_types.bzl` `platform_value`) |
 
 ### Walks outside the carry-over (T049)
@@ -661,30 +662,32 @@ fixed project to another entry; the test must fail naming it.
 
 ### R9. Coverage
 
-The test's projects are every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`
-(the corpus included, R11), `bun/tests/npm/scale/`, each `bun.lock` under
+The test's projects are every directory under `bun/tests/npm/fixtures/` holding a `bun.lock` (the
+corpus included, R11), `bun/tests/npm/scale/`, each `bun.lock` under
 `bun/tests/integration/workspaces/`, and the 1.4.2-written lockfiles under
-`bun/tests/npm/conformance/bun_1_4_2/` (R10), the lockfiles Bun installs that
-`write_lockfiles.ts` does not write with the pinned Bun under `bun/tests/npm/conformance/accepted/`
-(one Bun 1.4.2 writes, one written by hand; T107, T110), which the 1.4.2 run compares as well, and
-the lockfiles Bun refuses to load under `bun/tests/npm/conformance/refused/`, written by hand
-(T099). The extension and the test enumerate the same directories; a
-project present on one side only fails the test (FR-009, US2-4). A project the oracle cannot install
-(each `refused/` project) is listed in the test with its reason, the list
-is asserted exactly, and for each the test asserts that Bun's loader refuses it (the install
-prints `failed to parse lockfile: 'bun.lock'`, `report_lockfile_load_error`, not just any failed
-install) and that the ruleset fails it with an error naming the `bun.lock` label (T109; spec Edge
-Cases: no graph for a lockfile Bun does not install). Each corpus project has a
-Bun 1.4.2 lockfile or a reason in `not_applicable_1_4_2.ts`, which the test asserts (T095).
-`e2e/smoke`, the consumer module's project, is compared as well (T113, which supersedes T098's
-exclusion): `e2e` is no package of the root module (`REPO.bazel` `ignore_directories`), so the dev
-extension `fixture_results.bzl` reads its `bun.lock` and `package.json` from the source tree with
+`bun/tests/npm/conformance/bun_1_4_2/` (R10), the lockfiles Bun installs that `write_lockfiles.ts`
+does not write with the pinned Bun under `bun/tests/npm/conformance/accepted/` (one Bun 1.4.2
+writes; three written by hand, `platform_rule_raw` for BC-13, `extra_slots`, whose npm row has 5
+slots, for BC-18, and `lockfile_version_0`, stamped `lockfileVersion` 0, for BC-19; T107, T110,
+T150, T155), which the 1.4.2 run compares as well, and the lockfiles Bun refuses to load under
+`bun/tests/npm/conformance/refused/`, written by hand (`patch_path`, T099;
+`lockfile_version_0_member`, a version-0 member without its `packages` row, T155). The extension and
+the test enumerate the same directories; a project present on one side only fails the test (FR-009,
+US2-4). A project the oracle cannot install (each `refused/` project) is listed in the test with its
+reason, the list is asserted exactly, and for each the test asserts that Bun's loader refuses it
+(the install prints `failed to parse lockfile: 'bun.lock'`, `report_lockfile_load_error`, not just
+any failed install) and that the ruleset fails it with an error naming the `bun.lock` label (T109;
+spec Edge Cases: no graph for a lockfile Bun does not install). Each corpus project has a Bun 1.4.2
+lockfile or a reason in `not_applicable_1_4_2.ts`, which the test asserts (T095). `e2e/smoke`, the
+consumer module's project, is compared as well (T113, which supersedes T098's exclusion): `e2e` is
+no package of the root module (`REPO.bazel` `ignore_directories`), so the dev extension
+`fixture_results.bzl` reads its `bun.lock` and `package.json` from the source tree with
 `module_ctx.read`, resolves it into `graphs.json`, and writes the two files to
 `@npm_fixture_results//e2e/smoke:files`, which the test installs; the loopback registry serves it
 the archives of `bun/tests/npm/fixtures/jsx/archives`, which `fetch_react.ts` downloaded from
-`https://registry.npmjs.org` for the same three package versions (`react`, `react-dom`,
-`scheduler`) and verified against the integrity their packuments publish, the integrity both
-lockfiles record. `_NPM_DOC` names the compared directories.
+`https://registry.npmjs.org` for the same three package versions (`react`, `react-dom`, `scheduler`)
+and verified against the integrity their packuments publish, the integrity both lockfiles record.
+`_NPM_DOC` names the compared directories.
 
 The integration tests that wrote their lockfiles inline (T143, decided by the lead under the
 user's delegation, 2026-11-21: compare every one the ruleset resolves, record the rest).
@@ -703,15 +706,17 @@ rewritten). Not compared, each with its reason:
 
 - `credentials.test.ts`, the cases (a)–(l): a URL with user information in `bun.lock`,
   `package.json` or `.npmrc` fails evaluation without being printed (feature 005 FR-002), so the
-  ruleset resolves no graph.
+  ruleset resolves no graph. The pinned Bun loads such a `bun.lock` (an npm row's URL
+  `http://u:t@127.0.0.1:9/…` and a dependency specifier holding `u:t@`, `bun install
+  --frozen-lockfile --dry-run` exits 0, `tdd-log.md` T156), so this is ID-10.
 - `credentials.test.ts`, the lockfile with the row `g@git+ssh://git@host/r.git#abc`: the ruleset
   resolves it (the row unfetched, ID-4), but the oracle's install is offline against the loopback
   registry (FR-007), which serves no git repository, so the pinned Bun cannot install it.
-- `lockfile_errors.test.ts`, every lockfile: a `bun.lockb`, `lockfileVersion` 0 and 4, an unclosed
-  comment, and a `packages` key equal to a
-  workspace's name holding a `file:` folder ("Loader refusals", L2759) each fail evaluation, and
-  the cases of an invalid `name` or `workspace_target_name` fail on the `npm.translate_lock` tag,
-  so the ruleset resolves no graph.
+- `lockfile_errors.test.ts`, every lockfile: a `bun.lockb`, a `packages` row of a workspace on
+  `lockfileVersion` 0 (ID-11), `lockfileVersion` 4, an unclosed comment, and a `packages` key equal
+  to a workspace's name holding a `file:` folder ("Loader refusals", L2759) each fail evaluation,
+  and the cases of an invalid `name` or `workspace_target_name` fail on the `npm.translate_lock`
+  tag, so the ruleset resolves no graph.
 
 The Starlark unit tests (`bun/tests/npm/*_test.bzl`) resolve lockfile texts written in the test,
 without the `package.json` files and archives an install needs: they are unit tests of the reader
@@ -818,7 +823,10 @@ carry-over. Existing tests asserting a non-Bun behavior are changed and listed (
 per-key instances of one `name@version` (BC-6), `_NPM_DOC`'s "A non-optional dependency is carried
 whatever its `os`, `cpu` and `libc` say" (BC-7). T148 (BC-17) changed `conflict.test.ts`, which
 asserted that two rows of one `name@version` with different integrity or URL fail evaluation, and
-removed that case from `lockfile_errors.test.ts`.
+removed that case from `lockfile_errors.test.ts`. T155 (BC-19) changed `lockfile_errors.test.ts`'s
+`lockfileVersion` 0 case, which asserted that version 0 fails evaluation, into a version-0
+`packages` row of a workspace (ID-11), and `lockfile_test.bzl` `versions_test`, which asserted the
+same.
 
 ## Part 4: Fields and key forms the carried-over algorithm reads
 
@@ -850,7 +858,7 @@ Bun and deciding no binding:
 
 | Bun reads | Lines | Access |
 |---|---|---|
-| `lockfileVersion` | L1815 | L2 |
+| `lockfileVersion` | L1815, L1836 (0 to 3, `Version::from_int` L116–L124) | L2: 0 is the version BLOG shows (BC-19, T155); canary C-VER0 pins that the pinned Bun loads 0 and re-saves it as 1 (`Stringifier::version_to_write`, L163–L202) |
 | `configVersion` | L1861 | L34 (read only to refuse what Bun refuses; the value decides no binding: the default linker of a later install, and this one is `--linker isolated`) |
 | `trustedDependencies` | L1872 | L35 (read only to refuse what Bun refuses; the value decides no binding: lifecycle scripts, ID-1) |
 | `patchedDependencies` | L1899 | L20 (a patched package is unfetched, ID-4) |
@@ -865,6 +873,7 @@ Bun and deciding no binding:
 | an npm row's slots 1–3 | L2433–L2476, L2636–L2669 | L10, L11, L12 |
 | an npm row's slots after 3 | never read | not read: a row of more slots is read by its first 4 (BC-18, T149) |
 | slot 1 of any other row | L2557–L2591 | L31 |
+| slot 1 of a workspace row on `lockfileVersion` 0 | L2553–L2591 | not read: the row fails evaluation (ID-11). BLOG shows no workspace row, and since v1 no Bun writes the object (L170–L177: "v1 stopped listing a workspace package's dependencies as a trailing object"), so no canary can pin it (constitution V) |
 | `bundled` | L2351 | L26 |
 | `os`, `cpu`, `libc` | L2594–L2602 | L15, C-LIBC |
 | `hasInstallScript` | L2606 | decides no binding (lifecycle scripts, ID-1) |
@@ -892,7 +901,7 @@ for the reason given; the ruleset does not read that field, or reads only what d
 |---|---|---|---|
 | L1816 | Missing lockfile version | refused | `_LOADER_REFUSALS` L1816 |
 | L1829 | Invalid lockfile version | refused | `_LOADER_REFUSALS` L1829 |
-| L1855 | Unsupported lockfile version | refused | `_LOADER_REFUSALS` L1855; `versions_test`; `lockfile_errors.test.ts` |
+| L1855 | Unsupported lockfile version | refused | `_LOADER_REFUSALS` L1855; `versions_test` (4; 0 is loaded, BC-19); `lockfile_errors.test.ts` |
 | L1864 | Invalid "configVersion". Expected a number | refused | `_LOADER_REFUSALS` L1864, three rows: a string, a fraction and a number below 0, which ConfigVersion.rs `from_expr` maps to none (red first, T125); a whole number above 1 and `1.0` are read as Bun reads them (`config_version_test`). The value decides no binding (table above) |
 | L1875, L1884 | Expected an array / a string (`trustedDependencies`) | refused | `_LOADER_REFUSALS` L1875, L1884 (red first, T125); an array of strings is read (`config_version_test`). The value decides no binding (ID-1) |
 | L1901 | Expected an object (`patchedDependencies`) | refused | `_CONTAINER_REFUSALS` L1901 (red first) |
@@ -911,13 +920,14 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L2215 | Expected a string (the root's `name`) | refused | `_CONTAINER_REFUSALS` L2215 (red first) |
 | L2313 | Expected an object (`packages`) | refused | `_CONTAINER_REFUSALS` L2313 (red first) |
 | L2339, L2368, L2380, L2394, L2403, L2427, L2434, L2445, L2536, L2558, L2569, L2640, L2643 | the row refusals | refused | `_LOADER_REFUSALS`, one row each |
+| L2561, L2569 (a workspace row on `lockfileVersion` 0) | Missing dependencies object / Expected an object | refused, and so is a version-0 workspace row with the object, which Bun loads (ID-11) | `lockfile_test.bzl` `version_0_workspace_row_test`, `lockfile_errors.test.ts` (T155) |
 | L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | not refused | not written: the writer prints the object (L751–L778); not read (the root's own bins, table above) |
 | L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused, from lockfileVersion 2, where no whitespace-separated entry has a known algorithm and a digest `Integrity::parse_entry` accepts (standard base64 without padding, at most the algorithm's length, zero bits after the last byte; INTEGRITY L88–L164, BASE64 L548–L641); before 2 Bun warns and loads | `_LOADER_REFUSALS` L2650; `lockfile_test.bzl` `_INTEGRITY_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147) |
 | L2664 (L2652–L2669) | Missing integrity hash for npm package resolved to a tarball URL outside the configured registry | not refused; the row is unfetched (ID-4) | **ID-5** (user, 2026-11-21, Part 6): Bun's configured registry comes from `bunfig.toml` (`install.registry`, `install.scopes`), the environment and `.npmrc` (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only the `npmrc` attribute's `.npmrc` (FR-003), so it cannot tell which URLs are under the configured registry. It loads such a lockfile and a target that needs the row fails analysis (ID-4), as `restricted` and `integration/workspaces/multi_nointegrity` show for rows without integrity (`conformance_test`, ID-4) |
 | L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | refused: a missing or non-string slot on every lockfile, a tag over 256 bytes on every lockfile, and one `is_safe_resolved_tag` rejects (REPO L114–L123) for a GitHub row on every lockfile and for a git row from lockfileVersion 2 | `lockfile_test.bzl` `_GIT_TAG_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147); canary C-ROWTAIL |
 | L2733 (L1688–L1711) | Unsupported or malformed integrity hash (a tarball, git or GitHub row) | refused as L2650; a slot that is not a string is skipped, as Bun skips it | `_INTEGRITY_REFUSALS` (L2733 rows) and `row_tail_accepted_test` (red first, T147); canary C-ROWTAIL |
 | L2759 | Duplicate package path | refused | `bun_lockfile_test.bzl` (T031), `lockfile_errors.test.ts` (T035) |
-| L2843, L2908, L3010 | Failed to resolve … dependency (`dependency_resolution_failure`, L3302–L3345) | refused | `_LOADER_REFUSALS`, one row each |
+| L2843, L2908, L3010 | Failed to resolve … dependency (`dependency_resolution_failure`, L3302–L3345) | refused | `_LOADER_REFUSALS`, one row each, and a second L2843 row: a `lockfileVersion` 0 member without its `packages` row, which is no package on version 0 (L2263), as `refused/lockfile_version_0_member` shows (T155) |
 | L2888 | Workspace and dependency name too long | not refused | not written: `./<workspace>/<dependency>` must exceed the path buffer (4,096 bytes on Linux), but each name is a directory under `node_modules`, at most 255 bytes on every supported file system |
 | L2933 | `InvalidPackagesObject` | refused (unreachable) | unreachable in Bun: the first loop puts every row in the key map (L2360–L2762); `bun_lockfile.bzl` keeps the same refusal |
 | L3000 | Invalid package path | refused | `_LOADER_REFUSALS` L3000 |
@@ -966,7 +976,9 @@ BC-1 to BC-5 are the spec's. Found while planning:
   a non-optional one is carried whatever its `os`, `cpu` and `libc` say.
 
 Found by the eighth Claude review (2026-11-22), each a lockfile the pinned Bun installs and `main`
-fails to evaluate, so no graph comparison shows it:
+fails to evaluate. The conformance test shows BC-18 (the loader refuses the row: "the ruleset fails
+…, Bun installs the lockfile", `accepted/extra_slots`, T150), not BC-17, whose failure was the
+extension's check of the download, which its ruleset side does not run:
 
 - **BC-17: two rows of one `name@version` with different integrity or URL**. Bun's
   `append_package_dedupe` (LOCKFILE L2684–L2711) returns the package the first row appended, whose
@@ -1163,7 +1175,27 @@ difference no BC explains. BC-17 follows the loader the carry-over already has: 
 `name@version` is the first row's (`_append_package_dedupe`), so the extension's check that every
 row agree on the download is removed, and the package repository downloads from the first row's
 URL with its integrity, as the pinned Bun does. `conflict.test.ts` now builds both lockfiles and
-checks the one request; the conformance test compares the pinned Bun's install of each.
+checks the one request; the conformance test compares the pinned Bun's install of each, and links
+both alike before the change and after it, as `main`'s failure is in the extension, which it does
+not run (T150).
+
+**T155 and T156 decided by the lead, under the user's delegation (2026-11-22)**: the convergence
+check of phase 34 found two lockfile forms the pinned Bun loads that the ruleset fails without
+listing the difference. `lockfileVersion` 0 is the version BLOG shows and Bun 1.4.4 loads, so it is
+read as Bun reads it (BC-19): every field and slot reads as on version 1 except a `packages` row of
+a workspace, which on version 0 carries the member's dependencies in slot 1 (L2553–L2591), while the
+`workspaces` entry of a member makes no package (L2263). That object is a field neither BLOG
+describes nor the pinned Bun writes (it floors a version-0 lockfile to 1 on re-save, L170–L177), so
+constitution V allows no reader for it: such a row fails evaluation with the remedy `bun install`
+with Bun 1.4.4, which rewrites the lockfile as version 1 (ID-11, canary C-VER0). The pinned Bun
+would not install most such lockfiles either: a member's dependencies stay unresolved on version 0
+(L2859, L2920), so its frozen install fails in `verify_resolutions` ("is-number@7.0.0 failed to
+resolve", `PackageManager/PackageManagerResolution.rs` L120–L268, E17); only for a member without
+dependencies does Bun 1.4.4 plan the install (`--dry-run`), and Bun 1.4.2 refuses even that one ("No
+matching version for workspace dependency"), so no such project is compared. A URL with user
+information in `bun.lock` keeps failing evaluation, as feature 005 FR-002 and constitution III
+require (credentials only through Bazel's downloader), and is listed as ID-10, since the pinned Bun
+loads it.
 
 ## Part 7: Evidence log
 
@@ -1232,3 +1264,15 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   github:o/r#<commit>` requested `/repos/o/r/tarball/<commit>` and wrote
   `"r": ["r@github:o/r#0123456", {}, "o-r-0123456", "sha512-…"]`; a tarball URL dependency is written
   `["<name>@<url>", {…}, "sha512-…"]` (E12). A frozen install loads both.
+- **E17** (T155, T156, 2026-11-22): `bun install --frozen-lockfile --dry-run` with Bun 1.4.4 and
+  1.4.2 loads a `lockfileVersion` 0 lockfile without workspace rows; with a member that no
+  `packages` row holds, both refuse it ("Failed to resolve root workspace dependency 'm'"); with a
+  member row `["m@workspace:packages/m"]`, both refuse it ("Missing dependencies object"); with a
+  member row whose slot 1 is `{}` and a member without dependencies, Bun 1.4.4 plans the install
+  (exit 0) and Bun 1.4.2 fails ("No matching version for workspace dependency"); with a member whose
+  dependency is `is-number@7.0.0` (the registry's integrity), Bun 1.4.4's frozen install fails
+  ("is-number@7.0.0 failed to resolve", exit 1), while the same lockfile stamped 1 without the
+  object installs, and a non-frozen install rewrites the version-0 lockfile as `"lockfileVersion":
+  1`. Bun 1.4.4 loads a lockfile whose npm row's URL is `http://u:t@127.0.0.1:9/b/-/b-1.0.0.tgz`,
+  and one whose root dependency and row are `http://u:t@127.0.0.1:9/b-1.0.0.tgz` (`--frozen-lockfile
+  --dry-run`, exit 0).

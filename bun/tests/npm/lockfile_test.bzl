@@ -24,12 +24,35 @@ def _versions_test_impl(ctx):
     asserts.equals(env, 1, _lockfile(env, "version1")["version"])
     asserts.equals(env, 2, _lockfile(env, "basic")["version"])
     asserts.equals(env, 3, _lockfile(env, "overrides_gt")["version"])
-    for version in [0, 4]:
-        result = _read(_inline("", version))
-        asserts.equals(env, None, result["value"])
-        asserts.true(env, "inline/bun.lock" in result["error"], result["error"])
-        asserts.true(env, "lockfileVersion {}".format(version) in result["error"], result["error"])
-        asserts.true(env, "bun install" in result["error"], "names the remedy: " + result["error"])
+
+    # Feature 006 BC-19, T155: Bun 1.4.4 loads lockfileVersion 0 to 3 (LOCK L1836, `Version::from_int`
+    # L116-L124) and refuses 4 ("Unsupported lockfile version", L1855).
+    read = _read(_inline("", 0))
+    asserts.equals(env, None, read["error"])
+    asserts.equals(env, 0, read["value"]["version"] if read["value"] else None)
+    result = _read(_inline("", 4))
+    asserts.equals(env, None, result["value"])
+    asserts.true(env, "inline/bun.lock" in result["error"], result["error"])
+    asserts.true(env, "lockfileVersion 4" in result["error"], result["error"])
+    asserts.true(env, "bun install" in result["error"], "names the remedy: " + result["error"])
+    return unittest.end(env)
+
+def _version_0_workspace_row_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 006 ID-11, T155: on lockfileVersion 0 Bun reads a workspace row's dependencies from an
+    # object in slot 1 (LOCK L2553-L2591), a form neither the format outline bun.com links to
+    # describes nor the pinned Bun writes, so rules_bun does not read it (constitution V): the row
+    # fails evaluation naming the entry and the remedy, without the row's values. On lockfileVersion
+    # 1 the same row is read by its slot 0 (L22).
+    text = '{"lockfileVersion": %d, "workspaces": {"": {"name": "x", "dependencies": {"w": "workspace:packages/w"}}, "packages/w": {"name": "w"}}, "packages": {"w": ["w@workspace:packages/w"%s]}}'
+    for tail in ["", ", {}", ', {"dependencies": {"SECRET": "1"}}']:
+        error = _load_error(text % (0, tail)) or ""
+        asserts.true(env, error.startswith("inline/bun.lock: "), "names the label: " + error)
+        for fragment in ['packages entry "w"', "lockfileVersion 0", "run `bun install` with Bun 1.4.4 and commit bun.lock"]:
+            asserts.true(env, fragment in error, "names {}: {}".format(fragment, error))
+        asserts.false(env, "SECRET" in error, "prints no row value: " + error)
+    asserts.equals(env, None, _load_error(text % (1, "")))
     return unittest.end(env)
 
 def _config_version_test_impl(ctx):
@@ -380,6 +403,8 @@ _LOADER_REFUSALS = [
     ("L2643", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, 1]}}', ['"a"', "slot 3"]),
     ("L2650", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, "md5-AAAA"]}}', ['"a"', "Unsupported or malformed integrity hash"]),
     ("L2843", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x", "dependencies": {"b": "1.0.0"}}}, "packages": {}}', ["Failed to resolve root prod dependency 'b'"]),
+    # On lockfileVersion 0 a member is a package only through its `packages` row (L2263, T155).
+    ("L2843", '{"lockfileVersion": 0, "workspaces": {"": {"name": "x"}, "packages/w": {"name": "w"}}, "packages": {}}', ["Failed to resolve root workspace dependency 'w'"]),
     ("L2908", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "w": {"name": "w", "dependencies": {"b": "1.0.0"}}}, "packages": {}}', ["Failed to resolve prod dependency 'b' for package 'w'"]),
     ("L3000", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a@b/c": ["c@1.0.0", "", {"dependencies": {"d": "1.0.0"}}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a@b/c"', "Invalid package path"]),
     ("L3010", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {"dependencies": {"d": "1.0.0"}}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ["Failed to resolve prod dependency 'd' for package 'a'"]),
@@ -637,6 +662,7 @@ def _row_tail_accepted_test_impl(ctx):
     return unittest.end(env)
 
 versions_test = unittest.make(_versions_test_impl)
+version_0_workspace_row_test = unittest.make(_version_0_workspace_row_test_impl)
 config_version_test = unittest.make(_config_version_test_impl)
 invalid_test = unittest.make(_invalid_test_impl)
 workspaces_test = unittest.make(_workspaces_test_impl)
@@ -667,6 +693,7 @@ def lockfile_test_suite(name):
     unittest.suite(
         name,
         versions_test,
+        version_0_workspace_row_test,
         config_version_test,
         invalid_test,
         workspaces_test,

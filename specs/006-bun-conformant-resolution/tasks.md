@@ -1463,3 +1463,70 @@ behavior from `main` is listed as a BC before it is fixed.
   `len(entry) != 4`), while Bun reads slots by index and ignores extra ones (`bun.lock.rs`
   L2433–L2669). List the change as a BC, test red first against the pinned Bun, then read the row as
   Bun does, per P1 / P3 (contradicts)
+
+---
+
+## Phase 33: Convergence
+
+- [X] T150 Show BC-17 and BC-18 as conformance differences before their change, as the spec's
+  "Behavior Changes" ("each confirmed by the conformance test before the change") and SC-003
+  require: BC-18's only evidence is `bun/tests/npm/lockfile_test.bzl` `extra_slots_test` and a
+  script outside the repository (`tdd-log.md` T149), so no npm row of more than 4 slots is compared
+  with the pinned Bun, and BC-17's red row is `conflict_test`'s only, although `conformance_test`
+  now compares `bun/tests/integration/workspaces/conflict/integrity` and `conflict/url`. Add a
+  hand-written lockfile under `bun/tests/npm/conformance/accepted/` (as `platform_rule_raw`, T110)
+  whose npm row has 5 slots, compared by `conformance_test` and `conformance_1_4_2_test` (if Bun
+  1.4.2 refuses it, stop and report); run both with T148's and T149's code changes reverted (a
+  worktree of `f6375eb` with the three projects copied in) and record each project's difference
+  red in `tdd-log.md`, then green on the branch; name the project in spec BC-18,
+  `contracts/public-api.md` and research R9, per SC-003 / spec P2 / BC-17 / BC-18 (partial)
+- [X] T151 State BC-17 in `_NPM_DOC`'s "Fetching" paragraph (`bun/private/npm_extension.bzl`): it
+  says a package is "verified against the lockfile's integrity" from "the URL … the lockfile
+  records", while since T148 a `name@version` whose rows record different integrity values or URLs
+  is downloaded once from the first row's URL and verified against the first row's integrity, the
+  later rows' values unread (`bun/tests/integration/conflict.test.ts`), per FR-017 /
+  Constitution II / BC-17 (partial)
+- [X] T152 Bring the validation text to the code after T146–T149: `quickstart.md` Q6 expects
+  `222 functions checked in 7 modules` (204 top-level, 18 nested), while `citations_test` prints
+  `227 functions checked in 7 modules` since T147; `quickstart.md` Q1 ("Every BC-1…BC-16
+  difference recorded red in `tdd-log.md` is gone") and `plan.md` "Phases after this plan" step 1
+  ("BC-1…BC-16") omit BC-17 and BC-18, per plan (quickstart) / SC-004 / spec Behavior Changes
+  (partial)
+- [X] T153 In T066's PR body, also give the tests of the changes found after T142 was written,
+  next to their BCs: BC-4 T146 (`//bun/tests/npm:workspace_member` `alias_declared` and
+  `alias_bin_test`, and `//bun/tests/npm/fixtures/conformance_member_alias:member_test`, red and
+  green; `conformance_member_alias` compared in both conformance runs); BC-17 T148
+  (`//bun/tests/integration:conflict_test` red and green, and its FR-016 change of
+  `conflict.test.ts` and the removed `lockfile_errors.test.ts` case); BC-18 T149
+  (`//bun/tests/npm:lockfile` `extra_slots_test` red and green); and T150's conformance rows for
+  both, per spec "Behavior Changes" ("listed again in the PR with the test that shows it") /
+  SC-003 / FR-016 (partial)
+
+---
+
+## Phase 34: Convergence
+
+- [X] T154 CRITICAL: correct `translate_lock`'s doc in `bun/private/npm_extension.bzl` (about
+  L18–L19): it still lists "when two entries of one `name@version` record different URLs or
+  integrities" among the evaluation failures, which T148 removed (BC-17;
+  `bun/tests/integration/conflict.test.ts` builds both lockfiles); drop the clause so the doc
+  claims only what the tests cover, per Constitution II / BC-17 (contradicts)
+- [X] T155 `bun/private/lockfile.bzl` (`SUPPORTED_VERSIONS = [1, 2, 3]`, L10, about L215–L220)
+  refuses a `lockfileVersion: 0` lockfile, while the pinned Bun loads it (Bun 1.4.4 `bun install
+  --frozen-lockfile --dry-run`, exit 0, checked 2026-11-22; Bun defines versions 0–3, feature 003
+  research G7, and refuses 4 with "supports lockfile versions up to 3"); the spec lists no
+  Intentional Difference for it and research R9 records it only as failing evaluation. Read LOCK
+  L1815–L1829 and every site that branches on the version at `bun-v1.4.4`, list the change as a BC,
+  write it red first (a `lockfile_test.bzl` case and a hand-written project under
+  `bun/tests/npm/conformance/accepted/`, compared by `conformance_test` and
+  `conformance_1_4_2_test`; if Bun 1.4.2 refuses it, stop and report), then read version 0 as Bun
+  does (cited); change `bun/tests/integration/lockfile_errors.test.ts`'s version 0 case (FR-016
+  change), `translate_lock`'s doc, research R9 and Part 4, per P1 / P3 / FR-002 (contradicts)
+- [X] T156 A URL holding user information in `bun.lock` (an entry's URL or resolution, a
+  dependency specifier) fails evaluation (feature 005 FR-002, constitution III: credentials only
+  through Bazel's downloader), while the pinned Bun installs such a lockfile (a row URL
+  `http://u:t@127.0.0.1:9/…`, `bun install --frozen-lockfile --dry-run`, exit 0, checked
+  2026-11-22); research R9 records it only as not compared, and it is in neither the spec's
+  Intentional Differences nor `_NPM_DOC`'s list of intended differences. List it as ID-10 with its
+  reason and decision in the spec, `_NPM_DOC`, `contracts/public-api.md` and research R9's
+  `credentials.test.ts` item, and in T066's PR body, per P3 / FR-011 / FR-017 (partial)

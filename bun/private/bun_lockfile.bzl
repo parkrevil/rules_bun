@@ -1007,15 +1007,19 @@ def load_lockfile(lock, file):
     lockfile.packages.append(_package(root_name, struct(tag = RESOLUTION_TAG.ROOT, value = None), off, length, _meta(None, True)))
     _index_insert(lockfile, root_name, 0)
 
-    # The `workspaceOnly` packages (L2263-L2305).
-    for row in member_rows:
+    # The `workspaceOnly` packages (L2263-L2305). On lockfileVersion 0 there are none: a member is a
+    # package only through its `packages` row (L2263), which `lockfile.bzl` refuses (feature 006
+    # ID-11), so the version-0 branches of the rows (L2479, L2553) are not reached and the
+    # workspaces' own resolutions (L2859) have no workspace to resolve.
+    workspace_only = member_rows if lockfile.version != 0 else []
+    for row in workspace_only:
         result = _parse_append_dependencies(lockfile, _workspace_obj(row.workspace), unresolved_rows, None, None, True, file, "the workspace \"{}\"".format(row.path))
         if result.error:
             return result
         off, length = result.value
         package = _package(row.name, struct(tag = RESOLUTION_TAG.WORKSPACE, value = row.path), off, length, _meta(None, True), key = row.name)
         lockfile.pkg_map[row.name] = _append_package_dedupe(lockfile, package)
-    members = range(1, 1 + len(member_rows))
+    members = range(1, 1 + len(workspace_only))
 
     # The bundle roots (L2323-L2358).
     bundled_pkgs = {key: True for key in lock.keys if lock.entries[key].bundled}

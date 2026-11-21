@@ -1,0 +1,10 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# feature 006 BC-19 (T155): bun.lock is written by hand, as the pinned Bun writes lockfileVersion 1
+# to 3 only: lockfileVersion 0, the version of the format outline bun.com links to
+# (https://bun.com/blog/bun-lock-text-lockfile), which Bun 1.4.4 and 1.4.2 load
+# (src/install/lockfile/bun.lock.rs L1836, `Version::from_int` L116-L124 @ bun-v1.4.4) and install.
+# The rows of a and b are those of ../extra_slots. The conformance test compares it with both
+# oracles.
+
+conformance_files()

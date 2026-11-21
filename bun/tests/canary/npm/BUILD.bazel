@@ -31,6 +31,14 @@ bun_test(
 )
 
 bun_test(
+    name = "c_ver0_test",
+    srcs = ["c_ver0.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
     name = "c_ver1_test",
     srcs = ["c_ver1.test.ts"],
     deps = [
@@ -314,6 +322,7 @@ test_suite(
         ":c_unresolved_test",
         ":c_url1_test",
         ":c_url2_test",
+        ":c_ver0_test",
         ":c_ver1_test",
         ":c_ver_test",
         ":c_winname_test",

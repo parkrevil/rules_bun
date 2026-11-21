@@ -1,0 +1,7 @@
+{
+  "name": "lockfile-version-0",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  }
+}

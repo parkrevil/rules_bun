@@ -1,0 +1,12 @@
+{
+  "lockfileVersion": 0,
+  "workspaces": {
+    "": {
+      "name": "refused-lockfile-version-0-member",
+    },
+    "packages/m": {
+      "name": "m",
+    },
+  },
+  "packages": {}
+}

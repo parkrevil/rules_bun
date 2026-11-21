@@ -2,6 +2,9 @@
 // evaluation with an English error naming the file and the remedy. Two entries
 // of one package version that record different integrities no longer fail: the
 // pinned Bun keeps the first row's (feature 006 BC-17, conflict.test.ts).
+// lockfileVersion 0 no longer fails, as the pinned Bun loads it (feature 006
+// BC-19, conformance accepted/lockfile_version_0); a workspace row of it does
+// (ID-11).
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -23,7 +26,16 @@ const CASES: [string, string, string | Uint8Array, string[]][] = [
     new Uint8Array([...new TextEncoder().encode("#!/usr/bin/env bun\nbun-lockfile-format-v0\n"), 0, 1, 2, 255]),
     ["//:bun.lockb", "binary lockfile", "bun install --save-text-lockfile --frozen-lockfile --lockfile-only"],
   ],
-  ["lockfileVersion 0", "bun.lock", lockfile(0), ["//:bun.lock", "lockfileVersion 0 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
+  [
+    "a workspace row of lockfileVersion 0",
+    "bun.lock",
+    JSON.stringify({
+      lockfileVersion: 0,
+      workspaces: { "": { name: "lockfile-errors" } },
+      packages: { m: ["m@workspace:packages/m", { dependencies: {} }] },
+    }),
+    ["//:bun.lock", 'packages entry "m"', "lockfileVersion 0", "run `bun install` with Bun 1.4.4 and commit bun.lock"],
+  ],
   ["lockfileVersion 4", "bun.lock", lockfile(4), ["//:bun.lock", "lockfileVersion 4 is not supported", "run `bun install` with Bun 1.4.4 and commit bun.lock"]],
   ["invalid JSONC", "bun.lock", '{ "lockfileVersion": 2, /* not closed', ["//:bun.lock", "is not closed", "run `bun install` to rewrite bun.lock"]],
 ];

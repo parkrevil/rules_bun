@@ -40,7 +40,8 @@ const SCALE = "bun/tests/npm/scale";
 const SCALE_PLATFORM = `${SCALE}/platform`;
 const INTEGRATION = "bun/tests/integration/workspaces";
 const BUN_1_4_2 = "bun/tests/npm/conformance/bun_1_4_2";
-// Lockfiles Bun installs that write_lockfiles.ts does not write with the pinned Bun (T107, T110).
+// Lockfiles Bun installs that write_lockfiles.ts does not write with the pinned Bun (T107, T110,
+// T150, T155).
 const ACCEPTED = "bun/tests/npm/conformance/accepted";
 const REFUSED = "bun/tests/npm/conformance/refused";
 const ARCHIVES = `${MAIN}/bun/tests/npm/registry/archives`;
@@ -55,6 +56,7 @@ const E2E_ARCHIVES = `${MAIN}/bun/tests/npm/fixtures/jsx/archives`;
 // lockfile Bun refuses to load. The ruleset must refuse each as well (spec Edge Cases, FR-004).
 export const NOT_APPLICABLE: Record<string, string> = {
   [`${REFUSED}/patch_path`]: 'its patchedDependencies value is not a string, which Bun\'s loader refuses ("Expected a string", bun.lock.rs L1910); written by hand, as no Bun writes it',
+  [`${REFUSED}/lockfile_version_0_member`]: 'its lockfileVersion 0 lists a workspace member that no packages row holds, which Bun\'s loader refuses ("Failed to resolve root workspace dependency \'m\'", bun.lock.rs L2843): on lockfileVersion 0 a member is a package only through its row (L2263); written by hand, as the pinned Bun writes lockfileVersion 1 to 3 only',
 };
 
 // What a frozen install prints when Bun's text-lockfile loader refuses bun.lock

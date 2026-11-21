@@ -1,0 +1,8 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# feature 006 BC-18 (T149, T150): bun.lock is written by hand, as no Bun writes it: a's npm row has
+# a fifth slot, which Bun 1.4.4 and 1.4.2 install, reading the slots by index and ignoring the
+# others (src/install/lockfile/bun.lock.rs L2433-L2669 @ bun-v1.4.4). The conformance test compares
+# it with both oracles.
+
+conformance_files()

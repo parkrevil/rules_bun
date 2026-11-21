@@ -325,7 +325,8 @@ writes for the corpus projects it can install, and reports zero differences.
 The only differences between the ruleset and the pinned Bun's isolated install. The conformance
 test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5, ID-6 and ID-9 (the oracle
 refuses ID-5's lockfile, the corpus uses Bun's default for ID-6, and no lockfile the pinned Bun
-writes reaches ID-9), and ID-8 is checked by analysis tests, not by the graph comparison. ID-7 (a
+writes reaches ID-9), ID-8 is checked by analysis tests, not by the graph comparison, and ID-10
+and ID-11 are evaluation failures, which integration and unit tests check. ID-7 (a
 package's dependency bound by platform) was withdrawn when BC-16 linked it:
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
@@ -363,6 +364,23 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   platform classes only (or to a package on others), fail evaluation where Bun would install them;
   no lockfile the pinned Bun writes reaches either (research R4), only hand-written ones (T090,
   T097) (the lead, under the user's delegation, 2026-11-22).
+- **ID-10 Credentials in `bun.lock`**: a URL holding user information in `bun.lock` (an entry's URL
+  or resolution, a dependency specifier) fails evaluation naming the file and the entry or
+  dependency, without the URL, while the pinned Bun loads such a lockfile (`bun install
+  --frozen-lockfile --dry-run` exits 0, research E17), because credentials come only from Bazel's
+  downloader (constitution III, feature 005 FR-002) and no credential may enter a repository
+  attribute or a generated file (`credentials.test.ts`; the lead, under the user's delegation,
+  2026-11-22, T156).
+- **ID-11 Workspace rows of `lockfileVersion` 0**: a `packages` row of a workspace
+  (`<name>@workspace:<path>`) in a `lockfileVersion` 0 lockfile fails evaluation naming the file
+  and the row, with the remedy `bun install` with Bun 1.4.4, which rewrites the lockfile as
+  version 1 (canary C-VER0). On version 0 Bun reads the member's dependencies from an object in that row's
+  slot 1 (LOCK L2553–L2591), which the format outline bun.com links to does not describe and the
+  pinned Bun does not write, so constitution V allows no reader for it. Bun 1.4.4 loads such a
+  lockfile, but its frozen install fails where the member has a dependency, as version 0 leaves it
+  unresolved, and Bun 1.4.2 refuses even a member without one (research Part 6, E17)
+  (`lockfile_test.bzl` `version_0_workspace_row_test`, `lockfile_errors.test.ts`; the lead, under
+  the user's delegation, 2026-11-22, T155).
 
 ### Behavior Changes
 
@@ -470,13 +488,24 @@ the test that shows it:
   URLs are one package with the first row's integrity and URL, as Bun's `append_package_dedupe`
   keeps the package the first row appended (lockfile.rs L2684–L2711) and the pinned Bun installs
   such a lockfile, downloading the package once from that row's URL; `main` fails evaluation ("the
-  entries … record different integrity values") (`integration/workspaces/conflict/integrity`,
-  `integration/workspaces/conflict/url`, `conflict.test.ts`; the lead, under the user's delegation,
-  2026-11-22, T148).
+  entries … record different integrity values") (`conflict.test.ts`; the lead, under the user's
+  delegation, 2026-11-22, T148). `main` fails in the extension's check of the download, which the
+  conformance test's ruleset side (the loader and the resolver) does not run, so the conformance
+  test links `integration/workspaces/conflict/integrity` and `integration/workspaces/conflict/url`
+  as the pinned Bun does before the change and after it, and shows no difference (T150).
 - **BC-18**: an npm row with more than 4 slots is read by its first 4, as Bun reads the slots by
   index and ignores the others (LOCK L2433–L2669); `main` fails evaluation ("has 5 slots, not 4")
-  (`lockfile_test.bzl` `extra_slots_test`; the lead, under the user's delegation, 2026-11-22,
-  T149).
+  (`lockfile_test.bzl` `extra_slots_test`, and the hand-written
+  `bun/tests/npm/conformance/accepted/extra_slots/bun.lock`, which the conformance test compares
+  with both oracles, T150; the lead, under the user's delegation, 2026-11-22, T149).
+- **BC-19**: a `lockfileVersion` 0 lockfile is read as Bun 1.4.4 loads it (LOCK L1836,
+  `Version::from_int` L116–L124): its fields as on version 1, and a workspace member a package only
+  through its `packages` row (L2263), whose row ID-11 refuses; `main` fails evaluation
+  ("lockfileVersion 0 is not supported") (`lockfile_test.bzl` `versions_test` and the second L2843
+  row of `_LOADER_REFUSALS`, the hand-written
+  `bun/tests/npm/conformance/accepted/lockfile_version_0/bun.lock`, which the conformance test
+  compares with both oracles, and `refused/lockfile_version_0_member`; canary C-VER0; the lead,
+  under the user's delegation, 2026-11-22, T155).
 
 Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
 target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin

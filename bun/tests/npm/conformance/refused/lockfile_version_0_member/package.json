@@ -1,0 +1,7 @@
+{
+  "name": "refused-lockfile-version-0-member",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}
