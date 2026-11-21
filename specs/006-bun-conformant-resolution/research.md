@@ -823,6 +823,14 @@ private member (T089), member links merged across platform classes (T090), R10 a
 (the store directory takes Bun's form, not Bun's hash value; corrected in the spec). The CI runner
 labels in `_NPM_DOC` stay with T062/T067.
 
+**T091 decided by the lead, under the user's delegation (2026-11-21)**: the user asked the lead to
+make such choices. Bun 1.4.2 refuses no corpus project, so the not-applicable list is rightly empty
+and R10 is corrected. Its usual `conformance_platform_peer` lockfile (`4a5419e2`) reaches the
+entry-level "cannot express" error, which the pinned Bun 1.4.4 was not seen writing; the error is
+kept as **ID-7** and pinned with that Bun-written lockfile, rather than expressing an entry's
+per-class binding in this feature (a new BC and hub work for a layout only the second oracle
+writes). The second Claude review's findings become T094–T100.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on

@@ -925,7 +925,76 @@ The workflow's Claude review before the final gate found these; the user rejecte
   and `tdd-log.md` (about L110) records that 1.4.2 wrote `conformance_alias_workspace`. Establish
   with the 1.4.2 oracle which corpus projects 1.4.2 refuses or links differently; if some exist,
   list them with their reasons so US5 acceptance scenario 2 is exercised, otherwise correct R10 and
-  state in `tdd-log.md` that no project is not applicable; per US5 / FR-014 (contradicts)
+  state in `tdd-log.md` that no project is not applicable; per US5 / FR-014 (contradicts). Decided
+  (the lead, under the user's delegation, 2026-11-21, research Part 6): no project is not
+  applicable; correct R10, keep the committed lockfile, and settle the other one at T093
 - [X] T092 `MODULE.bazel` L293–L294: move the comment "Excludes files that rules_bun renames, by their
   archive names (FR-033)" back above the `npm_renamed` tag it describes, below the inserted
   `npm_conformance_platform_peer` block (unrequested)
+
+---
+
+## Phase 18: Convergence
+
+- [ ] T093 Decided (the lead, under the user's delegation, 2026-11-21, research Part 6): keep the
+  error as ID-7 and pin it with the Bun-written `4a5419e2` lockfile, committed as the fixture of the
+  analysis test that today uses a hand-written one (`platform_entry_error_test`). Settle the
+  Bun-written lockfile T091 found reaching the entry error: Bun 1.4.2 writes
+  `conformance_platform_peer` in 5 of 6 runs as the `4a5419e2` lockfile (no `plat-peer-host/q` row),
+  which Bun 1.4.4's and Bun 1.4.2's frozen isolated installs both accept, while the ruleset fails
+  evaluation with `the store links "p" of plat-peer-host@1.0.0 to different packages on different
+  platforms, which rules_bun cannot express` (`tdd-log.md` T091 rows). Research R4 "An entry's
+  alias" ("No Bun-written lockfile reaching it was found") and `_NPM_DOC`'s Resolution paragraph in
+  `bun/private/npm_extension.bzl` ("no lockfile the pinned Bun writes is known to reach either") no
+  longer describe what a 1.4.2 consumer sees (US5). Then correct R4, `_NPM_DOC`, spec BC-12 /
+  `contracts/public-api.md` to the outcome, and record it in `tdd-log.md` before T088, per US5 /
+  BC-12 / FR-017 / Constitution II (contradicts)
+
+---
+
+## Phase 19: Second final review (2026-11-21)
+
+The second Claude review before the final gate found these; the lead rejected the gate to fix them
+(the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and recorded in
+`tdd-log.md`.
+
+- [ ] T094 BC-4's member check counts only targets carrying the private `BunDeclaredTargetsInfo`
+  (`bun/private/run.bzl` about L342–L344, `bun/private/library.bzl` about L51–L54), while
+  `BunLibraryInfo` is public and a consumer's rule may return it (`bun/defs.bzl` about L70,
+  `bun/private/providers.bzl` about L17–L19, `bun/tests/npm/layout_test.bzl` about L72): a member
+  built by a consumer's rule, or such a rule between the program and the member, is not counted,
+  and analysis asks to "add" a member already in `deps`; bins go through the same check (`run.bzl`
+  about L536). Add analysis tests for both, red first; count every declared target that reaches the
+  member's `BunLibraryInfo`; record green, per BC-4 / US1 scenario 4 (contradicts)
+- [ ] T095 The Bun 1.4.2 run takes its projects from `bun_1_4_2/` only
+  (`bun/tests/npm/conformance/conformance.test.ts` about L118–L131): nothing checks that each
+  `fixtures/conformance_*` project has a 1.4.2 lockfile or is listed in `NOT_APPLICABLE_1_4_2`, nor
+  that a listed one has none. Fail the test on either, with an English message naming the project;
+  show it red (a project without a 1.4.2 lockfile), then green, per US5 scenario 2 / FR-013
+  (contradicts)
+- [ ] T096 BC-13 and BC-14 have no red record (`tdd-log.md` about L150: "green on the first run"),
+  and no corpus project exercises them (every `libc` row has `os: linux`; no `["linux", "any"]`).
+  Add tests that pin Bun's reading (`os: ["linux", "any"]` and its reverse; an optional package
+  with `libc` on a darwin class), run them on `main`'s code in a worktree to record red, then green
+  on the branch; add a corpus project for what the Linux host class can compare, per FR-015 /
+  SC-003 (contradicts)
+- [ ] T097 `bun/private/npm_extension.bzl` (about L354–L358) takes a per-platform link's bins and
+  fetch status from its first per-platform target, assuming all are one package. Write the
+  reviewer's case red first (workspace `w` with peer `p: ^1`; the root's optional `p: 2.0.0`
+  limited to darwin; `w`'s `p` is `p@2` on darwin and `p@1` elsewhere, through
+  `write_lockfiles.ts`); if it reproduces, take bins and status per platform target (`select()`),
+  otherwise record with Bun's lines why the pinned Bun cannot write it, per BC-12 (partial)
+- [ ] T098 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L497) says the conformance test covers
+  "every lockfile of rules_bun's tests", but `e2e/smoke/bun.lock` is not compared
+  (`conformance.test.ts` about L74–L92). Compare it, or state exactly which lockfiles are
+  compared, per Constitution II / FR-017 (contradicts)
+- [ ] T099 For a not-applicable project the test checks only that Bun refuses it
+  (`conformance.test.ts` about L138–L141), not that the ruleset refuses it too, as the spec requires
+  ("never link a graph for a lockfile Bun does not install"); `stale_link` passes only because its
+  template is not valid JSON. Check the ruleset's refusal as well, red first with a lockfile Bun
+  refuses that is valid JSON, per FR-004 / spec Edge Cases (partial)
+- [ ] T100 `scale_test` measures one platform class only: `resolve.bzl` (about L264–L268) builds the
+  store once per class, and the scale fixture has no `os`, `cpu` or `libc`. Add a scale variant
+  with platform-specific packages (an esbuild-like set of about 20 per-platform optional packages
+  under many dependents) so every class builds its store, keep the 10 s bound (plan R13), and
+  record the times in `tdd-log.md`, per SC / plan R13 (partial)

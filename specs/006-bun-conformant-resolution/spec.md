@@ -322,8 +322,9 @@ writes for the corpus projects it can install, and reports zero differences.
 ### Intentional Differences
 
 The only differences between the ruleset and the pinned Bun's isolated install. The conformance
-test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 and ID-6 (the oracle refuses
-ID-5's lockfile, and the corpus uses Bun's default for ID-6):
+test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5 to ID-7 (the oracle refuses
+ID-5's lockfile, the corpus uses Bun's default for ID-6, and ID-7's error is pinned by an analysis
+test on a lockfile Bun 1.4.2 writes):
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
   scripts; files those scripts would create are not compared, and the oracle install runs with
@@ -350,6 +351,14 @@ ID-5's lockfile, and the corpus uses Bun's default for ID-6):
   linkWorkspacePackages = true` (an npm range on a workspace's name binds to the workspace) and
   reads no `bunfig.toml` (FR-003); a project setting it to `false`, where Bun binds such a range to
   an npm row (LOCKFILE L2247–L2249), links differently (user, 2026-11-21, T054).
+- **ID-7 A package's dependency bound by platform**: where the store binds one dependency of a
+  package entry (not of the root or a workspace, which BC-12 links per platform) to different
+  packages on different platform classes, the ruleset fails evaluation ("the store links
+  "<alias>" of <package> to different packages on different platforms, which rules_bun cannot
+  express") while Bun installs it. Bun 1.4.4 was not seen writing such a lockfile; Bun 1.4.2 writes
+  one for `conformance_platform_peer` in 5 of 6 runs (T091). The error is loud, not a wrong link;
+  expressing the binding is left to a later feature (the lead, under the user's delegation,
+  2026-11-21, T091).
 
 ### Behavior Changes
 
