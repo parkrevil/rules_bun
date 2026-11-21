@@ -1154,3 +1154,34 @@ recorded in `tdd-log.md`.
   (`writeArchives`); `_NPM_DOC`'s list of compared directories in `bun/private/npm_extension.bzl`
   omits `refused/`, where the ruleset's refusal of `patch_path` is checked, per plan (data model,
   contracts) / FR-017 (partial)
+
+---
+
+## Phase 24: Convergence
+
+- [ ] T117 CRITICAL: test and document BC-7's effect on bins. Since BC-7, a declared non-optional
+  package whose `os` or `cpu` exclude some target platforms is a link whose root the hub selects
+  by platform, so `_compatible` (`bun/private/npm_repositories.bzl` about L471–L489) makes its
+  `:node_modules/<package>/bin/<bin>` incompatible there; on `main` the root was in `closure` and
+  the bin compatible with every platform. No test covers it (`bun/tests/integration/restricted.test.ts`
+  covers optional packages only, `bun/tests/npm/declared_test.bzl` only packages no platform
+  matches), and `_NPM_DOC` in `bun/private/npm_extension.bzl` ("The bins of a declared optional
+  package with `os`, `cpu` or `libc` are compatible only with the platforms it matches") and the
+  BC-7 row of `contracts/public-api.md` state it for optional packages only. Write an analysis test
+  (a declared non-optional package with `os` or `cpu` and a `bin`, through `pack.ts` and
+  `write_lockfiles.ts`: its bin incompatible on an excluded platform, buildable on a matched one),
+  run it on `main`'s code in a worktree to record red, then green on the branch, recorded in
+  `tdd-log.md`; state the rule for non-optional packages in `_NPM_DOC` and the BC-7 row, per
+  Constitution II / BC-7 / FR-017 (partial)
+- [ ] T118 Complete research Part 2's "Function-level map (T055)" in
+  `specs/006-bun-conformant-resolution/research.md`, which says it lists each function of the
+  rebuilt resolver as its docstring cites it: add `platforms.bzl` `platform_tuples`,
+  `platform_bits` (`src/install/PackageManager/PackageManagerOptions.rs` L1174–L1176),
+  `platform_classes` (`src/install/lockfile/Package/Meta.rs` L70–L74), `package_platforms`,
+  `npm_only_names`, `_npm_only`, `_check_list`, and `resolve.bzl` `_hex16`, `_declared_key`,
+  `_differing_member`, `class_member_conflict`, `_mask`, `_conditions`; give `_ids` its citations
+  (Store.rs L450–L466, ISO L1353–L1386) instead of "the adapter", and narrow the "Not carried
+  over" row `peer_hash` (ISO L1353–L1386, "directory names only") to what `_ids` does not carry
+  (Bun's Wyhash, a tarball's integrity, ID-4); in "Walks outside the carry-over" make `run.bzl`
+  `_check_unique` read one copy per store directory (BC-11). Check the map against every `def`
+  `citations_test` checks (none missing, none extra), per US3/AC2 / SC-004 / FR-002 (partial)
