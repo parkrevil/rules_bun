@@ -1088,3 +1088,40 @@ written red first and recorded in `tdd-log.md`.
   scans, so its `["linux", "any"]` claim is checked only against the ruleset's own reading. Compare
   it with the pinned Bun (add it to the scanned projects, or move it under the corpus), or record
   why Bun cannot install it and list it as not applicable, per P2 (partial)
+
+---
+
+## Phase 22: Fourth final review (2026-11-21)
+
+The fourth Claude review before the final gate found these; the lead rejected the gate to fix them
+(the lead, under the user's delegation, 2026-11-21, research Part 6). Each is written red first and
+recorded in `tdd-log.md`.
+
+- [ ] T111 CRITICAL: a declared dependency the store links on no platform class gets no
+  `:node_modules/<package>` target (`bun/private/resolve.bzl` about L366–L394 builds links only from
+  the store's holder edges), against the naming rule (`bun/private/npm_extension.bzl` about
+  L468–L470: one target "for each package that workspace package declares"), P4, FR-014 and SC-005.
+  `main` generated the target; on the branch `deps = ["//:node_modules/x"]` fails with "no such
+  target" for: a root or workspace optional dependency matching no platform the hub selects on
+  (`os: ["sunos"]`, `cpu: ["ppc64"]`), a non-optional dependency BC-7 disables everywhere, an
+  optional dependency under `unresolved` (BC-1, `conformance_unresolved` `packages/w` → `q`), and
+  the BC-3 and BC-5 cases. Write analysis tests red first (each case: the target exists and carries
+  nothing where Bun links nothing), then generate the target for every declared dependency, empty
+  on the platform classes where the store links nothing, as `main`'s empty optional targets are;
+  check every generated target name of `main` against the branch for the fixtures (SC-005), per
+  P4 / FR-014 / SC-005 (contradicts)
+- [ ] T112 A package restricted to an `os` or `cpu` Bun does not name (`cpu: ["riscv64"]`,
+  `@esbuild/linux-riscv64`; `os: ["netbsd"]`) is disabled on every class, including a
+  linux/riscv64 or netbsd target: `bun/private/bun_install_types.bzl` (about L358) maps such a
+  target value to `_UNNAMED`, and about L394–L398 read such a package value as matching nothing,
+  while `NPM_CPU` / `NPM_OS` (`bun/private/platforms.bzl` about L22, L31) still map them and
+  research (about L165) records npm's rule for these values, as on `main`'s `check_list`. Write
+  `bun/tests/npm/platforms_test.bzl` cases red first, then match a package value Bun does not name
+  as npm's rule does on the target that names it; align `_NPM_DOC`'s list of values that match no
+  platform, per research R3 / FR-015 (contradicts)
+- [ ] T113 `e2e/smoke/bun.lock` is resolved by the ruleset's tests but not compared with the pinned
+  Bun (search roots in `bun/tests/npm/conformance/conformance.test.ts` about L93 and
+  `bun/tests/npm/fixture_results.bzl` `_projects`; the exclusion stated at `_NPM_DOC` about L503),
+  against spec P2 ("every project the ruleset's tests resolve"). Compare it (a copy or a reference
+  the root module's tests can read), or record in the spec why it cannot be and narrow P2's
+  wording, per P2 (partial)
