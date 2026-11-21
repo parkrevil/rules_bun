@@ -290,7 +290,6 @@ npm.replace_package(
     replacement = "//bun/tests/npm/registry/archives:member-user@1.0.0.tgz",
 )
 
-# Excludes files that rules_bun renames, by their archive names (FR-033).
 # A dependency whose store entry differs by target platform (feature 006 BC-12).
 npm.translate_lock(
     name = "npm_conformance_platform_peer",
@@ -304,6 +303,8 @@ npm.replace_package(
     package = "q-darwin@1.0.0",
     replacement = "//bun/tests/npm/registry/archives:q-darwin@1.0.0.tgz",
 )
+
+# Excludes files that rules_bun renames, by their archive names (FR-033).
 npm.translate_lock(
     name = "npm_renamed",
     bun_lock = "//bun/tests/npm/fixtures/renamed:bun.lock",
