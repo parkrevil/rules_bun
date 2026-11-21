@@ -1349,3 +1349,32 @@ red first and recorded in `tdd-log.md`.
   `//bun/tests/npm:workspace_member` `through_srcs`, `through_entry_point`, `through_preload` and
   `through_tools` (red with `_FILE_ATTRIBUTES` set to `["data"]`, green restored), which spec BC-4
   cites as T132, per spec "Behavior Changes" (BC-4) / SC-003 (partial)
+
+---
+
+## Phase 28: Sixth final review (2026-11-21)
+
+The sixth review before the final gate (Claude and Codex, branch-wide) found these; the lead
+rejected the gate to fix them (the lead, under the user's delegation, 2026-11-21). Each is written
+red first and recorded in `tdd-log.md`.
+
+- [ ] T139 `bun/private/lockfile.bzl` reads JSON `null` as a missing field: for dependency maps,
+  `optionalPeers`, `unresolved`, a workspace's `version`, `configVersion` and
+  `trustedDependencies` it loads a lockfile Bun refuses, and for `overrides`, `catalog`,
+  `catalogs`, `patchedDependencies` and `packages` evaluation crashes with a bare Starlark error
+  (`in dict, got NoneType`) naming no file. Add `lockfile_test.bzl` cases red first (each field
+  set to `null`, checked against the pinned Bun's refusal), then tell a present `null` from an
+  absent key and fail naming the `bun.lock` label and the field, per FR-004 / spec Edge Cases
+  (contradicts)
+- [ ] T140 Codex: the member check still accepts a member whose files never reach the program
+  (`bun/private/library.bzl` about L59–L64): it assumes a target returning `BunLibraryInfo`
+  forwards every dependency outside the excluded attributes, but `consumer_library(extras =
+  [member])` returns none of the member's files, so a `bun_test` on that wrapper and
+  `node_modules/member-user` passes `_member_links` and gets a link to an uncopied directory. Add
+  that negative test red first, then accept a member only where its files and package record are
+  actually in the layout the run rule builds (from what `BunLibraryInfo` carries, not from which
+  attributes an aspect walks), else fail with the existing "add … to its deps" message; keep
+  T123/T124's tests green, per BC-4 (contradicts)
+- [ ] T141 `bun/tests/npm/fixtures/dependency_conflict/BUILD.bazel` and a comment in
+  `bun/tests/npm/registry/write_lockfiles.ts` still say the ruleset must reject that lockfile;
+  since BC-6 it accepts it (`uniqueness_test.bzl`). Correct both comments (unrequested)
