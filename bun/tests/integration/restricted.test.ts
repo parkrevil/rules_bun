@@ -5,7 +5,10 @@
 // unsupported package, and the bin of bin-darwin-arm64 is incompatible there
 // and buildable for darwin arm64. The bin of bin-linux-x64-musl (libc musl) is
 // incompatible on a Linux platform with the glibc constraint and buildable with
-// the musl one (specs/004-bun-1-4-4-upgrade research R11).
+// the musl one (specs/004-bun-1-4-4-upgrade research R11). Since feature 006
+// BC-7 a declared non-optional package with os or cpu is disabled where they
+// exclude the platform, as an optional one is: the bin of bin-darwin (os
+// darwin) is incompatible on linux x86_64 and buildable for darwin arm64 (T117).
 
 import { afterAll, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -13,7 +16,7 @@ import { rlocation } from "../support/spawn.ts";
 import { assertOffline, Inner, INNER_TIMEOUT } from "./support/inner.ts";
 
 const FIXTURE = "_main/bun/tests/npm/fixtures/restricted";
-const ARCHIVES = ["bin-darwin-arm64", "bin-linux-x64-musl", "native", "native-darwin-arm64", "native-darwin-x64", "native-linux-arm64", "native-linux-x64-musl", "native-win32-x64"].map(
+const ARCHIVES = ["bin-darwin", "bin-darwin-arm64", "bin-linux-x64-musl", "native", "native-darwin-arm64", "native-darwin-x64", "native-linux-arm64", "native-linux-x64-musl", "native-win32-x64"].map(
   (p) => rlocation(`_main/bun/tests/npm/registry/archives/${p}@1.0.0.tgz`),
 );
 const inner = new Inner("restricted", { npmArchives: ARCHIVES });
@@ -82,6 +85,28 @@ test(
     expect(glibc.stderr).toContain(`${target} is incompatible and cannot be built`);
     const musl = await inner.run(["build", "--nobuild", "--platforms=//:linux_x64_musl", target]);
     expect(musl.exitCode, musl.stderr).toBe(0);
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "the bin of a platform-restricted non-optional package is incompatible elsewhere (BC-7)",
+  async () => {
+    const result = await build("//:node_modules/bin-darwin/bin/dbin");
+    console.log(result.stderr.split("\n").filter((l) => /ERROR|incompatible|Error/.test(l)).join("\n"));
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toContain("//:node_modules/bin-darwin/bin/dbin is incompatible and cannot be built");
+    assertOffline(inner.log);
+  },
+  INNER_TIMEOUT,
+);
+
+test(
+  "the bin of a platform-restricted non-optional package stays buildable on the platform it is for (BC-7)",
+  async () => {
+    const result = await inner.run(["build", "--nobuild", "--platforms=//:darwin_arm64", "//:node_modules/bin-darwin/bin/dbin"]);
+    expect(result.exitCode, result.stderr).toBe(0);
     assertOffline(inner.log);
   },
   INNER_TIMEOUT,

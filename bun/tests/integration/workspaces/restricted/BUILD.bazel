@@ -13,7 +13,7 @@ platform(
     ],
 )
 
-# The platform bin-darwin-arm64 is for.
+# The platform bin-darwin-arm64 and bin-darwin are for.
 platform(
     name = "darwin_arm64",
     constraint_values = [

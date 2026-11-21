@@ -5,6 +5,7 @@
     "": {
       "name": "restricted",
       "dependencies": {
+        "bin-darwin": "1.0.0",
         "native": "1.0.0",
       },
       "optionalDependencies": {
@@ -14,6 +15,8 @@
     },
   },
   "packages": {
+    "bin-darwin": ["bin-darwin@1.0.0", "http://127.0.0.1:28761/bin-darwin/-/bin-darwin-1.0.0.tgz", { "os": "darwin", "bin": { "dbin": "cli.js" } }, "sha512-hPtq2kbdtNk/hfI3WpmG0hlEHV0ND6cy70lTWoDHkeT5ahZaXYRGKzUpm51LqUZmqbU2SLAHlI2yhYIFP+oBbA=="],
+
     "bin-darwin-arm64": ["bin-darwin-arm64@1.0.0", "http://127.0.0.1:28761/bin-darwin-arm64/-/bin-darwin-arm64-1.0.0.tgz", { "os": "darwin", "cpu": "arm64", "bin": { "rbin": "cli.js" } }, "sha512-7k3k7ZiKImLSdRXCOwObWqQK1BZT2g1cQgWt9g5zIwJK8By7hkrtDRquVn3oygM6rIhyvxNh/drcExUly7NuGQ=="],
 
     "bin-linux-x64-musl": ["bin-linux-x64-musl@1.0.0", "http://127.0.0.1:28761/bin-linux-x64-musl/-/bin-linux-x64-musl-1.0.0.tgz", { "os": "linux", "cpu": "x64", "libc": "musl", "bin": { "rbin": "cli.js" } }, "sha512-G3Aw+ZBHLMjU8Goycv/EKJLU3I8kvnivoTAHRcFATYspeW50alZYK226rEBtPQKG7obpyv5uA9be6ZSCPEPN8Q=="],

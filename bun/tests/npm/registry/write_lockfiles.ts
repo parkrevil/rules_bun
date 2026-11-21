@@ -337,18 +337,23 @@ const projects: Record<string, Project> = {
   // an integrity, so it is unsupported; bin-darwin-arm64, a declared optional
   // dependency with os darwin and cpu arm64, has a JavaScript bin, and so has
   // bin-linux-x64-musl, with libc musl (specs/004-bun-1-4-4-upgrade research R11).
+  // bin-darwin, a declared non-optional dependency with os darwin and a
+  // JavaScript bin, is disabled on every other platform as an optional one is
+  // (feature 006 BC-7, T117).
   restricted: {
     noIntegrity: ["native-linux-x64@1.0.0"],
     files: () => ({
       "package.json": json({
         name: "restricted",
         private: true,
-        dependencies: { native: "1.0.0" },
+        dependencies: { "bin-darwin": "1.0.0", native: "1.0.0" },
         optionalDependencies: { "bin-darwin-arm64": "1.0.0", "bin-linux-x64-musl": "1.0.0" },
       }),
     }),
     check(lock) {
-      keys(lock, ["bin-darwin-arm64", "native", "native-linux-x64"]);
+      keys(lock, ["bin-darwin", "bin-darwin-arm64", "native", "native-linux-x64"]);
+      assert(lock.packages["bin-darwin"][2].bin?.dbin === "cli.js", "bin-darwin has no dbin");
+      assert(lock.packages["bin-darwin"][2].os === "darwin", `bin-darwin os ${lock.packages["bin-darwin"][2].os}`);
       assert(lock.packages["native-linux-x64"][3] === "", `native-linux-x64 integrity ${lock.packages["native-linux-x64"][3]}`);
       assert(lock.packages["bin-darwin-arm64"][2].bin?.rbin === "cli.js", "bin-darwin-arm64 has no rbin");
       assert(lock.packages["bin-darwin-arm64"][2].os === "darwin", `bin-darwin-arm64 os ${lock.packages["bin-darwin-arm64"][2].os}`);

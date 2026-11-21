@@ -2,6 +2,7 @@
   "name": "restricted",
   "private": true,
   "dependencies": {
+    "bin-darwin": "1.0.0",
     "native": "1.0.0"
   },
   "optionalDependencies": {

@@ -1159,7 +1159,7 @@ recorded in `tdd-log.md`.
 
 ## Phase 24: Convergence
 
-- [ ] T117 CRITICAL: test and document BC-7's effect on bins. Since BC-7, a declared non-optional
+- [X] T117 CRITICAL: test and document BC-7's effect on bins. Since BC-7, a declared non-optional
   package whose `os` or `cpu` exclude some target platforms is a link whose root the hub selects
   by platform, so `_compatible` (`bun/private/npm_repositories.bzl` about L471–L489) makes its
   `:node_modules/<package>/bin/<bin>` incompatible there; on `main` the root was in `closure` and
@@ -1173,7 +1173,7 @@ recorded in `tdd-log.md`.
   run it on `main`'s code in a worktree to record red, then green on the branch, recorded in
   `tdd-log.md`; state the rule for non-optional packages in `_NPM_DOC` and the BC-7 row, per
   Constitution II / BC-7 / FR-017 (partial)
-- [ ] T118 Complete research Part 2's "Function-level map (T055)" in
+- [X] T118 Complete research Part 2's "Function-level map (T055)" in
   `specs/006-bun-conformant-resolution/research.md`, which says it lists each function of the
   rebuilt resolver as its docstring cites it: add `platforms.bzl` `platform_tuples`,
   `platform_bits` (`src/install/PackageManager/PackageManagerOptions.rs` L1174–L1176),

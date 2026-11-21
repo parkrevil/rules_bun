@@ -378,8 +378,9 @@ the test that shows it:
   whose dependencies are bound once, as Bun's row evidence decides, not one instance per key with
   each key's own walk (user, 2026-10-29, plan gate D2).
 - **BC-7**: a non-optional dependency whose package's `os`/`cpu` exclude the target platform is not
-  carried on that platform, as Bun skips a disabled package whether or not it is optional (user,
-  2026-10-29, plan gate D2).
+  carried on that platform, as Bun skips a disabled package whether or not it is optional, and its
+  bins (`:node_modules/<package>/bin/<bin>`) are incompatible there, as an optional package's are
+  (user, 2026-10-29, plan gate D2; bins: T117).
 - **BC-8**: the dependencies of an unfetched entry (`unsupported_reason`) get instances, as Bun
   installs them; the entry itself still fails analysis and no generated target name changes (user,
   2026-10-29, plan gate D3).

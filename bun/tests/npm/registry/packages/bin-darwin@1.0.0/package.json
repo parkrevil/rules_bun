@@ -1,0 +1,10 @@
+{
+  "name": "bin-darwin",
+  "version": "1.0.0",
+  "bin": {
+    "dbin": "cli.js"
+  },
+  "os": [
+    "darwin"
+  ]
+}

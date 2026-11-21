@@ -151,7 +151,8 @@ entry). Root and workspace entries are the holders of `node_modules/<name>` link
 | Bun step | Lines | Reason |
 |---|---|---|
 | hidden and public hoisting (`claim_hidden_hoist`, `public_hoist_pattern`) | ISO L219–228, L1271–1455 | writes `node_modules/.bun/node_modules` and root fallbacks, not entry dependencies; outside FR-008's graph (D1) |
-| `peer_hash`, `entry_hash`, global virtual store | ISO L111–150, L1353–1386 | directory names only |
+| `entry_hash`, global virtual store | ISO L111–150 | directory names only |
+| the `Wyhash11` of a `peer_hash`, and the integrity it starts from | ISO L1353–L1386 | `_ids` carries the peer hash as the store directory `<name>@<version>+<peer hash>` (BC-11) but hashes the peers' names and resolutions with `hash_fn` and numbers colliding hashes (same equality, no shared directory); a tarball's integrity names only an entry rules_bun does not fetch (ID-4) |
 | an entry's `nested_folder` | ISO L1404, L1424, L2365–L2390 | whether the installer installs a nested folder package or links it through the package containing it; the entry and its links are the same (T054) |
 | workspace filters, `packages_to_install`, `--omit` | ISO L1005–1031, TREE L1393–1404 | the ruleset links every workspace; its consumers select targets |
 | lifecycle scripts, `trustedDependencies` | ISO Installer | ID-1 |
@@ -174,7 +175,7 @@ the adapter `resolve.bzl` decides which package a dependency links.
 | `lockfile.bzl` `split_key`, an entry's `segments` and `alias` | `lockfile.bzl` `split_key`, `_entry` | read for each key and kept for the lockfile tests; no resolver reads them (the loader binds by `find_resolution`, LOCK L1580–L1662) |
 | `workspaces.bzl` member patterns, `compare_manifests`, `match_members` | `workspaces.bzl` | that `package.json` and `bun.lock` agree (the frozen-lockfile check, INSTALL L826–L891); no link |
 | `npm_extension.bzl` first entry of each `name@version`, `packages`, `identities` | `npm_extension.bzl` `_npm_impl` | which archive is downloaded and verified for a package version; no link |
-| `run.bzl` `_check_unique`, `_package_layout` | `run.bzl` | that a program gets one copy per package version, and the store and link paths of the instances and links `resolve.bzl` gives; no binding |
+| `run.bzl` `_check_unique`, `_package_layout` | `run.bzl` | that a program gets one copy per store directory (`<name>@<version>` or `<name>@<version>+<peer hash>`, BC-11), and the store and link paths of the instances and links `resolve.bzl` gives; no binding |
 
 ### Function-level map (T055)
 
@@ -376,9 +377,22 @@ binding-relevant Bun steps are unaccounted.
 | `resolve.bzl` `_entry_key` | the adapter (research R4) |
 | `resolve.bzl` `_class_graph` | the adapter (research R4) |
 | `resolve.bzl` `_reached` | the adapter (research R4) |
-| `resolve.bzl` `_ids` | the adapter (research R4) |
+| `resolve.bzl` `_hex16` | the adapter (research R4): Bun's `{:016x}` of a peer hash |
+| `resolve.bzl` `_ids` | `src/install/isolated_install/Store.rs` L450–L466; `src/install/isolated_install.rs` L1353–L1386 (the store directory `<name>@<version>+<peer hash>`, BC-11); the instance ID and the numbering of colliding hashes are the adapter (research R4) |
 | `resolve.bzl` `_label` | the adapter (research R4) |
+| `resolve.bzl` `_declared_key` | the adapter (research R4): the key the cleaned lockfile binds a declared dependency to, also one the store links on no class (T111) |
+| `resolve.bzl` `_differing_member` | the adapter (research R4) |
+| `resolve.bzl` `class_member_conflict` | the adapter (research R4): a member link that differs by platform class (BC-4, BC-12) |
 | `resolve.bzl` `resolve` | the adapter (research R4) |
+| `resolve.bzl` `_mask` | the adapter (research R4) |
+| `resolve.bzl` `_conditions` | the adapter (research R4) |
+| `platforms.bzl` `_npm_only` | the adapter (research R3, ID-2): a bit for each `NPM_OS`/`NPM_CPU` value Bun does not name (T112) |
+| `platforms.bzl` `npm_only_names` | the adapter (research R3, ID-2) |
+| `platforms.bzl` `_check_list` | the adapter (research R3): npm-install-checks `checkList`, as `main` read every value |
+| `platforms.bzl` `package_platforms` | the adapter (research R3, ID-2): Bun's `negatable_from_json_value` for the values Bun names, `_check_list` for the others |
+| `platforms.bzl` `platform_tuples` | the adapter (research R3, ID-2): the target platforms the hub's `select()` tells apart |
+| `platforms.bzl` `platform_bits` | `src/install/PackageManager/PackageManagerOptions.rs` L1174–L1176; the bits of values Bun does not name are the adapter's (T112) |
+| `platforms.bzl` `platform_classes` | `src/install/lockfile/Package/Meta.rs` L70–L74 |
 
 ## Part 3: Decisions
 

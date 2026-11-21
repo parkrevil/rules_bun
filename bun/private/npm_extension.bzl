@@ -489,7 +489,8 @@ Generated targets (public API, under these naming rules):
   pins that Bun runs such a file); any other bin, such as a shell script or a native executable,
   fails its analysis naming the reason. Every bin target is `manual`, so `bazel build //...`
   builds none; a bin a target uses or the command line names is built. The bins of a declared
-  optional package with `os`, `cpu` or `libc` are compatible only with the platforms it matches.
+  package with `os` or `cpu`, optional or not, and of a declared optional package with `libc` are
+  compatible only with the platforms it matches.
   Executables declared only through `directories.bin` get no target.
 - Every character of `<package>` or `<bin>` outside Bazel's target-name set is written `_`; two
   names that become one fail evaluation naming both.
