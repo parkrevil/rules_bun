@@ -1,0 +1,10 @@
+{
+  "name": "conformance-platform-root-package",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "optionalDependencies": {
+    "plat-p": "2.0.0"
+  }
+}

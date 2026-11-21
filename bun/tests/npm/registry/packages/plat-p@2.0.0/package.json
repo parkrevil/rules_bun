@@ -1,0 +1,11 @@
+{
+  "name": "plat-p",
+  "version": "2.0.0",
+  "main": "index.js",
+  "os": [
+    "darwin"
+  ],
+  "bin": {
+    "plat-p-two": "two.ts"
+  }
+}

@@ -471,7 +471,17 @@ class only when the lookup ends without a provider (`best_version` invalid, ISO 
   bins are the same. `resolve_test.bzl` `platform_holder_test`, `platforms_test.bzl`
   `root_linux_x64_test`/`root_darwin_aarch64_test`, the fixture test
   `conformance_platform_peer:platform_peer_test`, and `conformance_test` (both projects, `0
-  differences`).
+  differences`). Roots of different packages (T097, the review's case: workspace `w` with peer
+  `plat-p: ^1.0.0`, the root's optional `plat-p@2.0.0` restricted to darwin) are not written: a
+  workspace's peer binds a row whose version its range matches (`own_peer`, LOCK L2820), else the
+  row the key walk finds (`w/plat-p`, else the root's `plat-p`, L2897–L2901), the store's lookup
+  for a workspace's peer looks only at the root above it (ISO L1074–L1170), and the pinned Bun, like Bun 1.4.2, writes no `w/plat-p` row when the
+  root has a `plat-p`, even one the range does not match (`conformance_platform_root_package`: one
+  root, `plat-p@2.0.0`, linked on darwin only). With such a row written by hand the store binds
+  `plat-p@2.0.0` on darwin and `plat-p@1.0.0` elsewhere, whose bins and fetch status differ, so
+  `resolve.bzl` fails it (`the store links "<alias>" of the workspace "<path>" to different packages
+  on different platforms, which rules_bun cannot express`); `resolve_test.bzl`
+  `platform_root_package_test` covers both.
 - **An entry's alias** (`the store links "<alias>" of <package> to different packages on different
   platforms`): needs an optional peer that no row on the peer's key path resolves (LOCK L1580–L1662)
   while the parent's own platform-restricted dependency provides it. The pinned Bun hoists that

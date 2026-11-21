@@ -394,7 +394,40 @@ def _platform_edge_test_impl(ctx):
     asserts.equals(env, [], [i["id"] for i in p.values() if i["name"] == "a" and i["edge_conditions"]])
     return unittest.end(env)
 
+def _platform_root_package_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # The reviewer's case (T097): w's peer plat-p: ^1.0.0 and the root's optional plat-p@2.0.0,
+    # restricted to darwin. The pinned Bun writes no w/plat-p row, so w's plat-p is the root's
+    # plat-p@2.0.0 on darwin and nothing elsewhere: one root package, not one per platform.
+    resolution = _resolution(env, "conformance_platform_root_package")
+    link = resolution["links"]["packages/w"]["plat-p"]
+    asserts.equals(env, "plat-p@2.0.0", _nv(resolution, link["root"]))
+    asserts.equals(env, {}, link["roots"])
+    asserts.equals(env, [], [t for t in link["optional"][link["root"]] if t[0] != "darwin"])
+
+    # With a w/plat-p row written by hand, the store binds w's plat-p to plat-p@2.0.0 on darwin and
+    # to plat-p@1.0.0 elsewhere: two packages, whose bins the link cannot name for every platform.
+    text = json.encode({
+        "lockfileVersion": 2,
+        "workspaces": {
+            "": {"name": "inline", "optionalDependencies": {"plat-p": "2.0.0"}},
+            "packages/w": {"name": "w", "version": "1.0.0", "peerDependencies": {"plat-p": "^1.0.0"}},
+        },
+        "packages": {
+            "plat-p": ["plat-p@2.0.0", "", {"os": "darwin"}, "sha512-AAAA"],
+            "w": ["w@workspace:packages/w"],
+            "w/plat-p": ["plat-p@1.0.0", "", {}, "sha512-AAAA"],
+        },
+    })
+    lock = read_lockfile(text, "inline/bun.lock")
+    asserts.equals(env, None, lock.error)
+    result = resolve(lock.value, "inline/bun.lock")
+    asserts.equals(env, 'inline/bun.lock: the store links "plat-p" of the workspace "packages/w" to different packages on different platforms, which rules_bun cannot express', result.error)
+    return unittest.end(env)
+
 platform_holder_test = unittest.make(_platform_holder_test_impl)
+platform_root_package_test = unittest.make(_platform_root_package_test_impl)
 platform_edge_test = unittest.make(_platform_edge_test_impl)
 platform_entry_error_test = unittest.make(_platform_entry_error_test_impl)
 platform_member_test = unittest.make(_platform_member_test_impl)
@@ -420,4 +453,5 @@ def resolve_test_suite(name):
         platform_entry_error_test,
         platform_member_test,
         platform_edge_test,
+        platform_root_package_test,
     )

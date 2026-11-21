@@ -978,7 +978,7 @@ recorded in `tdd-log.md`.
   with `libc` on a darwin class), run them on `main`'s code in a worktree to record red, then green
   on the branch; add a corpus project for what the Linux host class can compare, per FR-015 /
   SC-003 (contradicts)
-- [ ] T097 `bun/private/npm_extension.bzl` (about L354–L358) takes a per-platform link's bins and
+- [X] T097 `bun/private/npm_extension.bzl` (about L354–L358) takes a per-platform link's bins and
   fetch status from its first per-platform target, assuming all are one package. Write the
   reviewer's case red first (workspace `w` with peer `p: ^1`; the root's optional `p: 2.0.0`
   limited to darwin; `w`'s `p` is `p@2` on darwin and `p@1` elsewhere, through

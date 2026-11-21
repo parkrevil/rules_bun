@@ -50,10 +50,13 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails
   analysis naming the package, the dependency and the member's target to add to its `deps`;
 - a package whose own dependency the store binds to different packages on different platform
-  classes fails evaluation naming the package and the dependency (no Bun-written lockfile is known
-  to reach it, research R4); so does a package, the root or a workspace whose link to a workspace
-  member the store makes on some platform classes only, or makes to a package on others (T090; no
-  Bun-written lockfile reaches it, research R4 "A member link").
+  classes fails evaluation naming the package and the dependency (ID-7: Bun 1.4.4 was not seen
+  writing such a lockfile, Bun 1.4.2 writes one, research R4); so does a package, the root or a
+  workspace whose link to a workspace member the store makes on some platform classes only, or
+  makes to a package on others (T090; no Bun-written lockfile reaches it, research R4 "A member
+  link"), and the root or a workspace whose dependency the store binds to different packages, not
+  only to other peer bindings of one package, on different platform classes (T097; no Bun-written
+  lockfile reaches it, research R4 "A holder's alias").
 
 Diagnostics that change: BC-3's and BC-5's evaluation failures disappear; the analysis failure of
 two instances of one package version in one target now applies only to instances with one store

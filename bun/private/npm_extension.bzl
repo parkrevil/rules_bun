@@ -353,7 +353,8 @@ def _translate(module_ctx, tag, replacements):
         targets = {}
         for alias, link in aliases.items():
             # The roots of a link whose root differs by platform are one package under different
-            # peer bindings (feature 006 BC-12), so any of them names its bins.
+            # peer bindings (feature 006 BC-12; `resolve.bzl` fails roots of different packages,
+            # T097), so any of them names its bins and fetch status.
             root = resolution.value.instances[link.root or sorted(link.roots.keys())[0]]
             entry_bins = entries[root.key].bin if root.status == "ok" else {}
             bins = bin_targets("{}@{}".format(root.name, root.version), entry_bins)
@@ -506,10 +507,11 @@ peer resolves to the version a dependent above it provides, else to the version 
 a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
 linked; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
 dependency excluded on a target platform is not linked from that package there, also where the
-target holds that dependency through another link. A link to a
-workspace member that the store would make on some target platforms only fails evaluation naming
-the package or workspace and the dependency; no lockfile the pinned Bun writes is known to reach
-it. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
+target holds that dependency through another link. A link to a workspace member that the store
+would make on some target platforms only, and a dependency of the root or a workspace that it
+would bind to different packages on different target platforms, fail evaluation naming the
+package or workspace and the dependency; no lockfile the pinned Bun writes is known to reach
+them. These differences from Bun are intended: no lifecycle script runs (ID-1); packages are
 selected by the target platform, not by the machine that runs Bun (ID-2); Bun's hoisted
 `node_modules/.bun/node_modules` and the root fallback, through which a package can import what it
 does not declare, are not reproduced, so only declared dependencies resolve (ID-3); an entry

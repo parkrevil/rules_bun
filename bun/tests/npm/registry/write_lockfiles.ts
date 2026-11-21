@@ -655,6 +655,25 @@ const projects: Record<string, Project> = {
       assert(walk(lock, "native", "native-linux-x64-musl") === "native-linux-x64-musl", "native's native-linux-x64-musl is not the root's");
     },
   },
+  // T097: a workspace's peer plat-p: ^1.0.0 and the root's optional plat-p@2.0.0, restricted to
+  // darwin, whose bins differ from plat-p@1.0.0's: the reviewer's case of a link whose root may be
+  // a different package by platform.
+  conformance_platform_root_package: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-platform-root-package",
+        private: true,
+        workspaces: ["packages/*"],
+        optionalDependencies: { "plat-p": "2.0.0" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", peerDependencies: { "plat-p": "^1.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "plat-p") === "plat-p@2.0.0", "the root's plat-p is not plat-p@2.0.0");
+      assert(lock.packages["plat-p"][2]?.os === "darwin", "plat-p@2.0.0 is not restricted to darwin");
+    },
+  },
   // FR-009: overrides of the ranges of a peer (state) and of a peer a dependency provides (q).
   conformance_overrides: {
     files: () => ({

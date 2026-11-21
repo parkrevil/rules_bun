@@ -335,7 +335,14 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
                 roots.setdefault((path, alias), {}).setdefault(root, []).extend(tuples_of[index])
                 for key in _reached(graph, root):
                     reach.setdefault((path, alias), {}).setdefault(key, []).extend(tuples_of[index])
-    for (path, alias), by_root in roots.items():
+    for (path, alias), by_root in sorted(roots.items()):
+        if len({key[0]: True for key in by_root.keys()}) > 1:
+            # Per-platform roots are one package under other peer bindings, so the link's bins
+            # and fetch status are the same on every platform. Roots of different packages need a
+            # holder's alias whose lockfile row differs from the one the lookup finds above it,
+            # which the pinned Bun does not write (research R4, T097).
+            holder = 'the workspace "{}"'.format(path) if path else "the root workspace"
+            return _error("{}: the store links \"{}\" of {} to different packages on different platforms, which rules_bun cannot express".format(file, alias, holder))
         closure = []
         optional = {}
         for key, platforms in reach[(path, alias)].items():
