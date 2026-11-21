@@ -34,18 +34,27 @@ alike. Only fields that decide a link are carried.
 | **Entry** | `node_id`, `dependencies` (ordered set of `(entry_id, dep_id)`), `parents` | Second pass (ISO L1251–1470): nodes with equal `pkg_id` and equal `peers` are one entry. |
 | **Platform class** | the `(os, cpu, libc)` tuples whose disabled-package set is equal; the store built for it | Research R3; a lockfile without restricted packages has one class. |
 
-## Ruleset output (`resolve.bzl`, unchanged shape)
+## Ruleset output (`resolve.bzl`)
 
-`struct(instances, links, members)` as on `main` (research R4):
+`struct(instances, links, members)`, the top-level shape `main` returns (research R4). Instances
+and links carry fields `main`'s do not; each is named below with the change that added it
+(`resolve`'s docstring is the full description):
 
 - **Instance** = one entry, merged over platform classes by `(package, peer bindings)`: `id`
-  (`name@version__<h>[__<n>]`), `name`, `version`, `store_name`, `key`, `edges` (alias → instance ID),
-  `edge_conditions` (alias of `edges` → the tuples an edge holds on, when not on every class,
-  BC-15), `edge_targets` (alias → instance ID → tuples, for a dependency bound to different
-  entries by class, BC-16), `dependency_keys`, `peers` (aliases that are peers), `status` (`ok` or
-  why it is not fetched).
-- **Link** `links[path][alias]` = `struct(alias, root, closure, optional)`: `closure` reached in every
-  class, `optional` ID → the `[os, cpu, libc]` requirements of the classes it is reached in.
+  (`name@version__<h>[__<n>]`), `name`, `version`, `store_name`, `peer_hash` (16 hexadecimal
+  digits naming the entry's transitive peer bindings, `""` without peers, BC-11), `key`, `edges`
+  (alias → instance ID), `edge_conditions` (alias of `edges` → the tuples an edge holds on, when
+  not on every class, BC-15), `edge_targets` (alias → instance ID → tuples, for a dependency bound
+  to different entries by class, BC-16), `dependency_keys`, `peers` (aliases that are peers),
+  `members` (alias → the path of the workspace member a dependency links, BC-4), `status` (`ok` or
+  why it cannot be used), `unfetched` (whether that is because rules_bun does not fetch it, ID-4).
+- **Link** `links[path][alias]` = `struct(alias, root, roots, closure, optional, key)`: `root` the
+  instance ID the alias links, or `None` when that differs by class or the store links it on no
+  class; `roots` root ID → the tuples it is the root on, when it differs by class (BC-12), else
+  empty; `closure` reached in every class, `optional` ID → the `[os, cpu, libc]` requirements of
+  the classes it is reached in; `key` the `bun.lock` key of the package it links, whose `bin`
+  entries name its bin targets, or `None` (T111). Every declared dependency has a link; one the
+  store links on no class has no root and reaches nothing (T111).
 - **Members** `members[path][alias]` → member path, for `workspace:` links.
 
 ## Conformance graph (test data; [contracts/conformance-graph.md](contracts/conformance-graph.md))

@@ -18,7 +18,7 @@ const ADAPTERS = new Set(["resolve", "platforms"]);
 
 // `platforms.bzl` is also the toolchain's platform table; only these of its functions resolve.
 const ONLY: Record<string, Set<string>> = {
-  platforms: new Set(["platform_tuples", "platform_bits", "platform_classes", "npm_only_names", "_check_list", "package_platforms"]),
+  platforms: new Set(["platform_tuples", "platform_bits", "platform_classes", "_npm_only", "npm_only_names", "_check_list", "package_platforms"]),
 };
 
 // The files of research Part 1 (LOCK, LOCKFILE, TREE, REACH, PRUNED, META, ISO, STORE, HOOKS,

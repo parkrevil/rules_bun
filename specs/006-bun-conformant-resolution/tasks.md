@@ -1125,3 +1125,32 @@ recorded in `tdd-log.md`.
   against spec P2 ("every project the ruleset's tests resolve"). Compare it (a copy or a reference
   the root module's tests can read), or record in the spec why it cannot be and narrow P2's
   wording, per P2 (partial)
+
+---
+
+## Phase 23: Convergence
+
+- [ ] T114 In T066's PR body, also give the tests that showed each change found after T106 was
+  written: BC-16 its T107 rows (red on `main`'s resolver in a worktree with the `4a5419e2`
+  lockfile; green `resolve`, `platforms`, `graph` and `conformance_test`); BC-13's extension to
+  `netbsd` and `riscv64` its T112 rows (`platforms_bun_rule_test` red and green); the kept
+  `:node_modules/<package>` target of a declared dependency the store links on no platform its
+  T111 rows (`declared_test.bzl` red and green, and the SC-005 comparison of `main`'s names); and
+  `scale_test`'s time for T100's platform variant next to T005's and T052's. T106 lists only
+  BC-1…BC-15, per spec "Behavior Changes" / SC-003 / FR-015 (partial)
+- [X] T115 Cite Bun's lines in, or state that it is the adapter (research R3, ID-2) in, the docstring
+  of `_npm_only` in `bun/private/platforms.bzl` (T112: the bits for `netbsd` and `riscv64` that
+  `platform_bits` and `package_platforms` read), and add it to `ONLY.platforms` in
+  `bun/tests/npm/conformance/citations.test.ts`, which skips it today; record the
+  `citations_test` run in `tdd-log.md`, per FR-002 / SC-004 (partial)
+- [X] T116 Bring the design documents and `_NPM_DOC` to the code: `data-model.md` "Ruleset output"
+  ("unchanged shape") names a link `struct(alias, root, closure, optional)`, while
+  `bun/private/resolve.bzl` `resolve` returns `struct(alias, root, roots, closure, optional, key)`
+  (`roots`: BC-12; `key` and the empty link of a dependency the store links nowhere: T111) and
+  instances with `peer_hash` (BC-11), `members` (BC-4) and `unfetched` (ID-4);
+  `contracts/conformance-graph.md` "Projects" and `quickstart.md` Q1 omit `e2e/smoke` (T113), Q1
+  also `bun/tests/npm/conformance/refused/`, and the contract's "Oracle files" row omits the
+  archives served to `e2e/smoke` (`bun/tests/npm/fixtures/jsx/archives`) and to the scale projects
+  (`writeArchives`); `_NPM_DOC`'s list of compared directories in `bun/private/npm_extension.bzl`
+  omits `refused/`, where the ruleset's refusal of `patch_path` is checked, per plan (data model,
+  contracts) / FR-017 (partial)

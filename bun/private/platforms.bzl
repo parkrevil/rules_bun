@@ -30,7 +30,20 @@ NPM_CPU = {
 }
 
 def _npm_only(kind, table):
-    """The values of `table` Bun does not name, each with its own bit above Bun's."""
+    """The values of `table` Bun does not name, each with its own bit above Bun's.
+
+    This is the adapter (research R3, ID-2): Bun's `negatable_names!` tables have no bit for
+    `netbsd` or `riscv64`, which `NPM_OS` and `NPM_CPU` map, so each gets one here, above every bit
+    Bun's tables use; `platform_bits` gives it to a target with that value and `package_platforms`
+    sets it as npm's `checkList` reads the field (T112).
+
+    Args:
+        kind: `os` or `cpu`.
+        table: `NPM_OS` or `NPM_CPU`.
+
+    Returns:
+        A dict from each value Bun does not name to its bit.
+    """
     return {name: 1 << (16 + i) for i, name in enumerate([n for n in sorted(table.keys()) if n not in platform_names(kind)])}
 
 # The npm values `NPM_OS` and `NPM_CPU` map that Bun's `negatable_names!` tables do not name

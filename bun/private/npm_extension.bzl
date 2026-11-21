@@ -502,8 +502,11 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 (`bun/tests/npm/conformance`) compares, for every `bun.lock` under `bun/tests/npm/fixtures/`,
 `bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/`,
 `bun/tests/npm/scale/` and `bun/tests/integration/workspaces/`, and `e2e/smoke`'s, each link with
-the one Bun's install makes on the test's platform, and that the ruleset refuses each lockfile there Bun refuses to load. It runs in the `test` job of rules_bun's
-CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners `ubuntu-latest`, `macos-latest` and
+the one Bun's install makes on the test's platform, and checks that the ruleset refuses each of
+those lockfiles Bun refuses to load, among them every one under
+`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string). It runs
+in the `test` job of rules_bun's CI (`.github/workflows/ci.yaml`) on the GitHub Actions runners
+`ubuntu-latest`, `macos-latest` and
 `windows-latest`, with Bun 1.4.4 as the oracle and again with Bun 1.4.2 on the lockfiles Bun 1.4.2
 writes (`conformance_1_4_2_test`), each comparing its runner's platform class; a statement here
 holds once a CI run of the change passes. So one package version is one
