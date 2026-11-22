@@ -1783,3 +1783,22 @@ claims (T177's root `$<name>`, BC-21's `catalog:default`) and lists the other fo
   (`bun_lockfile.bzl` about L184–L186), so BC-21's and `_NPM_DOC`'s "Bun refuses that" are false for
   these forms. Read them as Bun does, red first with a lockfile Bun writes, and correct BC-21 and
   `_NPM_DOC`, per P1 / Constitution II (contradicts)
+
+---
+
+## Phase 47: Fifteenth final review (2026-11-22)
+
+The fifteenth review's Claude findings are four differences `main` has too (the overrides
+comparison), listed as follow-ups under the stop rule (research Part 6). Codex found one this branch
+introduced, fixed here (the lead, under the user's delegation, 2026-11-22). Written red first and recorded in `tdd-log.md`.
+
+- [ ] T181 Codex: a bin's workspace members ignore platform conditions:
+  `bun/private/npm_repositories.bzl` (about L600) `_linked_members` unions the closure with every
+  optional instance and adds the members unconditionally, and the transitive member walk (T123)
+  drops conditions too. A portable CLI with an optional Linux-only helper that links a Linux-only
+  workspace target gets that member on macOS as well, so the bin is incompatible there (Bazel
+  propagates incompatibility), while `main` linked no member and the bin built. Add the regression
+  red first (a corpus project through `write_lockfiles.ts`: the macOS bin excludes the member and
+  stays buildable, the Linux bin has it), then collect members per platform class and give
+  `npm_bin.members` a `select()` on the classes the hub already selects by, per BC-4 / BC-12
+  (contradicts)

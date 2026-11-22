@@ -1341,6 +1341,12 @@ defects under P3, listed in the PR body and to be fixed in a later feature:
   (`workspaces.bzl` about L331);
 - a name in both `dependencies` and `optionalDependencies` (Bun keeps the optional one, L2473)
   fails (`workspaces.bzl` about L331).
+- (fifteenth review) in the overrides comparison (`overrides.bzl`): an object whose only child is
+  `"."` is kept as an object where Bun records the plain value; a top-level target with a range
+  (`"q@^1.0.0": "1.2.3"`) is stored as a string where Bun records `{".": …}`; npm's `"//"`
+  comment keys are compared where Bun skips them (`is_comment_key`, `OverrideMap.rs`
+  L207–L209); `resolutions` globs `"**/q"` and `"a/**/q"` fail where Bun records `{"q": …}` and
+  `{"a": {"q": …}}`.
 
 ## Part 7: Evidence log
 
