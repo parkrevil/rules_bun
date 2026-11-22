@@ -252,10 +252,41 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it;
   // except an entry rules_bun does not fetch, which ID-4 lets fail analysis (its links are compared
   // above like any other's).
-  for (const node of all.values()) {
-    if (node.entry?.status !== undefined && !node.entry.unfetched) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
+  return failedAnalysis(project, all, paths);
+}
+
+/** Whether the hub fails analysis of a node's entry for a reason other than ID-4's. */
+function failsAnalysis(node: Node | undefined): boolean {
+  return node?.entry?.status !== undefined && !node.entry.unfetched;
+}
+
+/**
+ * The failure of an entry the hub fails analysis of (FR-012): walking the corresponding nodes from
+ * the holders down (each pair is of one class, as every link agrees), the first link whose ruleset
+ * target fails analysis, with its dependent and both sides' targets. `undefined` when no entry
+ * fails analysis.
+ */
+function failedAnalysis(project: string, all: Map<string, Node>, paths: string[]): string | undefined {
+  const queue: [string, string][] = paths.map((path) => [`ruleset:h:${path}`, `bun:h:${path}`]);
+  const seen = new Set(queue.map(([r, b]) => `${r} ${b}`));
+  for (let i = 0; i < queue.length; i++) {
+    const [r, b] = queue[i];
+    const rNode = all.get(r)!;
+    const bNode = all.get(b)!;
+    for (const name of Object.keys(rNode.links).sort()) {
+      const rTarget = all.get(rNode.links[name]);
+      const bTarget = all.get(bNode.links[name]);
+      if (failsAnalysis(rTarget)) {
+        const where = describe(all, rNode, name);
+        return `${project}: ${where} links "${name}" to ${describe(all, rTarget)}, which fails analysis in the ruleset (${rTarget!.entry!.status}), Bun links it to ${describe(all, bTarget)} and installs it`;
+      }
+      if (rTarget === undefined || bTarget === undefined || seen.has(`${rNode.links[name]} ${bNode.links[name]}`)) continue;
+      seen.add(`${rNode.links[name]} ${bNode.links[name]}`);
+      queue.push([rNode.links[name], bNode.links[name]]);
+    }
   }
-  return undefined;
+  const node = [...all.values()].find(failsAnalysis);
+  return node === undefined ? undefined : `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry!.status}), Bun installs it: no holder reaches it`;
 }
 
 /** The failure of a holder on one side only (FR-012): each of its links with its target, which the

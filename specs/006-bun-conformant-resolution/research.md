@@ -661,7 +661,12 @@ holder or entry whose links differ, the dependency name, and both targets as `na
 their own links (peer bindings). When the links agree but a class's entry counts differ, it names
 the first two links, walking the corresponding nodes down from the holders, that one side binds to
 two entries of that class and the other to one, each with its dependent and the holder that reaches
-it (T161).
+it (T161). A holder of one side only is named with each of its links and their targets, which the
+other side links to no link; a holder whose links reach several entries of one store directory,
+which `run.bzl` fails analysis of in one target (`conflicts`), with each of those entries' bindings
+and the holder's links that reach it (T164); and an entry the hub fails analysis of, other than
+ID-4's, by the first link, walking down from the holders, that reaches it, with its dependent and
+both sides' targets, or as reached by no holder (T166).
 
 **Red mode** (FR-011): `RULES_BUN_CONFORMANCE_RED=1` redirects one edge of the ruleset's graph of a
 fixed project to another entry; the test must fail naming it.

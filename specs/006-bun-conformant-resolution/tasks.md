@@ -1627,3 +1627,51 @@ and left the rest here (the lead, under the user's delegation, 2026-11-22). `_NP
   that reach each conflicting entry with their bindings; add `graph_test_ts` cases red first,
   list the changed `graph.test.ts` cases (L109, L164) as FR-016 changes, and add both texts to
   the contract, per FR-012 / US2/AC2 (partial)
+
+---
+
+## Phase 40: Convergence
+
+- [X] T165 In T066's PR body, also give the tests of T163 and T164, next to their BC: BC-11's
+  single-peer-context directory form (`//bun/tests/npm:resolve` `provided_peer_test`,
+  `//bun/tests/npm/fixtures/jsx:store_test` and `e2e/smoke` `//jsx:store_test`, red on `main`'s
+  `_ids` and green on the branch, with the `tdd-log.md` T163 rows); and T164's changes of
+  `graph.test.ts` ("a holder on one side only differs" and "a holder whose links reach two entries
+  of one name@version in the ruleset differs") and `graph_test.bzl` `conflicts_test` in the FR-016
+  list of changed tests, as T162 lists T161's, per spec "Behavior Changes" ("listed again in the
+  PR with the test that shows it") / SC-003 / FR-016 (partial)
+
+---
+
+## Phase 41: Convergence
+
+- [X] T166 Bring the last link-level failure text of `bun/tests/npm/conformance/graph.ts` `compare`
+  to FR-012 as T161 and T164 read it (every failure): the status text (about L256,
+  `<project>: <entry> fails analysis in the ruleset (<status>), Bun installs it`) names neither a
+  dependent nor the dependency name. Name the first holder or entry, walking down from the holders,
+  that links the failing entry, with the dependency name and both sides' bindings; add a
+  `graph_test_ts` case red first; list the changed `graph.test.ts` case ("an entry whose status
+  fails analysis in the ruleset differs", about L147) as an FR-016 change in `tdd-log.md` and in
+  T066's PR body; update `contracts/conformance-graph.md` "Failure text" and research R8's
+  description of the failure texts (which stops at T161, without T164's holder-only and `conflicts`
+  texts), per FR-012 / US2/AC2 (partial)
+
+---
+
+## Phase 42: Tenth final review (2026-11-22)
+
+Codex approved; the tenth Claude review found only these two in the Bun 1.4.2 run, and the lead
+rejected the gate to fix them (the lead, under the user's delegation, 2026-11-22). Each is
+written red first and recorded in `tdd-log.md`.
+
+- [ ] T167 In the 1.4.2 run, `bun/tests/npm/conformance/conformance.test.ts` (about L223–L225)
+  rewrites every difference as "Bun 1.4.2 links this lockfile differently from Bun 1.4.4 … the
+  ruleset cannot follow both (constitution V)", also "the ruleset fails (…), Bun installs the
+  lockfile" (about L214), where the ruleset follows neither version. Rewrite only where the ruleset
+  side produced a graph; show red with a ruleset failure in 1.4.2 mode, per FR-012 / FR-013
+  (partial)
+- [ ] T168 Red mode does nothing in the 1.4.2 run: its project (`bun/tests/npm/fixtures/workspace`,
+  about L79) is dropped by the 1.4.2 filter (about L152), so `conformance_1_4_2_test
+  --test_env=RULES_BUN_CONFORMANCE_RED=1` passes. Redirect an edge of a project the 1.4.2 run
+  compares (from `bun_1_4_2/` or `accepted/`), and record both runs failing in red mode, per
+  FR-011 / SC-003 (partial)

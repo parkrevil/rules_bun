@@ -144,15 +144,50 @@ test("a registry entry bound where Bun binds a non-registry one of its name and 
   expect(compare("p", ruleset, bun)).toBe('p: d2@1.0.0 links "foo" to foo@file:vendor/foo, Bun links it to foo@1.0.0');
 });
 
-test("an entry whose status fails analysis in the ruleset differs", () => {
+test("an entry whose status fails analysis in the ruleset differs, named by the link that reaches it (FR-012)", () => {
   const bun: Graph = { holders: { "": { "ident-a": "e:0" } }, entries: [entry("ident-a", "1.0.0")] };
   const ruleset: Graph = {
     holders: { "": { "ident-a": "e:0" } },
     entries: [{ ...entry("ident-a", "1.0.0"), status: 'it needs the peer "state", which nothing provides' }],
   };
   expect(compare("p", ruleset, bun)).toBe(
-    'p: ident-a@1.0.0 fails analysis in the ruleset (it needs the peer "state", which nothing provides), Bun installs it',
+    'p: the root links "ident-a" to ident-a@1.0.0, which fails analysis in the ruleset (it needs the peer "state", which nothing provides), Bun links it to ident-a@1.0.0 and installs it',
   );
+});
+
+test("an entry that fails analysis, reached through an entry, names the dependent and both sides' bindings (FR-012)", () => {
+  const bun: Graph = {
+    holders: { "": { u: "e:0", v: "e:1" } },
+    entries: [entry("u", "1.0.0", { p: "e:2", w: "e:4" }), entry("v", "1.0.0", { p: "e:2" }), entry("p", "1.0.0", { q: "e:3" }), entry("q", "1.0.0"), entry("w", "1.0.0")],
+  };
+  const ruleset: Graph = {
+    holders: { "": { u: "e:1", v: "e:2" } },
+    entries: [
+      { ...entry("p", "1.0.0", { q: "e:3" }), status: "S" },
+      entry("u", "1.0.0", { p: "e:0", w: "e:4" }),
+      entry("v", "1.0.0", { p: "e:0" }),
+      entry("q", "1.0.0"),
+      entry("w", "1.0.0"),
+    ],
+  };
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: u@1.0.0 (w → w@1.0.0) links "p" to p@1.0.0 (q → q@1.0.0), which fails analysis in the ruleset (S), Bun links it to p@1.0.0 (q → q@1.0.0) and installs it',
+  );
+});
+
+test("of two entries that fail analysis, the first one reached walking down from the holders is named", () => {
+  const bun: Graph = { holders: { "": { a: "e:0", z: "e:2" } }, entries: [entry("a", "1.0.0", { x: "e:1" }), entry("x", "1.0.0"), entry("z", "1.0.0")] };
+  const ruleset: Graph = {
+    holders: { "": { a: "e:1", z: "e:2" } },
+    entries: [{ ...entry("x", "1.0.0"), status: "S1" }, entry("a", "1.0.0", { x: "e:0" }), { ...entry("z", "1.0.0"), status: "S2" }],
+  };
+  expect(compare("p", ruleset, bun)).toBe('p: the root links "z" to z@1.0.0, which fails analysis in the ruleset (S2), Bun links it to z@1.0.0 and installs it');
+});
+
+test("an entry that fails analysis and no holder reaches is named as such", () => {
+  const bun: Graph = { holders: { "": {} }, entries: [entry("a", "1.0.0")] };
+  const ruleset: Graph = { holders: { "": {} }, entries: [{ ...entry("a", "1.0.0"), status: "S" }] };
+  expect(compare("p", ruleset, bun)).toBe("p: a@1.0.0 fails analysis in the ruleset (S), Bun installs it: no holder reaches it");
 });
 
 test("an unfetched entry's status is excluded by ID-4, its links still compared", () => {
