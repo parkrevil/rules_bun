@@ -669,7 +669,9 @@ ID-4's, by the first link, walking down from the holders, that reaches it, with 
 both sides' targets, or as reached by no holder (T166).
 
 **Red mode** (FR-011): `RULES_BUN_CONFORMANCE_RED=1` redirects one edge of the ruleset's graph of a
-fixed project to another entry; the test must fail naming it.
+fixed project to another entry; the test must fail naming it. The project,
+`bun/tests/npm/conformance/bun_1_4_2/conformance_overrides`, has no BC and is a lockfile Bun 1.4.2
+wrote, so the 1.4.2 run (R10) compares it as well and fails in red mode too (T168).
 
 ### R9. Coverage
 

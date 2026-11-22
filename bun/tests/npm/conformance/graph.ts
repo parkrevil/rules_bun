@@ -377,6 +377,17 @@ function unreached(project: string, all: Map<string, Node>, { ruleset: r, bun: b
   return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}: no holder reaches ${r > b ? "the ruleset's" : "Bun's"} extra entry`;
 }
 
+/** A project's failure (contract "Failure text"): the ruleset's evaluation error, or `compare`'s
+ * first difference. With Bun 1.4.2 as the oracle (US5), a difference of a graph the ruleset linked
+ * is a disagreement of Bun 1.4.2 with Bun 1.4.4, which the ruleset follows (FR-013); a ruleset
+ * failure follows neither, so it stays the ruleset's (T167). */
+export function projectDifference(project: string, ruleset: Graph | { error: string }, bun: Graph, oracle: "1.4.4" | "1.4.2"): string | undefined {
+  if ("error" in ruleset) return `${project}: the ruleset fails (${ruleset.error}), Bun installs the lockfile`;
+  const difference = compare(project, ruleset, bun);
+  if (oracle === "1.4.4" || difference === undefined) return difference;
+  return `${project}: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (${difference.slice(project.length + 2)}); the ruleset cannot follow both (constitution V)`;
+}
+
 /** The host's platform tuple in npm values (research R8); the C library on Linux as Node reports it. */
 export function hostTuple(): Tuple {
   if (process.platform !== "linux") return [process.platform, process.arch, null];

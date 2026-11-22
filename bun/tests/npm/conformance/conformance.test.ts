@@ -13,7 +13,8 @@
 //        `target_names` (fixture_results.bzl, npm_extension.bzl link_targets) is skipped; the
 //        project's links are compared.
 //
-// RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `workspace`'s ruleset graph (FR-011, red mode).
+// RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `bun_1_4_2/conformance_overrides`'s ruleset graph
+// (FR-011, red mode), a project both runs compare.
 //
 // Run by Bun 1.4.2 (conformance_1_4_2_test, --platforms=//bun/tests/npm/conformance:host_bun_1_4_2;
 // US5, research R10), the oracle is Bun 1.4.2 and the projects are the lockfiles Bun 1.4.2 wrote
@@ -26,7 +27,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { rlocation, rlocationList } from "../../support/spawn.ts";
 import { writeArchives } from "../scale/generate.ts";
-import { classFor, compare, type Graph, hostTuple, readBunGraph } from "./graph.ts";
+import { classFor, type Graph, hostTuple, projectDifference, readBunGraph } from "./graph.ts";
 import { NOT_APPLICABLE_1_4_2 } from "./not_applicable_1_4_2.ts";
 import { installWithBun } from "./oracle.ts";
 
@@ -75,8 +76,9 @@ const EXTRA_FILES: Record<string, Record<string, string>> = {
   "bun/tests/integration/workspaces/multi_source/two": { "/mirror/b/-/b-1.0.0.tgz": `${ARCHIVES}/b@1.0.0.tgz` },
 };
 
-// The red mode's project: one without a Behavior Change, so its red is not a BC difference.
-const RED_PROJECT = "bun/tests/npm/fixtures/workspace";
+// The red mode's project: one without a Behavior Change, so its red is not a BC difference, and one
+// that Bun 1.4.2 wrote, so the 1.4.2 run compares it too (T168).
+const RED_PROJECT = "bun/tests/npm/conformance/bun_1_4_2/conformance_overrides";
 
 type RulesetSide =
   | { classes: { platforms: [string | null, string | null, string | null][]; graph: Graph }[]; target_names?: string }
@@ -186,6 +188,11 @@ test("every corpus project has a Bun 1.4.2 lockfile or a reason (US5-2, FR-013)"
   expect(problems).toEqual([]);
 });
 
+test("the red mode's project is compared (FR-011, T168)", () => {
+  expect(projects).toContain(RED_PROJECT);
+  expect(RED_PROJECT in notApplicable).toBe(false);
+});
+
 test("every refused lockfile is not applicable (T099)", () => {
   for (const project of projectsInRunfiles().filter((p) => p.startsWith(`${REFUSED}/`))) expect(Object.keys(NOT_APPLICABLE)).toContain(project);
 });
@@ -209,20 +216,12 @@ for (const project of projects) {
       const installed = await installWithBun(projectDir(project), archivesFor(project, scaleDir), { files });
       const bun = readBunGraph(installed.dir, installed.workspaces);
       const side = graphs[project];
-      let difference: string | undefined;
-      if ("error" in side) {
-        difference = `${project}: the ruleset fails (${side.error}), Bun installs the lockfile`;
-      } else {
-        const ruleset = structuredClone(classFor(host, side.classes).graph);
-        if (process.env.RULES_BUN_CONFORMANCE_RED && project === RED_PROJECT) {
-          console.log(`red mode: ${redirectOneEdge(ruleset)}`);
-        }
-        difference = compare(project, ruleset, bun);
-        if (side.target_names !== undefined) targetNames.push(`${project}: ${side.target_names}`);
+      const ruleset = "error" in side ? side : structuredClone(classFor(host, side.classes).graph);
+      if (!("error" in side) && side.target_names !== undefined) targetNames.push(`${project}: ${side.target_names}`);
+      if (!("error" in ruleset) && process.env.RULES_BUN_CONFORMANCE_RED && project === RED_PROJECT) {
+        console.log(`red mode: ${redirectOneEdge(ruleset)}`);
       }
-      if (MODE_1_4_2 && difference !== undefined) {
-        difference = `${project}: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (${difference.slice(project.length + 2)}); the ruleset cannot follow both (constitution V)`;
-      }
+      const difference = projectDifference(project, ruleset, bun, MODE_1_4_2 ? "1.4.2" : "1.4.4");
       compared.push(project);
       if (difference !== undefined) differences.push(difference);
       expect(difference).toBeUndefined();

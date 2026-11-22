@@ -1,7 +1,7 @@
 // Unit tests of graph.ts's comparison (research R8, contract "Failure text").
 
 import { expect, test } from "bun:test";
-import { compare, type Graph } from "./graph.ts";
+import { compare, type Graph, projectDifference } from "./graph.ts";
 
 const entry = (name: string, version: string, links: Record<string, string> = {}) => ({ name, version, links });
 
@@ -226,4 +226,22 @@ test("a conflicting entry several links of the holder reach names each of them",
     'p: workspace "packages/w"\'s links reach 2 entries of p@1.0.0+0000000000000001, which run.bzl fails analysis of in one target, while Bun links each: ' +
       'p@1.0.0 (q → q@1.0.0) through "p", "r"; p@1.0.0 (q → q@2.0.0) through "u"',
   );
+});
+
+test("a ruleset failure is the ruleset's, with either oracle (T167)", () => {
+  const bun: Graph = { holders: { "": { a: "e:0" } }, entries: [entry("a", "1.0.0")] };
+  const failed = { error: "rules_bun: p/bun.lock: broken" };
+  const expected = "p: the ruleset fails (rules_bun: p/bun.lock: broken), Bun installs the lockfile";
+  expect(projectDifference("p", failed, bun, "1.4.4")).toBe(expected);
+  expect(projectDifference("p", failed, bun, "1.4.2")).toBe(expected);
+});
+
+test("a graph difference with Bun 1.4.2 as the oracle is a disagreement of the two Bun versions (FR-013)", () => {
+  const bun: Graph = { holders: { "": { a: "e:0" } }, entries: [entry("a", "1.0.0"), entry("a", "2.0.0")] };
+  const ruleset: Graph = { holders: { "": { a: "e:1" } }, entries: [entry("a", "1.0.0"), entry("a", "2.0.0")] };
+  expect(projectDifference("p", ruleset, bun, "1.4.4")).toBe('p: the root links "a" to a@2.0.0, Bun links it to a@1.0.0');
+  expect(projectDifference("p", ruleset, bun, "1.4.2")).toBe(
+    'p: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (the root links "a" to a@2.0.0, Bun links it to a@1.0.0); the ruleset cannot follow both (constitution V)',
+  );
+  expect(projectDifference("p", bun, bun, "1.4.2")).toBeUndefined();
 });

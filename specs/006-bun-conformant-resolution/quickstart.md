@@ -27,9 +27,14 @@ Every BC-1…BC-19 difference recorded red in `tdd-log.md` is gone.
 
 ```sh
 bazel test //bun/tests/npm/conformance:conformance_test --test_env=RULES_BUN_CONFORMANCE_RED=1 --test_output=errors
+bazel test //bun/tests/npm/conformance:conformance_1_4_2_test \
+  --platforms=//bun/tests/npm/conformance:host_bun_1_4_2 \
+  --extra_execution_platforms=//bun/tests/npm/conformance:host_bun_1_4_2 \
+  --test_env=RULES_BUN_CONFORMANCE_RED=1 --test_output=errors
 ```
 
-Expected: FAIL, naming the project, the dependent, the dependency and both bindings
+Expected: both FAIL on `bun_1_4_2/conformance_overrides`, naming the project, the dependent, the
+dependency and both bindings
 ([contracts/conformance-graph.md](contracts/conformance-graph.md), "Failure text").
 
 ## Q3. Behavior changes were differences before (SC-003)

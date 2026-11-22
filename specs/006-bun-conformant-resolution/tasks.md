@@ -1664,13 +1664,13 @@ Codex approved; the tenth Claude review found only these two in the Bun 1.4.2 ru
 rejected the gate to fix them (the lead, under the user's delegation, 2026-11-22). Each is
 written red first and recorded in `tdd-log.md`.
 
-- [ ] T167 In the 1.4.2 run, `bun/tests/npm/conformance/conformance.test.ts` (about L223–L225)
+- [X] T167 In the 1.4.2 run, `bun/tests/npm/conformance/conformance.test.ts` (about L223–L225)
   rewrites every difference as "Bun 1.4.2 links this lockfile differently from Bun 1.4.4 … the
   ruleset cannot follow both (constitution V)", also "the ruleset fails (…), Bun installs the
   lockfile" (about L214), where the ruleset follows neither version. Rewrite only where the ruleset
   side produced a graph; show red with a ruleset failure in 1.4.2 mode, per FR-012 / FR-013
   (partial)
-- [ ] T168 Red mode does nothing in the 1.4.2 run: its project (`bun/tests/npm/fixtures/workspace`,
+- [X] T168 Red mode does nothing in the 1.4.2 run: its project (`bun/tests/npm/fixtures/workspace`,
   about L79) is dropped by the 1.4.2 filter (about L152), so `conformance_1_4_2_test
   --test_env=RULES_BUN_CONFORMANCE_RED=1` passes. Redirect an edge of a project the 1.4.2 run
   compares (from `bun_1_4_2/` or `accepted/`), and record both runs failing in red mode, per
