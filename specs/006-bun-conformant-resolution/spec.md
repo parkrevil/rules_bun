@@ -447,9 +447,11 @@ the test that shows it:
   (`basic`, `conformance_peer_contexts`, `integration/workspaces/fetch`; user, 2026-11-21, T076).
   As in Bun's store, every entry with peer bindings takes that form, also one with a single peer
   context: `react-dom@19.2.0` (`fixtures/jsx`, `e2e/smoke`) moves from `.store/react-dom@19.2.0/`
-  to `.store/react-dom@19.2.0+<peer hash>/` inside a program's copy tree. No target name and no
-  link changes; only a program that reads a package's own path sees the new directory name
-  (the lead, under the user's delegation, 2026-11-22).
+  to `.store/react-dom@19.2.0+<peer hash>/` inside a program's copy tree
+  (`bun/tests/npm/resolve_test.bzl` `provided_peer_test`, `//bun/tests/npm/fixtures/jsx:store_test`,
+  `e2e/smoke` `//jsx:store_test`). No target name and no link changes; only a program that reads a
+  package's own path sees the new directory name (the lead, under the user's delegation,
+  2026-11-22).
 - **BC-12**: a dependency of the root or a workspace that the pinned Bun's store binds to
   different store entries of one package on different platform classes (other peer bindings, a
   peer's provider being excluded on some) is linked per target platform, through `select()` on the

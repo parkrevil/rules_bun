@@ -10,7 +10,8 @@ dependency to by platform class, `edge_targets`) and its target is carried by an
 as `run.bzl` links them for a target holding every link; and an instance's `status` when it is not
 `ok`, since the hub fails analysis of that instance, marked `unfetched` when that is because
 rules_bun does not fetch it (ID-4); and, per holder, each store directory its links reach as
-several instances, since one target cannot hold them (`conflicts`).
+several instances, since one target cannot hold them (`conflicts`), with each instance and the
+holder's links that reach it.
 """
 
 load("//bun/private:npm_repositories.bzl", "conditions_hold")
@@ -76,25 +77,29 @@ def _graph(value, os, cpu, libc):
         holders[path] = holder
     carried_all = {i: True for carried in carried_sets for i in carried}
     reached = sorted(carried_all.keys())
-
-    # One target holds one instance of each store directory (run.bzl `_check_unique`): a holder
-    # whose links reach several instances with one directory cannot be used by one target.
-    conflicts = {}
-    for path in sorted(value.links.keys()):
-        by_directory = {}
-        for alias, link in value.links[path].items():
-            carried = _available(link, os, cpu, npm_libc)
-            if _root(link, os, cpu, npm_libc) not in carried:
-                continue
-            for i in carried:
-                by_directory.setdefault(_store_path(instances[i]), {})[i] = True
-        found = {d: len(ids) for d, ids in sorted(by_directory.items()) if len(ids) > 1}
-        if found:
-            conflicts[path] = found
     index = {instance_id: n for n, instance_id in enumerate(reached)}
 
     def target(instance_id):
         return instance_id if instance_id.startswith("w:") else "e:{}".format(index[instance_id])
+
+    # One target holds one instance of each store directory (run.bzl `_check_unique`): a holder
+    # whose links reach several instances with one directory cannot be used by one target. Each
+    # such instance is recorded with the holder's links that reach it (FR-012).
+    conflicts = {}
+    for path in sorted(value.links.keys()):
+        by_directory = {}
+        for alias, link in sorted(value.links[path].items()):
+            carried = _available(link, os, cpu, npm_libc)
+            if _root(link, os, cpu, npm_libc) not in carried:
+                continue
+            for i in sorted(carried.keys()):
+                by_directory.setdefault(_store_path(instances[i]), {}).setdefault(i, []).append(alias)
+        found = {}
+        for directory, reaching in sorted(by_directory.items()):
+            if len(reaching) > 1:
+                found[directory] = {target(i): reaching[i] for i in sorted(reaching.keys(), key = lambda i: index[i])}
+        if found:
+            conflicts[path] = found
 
     entries = []
     for instance_id in reached:

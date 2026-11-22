@@ -158,6 +158,14 @@ def _provided_peer_test_impl(ctx):
     react_dom = resolution["instances"][root["react-dom"]["root"]]
     asserts.equals(env, root["react"]["root"], react_dom["edges"]["react"])
     asserts.equals(env, ["react-dom@19.2.0", "react@19.2.0", "scheduler@0.27.0"], _closure_nvs(resolution, root["react-dom"]))
+
+    # react-dom binds its peer react in one peer context only, and still takes the store directory
+    # `react-dom@19.2.0+<peer hash>`, as every entry with peer bindings does in Bun's store
+    # (Store.rs L450-L466; BC-11); react, without peers, has none (`PeerHash::NONE`).
+    peer_hash = react_dom.get("peer_hash") or ""
+    asserts.equals(env, 16, len(peer_hash), peer_hash)
+    asserts.equals(env, "", peer_hash.lstrip("0123456789abcdef"), peer_hash)
+    asserts.equals(env, "", resolution["instances"][root["react"]["root"]].get("peer_hash"))
     return unittest.end(env)
 
 def _peer_of(resolution, path, chain, peer):

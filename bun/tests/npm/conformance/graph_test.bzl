@@ -217,9 +217,13 @@ def _conflicts_test_impl(ctx):
     asserts.equals(env, None, graph.get("conflicts"))
 
     # Two instances with one store directory: one target cannot hold both (run.bzl
-    # `_check_unique`), so a holder whose links reach both marks that directory.
+    # `_check_unique`), so a holder whose links reach both marks that directory, with each entry
+    # and the holder's links that reach it (FR-012): p@1.0.0 with q@1.0.0 through "p", with
+    # q@2.0.0 through "q2-user".
     graph = _conflicts_graph("0000000000000001", "0000000000000001")
-    asserts.equals(env, {"": {"p@1.0.0+0000000000000001": 2}}, graph.get("conflicts"))
+    asserts.equals(env, {"": {"p@1.0.0+0000000000000001": {"e:0": ["p"], "e:1": ["q2-user"]}}}, graph.get("conflicts"))
+    asserts.equals(env, [{"q": "e:3"}, {"q": "e:4"}], [graph["entries"][n]["links"] for n in [0, 1]])
+    asserts.equals(env, ["q@1.0.0", "q@2.0.0"], ["{}@{}".format(graph["entries"][n]["name"], graph["entries"][n]["version"]) for n in [3, 4]])
     return unittest.end(env)
 
 conflicts_test = unittest.make(_conflicts_test_impl)

@@ -1600,3 +1600,30 @@ and left the rest here (the lead, under the user's delegation, 2026-11-22). `_NP
   of two packages of one workspace); and T161's change of `graph.test.ts` "entry counts count: two
   identical entries against one" in the FR-016 list of changed tests, per spec "Behavior Changes"
   ("listed again in the PR with the test that shows it") / SC-003 / FR-016 (partial)
+
+---
+
+## Phase 39: Convergence
+
+- [X] T163 CRITICAL: no test covers BC-11's single-peer-context directory form as the spec and
+  `contracts/public-api.md` claim it: spec BC-11 states that `react-dom@19.2.0` (`fixtures/jsx`,
+  `e2e/smoke`) moves to `.store/react-dom@19.2.0+<peer hash>/`, and SC-003 requires "the test the
+  BC names (BC-11's directory form)", but that sentence names no test and none asserts
+  react-dom's store directory (`bun/tests/npm/resolve_test.bzl` `store_name_test` checks only
+  `p@1.0.0` under two peer contexts, `provided_peer_test` only `jsx`'s edges; neither
+  `fixtures/jsx` nor `e2e/smoke/jsx` reads a store path). Assert that `jsx`'s `react-dom@19.2.0`
+  instance has a 16-hex-digit peer hash and that a program's copy tree holds
+  `.store/react-dom@19.2.0+<16 hex>/node_modules/react-dom` (an analysis or runtime test in
+  `fixtures/jsx`), and the same in `e2e/smoke` or drop `e2e/smoke` from the claim; record it red
+  on `main`'s `_ids` (no peer hash) and green on the branch in `tdd-log.md`; name the tests in spec
+  BC-11 and the `public-api.md` row, per Constitution II / SC-003 / BC-11 (partial)
+- [X] T164 Bring the remaining failure texts of `bun/tests/npm/conformance/graph.ts` `compare` to
+  FR-012 ("A failure MUST name the project, the dependent, the dependency name and both
+  bindings", read at T161 as every failure): the holder-only text (about L207–L208, `workspace
+  "<path>" is a holder in Bun only`) names no dependency or binding and is missing from
+  `contracts/conformance-graph.md` "Failure text"; the `conflicts` text (about L246, `<holder>'s
+  links reach <n> entries of <store directory>, …`) names no dependency and no binding. Name the
+  holder's links on the side that has it (the other side: no link), and the links of the holder
+  that reach each conflicting entry with their bindings; add `graph_test_ts` cases red first,
+  list the changed `graph.test.ts` cases (L109, L164) as FR-016 changes, and add both texts to
+  the contract, per FR-012 / US2/AC2 (partial)

@@ -27,8 +27,9 @@ export interface Graph {
   holders: Record<string, Record<string, Target>>;
   entries: Entry[];
   /** Ruleset side only: workspace path → store directory (`name@version[+<peer hash>]`) its links
-   * reach as several entries, which one target cannot hold (run.bzl `_check_unique`) → how many. */
-  conflicts?: Record<string, Record<string, number>>;
+   * reach as several entries, which one target cannot hold (run.bzl `_check_unique`) → each of
+   * those entries → the holder's links (dependency names) whose closure carries it. */
+  conflicts?: Record<string, Record<string, Record<Target, string[]>>>;
 }
 
 export type Tuple = [string | null, string | null, string | null];
@@ -203,9 +204,8 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   const classes = refine(all);
   const paths = [...new Set([...Object.keys(ruleset.holders), ...Object.keys(bun.holders)])].sort();
   for (const path of paths) {
-    const where = path === "" ? "the root" : `workspace "${path}"`;
-    if (!(path in bun.holders)) return `${project}: ${where} is a holder in the ruleset only`;
-    if (!(path in ruleset.holders)) return `${project}: ${where} is a holder in Bun only`;
+    if (!(path in bun.holders)) return holderOnly(project, all, `ruleset:h:${path}`, ["the ruleset", "Bun"]);
+    if (!(path in ruleset.holders)) return holderOnly(project, all, `bun:h:${path}`, ["Bun", "the ruleset"]);
   }
   // Walk the pairs of corresponding nodes from the holders down to the first link that differs.
   const queue: [string, string][] = paths.map((path) => [`ruleset:h:${path}`, `bun:h:${path}`]);
@@ -242,8 +242,11 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
   // Linked alike, but one target cannot hold the entries a holder's links reach, while Bun links each.
   for (const [path, found] of Object.entries(ruleset.conflicts ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const where = path === "" ? "the root's" : `workspace "${path}"'s`;
-    for (const [nv, n] of Object.entries(found).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
-      return `${project}: ${where} links reach ${n} entries of ${nv}, which run.bzl fails analysis of in one target, while Bun links each`;
+    for (const [directory, reaching] of Object.entries(found).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+      const each = Object.entries(reaching)
+        .map(([target, names]) => `${describe(all, all.get(`ruleset:${target}`))} through ${names.map((name) => `"${name}"`).join(", ")}`)
+        .sort();
+      return `${project}: ${where} links reach ${each.length} entries of ${directory}, which run.bzl fails analysis of in one target, while Bun links each: ${each.join("; ")}`;
     }
   }
   // Linked alike, but an entry the hub fails analysis of cannot be used, while Bun installs it;
@@ -253,6 +256,18 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
     if (node.entry?.status !== undefined && !node.entry.unfetched) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
   }
   return undefined;
+}
+
+/** The failure of a holder on one side only (FR-012): each of its links with its target, which the
+ * other side, lacking the holder, links to nothing. */
+function holderOnly(project: string, all: Map<string, Node>, id: string, [side, other]: [string, string]): string {
+  const node = all.get(id)!;
+  const prefix = `${project}: ${nameVersion(node)} is a holder in ${side} only`;
+  const names = Object.keys(node.links).sort();
+  if (names.length === 0) return `${prefix} and links nothing`;
+  const links = names.map((name) => `"${name}" to ${describe(all, all.get(node.links[name]))}`);
+  const listed = links.length === 1 ? links[0] : `${links.slice(0, -1).join(", ")} and ${links[links.length - 1]}`;
+  return `${prefix}: ${side} links ${listed}, ${other} links ${names.length === 1 ? "it" : "them"} to no link`;
 }
 
 /** A link that `countDifference` names: `name` of `dependent`, which the walk reached from `holder`. */

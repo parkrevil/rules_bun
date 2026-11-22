@@ -103,10 +103,24 @@ test("a workspace target is compared by path", () => {
   expect(compare("p", ruleset, bun)).toBe('p: u@1.0.0 links "m" to no link, Bun links it to workspace "packages/m"');
 });
 
-test("a holder on one side only differs", () => {
+test("a holder on one side only differs, naming its links and their bindings (FR-012)", () => {
+  const bun: Graph = { holders: { "": {}, "packages/w": { b: "e:0" } }, entries: [entry("b", "1.0.0", { c: "e:1" }), entry("c", "1.0.0")] };
+  const ruleset: Graph = { holders: { "": {} }, entries: [] };
+  expect(compare("p", ruleset, bun)).toBe('p: workspace "packages/w" is a holder in Bun only: Bun links "b" to b@1.0.0 (c → c@1.0.0), the ruleset links it to no link');
+});
+
+test("a holder in the ruleset only names each of its links", () => {
+  const ruleset: Graph = { holders: { "": {}, "packages/w": { a: "e:0", m: "w:" } }, entries: [entry("a", "1.0.0")] };
+  const bun: Graph = { holders: { "": {} }, entries: [] };
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: workspace "packages/w" is a holder in the ruleset only: the ruleset links "a" to a@1.0.0 and "m" to the root, Bun links them to no link',
+  );
+});
+
+test("a holder on one side only without links says so", () => {
   const bun: Graph = { holders: { "": {}, "packages/w": {} }, entries: [] };
   const ruleset: Graph = { holders: { "": {} }, entries: [] };
-  expect(compare("p", ruleset, bun)).toBe('p: workspace "packages/w" is a holder in Bun only');
+  expect(compare("p", ruleset, bun)).toBe('p: workspace "packages/w" is a holder in Bun only and links nothing');
 });
 
 test("a package at no registry version is identified by its name", () => {
@@ -160,7 +174,21 @@ test("a holder whose links reach two entries of one name@version in the ruleset 
     holders: { "": { p: "e:0", "q2-user": "e:2" } },
     entries: [entry("p", "1.0.0", { q: "e:1" }), entry("q", "1.0.0"), entry("q2-user", "1.0.0", { p: "e:3", q: "e:4" }), entry("p", "1.0.0", { q: "e:4" }), entry("q", "2.0.0")],
   };
-  expect(compare("p", { ...graph, conflicts: { "": { "p@1.0.0+0000000000000001": 2 } } }, graph)).toBe(
-    "p: the root's links reach 2 entries of p@1.0.0+0000000000000001, which run.bzl fails analysis of in one target, while Bun links each",
+  const conflicts = { "": { "p@1.0.0+0000000000000001": { "e:0": ["p"], "e:3": ["q2-user"] } } };
+  expect(compare("p", { ...graph, conflicts }, graph)).toBe(
+    "p: the root's links reach 2 entries of p@1.0.0+0000000000000001, which run.bzl fails analysis of in one target, while Bun links each: " +
+      'p@1.0.0 (q → q@1.0.0) through "p"; p@1.0.0 (q → q@2.0.0) through "q2-user"',
+  );
+});
+
+test("a conflicting entry several links of the holder reach names each of them", () => {
+  const graph: Graph = {
+    holders: { "packages/w": { p: "e:0", r: "e:2", u: "e:3" } },
+    entries: [entry("p", "1.0.0", { q: "e:1" }), entry("q", "1.0.0"), entry("r", "1.0.0", { p: "e:0" }), entry("u", "1.0.0", { p: "e:4" }), entry("p", "1.0.0", { q: "e:5" }), entry("q", "2.0.0")],
+  };
+  const conflicts = { "packages/w": { "p@1.0.0+0000000000000001": { "e:0": ["p", "r"], "e:4": ["u"] } } };
+  expect(compare("p", { ...graph, conflicts }, graph)).toBe(
+    'p: workspace "packages/w"\'s links reach 2 entries of p@1.0.0+0000000000000001, which run.bzl fails analysis of in one target, while Bun links each: ' +
+      'p@1.0.0 (q → q@1.0.0) through "p", "r"; p@1.0.0 (q → q@2.0.0) through "u"',
   );
 });

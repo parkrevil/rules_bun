@@ -30,3 +30,13 @@ bun_binary(
         "//:node_modules/react-dom",
     ],
 )
+
+# BC-11's store directory of an entry with one peer context (rules_bun feature 006).
+bun_test(
+    name = "store_test",
+    srcs = ["store.test.ts"],
+    deps = [
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+    ],
+)
