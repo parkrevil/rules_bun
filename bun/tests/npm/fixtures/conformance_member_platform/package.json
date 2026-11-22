@@ -1,0 +1,10 @@
+{
+  "name": "conformance-member-platform",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "mplat-cli": "1.0.0"
+  }
+}

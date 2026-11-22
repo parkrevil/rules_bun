@@ -3,3 +3,21 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 exports_files(["bun.lock"])
 
 npm_link_all_packages()
+
+# The platforms bins.test.ts analyzes the bin of mplat-cli for, whatever the host (feature 006 T181):
+# its optional mplat-helper, which links the member mplat-w, is for Linux only.
+platform(
+    name = "linux_x64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "darwin_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)

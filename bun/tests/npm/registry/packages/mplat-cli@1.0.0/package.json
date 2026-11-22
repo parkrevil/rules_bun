@@ -1,0 +1,10 @@
+{
+  "name": "mplat-cli",
+  "version": "1.0.0",
+  "bin": {
+    "mplat-cli": "cli.js"
+  },
+  "optionalDependencies": {
+    "mplat-helper": "1.0.0"
+  }
+}

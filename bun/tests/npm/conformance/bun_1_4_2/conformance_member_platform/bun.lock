@@ -1,0 +1,23 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-member-platform",
+      "dependencies": {
+        "mplat-cli": "1.0.0",
+      },
+    },
+    "packages/mplat-w": {
+      "name": "mplat-w",
+      "version": "1.0.0",
+    },
+  },
+  "packages": {
+    "mplat-cli": ["mplat-cli@1.0.0", "http://127.0.0.1:28761/mplat-cli/-/mplat-cli-1.0.0.tgz", { "optionalDependencies": { "mplat-helper": "1.0.0" }, "bin": { "mplat-cli": "cli.js" } }, "sha512-C6ca0IFJUSQbL+eJ8LJfnNqgzbsjTxNMvJZ+xHUFpnxV7z3r7y9jr4wIKkQ0RI9xOc+1PlM7EW5RUkKX2bNKsg=="],
+
+    "mplat-helper": ["mplat-helper@1.0.0", "http://127.0.0.1:28761/mplat-helper/-/mplat-helper-1.0.0.tgz", { "dependencies": { "mplat-w": "^1.0.0" }, "os": "linux" }, "sha512-Tr7TjUS9J8lspQ73s5iLGT2hnUzioWBSrsQce50IqQQ9d6X/1PyEU6Bdq+TZe/Kguce1qF9CVJf+1W+NP334hw=="],
+
+    "mplat-w": ["mplat-w@workspace:packages/mplat-w"],
+  }
+}

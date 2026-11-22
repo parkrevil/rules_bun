@@ -813,6 +813,7 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_declared_nowhere` | the root's optional `bin-sunos` (`os: sunos`, a bin) and `nomatch-aix-ppc64` (`cpu: ppc64`), workspace `w`'s non-optional `nomatch-sunos-x64` and optional `bin-sunos`: declared dependencies the store links on no platform class, each keeping its `:node_modules/<package>` target | BC-7; SC-005 | T111 |
 | `conformance_member_chain` | the root's `chain-cli` (a bin) depends on member `chain-w1`, which declares the registry package `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members across two workspace boundaries) | T123 |
 | `conformance_member_workspace_chain` | the root's `chain-cli` depends on member `chain-w1`, which declares member `chain-mid` by `workspace:*`, which declares `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members through a `workspace:` link and more than one further member) | T131 |
+| `conformance_member_platform` | the root's `mplat-cli` (a bin, no `os`) has the optional `mplat-helper` (`os` linux), which depends on member `mplat-w` | BC-4, BC-12 (a bin's member only where the package linking it is installed) | T181 |
 | `conformance_member_alias` | `conformance_registry_to_workspace`'s layout, whose member's target `pkg` is an `alias` of a target in the fixture's root package that carries the member's files | BC-4 (a member's target that is an alias) | T146 |
 | `conformance_root_row` | member `w` depends on the root package (`workspace:*`), whose `bin` Bun writes in the root's `root:` row | L38 (a `root:` row the pinned Bun writes); not applicable to Bun 1.4.2 (R10) | T171 |
 | `conformance_local_tarball` | the root's `b: file:loc-1.0.0.tgz`, a tarball the project holds (`loc@1.0.0`, depending on `a@1.0.0`), written `["loc@loc-1.0.0.tgz", { … }, "sha512-…"]` | BC-20 (with BC-8, ID-4) | T175 |
@@ -1347,6 +1348,16 @@ defects under P3, listed in the PR body and to be fixed in a later feature:
   comment keys are compared where Bun skips them (`is_comment_key`, `OverrideMap.rs`
   L207–L209); `resolutions` globs `"**/q"` and `"a/**/q"` fail where Bun records `{"q": …}` and
   `{"a": {"q": …}}`.
+
+**T181 decided by the lead, under the user's delegation (2026-11-22)**: the fifteenth review's Codex
+finding is a regression against `main` this branch introduced (BC-4's bin members, T081 and T123,
+were collected on any platform), so the stop rule has it fixed. A bin's members are collected per
+platform class, by the closure and the optional instances whose conditions hold there, and given to
+`npm_bin.members` by a `select()` on the config settings the hub already selects optional
+instances by; a link whose members are the same on every class keeps a plain list. Instance and
+workspace member links need no conditions of their own: `class_member_conflict` already fails a
+member link that differs by class, which the pinned Bun does not write. No new Behavior Change is
+numbered; BC-4's bin members are refined.
 
 ## Part 7: Evidence log
 

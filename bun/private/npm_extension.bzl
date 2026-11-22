@@ -556,9 +556,10 @@ Generated targets (public API, under these naming rules):
   Otherwise its analysis fails
   naming the package, the dependency and the target to add, where Bun links the member with no
   such declaration (ID-8, below). A bin target (below) has no `deps`: the hub gives it the
-  targets of the workspace members its package's dependencies link to, on any platform, and of the
-  members that the packages those members declare in their `package.json` link to, through any
-  number of members. The bin
+  targets of the workspace members its package's dependencies link to, and of the members that the
+  packages those members declare in their `package.json` link to, through any number of members,
+  each on the target platforms where the package linking it is installed (a member only a Linux-only
+  optional package links is not declared on macOS, so a bin stays buildable there). The bin
   target is declared in the package that calls `npm_link_all_packages`, so each of those member
   targets must be visible to that package, as it must be to any target there that has it in its
   `deps` (for the root package, `visibility = ["//:__pkg__"]` on the member's target); otherwise

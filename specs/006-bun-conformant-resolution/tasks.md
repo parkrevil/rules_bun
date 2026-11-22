@@ -1792,7 +1792,7 @@ The fifteenth review's Claude findings are four differences `main` has too (the 
 comparison), listed as follow-ups under the stop rule (research Part 6). Codex found one this branch
 introduced, fixed here (the lead, under the user's delegation, 2026-11-22). Written red first and recorded in `tdd-log.md`.
 
-- [ ] T181 Codex: a bin's workspace members ignore platform conditions:
+- [X] T181 Codex: a bin's workspace members ignore platform conditions:
   `bun/private/npm_repositories.bzl` (about L600) `_linked_members` unions the closure with every
   optional instance and adds the members unconditionally, and the transitive member walk (T123)
   drops conditions too. A portable CLI with an optional Linux-only helper that links a Linux-only

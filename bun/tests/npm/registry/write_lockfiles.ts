@@ -620,6 +620,23 @@ const projects: Record<string, Project> = {
       assert(lock.packages["chain-helper"][2].dependencies?.["chain-w2"] === "^1.0.0", "chain-helper does not depend on chain-w2");
     },
   },
+  // BC-4 with BC-12's platform classes (T181): the root's mplat-cli (with a bin, no os) has the
+  // optional mplat-helper (os linux), which depends on the member mplat-w; a bin of mplat-cli
+  // needs mplat-w where mplat-helper is installed only.
+  conformance_member_platform: {
+    files: () => ({
+      "package.json": json({ name: "conformance-member-platform", private: true, workspaces: ["packages/*"], dependencies: { "mplat-cli": "1.0.0" } }),
+      "packages/mplat-w/package.json": json({ name: "mplat-w", version: "1.0.0", main: "index.js" }),
+      "packages/mplat-w/index.js": 'module.exports = { name: "mplat-w" };\n',
+      "packages/mplat-w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(slot0(lock, "mplat-w") === "mplat-w@workspace:packages/mplat-w", "mplat-w is not the workspace");
+      assert(lock.packages["mplat-cli"][2].optionalDependencies?.["mplat-helper"] === "1.0.0", "mplat-cli has no optional mplat-helper");
+      assert(lock.packages["mplat-helper"][2].os === "linux", "mplat-helper is not for linux only");
+      assert(lock.packages["mplat-helper"][2].dependencies?.["mplat-w"] === "^1.0.0", "mplat-helper does not depend on mplat-w");
+    },
+  },
   // FR-009, BC-5: a non-optional and an optional peer nothing provides (no version of state
   // matches ^3.0.0), in the root's and a workspace's tree.
   conformance_unprovided_peer: {

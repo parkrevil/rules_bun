@@ -426,7 +426,9 @@ the test that shows it:
   Bazel requires everything a target uses to be declared (user, 2026-11-21). A package's bin target
   (`:node_modules/<package>/bin/<bin>`) has no `deps`; the hub declares for it the members its
   package's dependencies link to (T081), and, through any number of members, the members that the
-  packages those members declare link to (T123). The bin is declared in the package that calls
+  packages those members declare link to (T123), each on the target platforms where the package
+  linking it is installed, by a `select()` on the platform classes the hub selects optional packages
+  by (T181). The bin is declared in the package that calls
   `npm_link_all_packages`, so each such member's target must be visible to that package, the
   visibility a target there needs to have it in its `deps`; otherwise the build fails with Bazel's
   visibility error naming the member's target and the bin target, as no supported API lets a target

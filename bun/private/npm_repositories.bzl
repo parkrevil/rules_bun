@@ -357,17 +357,43 @@ def _edge_fields(instance):
 
     return field(None), field(dependency_keys), field(peers)
 
-def _linked_members(link, instances):
-    """The workspace members the instances of a package link reach link by path, on any platform."""
-    reached = link["closure"] + list((link["optional"] or {}).keys())
-    return [m for i in reached for m in instances[i].get("members", {}).values()]
+def _on_any(link):
+    """The instances of a package link on some platform: its closure and every optional instance."""
+    return link["closure"] + list((link["optional"] or {}).keys())
 
-def _member_edges(links, instances):
+def _on_every(link):
+    """The instances of a package link on every platform: its closure."""
+    return link["closure"]
+
+def _on(os, cpu, libc):
+    """The instances of a package link on one platform tuple, as its platform select carries them.
+
+    Args:
+        os: The npm `os` of the tuple, or `None` for `//conditions:default`.
+        cpu: The npm `cpu` of the tuple, or `None`.
+        libc: The npm `libc` of the tuple, or `None`.
+
+    Returns:
+        A function of a link to its closure and the optional instances whose conditions hold there.
+    """
+
+    def reached(link):
+        return link["closure"] + [i for i, conditions in (link["optional"] or {}).items() if conditions_hold(conditions, os, cpu, libc)]
+
+    return reached
+
+def _linked_members(ids, instances):
+    """The workspace members the instances `ids` link by path."""
+    return [m for i in ids for m in instances[i].get("members", {}).values()]
+
+def _member_edges(links, instances, reached):
     """Workspace package -> the members its package links link by path, and the packages they reach.
 
     Args:
         links: Bazel package -> alias -> link, of every workspace package of the lockfile.
         instances: Instance ID -> instance, as the hub's `instances` attribute holds them.
+        reached: Link -> the instance IDs it carries on the platforms the edges are for (`_on_any`,
+            `_on_every` or `_on`).
 
     Returns:
         Bazel package -> `(members, packages)`: the canonical labels of the members the package's
@@ -381,13 +407,13 @@ def _member_edges(links, instances):
             if "workspace" in link:
                 packages[Label(link["workspace"]).package] = True
                 continue
-            for member in _linked_members(link, instances):
+            for member in _linked_members(reached(link), instances):
                 members[member] = True
                 packages[Label(member).package] = True
         edges[package] = (members, packages)
     return edges
 
-def _bin_members(link, edges, instances):
+def _bin_members(link, edges, instances, reached):
     """The workspace member targets a bin of `link` needs (feature 006 BC-4, T123).
 
     The members the link's instances link by path, and, to a fixed point, those that the package
@@ -397,13 +423,14 @@ def _bin_members(link, edges, instances):
 
     Args:
         link: The package link, as `links` holds it.
-        edges: `_member_edges` of the lockfile's links.
+        edges: `_member_edges` of the lockfile's links, for the platforms of `reached`.
         instances: Instance ID -> instance, as the hub's `instances` attribute holds them.
+        reached: Link -> the instance IDs it carries on those platforms.
 
     Returns:
         The sorted canonical labels of the member targets.
     """
-    members = {m: True for m in _linked_members(link, instances)}
+    members = {m: True for m in _linked_members(reached(link), instances)}
     visited = {}
     frontier = [Label(m).package for m in members]
 
@@ -414,11 +441,48 @@ def _bin_members(link, edges, instances):
             if package in visited:
                 continue
             visited[package] = True
-            reached, packages = edges.get(package, ({}, {}))
-            members.update(reached)
+            reached_members, packages = edges.get(package, ({}, {}))
+            members.update(reached_members)
             following.extend(packages.keys())
         frontier = following
     return sorted(members.keys())
+
+def _set_bin_members(links, instances):
+    """Sets `members` and `member_select` of each package link: the member targets of its bins.
+
+    A member that only an optional instance links, directly or through other members, is needed
+    only on the platforms where the platform select carries that instance (feature 006 T181): a
+    bin declaring it elsewhere would be incompatible wherever the member's target is, as Bazel
+    propagates incompatibility. A link whose members are the same on every platform gets them as
+    `members`; any other gets `member_select`, setting name (or `//conditions:default`) -> the
+    members there, for the `select()` the hub's optional instances use.
+
+    Args:
+        links: Bazel package -> alias -> link, of every workspace package of the lockfile.
+        instances: Instance ID -> instance, as the hub's `instances` attribute holds them.
+    """
+    anywhere = _member_edges(links, instances, _on_any)
+    everywhere = _member_edges(links, instances, _on_every)
+    tuples = [(name, os, cpu, libc) for name, (os, cpu, libc, _) in sorted(_settings().items())]
+    by_platform = {}
+    for aliases in links.values():
+        for link in aliases.values():
+            if "workspace" in link:
+                continue
+            members = _bin_members(link, anywhere, instances, _on_any)
+            link["members"] = members
+            link["member_select"] = None
+            if members == _bin_members(link, everywhere, instances, _on_every):
+                continue
+            selected = {}
+            for name, os, cpu, libc in tuples + [("//conditions:default", None, None, None)]:
+                if name not in by_platform:
+                    reached = _on(os, cpu, libc)
+                    by_platform[name] = (reached, _member_edges(links, instances, reached))
+                reached, edges = by_platform[name]
+                selected[name] = _bin_members(link, edges, instances, reached)
+            link["members"] = None
+            link["member_select"] = selected
 
 def _npm_hub_repository_impl(repository_ctx):
     instances = json.decode(repository_ctx.attr.instances)
@@ -483,13 +547,10 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 """.format(name = repr(name), constraints = repr(constraints)))
-    edges = _member_edges(links, instances)
-    for aliases in links.values():
-        for link in aliases.values():
-            if "workspace" not in link:
-                # A bin target has no deps to declare the workspace members its packages link by
-                # path in (BC-4), so the hub declares them for it.
-                link["members"] = _bin_members(link, edges, instances)
+
+    # A bin target has no deps to declare the workspace members its packages link by path in
+    # (BC-4), so the hub declares them for it.
+    _set_bin_members(links, instances)
     for aliases in links.values():
         for link in aliases.values():
             if "workspace" not in link:
@@ -532,6 +593,19 @@ def _root(link):
     return select({{
         (k if k.startswith("//conditions:") else Label("//:" + k)): root
         for k, root in link["root_select"].items()
+    }})
+
+def _members(link):
+    \"\"\"The workspace member targets of the bins of a link, by target platform where they differ.
+
+    A member that only an optional instance links is declared where the platform select carries
+    that instance (feature 006 T181).
+    \"\"\"
+    if link["member_select"] == None:
+        return [Label(m) for m in link["members"]]
+    return select({{
+        (k if k.startswith("//conditions:") else Label("//:" + k)): [Label(m) for m in members]
+        for k, members in link["member_select"].items()
     }})
 
 def _compatible(link):
@@ -597,7 +671,7 @@ def npm_link_all_packages():
             npm_bin(
                 name = "{{}}/bin/{{}}".format(name, bin),
                 package = ":" + name,
-                members = [Label(m) for m in link["members"]],
+                members = _members(link),
                 bin = bin,
                 entry = entry,
                 path = path,
