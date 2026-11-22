@@ -3,7 +3,8 @@
 The adapter of research R4 runs Bun's own stages, carried over from bun-v1.4.4 in Bun's order
 (research R2): the text-lockfile loader (`bun_lockfile.bzl`), `Lockfile::resolve` with the hoister
 (`bun_tree.bzl`), `clean`, and the isolated linker's `build_store` (`bun_isolated_store.bzl`) once
-per platform class (`platforms.bzl`, research R3). It then maps the store's entries to the output the
+per platform class (`platforms.bzl`, research R3), what reads no platform computed once for every
+class (`store_inputs`, research R13). It then maps the store's entries to the output the
 hub has consumed since feature 003, `struct(instances, links, members)`:
 
 - an instance is a store entry: a package with the packages its transitive peers bind to; an
@@ -25,8 +26,8 @@ An entry rules_bun does not fetch (FR-010) is linked like any other, so its depe
 instances (BC-8); its `status` makes the hub fail analysis of it (ID-4). Errors are returned as values.
 """
 
-load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_optional", "behavior_is_peer")
-load(":bun_isolated_store.bzl", "build_store")
+load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_optional")
+load(":bun_isolated_store.bzl", "build_store", "store_inputs")
 load(":bun_lockfile.bzl", "dependency_ids", "is_valid", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load(":bun_tree.bzl", "hoist")
 load(":lockfile.bzl", "DEPENDENCY_KINDS")
@@ -94,8 +95,14 @@ def _entry_key(entry):
     peers = sorted([(name, peer[1]) for name, peer in entry.peers.items()])
     return (entry.pkg_id, tuple(peers))
 
-def _class_graph(lockfile, store):
+def _class_graph(lockfile, store, paths, peer_dependencies):
     """This is the adapter: one class's holders and instance edges, by entry key.
+
+    Args:
+        lockfile: The cleaned lockfile.
+        store: The class's `build_store` value.
+        paths: The `_holder_path` of each package ID.
+        peer_dependencies: The IDs of the peer dependencies.
 
     Returns:
         `struct(holders, nodes)`: `holders` maps a workspace path to `struct(links, members)`
@@ -103,21 +110,21 @@ def _class_graph(lockfile, store):
         members, peers)`.
     """
     entries = store.entries
-    keys = [_entry_key(entry) for entry in entries]
+    keys = [_entry_key(entry) if entry.peers else (entry.pkg_id, ()) for entry in entries]
     holders = {}
     nodes = {}
     for entry_id, entry in enumerate(entries):
-        path = _holder_path(lockfile, entry.pkg_id)
+        path = paths[entry.pkg_id]
         links = {}
         members = {}
         peers = {}
         for alias, (target, dep_id) in entry.dependencies.items():
-            target_path = _holder_path(lockfile, entries[target].pkg_id)
+            target_path = paths[entries[target].pkg_id]
             if target_path != None:
                 members[alias] = target_path
             else:
                 links[alias] = keys[target]
-            if behavior_is_peer(lockfile.dependencies[dep_id].behavior):
+            if dep_id in peer_dependencies:
                 peers[alias] = True
         if path != None:
             # The root's directory, or the directory of the workspace the root declares; a
@@ -364,12 +371,15 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     bun = cleaned.value
 
     classes = platform_classes(bun)
+    targets = [platform_bits(platforms[0]) for platforms in classes]
+    inputs = store_inputs(bun, targets)
+    paths = [_holder_path(bun, pkg_id) for pkg_id in range(len(bun.packages))]
     graphs = []
-    for platforms in classes:
-        store = build_store(bun, platform_bits(platforms[0]))
+    for target in targets:
+        store = build_store(bun, target, inputs)
         if store.error:
             return _error(store.error)
-        graphs.append(_class_graph(bun, store.value))
+        graphs.append(_class_graph(bun, store.value, paths, inputs.peer_dependencies))
     conflict = class_member_conflict(graphs, file, lambda key: _label(bun, key[0]))
     if conflict:
         return _error(conflict)
@@ -385,7 +395,10 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
     nodes = {}
     for index, graph in enumerate(graphs):
         for key, node in graph.nodes.items():
-            merged = nodes.setdefault(key, struct(targets = {}, members = {}, peers = {}, classes = []))
+            merged = nodes.get(key)
+            if merged == None:
+                merged = struct(targets = {}, members = {}, peers = {}, classes = [])
+                nodes[key] = merged
             merged.classes.append(index)
             for alias, target in node.edges.items():
                 merged.targets.setdefault(alias, {}).setdefault(target, []).append(index)

@@ -390,12 +390,11 @@ binding-relevant Bun steps are unaccounted.
 | `bun_isolated_store.bzl` `_insert_peer` | `src/install/isolated_install/Store.rs` L234–L245; `src/install/isolated_install/Store.rs` L635–L656 |
 | `bun_isolated_store.bzl` `_peers_eql` | `src/install/isolated_install/Store.rs` L218–L232 |
 | `bun_isolated_store.bzl` `_named` | `src/install/isolated_install.rs` L471–L492 |
+| `bun_isolated_store.bzl` `store_inputs` (T183: `is_unlinked_member` and `is_omitted_peer`, formerly nested in `build_store`, computed once for every platform class) | `src/install/isolated_install.rs` L407–L451; `src/install/isolated_install.rs` L573–L578; `src/install/isolated_install.rs` L717–L720; `src/install/isolated_install.rs` L978–L1003; `src/install/isolated_install.rs` L1035–L1044 |
 | `bun_isolated_store.bzl` `build_store` | `src/install/isolated_install.rs` L510–L1470; `src/install/isolated_install.rs` L494–L508 |
 | `bun_isolated_store.bzl` `is_contained_folder` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L544–L544 |
 | `bun_isolated_store.bzl` `is_filtered` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L1035–L1044 |
-| `bun_isolated_store.bzl` `is_unlinked_member` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L717–L720 |
 | `bun_isolated_store.bzl` `resolve_up` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L829–L856 |
-| `bun_isolated_store.bzl` `is_omitted_peer` (nested in `build_store`, T128) | `src/install/isolated_install.rs` L998–L1003 |
 | `resolve.bzl` `_error` | the adapter (research R4) |
 | `resolve.bzl` `unsupported_reason` | the adapter (research R4) |
 | `resolve.bzl` `_target_safe` | the adapter (research R4) |
@@ -855,6 +854,24 @@ walk (`resolve.bzl` `_reached`, not one of Bun's stages) now propagates each ent
 bit mask in one walk; its output is unchanged (`graphs.json` and the unit tests' results were
 identical, so every test depending on them stayed cached), and the variant measures 4,810 ms, the
 `scale` fixture 1,759 ms (`tdd-log.md` T100).
+
+PR #7's CI ran the variant at 17,039 ms and 17,347 ms on `ubuntu-latest` (6,874 ms on WSL at
+T181), over the bound, so T183 cut the work each platform class repeats, without changing Bun's
+stages or what they compute: `store_inputs` computes once what `build_store` reads that no platform
+changes (each package's dependencies in `DepSorter` order, the peers its features omit, the
+unlinked workspace members, the peer names, the contained folders), and the answer of
+`is_filtered_dependency_or_workspace` for every dependency whose package `Meta::is_disabled` answers
+alike on each class's platform, since that function reads the platform through nothing else (TREE
+L1313–L1405); `build_store` evaluates the filter per class only for the others. The hot loops of
+`build_store` and the adapter's `_class_graph` read those precomputed sets instead of calling the
+`Behavior` predicates per item, and `_class_graph` the holder path of each package from one list.
+The order of every walk and every decision is unchanged: `conformance_test` (0 differences on both
+oracles) and the store and resolver unit tests pass unchanged, and `bun_isolated_store_test`'s
+`shared_inputs_test` checks, on every fixture lockfile that loads, that each class's store with the
+inputs of all the classes is the one it builds alone. The variant measures 2,985 ms (4,922 ms
+before), the `scale` fixture 1,733 ms (1,915 ms before), on WSL. An index of the cycle check's
+ancestor walk was tried and left out: with the class work run five times over, it saved about
+0.3 s of 11 s, within the run-to-run spread (`tdd-log.md` T183).
 
 ### R14. Behavior changes and existing tests
 
@@ -1382,6 +1399,15 @@ on lockfiles `main` refuses, with or without overrides, it is listed as BC-24 ra
 refinement of BC-22. `conformance_optional_duplicate` is not applicable to Bun 1.4.2, which writes
 its member's `packages` key twice (E22), listed in `NOT_APPLICABLE_1_4_2` as T179 listed
 `conformance_override_root_ref`.
+
+**T183 decided by the lead, under the user's delegation (2026-11-22)**: PR #7's CI failed
+`scale_test` on the platform variant's evaluation (17 s on `ubuntu-latest` against R13's 10 s).
+R13's bound is kept and the per-class work is cut (R13): what `build_store` reads that no platform
+changes is computed once (`store_inputs`), with no change to the order or outcome of any of Bun's
+steps. Classes whose stores are equal were already one class (`platform_classes`); the variant's 22
+classes each enable a different per-platform package, so no two stores could be shared, and a store
+derived from another's by adding or removing a disabled leaf was not taken, as it would replace
+Bun's walk with a rule of the ruleset's own.
 
 ## Part 7: Evidence log
 

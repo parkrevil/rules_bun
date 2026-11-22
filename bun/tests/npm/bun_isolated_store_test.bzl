@@ -7,10 +7,11 @@ expectations are the pinned Bun's own store entries (research E2, T017's conform
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
 load("//bun/private:bun_install_types.bzl", "platform_value")
-load("//bun/private:bun_isolated_store.bzl", "build_store")
+load("//bun/private:bun_isolated_store.bzl", "build_store", "store_inputs")
 load("//bun/private:bun_lockfile.bzl", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load("//bun/private:bun_tree.bzl", "hoist")
 load("//bun/private:lockfile.bzl", "read_lockfile")
+load("//bun/private:platforms.bzl", "platform_bits", "platform_classes")
 
 _LINUX = struct(cpu = platform_value("cpu", "x64"), os = platform_value("os", "linux"), libc = platform_value("libc", "glibc"))
 
@@ -92,10 +93,42 @@ def _cycle_test_impl(ctx):
     asserts.equals(env, [{"cyc-a": "cyc-a@1.0.0"}], _entries_of(lockfile, store, "cyc-b"))
     return unittest.end(env)
 
+def _shared_inputs_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # `store_inputs` computes once, for every platform class, what each class's `build_store`
+    # would compute again (research R13, T183): with the inputs of all the classes, each class's
+    # store is the one it builds from its own platform alone. Every fixture lockfile that loads
+    # (62 of `bun/tests/npm/fixtures/`, 12 of them with more than one class).
+    projects = 0
+    platform_projects = 0
+    for project in sorted(RESULTS.keys()):
+        file = "bun/tests/npm/fixtures/{}/bun.lock".format(project)
+        read = read_lockfile(RESULTS[project]["text"], file)
+        if read.error:
+            continue
+        loaded = load_lockfile(read.value, file)
+        if loaded.error or lockfile_resolve(loaded.value, hoist):
+            continue
+        cleaned = lockfile_clean(loaded.value, hoist)
+        if cleaned.error:
+            continue
+        lockfile = cleaned.value
+        targets = [platform_bits(platforms[0]) for platforms in platform_classes(lockfile)]
+        inputs = store_inputs(lockfile, targets)
+        for target in targets:
+            asserts.equals(env, build_store(lockfile, target), build_store(lockfile, target, inputs), "{} on {}".format(project, target))
+        projects += 1
+        if len(targets) > 1:
+            platform_projects += 1
+    asserts.true(env, projects >= 60 and platform_projects >= 10, "compared {} projects, {} with more than one platform class".format(projects, platform_projects))
+    return unittest.end(env)
+
 peer_contexts_test = unittest.make(_peer_contexts_test_impl)
 unprovided_peer_test = unittest.make(_unprovided_peer_test_impl)
 row_evidence_test = unittest.make(_row_evidence_test_impl)
 cycle_test = unittest.make(_cycle_test_impl)
+shared_inputs_test = unittest.make(_shared_inputs_test_impl)
 
 def bun_isolated_store_test_suite(name):
     unittest.suite(
@@ -104,4 +137,5 @@ def bun_isolated_store_test_suite(name):
         unprovided_peer_test,
         row_evidence_test,
         cycle_test,
+        shared_inputs_test,
     )
