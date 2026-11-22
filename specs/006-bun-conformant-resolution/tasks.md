@@ -1675,3 +1675,26 @@ written red first and recorded in `tdd-log.md`.
   --test_env=RULES_BUN_CONFORMANCE_RED=1` passes. Redirect an edge of a project the 1.4.2 run
   compares (from `bun_1_4_2/` or `accepted/`), and record both runs failing in red mode, per
   FR-011 / SC-003 (partial)
+
+---
+
+## Phase 43: Eleventh final review (2026-11-22)
+
+Codex approved; the eleventh Claude review found these, and the lead rejected the gate to fix
+them (the lead, under the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with
+T067. Each is written red first and recorded in `tdd-log.md`.
+
+- [ ] T169 BC-1 removes bin targets `main` generates: `bun/private/resolve.bzl` (about L224–L226)
+  `_declared_key` returns `None` for an optional dependency under `unresolved`, so `link_targets`
+  (`bun/private/npm_extension.bzl` about L236–L238) names no bins for that link, while `main`
+  linked it to the other row of that name and generated `:node_modules/<name>/bin/<bin>`. Add a
+  fixture where that other row has a `bin` (through `pack.ts` / `write_lockfiles.ts`) and a
+  `declared_test.bzl` / `names_test` case red first (the bin target is missing), then keep the bin
+  names of the row `main` bound, with the bins compatible with no platform as the spec says;
+  re-run Q7 against `main`, per FR-014 / SC-005 / BC-1 (contradicts)
+- [ ] T170 `bun/private/lockfile.bzl` (about L154) skips every `root:` row, so a row without its
+  `{ bin, binDir }` object, or with a non-object there, loads where Bun refuses it ("Missing package
+  binaries object" / "Expected an object", bun.lock.rs L2614, L2623). Refuse as Bun does, red first
+  against the pinned Bun; for L1782 and L2126, which `json.decode` cannot tell apart, list the
+  difference as an Intentional Difference in the spec and research Part 4, per FR-004 / P3
+  (contradicts)
