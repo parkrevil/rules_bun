@@ -1305,6 +1305,20 @@ last six. After T175–T178, the final gate is approved unless a review finds a 
 `main` or a difference on a lockfile the pinned Bun writes that this branch introduced; any other
 difference found then is listed as a follow-up in the PR body, not fixed in this feature.
 
+**Follow-ups after feature 006 (the lead, under the user's delegation, 2026-11-22)**: the fourteenth final review found four differences
+on lockfiles the pinned Bun writes and installs that `main` has too, each in `compare_manifests` or
+the overrides reader. Under the stop rule above they are not fixed in this feature; they are known
+defects under P3, listed in the PR body and to be fixed in a later feature:
+- override values Bun ignores with a warning (a non-string, `""`, `"-"`) fail evaluation
+  (`overrides.bzl` about L105–L127);
+- a top-level `catalog`/`catalogs` is merged with `workspaces.` ones, while Bun reads the top level
+  only when `workspaces` exists and holds neither (`Package.rs` L3418–L3440; `workspaces.bzl` about
+  L253–L256);
+- a peer listed only in `peerDependenciesMeta` (Bun writes `"*"` and `optionalPeers`) fails
+  (`workspaces.bzl` about L320);
+- a name in both `dependencies` and `optionalDependencies` (Bun keeps the optional one, L2473)
+  fails (`workspaces.bzl` about L320).
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on

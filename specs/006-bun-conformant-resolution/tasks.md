@@ -1758,3 +1758,28 @@ where Bun writes the form) and recorded in `tdd-log.md`; a change from `main` is
   name cannot hold (`file:./a/b`, `file:./a_b`) get one instance ID (`bun/private/resolve.bzl`
   about L189–L200; the second overwrites the first about L399). Make the ID distinct per resolution
   (no generated target name changes), red first, per P1 / FR-008 (contradicts)
+
+---
+
+## Phase 46: Fourteenth final review (2026-11-22)
+
+Codex approved; the fourteenth Claude review found six differences, none a regression against
+`main`. Under research Part 6's stop rule the lead fixes only the two in this branch's new code and
+claims (T177's root `$<name>`, BC-21's `catalog:default`) and lists the other four as follow-ups
+(research Part 6, the PR body) (the lead, under the user's delegation, 2026-11-22). Each is written red first and recorded in `tdd-log.md`.
+
+- [ ] T179 `bun/private/overrides.bzl` (about L35–L44, used for the root about L64) resolves a root
+  override's `$<name>` from the first of `dependencies` → `devDependencies` →
+  `optionalDependencies` → `peerDependencies` and cites `declared_dependency` (L1374, which Bun uses
+  for workspaces only), while Bun reads `ctx.root_package.dependencies` (`OverrideMap.rs` L1286):
+  sorted with dev entries first (`Package.rs` L3387), an optional duplicate replacing the earlier
+  entry (L2473), a name only in `peerDependenciesMeta` as `"*"` (L3352). Repro: `"dependencies":
+  {"b": "file:./b1"}, "devDependencies": {"b": "file:./b2"}, "overrides": {"c": "$b"}` (Bun writes
+  `"c": "file:./b2"`). Carry over Bun's root reading (cited), red first, per P1 / FR-002
+  (contradicts)
+- [ ] T180 `bun/private/workspaces.bzl` (about L273) refuses `catalog:default` and `catalog:`
+  resolved through `catalogs.default` ("names no entry of the catalog"), while Bun treats `""` and
+  `"default"` as one catalog (`CatalogMap.rs` L48–L100) and the branch's resolver already does
+  (`bun_lockfile.bzl` about L184–L186), so BC-21's and `_NPM_DOC`'s "Bun refuses that" are false for
+  these forms. Read them as Bun does, red first with a lockfile Bun writes, and correct BC-21 and
+  `_NPM_DOC`, per P1 / Constitution II (contradicts)
