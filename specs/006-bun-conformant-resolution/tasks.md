@@ -1563,3 +1563,26 @@ behavior from `main` is listed as a BC before it is fixed.
   (`conformance_member_alias:node_modules/member-user` and its bin added). Check that `main`'s 96
   names are all still on the branch after T146–T156, record the run in `tdd-log.md`, and update
   Q7's count, per SC-005 / plan (quickstart Q7) (partial)
+
+---
+
+## Phase 37: Ninth final review (2026-11-22)
+
+Codex's branch review approved; the ninth Claude review found these. The lead rejected the gate,
+corrected BC-11 (every entry with peers takes the `+<peer hash>` directory, as in Bun) and SC-003
+(a failing test before each BC, a conformance difference where the test can show one) directly,
+and left the rest here (the lead, under the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with T067.
+
+- [ ] T160 The conformance test's ruleset side runs only `read_lockfile` and `resolve`
+  (`bun/tests/npm/fixture_results.bzl` about L86–L90), not the extension's evaluation-time checks in
+  `_translate` (`bun/private/npm_extension.bzl`: the download URL, `_members`,
+  `compare_manifests`, the target-name collision checks), so an evaluation failure on a lockfile
+  Bun installs (BC-17's, found by review) is no conformance difference. Run those checks on the
+  ruleset side (one function both the extension and `fixture_results.bzl` call, not a copy), and
+  show red with BC-17's lockfile on `main`'s check (`the ruleset fails (…), Bun installs the
+  lockfile`), then green, per P2 / FR-008 (contradicts)
+- [ ] T161 `bun/tests/npm/conformance/graph.ts` (about L241): the entry-count failure ("is <n>
+  entries in the ruleset, Bun installs it as <m>") names neither a dependent, the dependency nor
+  both bindings, as FR-012 requires of every failure. Name a holder that reaches the extra or
+  missing entry and both sides' bindings; add a `graph_test_ts` case red first, per FR-012
+  (partial)

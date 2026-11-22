@@ -434,9 +434,13 @@ the test that shows it:
   into a target that reaches both, each in its own store directory in the form of Bun's
   (`<name>@<version>+<peer hash>`, Store.rs L450–L466); the hash value is the ruleset's own (Starlark
   `hash` of the peer bindings, with a counter on a collision), not Bun's Wyhash, and nothing reads
-  it; `main` fails analysis of that target ("a
-  target holds one instance of each package version") (`basic`, `conformance_peer_contexts`,
-  `integration/workspaces/fetch`; user, 2026-11-21, T076).
+  it; `main` fails analysis of that target ("a target holds one instance of each package version")
+  (`basic`, `conformance_peer_contexts`, `integration/workspaces/fetch`; user, 2026-11-21, T076).
+  As in Bun's store, every entry with peer bindings takes that form, also one with a single peer
+  context: `react-dom@19.2.0` (`fixtures/jsx`, `e2e/smoke`) moves from `.store/react-dom@19.2.0/`
+  to `.store/react-dom@19.2.0+<peer hash>/` inside a program's copy tree. No target name and no
+  link changes; only a program that reads a package's own path sees the new directory name
+  (the lead, under the user's delegation, 2026-11-22).
 - **BC-12**: a dependency of the root or a workspace that the pinned Bun's store binds to
   different store entries of one package on different platform classes (other peer bindings, a
   peer's provider being excluded on some) is linked per target platform, through `select()` on the
@@ -534,8 +538,10 @@ Any further difference the conformance test finds is added here before it is fix
   and reports 0 differences with Bun 1.4.4 on Linux, macOS and Windows CI.
 - **SC-002**: The 1.4.2 conformance run reports 0 differences for every project it applies to, on
   each platform where it runs.
-- **SC-003**: Each Behavior Change has a conformance difference recorded before the change (TDD log)
-  that is gone after it; the conformance test and each new canary fail in red mode.
+- **SC-003**: Each Behavior Change has a failing test recorded before the change (TDD log) that
+  passes after it: a conformance difference where the conformance test can show one, else the test
+  the BC names (BC-11's directory form, BC-17); the conformance test and each new canary fail in
+  red mode.
 - **SC-004**: 100% of the rebuilt resolver's functions cite Bun source lines; `research.md` maps
   every binding-relevant Bun step, with 0 unaccounted.
 - **SC-005**: 0 public API changes: every generated target name and every public symbol on `main`
