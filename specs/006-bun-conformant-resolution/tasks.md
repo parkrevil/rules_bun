@@ -1802,3 +1802,20 @@ introduced, fixed here (the lead, under the user's delegation, 2026-11-22). Writ
   stays buildable, the Linux bin has it), then collect members per platform class and give
   `npm_bin.members` a `select()` on the classes the hub already selects by, per BC-4 / BC-12
   (contradicts)
+
+---
+
+## Phase 48: Sixteenth final review (2026-11-22)
+
+Codex approved; the sixteenth Claude review found no regression against `main`, but two follow-ups
+of research Part 6 keep BC-22's `$<name>` paths from ever running, so BC-22's text is false. The
+lead takes those two into this feature and keeps the rest as follow-ups (the lead, under the user's delegation, 2026-11-22). Written red first
+with lockfiles the pinned Bun writes and recorded in `tdd-log.md`.
+
+- [ ] T182 `compare_manifests` (`bun/private/workspaces.bzl` about L331) fails where Bun 1.4.4 writes
+  and installs: a peer listed only in `peerDependenciesMeta` (Bun writes `peerDependencies:
+  {name: "*"}` and `optionalPeers`; Package.rs L3352) and a name in both `dependencies` (or
+  `devDependencies`) and `optionalDependencies` (Bun keeps only the optional entry, L2473), for the
+  root and for workspaces. Read the manifest as Bun does (cited), so T179's `$<name>` → `"*"` and
+  replacement paths run; add corpus projects for both through `write_lockfiles.ts`, red first;
+  remove both items from research Part 6's follow-up list, per P1 / BC-22 (contradicts)
