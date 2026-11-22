@@ -1812,7 +1812,7 @@ of research Part 6 keep BC-22's `$<name>` paths from ever running, so BC-22's te
 lead takes those two into this feature and keeps the rest as follow-ups (the lead, under the user's delegation, 2026-11-22). Written red first
 with lockfiles the pinned Bun writes and recorded in `tdd-log.md`.
 
-- [ ] T182 `compare_manifests` (`bun/private/workspaces.bzl` about L331) fails where Bun 1.4.4 writes
+- [X] T182 `compare_manifests` (`bun/private/workspaces.bzl` about L331) fails where Bun 1.4.4 writes
   and installs: a peer listed only in `peerDependenciesMeta` (Bun writes `peerDependencies:
   {name: "*"}` and `optionalPeers`; Package.rs L3352) and a name in both `dependencies` (or
   `devDependencies`) and `optionalDependencies` (Bun keeps only the optional entry, L2473), for the

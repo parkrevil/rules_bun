@@ -10,7 +10,7 @@ def _normalize(manifest):
 
 def _fixtures_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref"]:
+    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_peer_meta_only", "conformance_optional_duplicate"]:
         lockfile = RESULTS[project]["lockfile"]["value"]
         result = _normalize(json.decode(RESULTS[project]["manifest"]))
         asserts.equals(env, None, result["error"], project)

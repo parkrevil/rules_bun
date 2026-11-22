@@ -2,6 +2,7 @@ load(":bins_test.bzl", "bins_test_suite")
 load(":bun_install_types_test.bzl", "bun_install_types_test_suite")
 load(":bun_isolated_store_test.bzl", "bun_isolated_store_test_suite")
 load(":bun_lockfile_test.bzl", "bun_lockfile_test_suite")
+load(":bun_package_test.bzl", "bun_package_test_suite")
 load(":bun_semver_test.bzl", "bun_semver_test_suite")
 load(":bun_tree_test.bzl", "bun_tree_test_suite")
 load(":compare_test.bzl", "compare_test_suite")
@@ -66,6 +67,8 @@ bun_semver_test_suite(name = "bun_semver")
 bun_install_types_test_suite(name = "bun_install_types")
 
 bun_lockfile_test_suite(name = "bun_lockfile")
+
+bun_package_test_suite(name = "bun_package")
 
 bun_tree_test_suite(name = "bun_tree")
 

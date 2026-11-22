@@ -278,6 +278,15 @@ const USERINFO_CASES: UserinfoCase[] = [
     npmrc: `@https://${USER}:${TOKEN}@host/:registry=http://127.0.0.1:1/\n`,
     expected: ["//:.npmrc", "a key of the form @<scope>:registry names no npm scope"],
   },
+  {
+    // Feature 006 T182: a name only in peerDependenciesMeta is a peer the comparison with
+    // bun.lock names, so the field is checked as the dependency fields are.
+    name: "(m) a peerDependenciesMeta name holding credentials",
+    manifest: { a: "1.0.0" },
+    extra: { peerDependenciesMeta: { [`https://${USER}:${TOKEN}@host/p.tgz`]: { optional: true } } },
+    lock: (r) => workspaceLock({ a: "1.0.0" }, `    "a": ["a@1.0.0", "${r}/a/-/a-1.0.0.tgz", {}, ${A}],`),
+    expected: ["//:package.json", 'a key at "peerDependenciesMeta" is a URL that holds credentials'],
+  },
 ];
 
 // A package.json field the ruleset does not read is not checked (feature 005 P4): a description

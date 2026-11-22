@@ -1,0 +1,10 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "l": "file:../../l1"
+  },
+  "optionalDependencies": {
+    "l": "file:../../l2"
+  }
+}

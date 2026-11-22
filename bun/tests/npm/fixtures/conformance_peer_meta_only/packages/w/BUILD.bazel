@@ -1,0 +1,5 @@
+load("//bun/tests/npm/conformance:files.bzl", "conformance_files")
+
+# A workspace member of the fixture project.
+
+conformance_files()

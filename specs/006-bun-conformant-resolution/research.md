@@ -775,11 +775,13 @@ a project it cannot write or install would be listed with the reason in
 `bun/tests/npm/conformance/not_applicable_1_4_2.ts`. Planning expected two (an unlinked workspace,
 which 1.4.2's loader was read to reject, LOCK-142 L2479–2490; `unresolved`, which 1.4.2 was read
 not to write), but run with the 1.4.2 oracle, Bun 1.4.2 writes and installs every corpus project
-(T091, `tdd-log.md`). The list holds two projects added since: `conformance_root_row` (T171), a
+(T091, `tdd-log.md`). The list holds three projects added since: `conformance_root_row` (T171), a
 member depending on the root package, which Bun 1.4.2 cannot write by `workspace:*` and whose
 lockfile, written by `workspace:../..`, its own frozen install refuses (Part 6, E18); and
 `conformance_override_root_ref` (T179), whose lockfile Bun 1.4.2 writes with the `packages` key `b`
-twice and its own frozen install refuses (Part 6, E21). Bun 1.4.2's usual lockfile
+twice and its own frozen install refuses (Part 6, E21); and `conformance_optional_duplicate` (T182),
+whose lockfile Bun 1.4.2 writes with the `packages` key `w/l` twice, refused the same way (Part 6,
+E22). Bun 1.4.2's usual lockfile
 for `conformance_platform_peer` differs from the committed one; both conformance runs compare it
 as `bun/tests/npm/conformance/accepted/platform_peer_1_4_2` (BC-16, R4).
 
@@ -822,6 +824,8 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_folder_ids` | the root's `x: file:./a/b` and `y: file:./a_b`, two folders of package `foo@1.0.0` with different dependencies | BC-23 | T178 |
 | `conformance_override_root_ref` | override `c: "$b"` with the root's `b: file:./b1` in `dependencies` and `b: file:./b2` in `devDependencies`, written `{ "c": "file:./b2" }` | BC-22; not applicable to Bun 1.4.2 (R10, E21) | T179 |
 | `conformance_catalog_default` | the root's `a: catalog:default` (entry in `catalog`) and `q: catalog:` (entry in `catalogs.default`), workspace `w`'s `single-bin: catalog:` (entry in `catalogs.default`) | BC-21 | T180 |
+| `conformance_peer_meta_only` | `peerDependenciesMeta` names with `"optional": true` and no `peerDependencies` entry: the root's `a` (also in its `dependencies`) and `q`, workspace `w`'s `q`; the root's `r` with `"optional": false`; override `c: "$q"`, written `{ "c": "*" }` | BC-24, BC-22 | T182 |
+| `conformance_optional_duplicate` | the root's `l` in `dependencies` and `optionalDependencies`, `m` in `devDependencies` and `optionalDependencies` (written under `optionalDependencies` only), workspace `w`'s `l` in both (written in both); override `c: "$m"`, written `{ "c": "file:./m2" }` | BC-24, BC-22; not applicable to Bun 1.4.2 (R10, E22) | T182 |
 
 T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
 its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
@@ -1049,6 +1053,17 @@ conformance difference is recorded red in `tdd-log.md`:
   for workspaces only (T179, found by the fourteenth review; E21).
 - **BC-23: unfetched entries' instance IDs**. Two unfetched entries whose `name@version` keep the same
   target-name characters got one ID, the second overwriting the first.
+- **BC-24: a `package.json`'s dependencies as Bun lists them**. `Package::parse` adds an optional
+  peer `"*"` for each `peerDependenciesMeta` name with `"optional": true` that no `peerDependencies`
+  entry consumed (PKG L2664–L2700, L3352–L3383), and, for the root only (`Features::MAIN`, whose
+  `check_for_duplicate_dependencies` a workspace's `Features::WORKSPACE` lacks, resolver_hooks.rs
+  L1240–L1264), replaces the first earlier entry of a name by its `optionalDependencies` entry
+  (PKG L2465–L2520); `write_workspace_deps` writes each entry under every group its behavior
+  intersects, an optional peer under `peerDependencies` only (LOCK L1184–L1233). The comparison
+  read the four maps as the file writes them and failed on both forms (T182, found by the
+  fourteenth review, E22). `bun_package.bzl` carries the list over; `overrides.bzl` reads the
+  root's `$<name>` from it, and `peerDependenciesMeta` joined the fields checked for credentials,
+  since a diagnostic now names its keys.
 
 ## Part 6: Decisions for the user
 
@@ -1331,17 +1346,14 @@ Behavior Change is numbered.
 
 **Follow-ups after feature 006 (the lead, under the user's delegation, 2026-11-22)**: the fourteenth final review found four differences
 on lockfiles the pinned Bun writes and installs that `main` has too, each in `compare_manifests` or
-the overrides reader. Under the stop rule above they are not fixed in this feature; they are known
-defects under P3, listed in the PR body and to be fixed in a later feature:
+the overrides reader. Under the stop rule above they are not fixed in this feature (but for the two
+T182 took in, below); they are known defects under P3, listed in the PR body and to be fixed in a
+later feature:
 - override values Bun ignores with a warning (a non-string, `""`, `"-"`) fail evaluation
   (`overrides.bzl` about L145–L171);
 - a top-level `catalog`/`catalogs` is merged with `workspaces.` ones, while Bun reads the top level
   only when `workspaces` exists and holds neither (`Package.rs` L3418–L3440; `workspaces.bzl` about
   L253–L256);
-- a peer listed only in `peerDependenciesMeta` (Bun writes `"*"` and `optionalPeers`) fails
-  (`workspaces.bzl` about L331);
-- a name in both `dependencies` and `optionalDependencies` (Bun keeps the optional one, L2473)
-  fails (`workspaces.bzl` about L331).
 - (fifteenth review) in the overrides comparison (`overrides.bzl`): an object whose only child is
   `"."` is kept as an object where Bun records the plain value; a top-level target with a range
   (`"q@^1.0.0": "1.2.3"`) is stored as a string where Bun records `{".": …}`; npm's `"//"`
@@ -1358,6 +1370,18 @@ instances by; a link whose members are the same on every class keeps a plain lis
 workspace member links need no conditions of their own: `class_member_conflict` already fails a
 member link that differs by class, which the pinned Bun does not write. No new Behavior Change is
 numbered; BC-4's bin members are refined.
+
+**T182 decided by the lead, under the user's delegation (2026-11-22)**: the sixteenth review found
+that two follow-ups above keep BC-22's `$<name>` paths for a `peerDependenciesMeta`-only name and an
+optional duplicate from ever running, since the manifest comparison fails first, so BC-22's text was
+false; both are taken into this feature and removed from the follow-ups. The comparison reads a
+`package.json` as `Package::parse` lists it, which the pinned Bun shows differs between the root and
+a workspace (E22): the task's "for the root and for workspaces" holds for the `peerDependenciesMeta`
+peer only, since a workspace keeps both entries of a duplicate. As the change makes evaluation pass
+on lockfiles `main` refuses, with or without overrides, it is listed as BC-24 rather than as a
+refinement of BC-22. `conformance_optional_duplicate` is not applicable to Bun 1.4.2, which writes
+its member's `packages` key twice (E22), listed in `NOT_APPLICABLE_1_4_2` as T179 listed
+`conformance_override_root_ref`.
 
 ## Part 7: Evidence log
 
@@ -1480,3 +1504,18 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   1.4.2 writes the `packages` key `"b"` twice (`["b@file:b2", {}]`, `["b@file:b1", {}]`), which
   both Bun 1.4.2 and 1.4.4 refuse on a frozen install (`Duplicate package path`, bun-v1.4.2 LOCK
   L3033; `InvalidLockfile: failed to parse lockfile: 'bun.lock'`).
+- **E22** (T182, 2026-11-22): `bun install --ignore-scripts` with Bun 1.4.4 of a root declaring
+  `dependencies { b: "file:./b1", d: "file:./c1" }`, `devDependencies { e: "file:./c1" }`,
+  `optionalDependencies { b: "file:./b2", e: "file:./c2" }` and `peerDependenciesMeta { p:
+  { optional: true }, b: { optional: true }, f: { optional: false } }`, and a member `w` declaring
+  the same `b` and `e` (as `file:../../…`) and `peerDependenciesMeta { q: { optional: true }, b:
+  { optional: true } }`, writes the root as `dependencies { d }`, `optionalDependencies { b:
+  "file:./b2", e: "file:./c2" }`, `peerDependencies { b: "*", p: "*" }`, `optionalPeers [b, p]`
+  (no `f`), and `w` as `dependencies { b: "file:../../b1" }`, `devDependencies { e: "file:../../c1" }`,
+  `optionalDependencies { b: "file:../../b2", e: "file:../../c2" }`, `peerDependencies { b: "*", q:
+  "*" }`, `optionalPeers [b, q]`. `write_lockfiles.ts` writes `conformance_peer_meta_only` and
+  `conformance_optional_duplicate` with Bun 1.4.4 and 1.4.2, the `check` of each holding; Bun 1.4.2
+  writes the same `conformance_peer_meta_only` lockfile, and for `conformance_optional_duplicate`
+  the `packages` key `"w/l"` twice (`["l@file:l2", {}]`, `["l@file:l1", {}]`), which both Bun 1.4.2
+  and 1.4.4 refuse on a frozen install (`Duplicate key "w/l" in object literal`, `Duplicate package
+  path`, exit 1).

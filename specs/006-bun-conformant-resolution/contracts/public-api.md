@@ -32,7 +32,8 @@ lockfiles the pinned Bun writes and installs, the corpus projects `conformance_l
 `conformance_catalog_missing`, `conformance_catalog_default`, `conformance_override_forms`,
 `conformance_override_root_ref` and `conformance_folder_ids`, which the conformance test compares
 with both oracles, but for `conformance_override_root_ref`, whose lockfile Bun 1.4.2 cannot write
-(T175–T180). The Intentional
+(T175–T180). BC-24 is the corpus projects `conformance_peer_meta_only` (both oracles) and
+`conformance_optional_duplicate` (Bun 1.4.4; Bun 1.4.2 cannot write it) (T182). The Intentional
 Differences ID-1 to ID-13 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
 members, ID-9 the two evaluation failures below (BC-12), ID-10 a URL holding user information in
 `bun.lock`, ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, and ID-12 two
@@ -66,6 +67,7 @@ catalog entry, the root workspace, a `packages` key) or reads the first value (`
 | A `catalog:` reference whose entry is in `catalogs.default`, a `catalog:default` one whose entry is in `catalog` | evaluation fails ("names no entry of the catalog") | linked to that entry: both spellings name one default catalog, as Bun looks it up | BC-21 |
 | An override `$<name>`, or an object nested in a parent's object | evaluation fails ("has a form rules_bun cannot compare with bun.lock") | compared as Bun reads them: the specifier declared for `<name>` (the root's first dependency of that name as Bun sorts them: dev, optional, prod, peer); the nested object ignored | BC-22 |
 | Two unfetched entries of one package whose resolutions differ only in characters a target name cannot hold | one instance ID: the second entry overwrites the first, both links reach it | two instances, each linked as Bun links it; no `:node_modules/...` name changes | BC-23 |
+| A name only in `peerDependenciesMeta` (`"optional": true`); the root's name in `dependencies` or `devDependencies` and in `optionalDependencies` | evaluation fails ("run `bun install` and commit bun.lock") | compared as Bun lists them: an optional peer `"*"`; the root's optional entry only (a workspace keeps both) | BC-24 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-13 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
@@ -100,9 +102,10 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   one target name, is unchanged too; it is listed because the pinned Bun installs such a lockfile
   (T160).
 
-Diagnostics that change: BC-3's, BC-5's, BC-17's, BC-18's, BC-19's, BC-20's, BC-21's and BC-22's
+Diagnostics that change: BC-3's, BC-5's, BC-17's, BC-18's, BC-19's, BC-20's, BC-21's, BC-22's and BC-24's
 evaluation failures disappear (BC-19's but for ID-11, BC-21's but for a `dependencies` or
 `devDependencies` reference with no entry, for the default catalog in neither `catalog` nor
 `catalogs.default`); the analysis failure of two instances of one package version in one target
 now applies only to instances with one store directory from several lockfiles and reads "one
-instance of each package version and peer bindings" (BC-11).
+instance of each package version and peer bindings" (BC-11). A URL holding credentials in a
+`peerDependenciesMeta` name fails evaluation as one in a dependency field does (BC-24, ID-10).

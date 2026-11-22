@@ -1043,6 +1043,74 @@ const projects: Record<string, Project> = {
       assert(slot0(lock, "single-bin") === "single-bin@1.0.0", "single-bin is not single-bin@1.0.0");
     },
   },
+  // T182: a name only in `peerDependenciesMeta` with `"optional": true` is an optional peer `"*"`
+  // of the root and of a workspace (`Package.rs` L3352–L3381), also where the root depends on it;
+  // `"optional": false` adds none. A root override's `$<name>` of such a name is `"*"` (T179).
+  conformance_peer_meta_only: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-peer-meta-only",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { a: "1.0.0" },
+        peerDependenciesMeta: { a: { optional: true }, q: { optional: true }, r: { optional: false } },
+        overrides: { c: "$q" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", peerDependenciesMeta: { q: { optional: true } } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      const root = lock.workspaces[""];
+      const w = lock.workspaces["packages/w"];
+      assert(JSON.stringify(root.dependencies) === '{"a":"1.0.0"}', `the root's dependencies are ${JSON.stringify(root.dependencies)}`);
+      assert(JSON.stringify(root.peerDependencies) === '{"a":"*","q":"*"}', `the root's peers are ${JSON.stringify(root.peerDependencies)}`);
+      assert(JSON.stringify(root.optionalPeers) === '["a","q"]', `the root's optional peers are ${JSON.stringify(root.optionalPeers)}`);
+      assert(JSON.stringify(w.peerDependencies) === '{"q":"*"}', `w's peers are ${JSON.stringify(w.peerDependencies)}`);
+      assert(JSON.stringify(w.optionalPeers) === '["q"]', `w's optional peers are ${JSON.stringify(w.optionalPeers)}`);
+      assert(JSON.stringify(lock.overrides) === '{"c":"*"}', `overrides are ${JSON.stringify(lock.overrides)}`);
+    },
+  },
+  // T182: the root keeps only the `optionalDependencies` entry of a name it also declares in
+  // `dependencies` or `devDependencies` (`Package.rs` L2467–L2484, Features::MAIN L1240), while a
+  // workspace keeps both (Features::WORKSPACE checks no duplicate). A root override's `$<name>` of
+  // such a name is the optional one (T179).
+  conformance_optional_duplicate: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-optional-duplicate",
+        private: true,
+        workspaces: ["packages/*"],
+        dependencies: { a: "1.0.0", l: "file:./l1" },
+        devDependencies: { m: "file:./m1" },
+        optionalDependencies: { l: "file:./l2", m: "file:./m2" },
+        overrides: { c: "$m" },
+      }),
+      "l1/package.json": json({ name: "l", version: "1.0.0" }),
+      "l2/package.json": json({ name: "l", version: "2.0.0" }),
+      "m1/package.json": json({ name: "m", version: "1.0.0" }),
+      "m2/package.json": json({ name: "m", version: "2.0.0" }),
+      "packages/w/package.json": json({
+        name: "w",
+        version: "1.0.0",
+        dependencies: { l: "file:../../l1" },
+        optionalDependencies: { l: "file:../../l2" },
+      }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      const root = lock.workspaces[""];
+      const w = lock.workspaces["packages/w"];
+      assert(JSON.stringify(root.dependencies) === '{"a":"1.0.0"}', `the root's dependencies are ${JSON.stringify(root.dependencies)}`);
+      assert(root.devDependencies === undefined, `the root's devDependencies are ${JSON.stringify(root.devDependencies)}`);
+      assert(
+        JSON.stringify(root.optionalDependencies) === '{"l":"file:./l2","m":"file:./m2"}',
+        `the root's optionalDependencies are ${JSON.stringify(root.optionalDependencies)}`,
+      );
+      assert(JSON.stringify(w.dependencies) === '{"l":"file:../../l1"}', `w's dependencies are ${JSON.stringify(w.dependencies)}`);
+      assert(JSON.stringify(w.optionalDependencies) === '{"l":"file:../../l2"}', `w's optionalDependencies are ${JSON.stringify(w.optionalDependencies)}`);
+      assert(JSON.stringify(lock.overrides) === '{"c":"file:./m2"}', `overrides are ${JSON.stringify(lock.overrides)}`);
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

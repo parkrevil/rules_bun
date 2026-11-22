@@ -209,9 +209,10 @@ writes for the corpus projects it can install, and reports zero differences.
 
 1. **Given** a corpus project's lockfile written by Bun 1.4.2, **When** the 1.4.2 conformance run
    compares it, **Then** the ruleset's resolution equals Bun 1.4.2's isolated install.
-2. **Given** a corpus project Bun 1.4.2 cannot write or install (two: `conformance_root_row`, a
+2. **Given** a corpus project Bun 1.4.2 cannot write or install (three: `conformance_root_row`, a
    member depending on the root package, T171; `conformance_override_root_ref`, a root declaring one
-   name in `dependencies` and `devDependencies`, T179; research R10), **When** the 1.4.2 run lists its projects,
+   name in `dependencies` and `devDependencies`, T179; `conformance_optional_duplicate`, a member
+   declaring one name in `dependencies` and `optionalDependencies`, T182; research R10), **When** the 1.4.2 run lists its projects,
    **Then** that project is listed as not applicable with the reason, not silently skipped.
 
 ### Edge Cases
@@ -575,6 +576,19 @@ the test that shows it:
   `:node_modules/...` name changes; only the hub's own instance targets of such entries, which are
   not public, are numbered (`…__0`, `…__1`) (the lead, under the user's delegation, 2026-11-22,
   T178).
+- **BC-24**: a `package.json`'s dependencies are compared with the lockfile's as Bun lists them
+  (`Package::parse`, PKG L2642–L2700, L2465–L2520, L3302–L3388) and writes them
+  (`write_workspace_deps`, LOCK L1184–L1233): a name only in `peerDependenciesMeta` with
+  `"optional": true` is an optional peer `"*"`, of the root and of a workspace, and the root, unlike
+  a workspace (`Features::WORKSPACE` checks no duplicate, resolver_hooks.rs L1240–L1264), keeps only
+  the `optionalDependencies` entry of a name it also declares in `dependencies` or
+  `devDependencies`; `main` compares the maps as the file writes them and fails evaluation ("run
+  `bun install` and commit bun.lock") on both lockfiles, which the pinned Bun writes and installs.
+  BC-22's `$<name>` read as `"*"` or as the optional entry is reached through this comparison only
+  (`conformance_peer_meta_only`, `conformance_optional_duplicate`, `compare_test.bzl`
+  `manifest_forms_test`, `bun_package_test.bzl`). `peerDependenciesMeta` is checked for URLs that
+  hold credentials as the dependency fields are (ID-10; `credentials.test.ts` case (m)) (the lead,
+  under the user's delegation, 2026-11-22, T182).
 
 Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
 target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin

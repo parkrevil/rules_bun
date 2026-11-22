@@ -1,0 +1,21 @@
+{
+  "name": "conformance-optional-duplicate",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "a": "1.0.0",
+    "l": "file:./l1"
+  },
+  "devDependencies": {
+    "m": "file:./m1"
+  },
+  "optionalDependencies": {
+    "l": "file:./l2",
+    "m": "file:./m2"
+  },
+  "overrides": {
+    "c": "$m"
+  }
+}

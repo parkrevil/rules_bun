@@ -1,0 +1,9 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "peerDependenciesMeta": {
+    "q": {
+      "optional": true
+    }
+  }
+}

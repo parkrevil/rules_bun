@@ -17,12 +17,16 @@ Evaluation fails with an English error naming the file and the remedy when the l
 `packages` row of a workspace (`<name>@workspace:<path>`; ID-11 of the `npm` extension's
 documentation), when the file is not JSONC, when the root or a member `package.json` and the
 lockfile differ in dependencies, workspace members, catalogs or overrides ("run `bun install` and
-commit bun.lock"), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
+commit bun.lock"; the dependencies are compared as Bun lists them, so a name only in
+`peerDependenciesMeta` with `"optional": true` is a peer `"*"`, and the root, unlike a member, keeps
+only the `optionalDependencies` entry of a name it also declares in `dependencies` or
+`devDependencies`), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
 of its catalog, which Bun refuses to install (`catalog:` and `catalog:default` name one catalog, the
 entries of `catalog` and of `catalogs.default`), when the root `package.json` uses an override form
 rules_bun does not compare,
 and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
-(`name`, `workspaces`, the dependency fields, `overrides`, `resolutions`, `catalog`, `catalogs`),
+(`name`, `workspaces`, the dependency fields, `peerDependenciesMeta`, `overrides`, `resolutions`,
+`catalog`, `catalogs`),
 holds credentials, as a registry URL of `.npmrc` does (ID-10). A URL is recognized by RFC 3986's syntax (a
 scheme before `://`), wherever it stands in a string; it holds credentials when its authority holds
 user information, except the user name alone of an `ssh://` or `git+ssh://` URL, which names an
@@ -136,7 +140,7 @@ _USERINFO_REMEDY = "give credentials through Bazel's downloader (--credential_he
 _MAX_NODES = 1 << 24
 
 # The fields of a package.json the npm extension reads (P4: what the ruleset reads is checked).
-_MANIFEST_FIELDS = ["name", "workspaces", "overrides", "resolutions", "catalog", "catalogs"] + DEPENDENCY_KINDS
+_MANIFEST_FIELDS = ["name", "workspaces", "overrides", "resolutions", "catalog", "catalogs", "peerDependenciesMeta"] + DEPENDENCY_KINDS
 
 def _url_with_credentials(text):
     """Whether a string holds a URL that carries credentials (`urls.bzl` `has_credentials`)."""

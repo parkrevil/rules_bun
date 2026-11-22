@@ -6,12 +6,13 @@ syntax (bun.com `runtime/glob`), with the semantics the pinned Bun 1.4.4 shows a
 removes what any glob matched, not a directory listed by its path; wildcards do not
 match a leading `.`; `{a,b}` expands within one segment; `**` enters no hidden directory and no
 pattern enters `node_modules`; a
-matched directory is a member when it holds `package.json`. Each member's four dependency maps
-must equal the lockfile's for it as written (the lockfile records `catalog:` and `workspace:`
-specifiers literally); the root's catalogs and overrides must equal the lockfile's. Errors are
-returned as values.
+matched directory is a member when it holds `package.json`. Each member's four dependency maps,
+as Bun reads and writes them (`package_dependencies`, `workspace_groups`), must equal the
+lockfile's for it (the lockfile records `catalog:` and `workspace:` specifiers literally); the
+root's catalogs and overrides must equal the lockfile's. Errors are returned as values.
 """
 
+load(":bun_package.bzl", "package_dependencies", "workspace_groups")
 load(":lockfile.bzl", "DEPENDENCY_KINDS")
 load(":overrides.bzl", "normalize_overrides")
 
@@ -326,8 +327,9 @@ def compare_manifests(lockfile, manifests):
         workspace = lockfile.workspaces.get(path)
         if workspace == None:
             return _error("{}: the workspace member {} is not in bun.lock; {}".format(manifest.file, path, _REMEDY))
+        groups = workspace_groups(package_dependencies(manifest.value, is_main = path == ""))
         for kind in DEPENDENCY_KINDS:
-            declared = dict(manifest.value.get(kind, {}))
+            declared = groups[kind]
             difference = _difference(manifest.file, kind, declared, getattr(workspace, kind))
             if difference:
                 return _error(difference)

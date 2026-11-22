@@ -43,7 +43,7 @@ def _compare(project, edit = None):
 
 def _equal_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_catalog_default"]:
+    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_catalog_default", "conformance_peer_meta_only", "conformance_optional_duplicate"]:
         asserts.equals(env, None, _compare(project).error, project)
     return unittest.end(env)
 
@@ -75,6 +75,30 @@ def _dependencies_test_impl(ctx):
     _expect_error(env, _compare("workspace", _set("packages/w1", "devDependencies", "single-bin", "2.0.0")), ["packages/w1/package.json", '"single-bin"'])
     _expect_error(env, _compare("workspace", _set("packages/w1", "peerDependencies", "state", "2.0.0")), ["packages/w1/package.json", '"state"'])
     _expect_error(env, _compare("workspace", _set("packages/w1", "optionalDependencies", "native-linux-x64", None)), ["packages/w1/package.json", '"native-linux-x64"'])
+    return unittest.end(env)
+
+def _manifest_forms_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 006 T182: the manifests are read as `Package::parse` lists them. A name only in
+    # `peerDependenciesMeta` with `"optional": true` is a peer `"*"` of the root and of a workspace
+    # (fixtures/conformance_peer_meta_only); the root keeps only the `optionalDependencies` entry of
+    # a name it also declares in `dependencies` or `devDependencies`, while a workspace keeps both
+    # (fixtures/conformance_optional_duplicate). Both lockfiles are the pinned Bun's.
+    asserts.equals(env, None, _compare("conformance_peer_meta_only").error)
+    asserts.equals(env, None, _compare("conformance_optional_duplicate").error)
+
+    # `"optional": false` adds no peer, so the lockfile's `"q": "*"` is not declared.
+    _expect_error(env, _compare("conformance_peer_meta_only", _set("", "peerDependenciesMeta", "q", {"optional": False})), ["./package.json", "peerDependencies", '"q"', '"*"'])
+    _expect_error(env, _compare("conformance_peer_meta_only", _set("packages/w", "peerDependenciesMeta", "q", None)), ["packages/w/package.json", "peerDependencies", '"q"'])
+
+    # Without the optional entry, the root's `dependencies` and `devDependencies` ones stay.
+    _expect_error(env, _compare("conformance_optional_duplicate", _set("", "optionalDependencies", "l", None)), ["./package.json", '"l"', '"file:./l1"'])
+    _expect_error(env, _compare("conformance_optional_duplicate", _set("", "optionalDependencies", "m", None)), ["./package.json", "devDependencies", '"m"', '"file:./m1"'])
+
+    # A workspace's two entries are both compared.
+    _expect_error(env, _compare("conformance_optional_duplicate", _set("packages/w", "dependencies", "l", None)), ["packages/w/package.json", "dependencies", '"l"', '"file:../../l1"'])
+    _expect_error(env, _compare("conformance_optional_duplicate", _set("packages/w", "optionalDependencies", "l", "file:../../l1")), ["packages/w/package.json", "optionalDependencies", '"l"'])
     return unittest.end(env)
 
 def _catalogs_test_impl(ctx):
@@ -150,10 +174,11 @@ def _resolve_catalog_test_impl(ctx):
 
 equal_test = unittest.make(_equal_test_impl)
 dependencies_test = unittest.make(_dependencies_test_impl)
+manifest_forms_test = unittest.make(_manifest_forms_test_impl)
 catalogs_test = unittest.make(_catalogs_test_impl)
 catalog_missing_test = unittest.make(_catalog_missing_test_impl)
 overrides_test = unittest.make(_overrides_test_impl)
 resolve_catalog_test = unittest.make(_resolve_catalog_test_impl)
 
 def compare_test_suite(name):
-    unittest.suite(name, equal_test, dependencies_test, catalogs_test, catalog_missing_test, overrides_test, resolve_catalog_test)
+    unittest.suite(name, equal_test, dependencies_test, manifest_forms_test, catalogs_test, catalog_missing_test, overrides_test, resolve_catalog_test)

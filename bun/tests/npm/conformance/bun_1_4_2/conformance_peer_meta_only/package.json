@@ -1,0 +1,24 @@
+{
+  "name": "conformance-peer-meta-only",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "a": {
+      "optional": true
+    },
+    "q": {
+      "optional": true
+    },
+    "r": {
+      "optional": false
+    }
+  },
+  "overrides": {
+    "c": "$q"
+  }
+}
