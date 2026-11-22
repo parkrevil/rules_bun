@@ -1435,6 +1435,13 @@ alongside them. The profile's event name is not documented, so the test fails, r
 measuring something else, if Bazel stops writing exactly one span of that name; it is a test of the
 repository, not a reading the ruleset's rules rely on (constitution V governs those).
 
+**CI follow-up (the lead, under the user's delegation, 2026-11-23)**: PR #7's third CI run (45040229326, after T184) passed every job;
+`//bun/tests/integration:source_node_modules_test`, which this branch does not change, was FLAKY once
+on `output-root-with-space (.)` (Windows): the first attempt failed with the load guard reporting
+`node_modules\b\index.js is not declared by this target` for `@@//:phantom_test` and
+`node_modules\r\index.js` for `@@//:optional_peer_test`, and the retry passed. It did not flake in the
+branch's two earlier CI runs or in `main`'s last six. It is a follow-up, listed in the PR body.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on
