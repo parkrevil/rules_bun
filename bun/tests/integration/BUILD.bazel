@@ -400,7 +400,12 @@ bun_test(
         "//bun/tests/npm/scale:platform/bun.lock",
         "//bun/tests/npm/scale:platform/package.json",
     ],
-    tags = ["requires-network"],
+    # Its bounds are times, so no other test may share the runner's CPUs while
+    # it measures (bazel.build common-definitions: "exclusive"; T184).
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
     deps = [
         ":inner",
         "//bun/tests/npm/scale:generate",

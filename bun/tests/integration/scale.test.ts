@@ -18,6 +18,9 @@ import { assertOffline, Inner } from "./support/inner.ts";
 const MAX_EVALUATION_MS = 10_000;
 const MAX_LAUNCH_OVERHEAD_MS = 2_000;
 const RUNS = 5;
+// The extension whose evaluation is measured, as the inner workspace's
+// --override_module names its module's repository.
+const NPM_EXTENSION = "@@rules_bun+//bun:extensions.bzl%npm";
 
 const packages = scalePackages();
 const P = packages.length;
@@ -68,12 +71,28 @@ async function timed(args: string[]): Promise<number> {
   return performance.now() - start;
 }
 
-// `bazel mod deps` wall time on a fresh server, so that the extension, whose
-// result the lockfile does not hold (it is reproducible), is evaluated again.
-async function modDeps(module: string): Promise<number> {
+// The npm extension's own evaluation, in milliseconds, from the JSON trace
+// profile of `bazel mod deps` (bazel.build/advanced/performance/json-trace-profile:
+// `traceEvents`, durations in microseconds) on a fresh server, so that the
+// extension, whose result the lockfile does not hold (it is reproducible), is
+// evaluated again. Only the extension's span is read, not the invocation's wall
+// time, which server start and module resolution make noisy on a shared runner
+// (T184). bazel.build does not list event names, so the span is found by the
+// name Bazel 9.2.0 gives it, and the test fails if that name ever stops naming
+// exactly one span.
+async function evaluation(module: string): Promise<number> {
   inner.write("MODULE.bazel", module);
   await inner.run(["shutdown"]);
-  return timed(["mod", "deps"]);
+  const profile = join(inner.root, "mod_deps.profile.json");
+  await bazel(["mod", "deps", `--profile=${profile}`]);
+  const name = `evaluate module extension: ${NPM_EXTENSION}`;
+  const spans = (JSON.parse(readFileSync(profile, "utf8")).traceEvents as { name?: string; ph?: string; dur?: number }[]).filter(
+    (e) => e.ph === "X" && e.name === name,
+  );
+  if (spans.length !== 1 || typeof spans[0].dur !== "number") {
+    throw new Error(`the profile of bazel mod deps has ${spans.length} complete events named "${name}", expected 1`);
+  }
+  return spans[0].dur / 1000;
 }
 
 function actionCount(stdout: string): number {
@@ -162,18 +181,19 @@ test(
     inner.write("platform/BUILD.bazel", "");
     inner.write("BUILD.bazel", 'load("@rules_bun//bun:defs.bzl", "bun_binary")\n\nbun_binary(\n    name = "baseline",\n    entry_point = "elapsed.ts",\n)\n');
 
-    await modDeps(BASE); // the first server start and module resolution
-    const without: number[] = [];
-    const withTag: number[] = [];
-    const withPlatform: number[] = [];
-    for (let i = 0; i < 3; i++) {
-      without.push(await modDeps(BASE));
-      withPlatform.push(await modDeps(BASE + "\n" + PLATFORM_TAG));
+    // The first server start and module resolution, which fill the repository cache.
+    inner.write("MODULE.bazel", BASE);
+    await bazel(["mod", "deps"]);
+    const scaleSamples: number[] = [];
+    const platformSamples: number[] = [];
+    for (let i = 0; i < RUNS; i++) {
+      platformSamples.push(await evaluation(BASE + "\n" + PLATFORM_TAG));
       // Last, so that the build below sees the base fixture's tag.
-      withTag.push(await modDeps(BASE + "\n" + TAG));
+      scaleSamples.push(await evaluation(BASE + "\n" + TAG));
     }
-    const evaluation = median(withTag) - median(without);
-    const platformEvaluation = median(withPlatform) - median(without);
+    const scaleEvaluation = median(scaleSamples);
+    const platformEvaluation = median(platformSamples);
+    const samples = (values: number[]) => values.map((t) => t.toFixed(0)).join(", ");
 
     inner.write("BUILD.bazel", BUILD);
     const scaleActions = actionCount((await bazel(["aquery", "--output=jsonproto", "//:scale"])).stdout);
@@ -194,8 +214,8 @@ test(
     console.log(
       [
         `packages P = ${P}, edges E = ${E}, direct links L = ${L}`,
-        `extension evaluation: ${evaluation.toFixed(0)} ms (bazel mod deps median with the tag ${median(withTag).toFixed(0)} ms [${withTag.map((t) => t.toFixed(0)).join(", ")}], without ${median(without).toFixed(0)} ms [${without.map((t) => t.toFixed(0)).join(", ")}])`,
-        `platform variant (${PLATFORM_P} packages, ${PLATFORM_NATIVE} per-platform): extension evaluation ${platformEvaluation.toFixed(0)} ms (median with its tag ${median(withPlatform).toFixed(0)} ms [${withPlatform.map((t) => t.toFixed(0)).join(", ")}])`,
+        `extension evaluation: ${scaleEvaluation.toFixed(0)} ms (median of the profile's span [${samples(scaleSamples)}])`,
+        `platform variant (${PLATFORM_P} packages, ${PLATFORM_NATIVE} per-platform): extension evaluation ${platformEvaluation.toFixed(0)} ms (median of the profile's span [${samples(platformSamples)}])`,
         `actions of //:scale: ${scaleActions}; P + E + L + A = ${P + E + L + A} (A = ${A}, the actions of //:baseline)`,
         `bazel build //:scale after analysis (the store copies and links): ${copyWall.toFixed(0)} ms; store files ${bytes.total} bytes, ${bytes.unlinked} of them not hardlinked`,
         `launcher start: //:scale median ${median(scaleLaunch)} ms [${scaleLaunch.join(", ")}], //:baseline median ${median(baselineLaunch)} ms [${baselineLaunch.join(", ")}], overhead ${overhead} ms`,
@@ -205,7 +225,7 @@ test(
 
     expect(scaleActions).toBe(P + E + L + A);
     if (process.platform === "linux") {
-      expect(evaluation).toBeLessThanOrEqual(MAX_EVALUATION_MS);
+      expect(scaleEvaluation).toBeLessThanOrEqual(MAX_EVALUATION_MS);
       expect(platformEvaluation).toBeLessThanOrEqual(MAX_EVALUATION_MS);
       expect(overhead).toBeLessThanOrEqual(MAX_LAUNCH_OVERHEAD_MS);
     }

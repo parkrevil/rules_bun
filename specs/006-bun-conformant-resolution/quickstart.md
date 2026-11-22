@@ -126,4 +126,6 @@ documentation names only the runner labels that ran.
 bazel test //bun/tests/integration:scale_test --test_output=all   # on main and on the branch
 ```
 
-Expected: PASS (evaluation ≤ 10,000 ms, unchanged bound); both printed times go into the PR.
+Expected: PASS (evaluation ≤ 10,000 ms, unchanged bound); both printed times go into the PR. Since
+T184 the branch measures the extension's span in `bazel mod deps --profile`'s trace (research R13),
+`main` the difference of two invocations' wall times.

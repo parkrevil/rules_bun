@@ -873,6 +873,22 @@ before), the `scale` fixture 1,733 ms (1,915 ms before), on WSL. An index of the
 ancestor walk was tried and left out: with the class work run five times over, it saved about
 0.3 s of 11 s, within the run-to-run spread (`tdd-log.md` T183).
 
+PR #7's second CI run, after T183, passed every job, but `scale_test` failed its first attempt on
+all three Linux jobs (FLAKY): the variant measured 10,444–12,716 ms there, and the measurement was
+the difference of wall-clock `bazel mod deps` medians of three fresh-server runs with and without
+the tag, whose `without` samples alone ranged 3,033–10,224 ms on one runner. T184 measures the
+extension itself: each sample is the `dur` of the complete event `evaluate module extension:
+@@rules_bun+//bun:extensions.bzl%npm` in the JSON trace profile `bazel mod deps --profile` writes on
+a fresh server (bazel.build, json-trace-profile: `traceEvents`, `ts` and `dur` in microseconds, `cat`
+a `ProfilerTask` value), five samples per fixture, median. bazel.build lists no event names, so the
+test finds the span by the name Bazel 9.2.0 gives it and fails if that name stops naming exactly one
+span, rather than measuring something else. CPU contention doubles the span (20 busy processes on
+WSL's 24 cores: variant 2,506 → 5,016 ms, the samples within 6 % of each other either way), and on
+CI `scale_test` shared the runner's 4 CPUs with the suite's other tests, so it is tagged `exclusive`
+(bazel.build common-definitions: "ensuring that no other tests are running at the same time"). The
+bound stays 10,000 ms. On WSL the variant measures 2,506 ms (samples 2,424–2,567), the `scale`
+fixture 1,491 ms (`tdd-log.md` T184).
+
 ### R14. Behavior changes and existing tests
 
 Each BC of Part 5 is first recorded as a conformance difference (`tdd-log.md`), then fixed by the
@@ -1408,6 +1424,16 @@ steps. Classes whose stores are equal were already one class (`platform_classes`
 classes each enable a different per-platform package, so no two stores could be shared, and a store
 derived from another's by adding or removing a disabled leaf was not taken, as it would replace
 Bun's walk with a rule of the ruleset's own.
+
+**T184 decided by the lead, under the user's delegation (2026-11-23)**: after T183, `scale_test`
+was FLAKY on the three Linux jobs of PR #7's second CI run. R13's bound is kept; what changed is
+how the time is measured (R13): the extension's own span in `bazel mod deps --profile`'s JSON trace
+profile, five samples, median, instead of the difference of two invocations' wall times; and the
+test is tagged `exclusive`, the documented way to keep other tests off the CPUs while it measures.
+Its cost is that `scale_test` runs after the suite's other tests on each root job instead of
+alongside them. The profile's event name is not documented, so the test fails, rather than
+measuring something else, if Bazel stops writing exactly one span of that name; it is a test of the
+repository, not a reading the ruleset's rules rely on (constitution V governs those).
 
 ## Part 7: Evidence log
 
