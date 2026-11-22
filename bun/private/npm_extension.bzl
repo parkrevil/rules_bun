@@ -242,7 +242,8 @@ def link_targets(file, resolution, entries):
             # The package the link names its bins after (`resolve.bzl`): its root, or the one
             # package of the roots of a link whose root differs by platform (feature 006 BC-12;
             # `resolve.bzl` fails roots of different packages, T097), or, for a link the store
-            # makes on no platform, the package the dependency resolves to (T111).
+            # makes on no platform, the package the dependency resolves to (T111) or, for an
+            # optional dependency under `unresolved`, the row `main` linked it to (T169).
             entry = entries[link.key] if link.key else None
             entry_bins = entry.bin if entry else {}
             bins = bin_targets("{}@{}".format(entry.name, entry.version) if entry else alias, entry_bins)
@@ -623,9 +624,13 @@ lockfile as version 1, which rules_bun reads (ID-11); and two `bin` names of one
 one target name fail evaluation naming both ("Generated targets", above), while Bun installs the
 lockfile and links both, since one package cannot hold two targets of one name (ID-12; two packages
 of one workspace fail the same way, which no test covers). A `lockfileVersion` 0 lockfile without
-such a row is read as Bun reads it. The conformance test exercises ID-1 to ID-4 and ID-12, whose
+such a row is read as Bun reads it. A `bun.lock` that writes a catalog entry or the root workspace
+twice is read with that key's last value, while Bun refuses it, since Starlark's `json.decode`
+keeps only the last value of a key an object holds twice; no Bun writes such a lockfile (ID-13).
+The conformance test exercises ID-1 to ID-4 and ID-12, whose
 project's links it still compares; analysis tests check ID-8; no lockfile it compares reaches ID-5, ID-6 or ID-9; ID-10 and ID-11 fail evaluation, which
-`bun/tests/integration/credentials.test.ts` and `lockfile_errors.test.ts` check.
+`bun/tests/integration/credentials.test.ts` and `lockfile_errors.test.ts` check; unit tests check
+ID-13.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target
 platforms Bun's own filter accepts (`Meta::is_disabled` with `negatable_from_json_value`, Bun's

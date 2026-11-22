@@ -255,7 +255,7 @@ def _unresolved_test_impl(ctx):
     # L23, L24 (research Part 4): `unresolved` of an entry and of a workspace, as Bun wrote them.
     unresolved = _lockfile(env, "conformance_unresolved")
     asserts.equals(env, ["state"], unresolved["entries"]["opt-user"].get("unresolved"))
-    asserts.equals(env, ["b"], unresolved["workspaces"][""].get("unresolved"))
+    asserts.equals(env, ["b", "single-bin"], unresolved["workspaces"][""].get("unresolved"))
     asserts.equals(env, ["q"], unresolved["workspaces"]["packages/w"].get("unresolved"))
     asserts.equals(env, [], _lockfile(env, "basic")["entries"]["a"].get("unresolved"))
 
@@ -399,6 +399,9 @@ _LOADER_REFUSALS = [
     ("L2536", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@workspace:nope"]}}', ['"a"', "Unknown workspace"]),
     ("L2558", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@file:a"]}}', ['"a"', "slot 1"]),
     ("L2569", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", 1, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="]}}', ['"a"', "slot 2"]),
+    # A `root:` row without its `{ bin, binDir }` object, and with a non-object there (T170).
+    ("L2614", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"x": ["x@root:"]}}', ['"x"', "binaries object"]),
+    ("L2623", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"x": ["x@root:", "SECRET"]}}', ['"x"', "binaries object"]),
     ("L2640", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}]}}', ['"a"', "slots"]),
     ("L2643", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, 1]}}', ['"a"', "slot 3"]),
     ("L2650", '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"a": ["a@1.0.0", "", {}, "md5-AAAA"]}}', ['"a"', "Unsupported or malformed integrity hash"]),
@@ -567,6 +570,23 @@ def _load_error(text):
         return read.error
     return resolve(read.value, "inline/bun.lock").error
 
+def _duplicate_keys_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # ID-13 (T170): a catalog entry or the root workspace written twice loads with the key's last
+    # value, as `json.decode` keeps it, where the pinned Bun refuses the lockfile ("Duplicate
+    # catalog entry", "Duplicate root package", LOCK L1782, L2126).
+    catalog = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "catalog": {"a": "1.0.0", "a": "2.0.0"}, "packages": {}}'
+    asserts.equals(env, None, _load_error(catalog))
+    asserts.equals(env, {"a": "2.0.0"}, _read(catalog)["value"]["catalog"])
+    catalogs = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "catalogs": {"g": {"a": "1.0.0", "a": "2.0.0"}}, "packages": {}}'
+    asserts.equals(env, None, _load_error(catalogs))
+    asserts.equals(env, {"g": {"a": "2.0.0"}}, _read(catalogs)["value"]["catalogs"])
+    root = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "": {"name": "y"}}, "packages": {}}'
+    asserts.equals(env, None, _load_error(root))
+    asserts.equals(env, "y", _read(root)["value"]["workspaces"][""]["name"])
+    return unittest.end(env)
+
 def _check_refusals(env, cases):
     for line, text, fragments in cases:
         error = _load_error(text) or ""
@@ -687,6 +707,7 @@ bin_values_test = unittest.make(_bin_values_test_impl)
 bin_objects_test = unittest.make(_bin_objects_test_impl)
 integrity_refusals_test = unittest.make(_integrity_refusals_test_impl)
 git_tag_refusals_test = unittest.make(_git_tag_refusals_test_impl)
+duplicate_keys_test = unittest.make(_duplicate_keys_test_impl)
 row_tail_accepted_test = unittest.make(_row_tail_accepted_test_impl)
 
 def lockfile_test_suite(name):
@@ -718,4 +739,5 @@ def lockfile_test_suite(name):
         integrity_refusals_test,
         git_tag_refusals_test,
         row_tail_accepted_test,
+        duplicate_keys_test,
     )

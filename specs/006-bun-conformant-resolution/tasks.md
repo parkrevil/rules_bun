@@ -1684,7 +1684,7 @@ Codex approved; the eleventh Claude review found these, and the lead rejected th
 them (the lead, under the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with
 T067. Each is written red first and recorded in `tdd-log.md`.
 
-- [ ] T169 BC-1 removes bin targets `main` generates: `bun/private/resolve.bzl` (about L224–L226)
+- [X] T169 BC-1 removes bin targets `main` generates: `bun/private/resolve.bzl` (about L224–L226)
   `_declared_key` returns `None` for an optional dependency under `unresolved`, so `link_targets`
   (`bun/private/npm_extension.bzl` about L236–L238) names no bins for that link, while `main`
   linked it to the other row of that name and generated `:node_modules/<name>/bin/<bin>`. Add a
@@ -1692,7 +1692,7 @@ T067. Each is written red first and recorded in `tdd-log.md`.
   `declared_test.bzl` / `names_test` case red first (the bin target is missing), then keep the bin
   names of the row `main` bound, with the bins compatible with no platform as the spec says;
   re-run Q7 against `main`, per FR-014 / SC-005 / BC-1 (contradicts)
-- [ ] T170 `bun/private/lockfile.bzl` (about L154) skips every `root:` row, so a row without its
+- [X] T170 `bun/private/lockfile.bzl` (about L154) skips every `root:` row, so a row without its
   `{ bin, binDir }` object, or with a non-object there, loads where Bun refuses it ("Missing package
   binaries object" / "Expected an object", bun.lock.rs L2614, L2623). Refuse as Bun does, red first
   against the pinned Bun; for L1782 and L2126, which `json.decode` cannot tell apart, list the

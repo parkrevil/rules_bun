@@ -37,8 +37,8 @@ failures) were decided by the lead under the user's delegation on 2026-11-22, as
 rows of one `name@version` with different integrity or URL, T148) and BC-18 (npm rows with more
 than 4 slots, T149), and BC-19 (`lockfileVersion` 0, T155), ID-10 (credentials in `bun.lock`,
 T156) and ID-11 (a workspace row of `lockfileVersion` 0, T155), and ID-12 (names that become one
-target name, T160), so the Behavior Changes are BC-1…BC-19 and the Intentional Differences
-ID-1…ID-12 (ID-7 withdrawn).
+target name, T160), and ID-13 (a key `bun.lock` writes twice, T170), so the Behavior Changes are
+BC-1…BC-19 and the Intentional Differences ID-1…ID-13 (ID-7 withdrawn).
 
 ## Technical Context
 

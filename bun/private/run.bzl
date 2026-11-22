@@ -92,15 +92,16 @@ load), so a lockfile written for Bun's hoisted installs gets this layout too, an
 resolve as the pinned Bun's isolated install resolves them (the `npm` extension's Resolution): to
 the version a dependent above the package provides, else to the version the lockfile lists; a peer
 nothing provides is absent. That paragraph names where rules_bun links or loads differently on
-purpose (ID-1 to ID-6 and ID-8 to ID-12), among them a workspace member a package links, which the
+purpose (ID-1 to ID-6 and ID-8 to ID-13), among them a workspace member a package links, which the
 target must have in its `deps` (ID-8), a layout the hub cannot express, which fails evaluation
 (ID-9), a `bunfig.toml` that sets `linkWorkspacePackages = false`, which rules_bun does not read
 (ID-6), an entry outside Bun's configured registry without integrity, which fails analysis of the
 target that needs it (ID-5), a URL holding user information in `bun.lock`, which fails evaluation
 (ID-10), a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, which fails
-evaluation (ID-11), and two `bin` names of one package that become one target name, which fail
-evaluation (ID-12). Two instances with one store directory that come from different
-lockfiles and differ fail analysis, as the `npm` extension's "Several lockfiles" states.
+evaluation (ID-11), two `bin` names of one package that become one target name, which fail
+evaluation (ID-12), and a `bun.lock` that writes a key twice, which is read with its last value
+(ID-13). Two instances with one store directory that come from different lockfiles and differ fail
+analysis, as the `npm` extension's "Several lockfiles" states.
 
 The load guard admits every file under the target's store entries and nothing else; its limits
 above apply unchanged, and Bun's resolver may still read a `package.json` outside the declared set

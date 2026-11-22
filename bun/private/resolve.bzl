@@ -25,7 +25,7 @@ An entry rules_bun does not fetch (FR-010) is linked like any other, so its depe
 instances (BC-8); its `status` makes the hub fail analysis of it (ID-4). Errors are returned as values.
 """
 
-load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_peer")
+load(":bun_install_types.bzl", "RESOLUTION_TAG", "behavior_is_optional", "behavior_is_peer")
 load(":bun_isolated_store.bzl", "build_store")
 load(":bun_lockfile.bzl", "dependency_ids", "is_valid", "load_lockfile", "lockfile_clean", "lockfile_resolve")
 load(":bun_tree.bzl", "hoist")
@@ -205,12 +205,24 @@ def _label(lockfile, pkg_id):
     package = lockfile.packages[pkg_id]
     return "{}@{}".format(package.name, package.entry.version if package.entry else package.resolution.value)
 
-def _declared_key(lockfile, holders, path, alias, patched):
-    """This is the adapter: the `bun.lock` key of the package a holder's declared dependency resolves to.
+def _declared_key(lockfile, bun, holders, path, alias, patched):
+    """This is the adapter: the `bun.lock` key of the package a holder's declared dependency names its bins after.
 
     The package is the one the cleaned lockfile binds the holder's dependency of that name to
     (`resolutions[dep_id]`, LOCK L2923–L3023), whether or not the store links it on a platform
-    class; a link the store makes on no class names its bin targets after it (T111).
+    class; a link the store makes on no class names its bin targets after it (T111). An optional
+    dependency under `unresolved` is bound to no package (LOCK L3027–L3031, feature 006 BC-1);
+    `main` linked it to the row its lookup finds (`_hoisted_key`) and generated that row's bin
+    targets, so its link names its bins after that row, and no target name `main` generated is
+    gone (FR-014, SC-005, T169).
+
+    Args:
+        lockfile: The `value` of `read_lockfile`.
+        bun: The cleaned lockfile.
+        holders: Workspace path -> the package ID of the root or the workspace.
+        path: The holder's workspace path.
+        alias: The dependency's name.
+        patched: The `name@version` keys of `patchedDependencies`.
 
     Returns:
         The key, or `None` when the dependency resolves to no package, to a workspace, or to an
@@ -218,16 +230,47 @@ def _declared_key(lockfile, holders, path, alias, patched):
     """
     if path not in holders:
         return None
-    for dep_id in dependency_ids(lockfile, holders[path]):
-        if lockfile.dependencies[dep_id].name != alias:
+    for dep_id in dependency_ids(bun, holders[path]):
+        dependency = bun.dependencies[dep_id]
+        if dependency.name != alias:
             continue
-        pkg_id = lockfile.resolutions[dep_id]
-        if not is_valid(pkg_id) or _holder_path(lockfile, pkg_id) != None:
+        pkg_id = bun.resolutions[dep_id]
+        if not is_valid(pkg_id):
+            if behavior_is_optional(dependency.behavior) and alias in lockfile.workspaces[path].unresolved:
+                return _hoisted_key(lockfile, path, alias, patched)
             return None
-        package = lockfile.packages[pkg_id]
+        if _holder_path(bun, pkg_id) != None:
+            return None
+        package = bun.packages[pkg_id]
         if package.entry == None or unsupported_reason(package.entry, patched):
             return None
         return package.key
+    return None
+
+def _hoisted_key(lockfile, path, alias, patched):
+    """This is the adapter: the `bun.lock` key `main` linked a workspace's dependency to.
+
+    `main` looked the dependency up as its hoisted-tree walk did: `<workspace name>/<alias>`, then
+    `<alias>` (for the root only `<alias>`), the first key that exists.
+
+    Args:
+        lockfile: The `value` of `read_lockfile`.
+        path: The workspace path, `""` for the root.
+        alias: The dependency's name.
+        patched: The `name@version` keys of `patchedDependencies`.
+
+    Returns:
+        The key, or `None` when no key exists or its entry is a workspace or an entry rules_bun does
+        not fetch.
+    """
+    start = [lockfile.workspaces[path].name] if path else []
+    for i in range(len(start), -1, -1):
+        key = "/".join(start[:i] + [alias])
+        if key in lockfile.entries:
+            entry = lockfile.entries[key]
+            if entry.kind == "workspace" or unsupported_reason(entry, patched):
+                return None
+            return key
     return None
 
 def _differing_member(held):
@@ -300,8 +343,9 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
         declares (`root`: the instance ID the alias links, or `None` when that differs by platform
         or the store links it on no platform class; then `roots` maps each root's ID to the `[os,
         cpu, libc]` tuples it is the root on, else it is empty; `key`: the `bun.lock` key of the
-        package it links, whose `bin` entries name its bin targets, or `None` for none or one
-        rules_bun does not fetch), and `members` maps a workspace path to alias -> the path of each
+        package it links, whose `bin` entries name its bin targets, the row `main` linked it to
+        for an optional dependency under `unresolved`, or `None` for none or one rules_bun does
+        not fetch), and `members` maps a workspace path to alias -> the path of each
         workspace it links.
     """
     loaded = load_lockfile(lockfile, file)
@@ -445,7 +489,7 @@ def resolve(lockfile, file = "bun.lock", hash_fn = hash):
         for alias in sorted(declared.keys()):
             if alias in links[path] or alias in members.get(path, {}):
                 continue
-            key = _declared_key(bun, holder_ids, path, alias, patched)
+            key = _declared_key(lockfile, bun, holder_ids, path, alias, patched)
             links[path][alias] = struct(alias = alias, root = None, roots = {}, closure = [], optional = {}, key = key)
     return struct(value = struct(instances = instances, links = links, members = members), error = None)
 

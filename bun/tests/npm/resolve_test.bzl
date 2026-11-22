@@ -450,6 +450,47 @@ def _platform_root_package_test_impl(ctx):
     asserts.equals(env, 'inline/bun.lock: the store links "plat-p" of the workspace "packages/w" to different packages on different platforms, which rules_bun cannot express', result.error)
     return unittest.end(env)
 
+def _unresolved_key_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # An optional dependency under `unresolved` is linked nowhere (BC-1); its link names its bins
+    # after the row `main` linked it to (T169): the root's single-bin after w's single-bin@1.0.0,
+    # w's q after the root's q@1.0.0.
+    resolution = _resolution(env, "conformance_unresolved")
+    for path, alias, key in [("", "b", "b"), ("", "single-bin", "single-bin"), ("packages/w", "q", "q")]:
+        link = resolution["links"][path][alias]
+        asserts.equals(env, None, link["root"], "the root of {}'s {}".format(path or "the root", alias))
+        asserts.equals(env, [], link["closure"])
+        asserts.equals(env, key, link["key"], "the key of {}'s {}".format(path or "the root", alias))
+
+    # `main`'s lookup: `<workspace name>/<alias>`, then `<alias>`; no key for a workspace row or
+    # an entry rules_bun does not fetch.
+    text = json.encode({
+        "lockfileVersion": 2,
+        "workspaces": {
+            "": {"name": "inline", "optionalDependencies": {"m": "^9.0.0", "t": "^9.0.0"}, "unresolved": ["m", "t"]},
+            "packages/m": {"name": "m", "version": "1.0.0"},
+            "packages/w": {"name": "w", "version": "1.0.0", "optionalDependencies": {"q": "^9.0.0"}, "unresolved": ["q"]},
+        },
+        "packages": {
+            "m": ["m@workspace:packages/m"],
+            "q": ["q@1.0.0", "", {}, "sha512-AAAA"],
+            "t": ["t@1.0.0", "", {}, ""],
+            "w": ["w@workspace:packages/w"],
+            "w/q": ["q@2.0.0", "", {}, "sha512-AAAA"],
+        },
+    })
+    lock = read_lockfile(text, "inline/bun.lock")
+    asserts.equals(env, None, lock.error)
+    result = _plain(resolve(lock.value, "inline/bun.lock"))
+    asserts.equals(env, None, result["error"])
+    links = result["value"]["links"]
+    asserts.equals(env, "w/q", links["packages/w"]["q"]["key"])
+    asserts.equals(env, None, links[""]["m"]["key"])
+    asserts.equals(env, None, links[""]["t"]["key"])
+    return unittest.end(env)
+
+unresolved_key_test = unittest.make(_unresolved_key_test_impl)
 platform_holder_test = unittest.make(_platform_holder_test_impl)
 platform_root_package_test = unittest.make(_platform_root_package_test_impl)
 platform_edge_test = unittest.make(_platform_edge_test_impl)
@@ -478,4 +519,5 @@ def resolve_test_suite(name):
         platform_member_test,
         platform_edge_test,
         platform_root_package_test,
+        unresolved_key_test,
     )

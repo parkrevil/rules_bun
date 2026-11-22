@@ -1,0 +1,12 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "refused-root-row-without-bins"
+    }
+  },
+  "packages": {
+    "refused-root-row-without-bins": ["refused-root-row-without-bins@root:"]
+  }
+}

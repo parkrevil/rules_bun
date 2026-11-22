@@ -49,7 +49,9 @@ the Bun lines that read it, the evidence and its canary.
 (https://bazel.build/extending/toolchains, https://bazel.build/extending/platforms#skipping-incompatible-targets),
 platform inheritance (`parents`, https://bazel.build/reference/be/platforms-and-toolchains#platform),
 `module_extension` / `module_ctx.read` (https://bazel.build/rules/lib/builtins/module_ctx),
-`select()` (https://bazel.build/docs/configurable-attributes). Each is used as documented.
+`select()` (https://bazel.build/docs/configurable-attributes), `json.decode`, which keeps the last
+value of a key an object holds twice (https://bazel.build/rules/lib/core/json, ID-13). Each is used
+as documented.
 
 ## Part 2: The pinned Bun's pipeline
 
@@ -404,7 +406,8 @@ binding-relevant Bun steps are unaccounted.
 | `resolve.bzl` `_hex16` | the adapter (research R4): Bun's `{:016x}` of a peer hash |
 | `resolve.bzl` `_ids` | `src/install/isolated_install/Store.rs` L450–L466; `src/install/isolated_install.rs` L1353–L1386 (the store directory `<name>@<version>+<peer hash>`, BC-11); the instance ID and the numbering of colliding hashes are the adapter (research R4) |
 | `resolve.bzl` `_label` | the adapter (research R4) |
-| `resolve.bzl` `_declared_key` | the adapter (research R4): the key the cleaned lockfile binds a declared dependency to, also one the store links on no class (T111) |
+| `resolve.bzl` `_declared_key` | the adapter (research R4): the key the cleaned lockfile binds a declared dependency to, also one the store links on no class (T111); for an optional dependency under `unresolved`, `_hoisted_key`'s (T169) |
+| `resolve.bzl` `_hoisted_key` | the adapter (research R4): the key `main`'s lookup found for a declared dependency, `<workspace name>/<alias>`, then `<alias>` (T169) |
 | `resolve.bzl` `_differing_member` | the adapter (research R4) |
 | `resolve.bzl` `class_member_conflict` | the adapter (research R4): a member link that differs by platform class (BC-4, BC-12) |
 | `resolve.bzl` `resolve` | the adapter (research R4) |
@@ -521,9 +524,14 @@ dependency under `unresolved`, BC-1; an optional or peer dependency without a ke
 a link with no root that reaches nothing, as `main`'s link of an optional package no platform
 matches reaches nothing; its bin targets are named after the package the cleaned lockfile binds
 the dependency to (`resolutions[dep_id]`, LOCK L2923–L3023), when that is a package rules_bun
-fetches, and are compatible with no platform. `declared_test.bzl`, the fixtures' `names_test`
-(`generated_names.bzl`), and a comparison of every `:node_modules/...` name of `main` with the
-branch (`tdd-log.md`, T111).
+fetches, and are compatible with no platform. An optional dependency under `unresolved` is bound to
+no package (LOCK L3027–L3031); `main` linked it to the row its lookup found (`<workspace
+name>/<alias>`, then `<alias>`) and generated that row's bin targets, so its bin targets are named
+after that row (`_hoisted_key`, T169: `conformance_unresolved`'s root `single-bin`, under
+`unresolved`, keeps `:node_modules/single-bin/bin/single-bin` of `w`'s `single-bin@1.0.0`).
+`declared_test.bzl`, the fixtures' `names_test` (`generated_names.bzl`), `resolve_test.bzl`
+`unresolved_key_test`, and a comparison of every `:node_modules/...` name of `main` with the
+branch (`tdd-log.md`, T111, T169).
 
 **Bindings that differ by platform class (T077)**. The store's first pass skips a dependency whose
 package `is_disabled` for the platform (ISO L1032–L1047, through TREE L1313–L1405), so a skipped
@@ -777,7 +785,7 @@ oracle's tarballs carry the dependencies the lockfile records.
 | Project | FR-009 layout | BC or edge case it exercises | Added by |
 |---|---|---|---|
 | `conformance_alias_workspace` | workspace `lib` and `@scope/lib`, root aliases `lib: npm:a@1.0.0`, `@scope/lib: npm:c@1.0.0` (PRIOR U4) | BC-2 | T007 |
-| `conformance_unresolved` | package and workspace optional dependencies listed under `unresolved` (PRIOR E1, E7, E9; archive `opt-user@1.0.0`) | BC-1 | T007 |
+| `conformance_unresolved` | package and workspace optional dependencies listed under `unresolved` (PRIOR E1, E7, E9; archive `opt-user@1.0.0`); the root's unresolved `single-bin`, whose row of that name (`w`'s `single-bin@1.0.0`) has a bin | BC-1; SC-005 | T007, T169 |
 | `conformance_unbound` | optional and peer dependencies without a key, root and workspace (PRIOR E3, E10) | BC-3 | T007 |
 | `conformance_registry_to_workspace` | a registry package depending on a workspace member's name, resolved to the member | BC-4 | T007 |
 | `conformance_unprovided_peer` | a non-optional and an optional peer nothing provides | BC-5 | T007 |
@@ -922,19 +930,19 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L1936 | Expected an object (`overrides`) | refused | `_CONTAINER_REFUSALS` L1936 (red first) |
 | L1946, L1968, L1978, L1986, L1992, L2007, L2027 | the `overrides` refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L1738, L1746, L1765 | the `parse_catalog` refusals | refused | `_LOADER_REFUSALS`, one row each |
-| L1782 | Duplicate catalog entry | not refused | not written: it needs one key twice in one JSON object, which the writer never prints (it iterates a map, L586–L615, `write_catalog` L912); Starlark's `json.decode` keeps one of two equal keys, so the ruleset cannot see it |
+| L1782 | Duplicate catalog entry | not refused (**ID-13**): loaded with the entry's last value | not written: it needs one key twice in one JSON object, which the writer never prints (it iterates a map, L586–L615, `write_catalog` L912); Starlark's `json.decode` keeps the last value of a key written twice (https://bazel.build/rules/lib/core/json), so the ruleset cannot see it; `lockfile_test.bzl` `duplicate_keys_test` (`catalog` and a `catalogs` group), each text refused by Bun 1.4.4 and 1.4.2 (T170) |
 | L2039 | Expected an object (`catalog`) | refused | `_CONTAINER_REFUSALS` L2039 (red first) |
 | L2058 | Expected an object (`catalogs`) | refused | `_CONTAINER_REFUSALS` L2058 (red first) |
 | L2068, L2076 | the `catalogs` refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2101 | Missing a workspaces object property | refused | `_CONTAINER_REFUSALS` L2101 (red first; one check for missing and not an object) |
 | L2114 | Expected an object (a workspace) | refused | `_CONTAINER_REFUSALS` L2114 (red first) |
-| L2126 | Duplicate root package | not refused | not written: a second `""` key in `workspaces`; the writer prints each workspace path once, and `json.decode` keeps one (as L1782) |
+| L2126 | Duplicate root package | not refused (**ID-13**): loaded with the last root workspace | not written: a second `""` key in `workspaces`; the writer prints each workspace path once, and `json.decode` keeps the last (as L1782); `duplicate_keys_test`, the text refused by Bun 1.4.4 and 1.4.2 (T170) |
 | L2138, L2146, L2164, L2181, L2200 | the workspace refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2215 | Expected a string (the root's `name`) | refused | `_CONTAINER_REFUSALS` L2215 (red first) |
 | L2313 | Expected an object (`packages`) | refused | `_CONTAINER_REFUSALS` L2313 (red first) |
 | L2339, L2368, L2380, L2394, L2403, L2427, L2434, L2445, L2536, L2558, L2569, L2640, L2643 | the row refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2561, L2569 (a workspace row on `lockfileVersion` 0) | Missing dependencies object / Expected an object | refused, and so is a version-0 workspace row with the object, which Bun loads (ID-11) | `lockfile_test.bzl` `version_0_workspace_row_test`, `lockfile_errors.test.ts` (T155) |
-| L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | not refused | not written: the writer prints the object (L751–L778); not read (the root's own bins, table above) |
+| L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | refused | `_LOADER_REFUSALS` L2614, L2623 and `conformance/refused/root_row_without_bins`, `refused/root_row_bins_not_object`, which the conformance test checks Bun and the ruleset both refuse (red first, T170); not written: the writer prints the object (L751–L778); its content is not read (the root's own bins, table above) |
 | L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused, from lockfileVersion 2, where no whitespace-separated entry has a known algorithm and a digest `Integrity::parse_entry` accepts (standard base64 without padding, at most the algorithm's length, zero bits after the last byte; INTEGRITY L88–L164, BASE64 L548–L641); before 2 Bun warns and loads | `_LOADER_REFUSALS` L2650; `lockfile_test.bzl` `_INTEGRITY_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147) |
 | L2664 (L2652–L2669) | Missing integrity hash for npm package resolved to a tarball URL outside the configured registry | not refused; the row is unfetched (ID-4) | **ID-5** (user, 2026-11-21, Part 6): Bun's configured registry comes from `bunfig.toml` (`install.registry`, `install.scopes`), the environment and `.npmrc` (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only the `npmrc` attribute's `.npmrc` (FR-003), so it cannot tell which URLs are under the configured registry. It loads such a lockfile and a target that needs the row fails analysis (ID-4), as `restricted` and `integration/workspaces/multi_nointegrity` show for rows without integrity (`conformance_test`, ID-4) |
 | L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | refused: a missing or non-string slot on every lockfile, a tag over 256 bytes on every lockfile, and one `is_safe_resolved_tag` rejects (REPO L114–L123) for a GitHub row on every lockfile and for a git row from lockfileVersion 2 | `lockfile_test.bzl` `_GIT_TAG_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147); canary C-ROWTAIL |
@@ -1223,6 +1231,18 @@ workspace whose names become one target name fail the same way; no lockfile a te
 (unverified). The 23 other lockfiles it failed at first were the integration tests' `{REGISTRY}`
 placeholder, which the oracle fills in with its registry and the ruleset side then did not; it now
 reads the files as the oracle installs them (`tdd-log.md` T160).
+
+**T169 and T170 decided by the lead, under the user's delegation (2026-11-22)**: the eleventh
+Claude review found two gaps. An optional dependency under `unresolved` lost the bin targets `main`
+generated for it, from the row of its name `main` linked it to; its link keeps them, compatible
+with no platform (T111), so no generated target name of `main` is gone (SC-005; Part 3 "Declared
+dependencies the store links nowhere"). The reader skipped a `root:` row whole, so it loaded a row
+without its binaries object, or with a non-object there, which Bun refuses (L2614, L2623); it
+refuses both now. Two other refusals of the loader need a key written twice in one JSON object (a
+catalog entry, L1782; the root workspace, L2126); `json.decode` keeps the last value of such a key
+(bazel.build: "If the same key string occurs more than once in the object, the last value for the
+key is kept"), so the reader cannot see the first and loads the lockfile, which is listed as
+ID-13. No Bun writes any of these forms.
 
 ## Part 7: Evidence log
 

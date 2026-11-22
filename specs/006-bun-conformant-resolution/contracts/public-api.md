@@ -12,7 +12,8 @@ features 001–005 stays. `:node_modules/<package>` and `:node_modules/<package>
 names. Repositories named `<name>__...` (instance IDs) are not public API (`_NPM_DOC`) and may
 change. Every package the root or a workspace declares keeps its `:node_modules/<package>` target,
 also one the store links on no target platform (BC-1, BC-3, BC-5, BC-7), which then carries nothing
-and whose bin targets are compatible with no platform (T111).
+and whose bin targets are compatible with no platform (T111); an optional dependency under
+`unresolved` (BC-1) keeps the bin targets of the row `main` linked it to (T169).
 
 ## What a consumer can observe
 
@@ -27,10 +28,12 @@ extension's evaluation checks since T160: with `main`'s check of the download it
 lockfiles, after the change it passes them (T160). BC-19 is a `lockfileVersion` 0 lockfile, by
 `lockfile_test.bzl` `versions_test` and the hand-written
 `bun/tests/npm/conformance/accepted/lockfile_version_0` (both oracles, T155). The Intentional
-Differences ID-1 to ID-12 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
+Differences ID-1 to ID-13 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
 members, ID-9 the two evaluation failures below (BC-12), ID-10 a URL holding user information in
 `bun.lock`, ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, and ID-12 two
-names that become one target name, each an evaluation failure below.
+names that become one target name, each an evaluation failure below, and ID-13 a catalog entry or
+the root workspace written twice in `bun.lock`, read with its last value where Bun refuses the
+lockfile.
 
 | Surface | Before (`main`) | After | BC |
 |---|---|---|---|
@@ -53,7 +56,7 @@ names that become one target name, each an evaluation failure below.
 | Two rows of one `name@version` that record different integrity values or download URLs | evaluation fails ("the entries … record different integrity values") | one package with the first row's integrity and URL, downloaded once, as Bun's `append_package_dedupe` keeps it | BC-17 |
 | An npm row with more than 4 slots | evaluation fails ("has 5 slots, not 4") | read by its first 4 slots, as Bun reads them | BC-18 |
 | A `lockfileVersion` 0 lockfile | evaluation fails ("lockfileVersion 0 is not supported") | read as Bun 1.4.4 loads it; a `packages` row of a workspace in it fails evaluation (ID-11) | BC-19 |
-| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-12 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
+| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-13 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
 
@@ -65,8 +68,8 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   strings (T080), and a `configVersion` that is not a whole number of at least 0 and a
   `trustedDependencies` that is not an array of strings (T125), a present JSON `null` in each of
   these fields included (T139), an integrity whose digest Bun's decoder rejects and a git or GitHub
-  row's missing, non-string or unsafe `.bun-tag` (T147), each naming the field without printing the
-  value;
+  row's missing, non-string or unsafe `.bun-tag` (T147), and a `root:` row without its binaries
+  object or with a non-object there (T170), each naming the field without printing the value;
 - a malformed `unresolved` or `optionalPeers`, `null` included (T139), fails naming the entry and
   the field without printing its value;
 - BC-4: a target whose closure holds a link to a workspace member it does not declare fails

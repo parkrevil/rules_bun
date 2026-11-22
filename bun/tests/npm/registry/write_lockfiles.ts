@@ -484,6 +484,8 @@ const projects: Record<string, Project> = {
     },
   },
   // FR-009, BC-1: optional dependencies listed under "unresolved", in a package and in workspaces.
+  // The root's unresolved single-bin has a row of its name with a bin, w's single-bin@1.0.0, which
+  // `main` linked it to, so `main` generated its bin target (T169).
   conformance_unresolved: {
     files: () => ({
       "package.json": json({
@@ -491,14 +493,20 @@ const projects: Record<string, Project> = {
         private: true,
         workspaces: ["packages/*"],
         dependencies: { a: "1.0.0", "opt-user": "1.0.0", q: "1.0.0", state: "1.0.0" },
-        optionalDependencies: { b: "^3.0.0" },
+        optionalDependencies: { b: "^3.0.0", "single-bin": "^9.0.0" },
       }),
-      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { a: "1.0.0" }, optionalDependencies: { q: "^3.0.0" } }),
+      "packages/w/package.json": json({
+        name: "w",
+        version: "1.0.0",
+        dependencies: { a: "1.0.0", "single-bin": "1.0.0" },
+        optionalDependencies: { q: "^3.0.0" },
+      }),
       "packages/w/BUILD.bazel": memberBuild("npm_conformance_unresolved"),
     }),
     check(lock) {
       assert(JSON.stringify(lock.packages["opt-user"]?.[2]?.unresolved) === '["state"]', "opt-user's unresolved is not [state]");
-      assert(JSON.stringify(lock.workspaces[""].unresolved) === '["b"]', "the root's unresolved is not [b]");
+      assert(JSON.stringify(lock.workspaces[""].unresolved) === '["b","single-bin"]', "the root's unresolved is not [b, single-bin]");
+      assert(slot0(lock, "single-bin") === "single-bin@1.0.0", "single-bin is not single-bin@1.0.0");
       assert(JSON.stringify(lock.workspaces["packages/w"].unresolved) === '["q"]', "w's unresolved is not [q]");
     },
   },

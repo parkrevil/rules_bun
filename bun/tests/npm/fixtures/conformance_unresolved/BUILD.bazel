@@ -8,7 +8,9 @@ exports_files([
 ])
 
 # T111 (feature 006): every declared dependency has its target, also one the store links on no
-# platform class; //bun/tests/npm:declared checks that such a target carries nothing.
+# platform class; //bun/tests/npm:declared checks that such a target carries nothing. T169: the
+# unresolved single-bin keeps the bin target of the row `main` linked it to (w's
+# single-bin@1.0.0), compatible with no platform.
 npm_link_all_packages()
 
 generated_names_test(
@@ -18,7 +20,12 @@ generated_names_test(
         "node_modules/b",
         "node_modules/opt-user",
         "node_modules/q",
+        "node_modules/single-bin",
+        "node_modules/single-bin/bin/single-bin",
         "node_modules/state",
+    ],
+    expected_incompatible = [
+        "node_modules/single-bin/bin/single-bin",
     ],
 )
 

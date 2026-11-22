@@ -12,9 +12,11 @@
       },
       "optionalDependencies": {
         "b": "^3.0.0",
+        "single-bin": "^9.0.0",
       },
       "unresolved": [
         "b",
+        "single-bin",
       ],
     },
     "packages/w": {
@@ -22,6 +24,7 @@
       "version": "1.0.0",
       "dependencies": {
         "a": "1.0.0",
+        "single-bin": "1.0.0",
       },
       "optionalDependencies": {
         "q": "^3.0.0",
@@ -41,6 +44,8 @@
     "opt-user": ["opt-user@1.0.0", "http://127.0.0.1:28761/opt-user/-/opt-user-1.0.0.tgz", { "dependencies": { "ident-a": "1.0.0" }, "optionalDependencies": { "state": "^3.0.0" }, "unresolved": ["state"] }, "sha512-lt10XfhSLJRuV7fz90jn2DFhPu0ww53CZpZaC52gBkTbWRvgQfqER6zhB9jvGtimjgZfA3Hkt20HPezgsCKkYg=="],
 
     "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "single-bin": ["single-bin@1.0.0", "http://127.0.0.1:28761/single-bin/-/single-bin-1.0.0.tgz", { "bin": "cli.ts" }, "sha512-6uXpPhdvW0zAkL3xfQL+cFK+H1qjIOWTjKNUXPRY3hGjKr+kWMoZMUvYdy/ehGi7cQBelGw9mlFxQH1mgUChJw=="],
 
     "state": ["state@1.0.0", "http://127.0.0.1:28761/state/-/state-1.0.0.tgz", {}, "sha512-sGZb7AOYLr4Imwh9FrhNETSJfhtvq+mXb+/hYcvjmeld/a3Q7GWCWfJ0P4pMKmshVrUC6R439QTySFxhzDq0zw=="],
 

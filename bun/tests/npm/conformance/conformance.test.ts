@@ -60,6 +60,8 @@ const E2E_ARCHIVES = `${MAIN}/bun/tests/npm/fixtures/jsx/archives`;
 // lockfile Bun refuses to load. The ruleset must refuse each as well (spec Edge Cases, FR-004).
 export const NOT_APPLICABLE: Record<string, string> = {
   [`${REFUSED}/patch_path`]: 'its patchedDependencies value is not a string, which Bun\'s loader refuses ("Expected a string", bun.lock.rs L1910); written by hand, as no Bun writes it',
+  [`${REFUSED}/root_row_without_bins`]: 'its root: row has no binaries object, which Bun\'s loader refuses ("Missing package binaries object", bun.lock.rs L2614); written by hand, as no Bun writes it',
+  [`${REFUSED}/root_row_bins_not_object`]: 'its root: row has a string where the binaries object goes, which Bun\'s loader refuses ("Expected an object", bun.lock.rs L2623); written by hand, as no Bun writes it',
   [`${REFUSED}/lockfile_version_0_member`]: 'its lockfileVersion 0 lists a workspace member that no packages row holds, which Bun\'s loader refuses ("Failed to resolve root workspace dependency \'m\'", bun.lock.rs L2843): on lockfileVersion 0 a member is a package only through its row (L2263); written by hand, as the pinned Bun writes lockfileVersion 1 to 3 only',
 };
 

@@ -326,7 +326,8 @@ The only differences between the ruleset and the pinned Bun's isolated install. 
 test excludes ID-1 to ID-4 and ID-12 by name; its corpus does not exercise ID-5, ID-6 and ID-9 (the oracle
 refuses ID-5's lockfile, the corpus uses Bun's default for ID-6, and no lockfile the pinned Bun
 writes reaches ID-9), ID-8 is checked by analysis tests, not by the graph comparison, and ID-10
-and ID-11 are evaluation failures, which integration and unit tests check. ID-7 (a
+and ID-11 are evaluation failures, which integration and unit tests check, and ID-13 is a
+lockfile no Bun writes, which a unit test checks. ID-7 (a
 package's dependency bound by platform) was withdrawn when BC-16 linked it:
 
 - **ID-1 No lifecycle scripts**: the ruleset runs no `preinstall`, `install` or `postinstall`
@@ -390,6 +391,14 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   (`bun/tests/npm/fixtures/bins_clash`; `bins.test.ts`, `naming_test.bzl`). Two packages of one
   workspace whose names become one target name fail evaluation the same way; no test holds such a
   lockfile (unverified) (the lead, under the user's delegation, 2026-11-22, T160).
+- **ID-13 A key written twice**: a `bun.lock` that writes one catalog entry twice (in `catalog` or
+  in a `catalogs` group) or the root workspace (`""` in `workspaces`) twice loads with the last
+  value of that key, while the pinned Bun refuses it ("Duplicate catalog entry", "Duplicate root
+  package", LOCK L1782, L2126), because the ruleset reads `bun.lock` with Starlark's `json.decode`,
+  which keeps the last value of a key an object holds more than once (bazel.build `json.decode`),
+  so the earlier one is gone before the reader sees the object. No Bun writes such a lockfile: the
+  writer prints each catalog entry and each workspace path once (`lockfile_test.bzl`
+  `duplicate_keys_test`; the lead, under the user's delegation, 2026-11-22, T170).
 
 ### Behavior Changes
 
@@ -526,7 +535,10 @@ the test that shows it:
 Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
 target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin
 targets are compatible with no platform, as `main`'s target of an optional package no platform
-matches is (P4, FR-014, SC-005; the lead, under the user's delegation, 2026-11-21, T111).
+matches is (P4, FR-014, SC-005; the lead, under the user's delegation, 2026-11-21, T111). For an
+optional dependency under `unresolved` (BC-1), those are the bin targets of the row of its name
+`main` linked it to (`conformance_unresolved`'s `single-bin`; `names_test`, `declared_test.bzl`,
+`resolve_test.bzl` `unresolved_key_test`; T169).
 
 Any further difference the conformance test finds is added here before it is fixed.
 

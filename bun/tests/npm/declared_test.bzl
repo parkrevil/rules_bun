@@ -24,8 +24,8 @@ _NOWHERE = {
     # Optional and peer dependencies without a key (BC-3), peers nothing provides (BC-5).
     "conformance_unbound": ["r", "state"],
     "conformance_unbound/packages/w": ["q", "x"],
-    # Optional dependencies under `unresolved` (BC-1).
-    "conformance_unresolved": ["b"],
+    # Optional dependencies under `unresolved` (BC-1); single-bin keeps its bin target (T169).
+    "conformance_unresolved": ["b", "single-bin"],
     "conformance_unresolved/packages/w": ["q"],
 }
 
