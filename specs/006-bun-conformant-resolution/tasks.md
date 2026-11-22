@@ -1698,3 +1698,33 @@ T067. Each is written red first and recorded in `tdd-log.md`.
   against the pinned Bun; for L1782 and L2126, which `json.decode` cannot tell apart, list the
   difference as an Intentional Difference in the spec and research Part 4, per FR-004 / P3
   (contradicts)
+
+---
+
+## Phase 44: Twelfth final review (2026-11-22)
+
+Codex approved; the twelfth Claude review found these, and the lead rejected the gate to fix them,
+widening ID-13 in the spec to every key written twice (the lead, under the user's delegation, 2026-11-22). Each is written red first and
+recorded in `tdd-log.md`.
+
+- [ ] T171 The `root:` row T170 reads has no research Part 4 access entry (L9's slot-0 forms omit
+  `root:`), no canary, no `# L<n>` tag (`bun/private/lockfile.bzl` about L154–L159), and research
+  about L902 and L908 still say its `{ bin, binDir }` is not read and that no access lacks a
+  canary. Bun 1.4.4 writes the form (a workspace depending on the root with `"x": "workspace:*"`
+  gets `"x": ["x@root:", { "bin": { "xb": "cli.js" } }]`). Add the access entry and tag, a canary
+  with a red mode pinning that row (as T130 and T147 did), a corpus project Bun writes with a
+  `root:` row compared by both oracles, and correct research's lines, per constitution V / FR-005
+  / FR-006 (contradicts)
+- [ ] T172 `bun/tests/npm/conformance/graph.ts` (about L150) labels every non-registry entry
+  `e:<name>@(not a registry version)` on both sides, so its resolution is not compared (aliases
+  `x` → `foo@file:./a` and `y` → `foo@file:./b` swapped would pass), an exclusion beyond ID-1 to
+  ID-4 and ID-12 (FR-011, US2 scenario 5). Label such an entry by its resolution on both sides (Bun's
+  store directory records it), show the swap red first in `graph_test_ts`, and update the contract
+  (about L64), per FR-011 / P2 (contradicts)
+- [ ] T173 `_NPM_DOC` (`bun/private/npm_extension.bzl` about L582–L584) names two of the four
+  projects under `refused/`; name all of them, or none and say "every one", per FR-017
+  (unrequested)
+- [ ] T174 Extend `lockfile_test.bzl` `duplicate_keys_test` to the widened ID-13: `packages` holding
+  one key twice (Bun refuses, L2759) and `lockfileVersion` written twice (Bun reads the first), each
+  checked against the pinned Bun; correct research Part 4 (L1782, L2126 rows and about L1241–L1245)
+  to say ID-13 covers every key, per P3 (partial)

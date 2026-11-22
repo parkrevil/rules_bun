@@ -391,14 +391,15 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   (`bun/tests/npm/fixtures/bins_clash`; `bins.test.ts`, `naming_test.bzl`). Two packages of one
   workspace whose names become one target name fail evaluation the same way; no test holds such a
   lockfile (unverified) (the lead, under the user's delegation, 2026-11-22, T160).
-- **ID-13 A key written twice**: a `bun.lock` that writes one catalog entry twice (in `catalog` or
-  in a `catalogs` group) or the root workspace (`""` in `workspaces`) twice loads with the last
-  value of that key, while the pinned Bun refuses it ("Duplicate catalog entry", "Duplicate root
-  package", LOCK L1782, L2126), because the ruleset reads `bun.lock` with Starlark's `json.decode`,
-  which keeps the last value of a key an object holds more than once (bazel.build `json.decode`),
-  so the earlier one is gone before the reader sees the object. No Bun writes such a lockfile: the
-  writer prints each catalog entry and each workspace path once (`lockfile_test.bzl`
-  `duplicate_keys_test`; the lead, under the user's delegation, 2026-11-22, T170).
+- **ID-13 A key written twice**: where a `bun.lock` writes one key twice in one JSON object, the
+  ruleset reads the last value, because it reads `bun.lock` with Starlark's `json.decode`, which
+  keeps the last value of a key an object holds more than once (bazel.build `json.decode`), so the
+  earlier one is gone before the reader sees the object. The pinned Bun keeps every copy: it reads
+  the first where it reads one field (`lockfileVersion` written as `1` then `99` installs in Bun
+  and fails in the ruleset), and refuses where it checks for a repeat ("Duplicate catalog entry",
+  "Duplicate root package", "Duplicate package path", LOCK L1782, L2126, L2759), which the ruleset
+  loads. This holds for every key of the file. No Bun writes such a lockfile: the writer prints
+  each key of an object once (`lockfile_test.bzl` `duplicate_keys_test`; the lead, under the user's delegation, 2026-11-22, T170, T174).
 
 ### Behavior Changes
 
