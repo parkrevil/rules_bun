@@ -1266,6 +1266,12 @@ member's dependency to a copy of the root in its store (`node_modules/.bun/<name
 links the root itself; that lockfile is not one Bun 1.4.2 writes, so the spec's Edge Case (a
 lockfile 1.4.2 writes that 1.4.4 links differently) does not reach it.
 
+**Stop rule for the final reviews (the lead, under the user's delegation, 2026-11-22)**: thirteen review rounds before the final gate each
+found new differences, mostly in forms only a hand-written lockfile reaches, while Codex approved the
+last six. After T175–T178, the final gate is approved unless a review finds a regression against
+`main` or a difference on a lockfile the pinned Bun writes that this branch introduced; any other
+difference found then is listed as a follow-up in the PR body, not fixed in this feature.
+
 ## Part 7: Evidence log
 
 Scripts: `/tmp/bun006c-scripts/oracle.ts` (copies a project, serves the fixture archives on
