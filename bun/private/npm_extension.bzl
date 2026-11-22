@@ -597,7 +597,7 @@ those lockfiles Bun refuses to load, among them every one under
 `lockfileVersion` 0 workspace member that no `packages` row holds), with Bun 1.4.4 as the oracle
 and again with Bun 1.4.2 on the lockfiles Bun 1.4.2 writes and those under
 `bun/tests/npm/conformance/accepted/` (`conformance_1_4_2_test`), each comparing the platform class of the machine it runs on. Both have
-passed on Linux x64; on macOS and Windows the comparison is unverified. So one package version is one
+passed on the CI runners `ubuntu-latest`, `macos-latest` and `windows-latest`. So one package version is one
 package, its dependencies bound as Bun binds them; a package reached under different peers is one
 store entry per set of peers, and a target that reaches several holds each in its own directory
 (`<name>@<version>+<peer hash>`, the form of Bun's store entries); where the store binds a

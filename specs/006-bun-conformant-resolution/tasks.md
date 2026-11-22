@@ -558,13 +558,13 @@ with reasons (Q4).
   `prek run --all-files`, `bazel test //...`, `bazel test //... --noenable_runfiles
   --spawn_strategy=local`; in `e2e/smoke/` `bazel test //...`; record each; report a failure, do not
   widen the task (AGENTS.md)
-- [ ] T066 Commit the remaining work, push `006-bun-conformant-resolution` and open one PR to `main`
+- [X] T066 Commit the remaining work, push `006-bun-conformant-resolution` and open one PR to `main`
   with `gh pr create`: the BC table of `contracts/public-api.md`, each BC with its T017 difference
   and its T051 "difference gone" row, the FR-016 list of changed tests (T048), the Intentional
   Differences, `scale_test` times on `main` and on the branch (T005, T052), and the 1.4.2 results
   per platform (T060), and the speckit overlay as outside feature 006's scope (T083); end the body
   with the attribution line the session specifies
-- [ ] T067 Watch the PR's CI run (`gh pr checks --watch`); for each job on `ubuntu-latest`,
+- [X] T067 Watch the PR's CI run (`gh pr checks --watch`); for each job on `ubuntu-latest`,
   `macos-latest`, `windows-latest` (including the 1.4.2 step) record the result in `tdd-log.md`; on a
   failure, report it with its log, do not widen the task; when every job passes, fill `_NPM_DOC`'s
   runner labels (T062) with exactly the labels that ran, and commit as
@@ -1840,7 +1840,7 @@ the evaluation made faster (the lead, under the user's delegation, 2026-11-22).
   runner (about 2.5× slower) stays under the bound, per plan R13 / SC (partial). Done on WSL:
   4,922 ms → 2,985 ms, 0 differences on both oracles (`tdd-log.md` T183); `ubuntu-latest` is
   checked by T067 on the PR's next CI run
-- [ ] T184 After T183, PR #7's second CI run passed every job, but `scale_test` was FLAKY on all three
+- [X] T184 After T183, PR #7's second CI run passed every job, but `scale_test` was FLAKY on all three
   Linux jobs (`test (ubuntu-latest, .)`, `manifest-only (.)`, `network-denied (.)`: failed the first
   attempt, passed the retry). The platform variant measured 10,444–12,716 ms there, and the
   measurement itself is noisy: it is the difference of wall-clock `bazel mod deps` medians of three
