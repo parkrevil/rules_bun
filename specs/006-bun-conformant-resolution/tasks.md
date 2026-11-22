@@ -1819,3 +1819,22 @@ with lockfiles the pinned Bun writes and recorded in `tdd-log.md`.
   root and for workspaces. Read the manifest as Bun does (cited), so T179's `$<name>` → `"*"` and
   replacement paths run; add corpus projects for both through `write_lockfiles.ts`, red first;
   remove both items from research Part 6's follow-up list, per P1 / BC-22 (contradicts)
+
+---
+
+## Phase 49: PR CI (2026-11-22)
+
+PR #7's first CI run passed every job but `test (ubuntu-latest, .)`: `//bun/tests/integration:scale_test`
+failed in 2 of 2 attempts on its platform variant (`scale.test.ts` about L209, extension
+evaluation 17,039 ms and 17,347 ms against the 10,000 ms bound of plan R13; the base variant passed;
+the same test measured 6,874 ms on Linux x64 under WSL at T181). The lead keeps R13's bound and has
+the evaluation made faster (the lead, under the user's delegation, 2026-11-22).
+
+- [ ] T183 Bring the platform variant's extension evaluation (`bun/tests/npm/scale/platform`: 2,024
+  packages, 23 per-platform, 22 platform classes) within plan R13's 10,000 ms on `ubuntu-latest`
+  (17 s there, 6.9 s on WSL): profile where the time goes (`bazel mod` / `--starlark_cpu_profile`),
+  then cut the work per platform class without changing any binding, for example by building the
+  store once for classes whose enabled package sets are equal, or by sharing the work no disabled
+  package can change, as Bun builds one store per install. Conformance must stay at 0 differences
+  on both oracles; record before and after times in `tdd-log.md`, aiming at WSL ≤ 4 s so the CI
+  runner (about 2.5× slower) stays under the bound, per plan R13 / SC (partial)
