@@ -16,7 +16,8 @@ Expected: PASS, with the test log listing every project compared (all of `bun/te
 the `conformance_*` corpus, `scale` and `scale/platform`, `bun/tests/integration/workspaces/*`,
 `bun/tests/npm/conformance/bun_1_4_2/*`, `bun/tests/npm/conformance/accepted/*`, `e2e/smoke`), the
 not-applicable projects (`bun/tests/npm/conformance/refused/*`, each of which both
-Bun and the ruleset must refuse) with their reasons, the exclusions `ID-1`, `ID-2`, `ID-3`, `ID-4` by name, and `0 differences`.
+Bun and the ruleset must refuse) with their reasons, the exclusions `ID-1`, `ID-2`, `ID-3`, `ID-4`, `ID-12` by name, `ID-12, links compared:` naming
+`bun/tests/npm/fixtures/bins_clash`, and `0 differences`.
 ID-5, ID-6 and ID-9 exclude nothing (no compared lockfile reaches them), nor does ID-8 (the graph
 links a workspace member as Bun does; analysis tests check its declaration), nor do ID-10 and ID-11
 (evaluation failures that integration and unit tests check); spec "Intentional Differences".

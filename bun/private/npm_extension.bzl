@@ -138,8 +138,8 @@ def _url_with_credentials(text):
 def _path_text(path):
     return " ".join(path) if path else "the top level"
 
-def check_credentials(file, value):
-    """Fails when any key or string value of a decoded JSON value holds a URL with credentials.
+def _credentials_error(file, value):
+    """The error when any key or string value of a decoded JSON value holds a URL with credentials.
 
     Every string is checked as written, before anything parses it, so no reader, repository
     attribute or diagnostic sees a credential (FR-002, feature 005 P1). The error names the file
@@ -149,43 +149,51 @@ def check_credentials(file, value):
     Args:
         file: The file the document comes from, for the error.
         value: The decoded document.
+
+    Returns:
+        The error, or `None`.
     """
     work = [(value, [])]
     for _ in range(_MAX_NODES):
         if not work:
-            return
+            return None
         current, path = work.pop()
         if type(current) == "dict":
             for key in sorted(current.keys()):
                 if _url_with_credentials(key):
-                    fail("rules_bun: {}: a key at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY))
+                    return "rules_bun: {}: a key at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY)
                 work.append((current[key], path + [json.encode(key)]))
         elif type(current) == "list":
             for index in range(len(current)):
                 work.append((current[index], path + ["[{}]".format(index)]))
         elif _url_with_credentials(current):
-            fail("rules_bun: {}: the value at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY))
-    fail("rules_bun: {} holds more than {} JSON values".format(file, _MAX_NODES))
+            return "rules_bun: {}: the value at {} is a URL that holds credentials (user information other than an SSH user name); {}".format(file, _path_text(path), _USERINFO_REMEDY)
+    return "rules_bun: {} holds more than {} JSON values".format(file, _MAX_NODES)
 
-def _read_json(module_ctx, path, file):
+def _error(message):
+    return struct(value = None, error = message)
+
+def _read_json(read, path, file):
+    """`struct(value, error)`: a `package.json`, decoded and checked for credentials."""
     if not path.exists:
-        fail("rules_bun: {} does not exist; the npm extension reads the package.json next to bun.lock and in each workspace member".format(file))
-    text = module_ctx.read(path)
+        return _error("rules_bun: {} does not exist; the npm extension reads the package.json next to bun.lock and in each workspace member".format(file))
+    text = read(path)
     if not text.strip():
-        fail("rules_bun: {} is empty".format(file))
+        return _error("rules_bun: {} is empty".format(file))
     value = json.decode(text)
     if type(value) == "dict":
-        check_credentials(file, {k: value[k] for k in _MANIFEST_FIELDS if k in value})
-    return value
+        error = _credentials_error(file, {k: value[k] for k in _MANIFEST_FIELDS if k in value})
+        if error:
+            return _error(error)
+    return struct(value = value, error = None)
 
 def _descend(path, relative):
     for part in relative.split("/") if relative else []:
         path = path.get_child(part)
     return path
 
-def _members(module_ctx, tag, root_file, root_manifest, lockfile):
-    """Fails unless the members the root `workspaces` patterns match are the lockfile's (R9)."""
-    lock_dir = module_ctx.path(tag.bun_lock).dirname
+def _members_error(module_ctx, lock_dir, root_file, root_manifest, lockfile):
+    """The error unless the members the root `workspaces` patterns match are the lockfile's (R9)."""
 
     def list_dir(relative):
         path = _descend(lock_dir, relative)
@@ -200,28 +208,121 @@ def _members(module_ctx, tag, root_file, root_manifest, lockfile):
 
     matched = match_members(workspace_patterns(root_manifest), list_dir, has_manifest, root_file)
     if matched.error:
-        fail("rules_bun: " + matched.error)
+        return "rules_bun: " + matched.error
     recorded = sorted([p for p in lockfile.workspaces.keys() if p])
     for member in matched.value:
         if member not in recorded:
-            fail('rules_bun: {}: the workspace member "{}", which "workspaces" matches, is not in bun.lock; {}'.format(root_file, member, _REMEDY))
+            return 'rules_bun: {}: the workspace member "{}", which "workspaces" matches, is not in bun.lock; {}'.format(root_file, member, _REMEDY)
     for member in recorded:
         if member not in matched.value:
-            fail('rules_bun: {}: bun.lock records the workspace member "{}", which "workspaces" does not match; {}'.format(root_file, member, _REMEDY))
+            return 'rules_bun: {}: bun.lock records the workspace member "{}", which "workspaces" does not match; {}'.format(root_file, member, _REMEDY)
+    return None
 
-def _manifests(module_ctx, tag, lockfile):
-    """Member path -> `struct(file, value)` of the root and member `package.json` files."""
-    lock_dir = module_ctx.path(tag.bun_lock).dirname
+def link_targets(file, resolution, entries):
+    """Workspace path -> alias -> the target name and the bins of each link and member link.
+
+    The `npm` extension fails evaluation with the error; the conformance test's ruleset side
+    (`bun/tests/npm/fixture_results.bzl`) records it next to the graph, as Intentional Difference
+    ID-12 of the extension's documentation (feature 006 T160).
+
+    Args:
+        file: The lockfile's name, for errors.
+        resolution: The value `resolve` returns.
+        entries: The lockfile's entries.
+
+    Returns:
+        `struct(value, error)`; `value` maps each alias to `struct(target, bins)`, `bins` (`None`
+        for a member link) mapping each bin's target name to `[path, bin name]`; `error` names two
+        bins of one package, or two packages of one workspace, whose names become one target name.
+    """
+    targets = {}
+    for path, aliases in resolution.links.items():
+        found = {}
+        for alias, link in aliases.items():
+            # The package the link names its bins after (`resolve.bzl`): its root, or the one
+            # package of the roots of a link whose root differs by platform (feature 006 BC-12;
+            # `resolve.bzl` fails roots of different packages, T097), or, for a link the store
+            # makes on no platform, the package the dependency resolves to (T111).
+            entry = entries[link.key] if link.key else None
+            entry_bins = entry.bin if entry else {}
+            bins = bin_targets("{}@{}".format(entry.name, entry.version) if entry else alias, entry_bins)
+            if bins.error:
+                return _error("rules_bun: {}: {}".format(file, bins.error))
+            originals = {target_name(b): b for b in entry_bins}
+            found[alias] = {name: [bin_path, originals[name]] for name, bin_path in bins.value.items()}
+
+        # A `workspace:` dependency links to the member's target (research R7).
+        for alias in resolution.members[path].keys():
+            found[alias] = None
+        names = {}
+        result = {}
+        for alias in sorted(found.keys()):
+            name = target_name(alias)
+            if name in names:
+                return _error('rules_bun: {}: the packages "{}" and "{}" of the workspace "{}" both become the target name "node_modules/{}"'.format(file, names[name], alias, path, name))
+            names[name] = alias
+            result[alias] = struct(target = name, bins = found[alias])
+        targets[path] = result
+    return struct(value = targets, error = None)
+
+def evaluate_lockfile(module_ctx, lock, file, manifest_file, read = None):
+    """Reads one `bun.lock` and its `package.json` files, checks them and resolves the lockfile.
+
+    The `npm` extension fails evaluation with the error; the conformance test's ruleset side
+    (`bun/tests/npm/fixture_results.bzl`) records it, so an evaluation failure on a lockfile the
+    pinned Bun installs is a conformance difference (feature 006 T160). The checks: credentials in
+    `bun.lock` and in the fields of each `package.json` the extension reads (ID-10), the lockfile
+    reader, the download URLs, the workspace members, the comparison of the manifests with the
+    lockfile and the resolver; `link_targets` checks the target names.
+
+    Args:
+        module_ctx: The module context, to list directories and watch files.
+        lock: The path of `bun.lock`; the root `package.json` is next to it.
+        file: The lockfile's name, for errors.
+        manifest_file: Member path (`""` for the root) -> the name of its `package.json`, for
+            errors.
+        read: Path -> the text of `bun.lock` or a `package.json`; `module_ctx.read` when `None`.
+
+    Returns:
+        `struct(value, error)`; `value` is `struct(lockfile, resolution)`, the lockfile reader's
+        value and the resolver's value.
+    """
+    read = read or module_ctx.read
+    text = read(lock)
+
+    # Every string as written, before the reader parses or prints any of it (research R2).
+    decoded = jsonc_decode(text, file)
+    if decoded.error == None:
+        error = _credentials_error(file, decoded.value)
+        if error:
+            return _error(error)
+    lockfile = read_lockfile(text, file)
+    if lockfile.error:
+        return _error(lockfile.error)
+
+    # A download URL Bazel is given must be an http or https URL without user information.
+    for key in sorted(lockfile.value.entries.keys()):
+        entry = lockfile.value.entries[key]
+        if entry.kind == "npm" and entry.url and not is_download_url(entry.url):
+            return _error('rules_bun: {}: the packages entry "{}" records a download URL that is no http or https URL without user information; {}'.format(file, key, _USERINFO_REMEDY))
+    lock_dir = lock.dirname
     manifests = {}
-    for path in sorted(lockfile.workspaces.keys()):
-        manifest = _descend(lock_dir, path)
-        package = "/".join([p for p in [tag.bun_lock.package, path] if p])
-
-        # Diagnostic text only, as in `_label_text`.
-        # buildifier: disable=canonical-repository
-        file = "{}//{}:package.json".format("@@" + tag.bun_lock.repo_name if tag.bun_lock.repo_name else "", package)
-        manifests[path] = struct(file = file, value = _read_json(module_ctx, manifest.get_child("package.json"), file))
-    return manifests
+    for path in sorted(lockfile.value.workspaces.keys()):
+        member_file = manifest_file(path)
+        manifest = _read_json(read, _descend(lock_dir, path).get_child("package.json"), member_file)
+        if manifest.error:
+            return manifest
+        manifests[path] = struct(file = member_file, value = manifest.value)
+    error = _members_error(module_ctx, lock_dir, manifests[""].file, manifests[""].value, lockfile.value)
+    if error:
+        return _error(error)
+    comparison = compare_manifests(lockfile.value, manifests)
+    if comparison.error:
+        return _error("rules_bun: " + comparison.error)
+    resolution = resolve(lockfile.value, file)
+    if resolution.error:
+        return _error(resolution.error)
+    return struct(value = struct(lockfile = lockfile.value, resolution = resolution.value), error = None)
 
 def _translate(module_ctx, tag, replacements):
     file = str(tag.bun_lock)
@@ -230,36 +331,29 @@ def _translate(module_ctx, tag, replacements):
     path = module_ctx.path(tag.bun_lock)
     if not path.exists and path.dirname.get_child(tag.bun_lock.name + "b").exists:
         fail("rules_bun: {} does not exist, only Bun's binary lockfile bun.lockb, which rules_bun does not read; {}".format(file, _LOCKB_REMEDY))
-    text = module_ctx.read(tag.bun_lock)
 
-    # Every string as written, before the reader parses or prints any of it (research R2).
-    decoded = jsonc_decode(text, file)
-    if decoded.error == None:
-        check_credentials(file, decoded.value)
-    lockfile = read_lockfile(text, file)
-    if lockfile.error:
-        fail(lockfile.error)
+    def manifest_file(member):
+        package = "/".join([p for p in [tag.bun_lock.package, member] if p])
 
-    # A download URL Bazel is given must be an http or https URL without user information.
-    for key in sorted(lockfile.value.entries.keys()):
-        entry = lockfile.value.entries[key]
-        if entry.kind == "npm" and entry.url and not is_download_url(entry.url):
-            fail('rules_bun: {}: the packages entry "{}" records a download URL that is no http or https URL without user information; {}'.format(file, key, _USERINFO_REMEDY))
+        # Diagnostic text only, as in `_label_text`.
+        # buildifier: disable=canonical-repository
+        return "{}//{}:package.json".format("@@" + tag.bun_lock.repo_name if tag.bun_lock.repo_name else "", package)
+
+    evaluated = evaluate_lockfile(module_ctx, path, file, manifest_file)
+    if evaluated.error:
+        fail(evaluated.error)
+    link_names = link_targets(file, evaluated.value.resolution, evaluated.value.lockfile.entries)
+    if link_names.error:
+        fail(link_names.error)
     npmrc = None
     if tag.npmrc:
         npmrc = read_npmrc(module_ctx.read(tag.npmrc), str(tag.npmrc))
         if npmrc.error:
             fail("rules_bun: " + npmrc.error)
         npmrc = npmrc.value
-    manifests = _manifests(module_ctx, tag, lockfile.value)
-    _members(module_ctx, tag, manifests[""].file, manifests[""].value, lockfile.value)
-    comparison = compare_manifests(lockfile.value, manifests)
-    if comparison.error:
-        fail("rules_bun: " + comparison.error)
-    resolution = resolve(lockfile.value, file)
-    if resolution.error:
-        fail(resolution.error)
-    entries = lockfile.value.entries
+    lockfile = evaluated.value.lockfile
+    resolution = evaluated.value.resolution
+    entries = lockfile.entries
 
     # One package repository serves every package version (research R3). The loader keeps one
     # package per name@version, the first row's, with that row's integrity and URL, as Bun's
@@ -267,7 +361,7 @@ def _translate(module_ctx, tag, replacements):
     # of the same name@version that records another integrity or URL is not read for the download
     # (feature 006 BC-17).
     packages = {}
-    for instance in resolution.value.instances.values():
+    for instance in resolution.instances.values():
         if instance.status != "ok":
             continue
         entry = entries[instance.key]
@@ -310,7 +404,7 @@ def _translate(module_ctx, tag, replacements):
         return "{}//{}:{}".format(lock_repo, "/".join([p for p in [lock_dir, member] if p]), tag.workspace_target_name)
 
     instances = {}
-    for instance in resolution.value.instances.values():
+    for instance in resolution.instances.values():
         name_version = "{}@{}".format(instance.name, instance.version)
         if instance.status != "ok":
             instances[instance.id] = {"package": name_version, "status": instance.status}
@@ -333,41 +427,26 @@ def _translate(module_ctx, tag, replacements):
             "store_name": instance.store_name,
         }
     links = {}
-    for path, aliases in resolution.value.links.items():
+    for path, aliases in resolution.links.items():
         package = "/".join([p for p in [lock_dir, path] if p])
         targets = {}
-        for alias, link in aliases.items():
-            # The package the link names its bins after (`resolve.bzl`): its root, or the one
-            # package of the roots of a link whose root differs by platform (feature 006 BC-12;
-            # `resolve.bzl` fails roots of different packages, T097), or, for a link the store
-            # makes on no platform, the package the dependency resolves to (T111).
-            entry = entries[link.key] if link.key else None
-            entry_bins = entry.bin if entry else {}
-            bins = bin_targets("{}@{}".format(entry.name, entry.version) if entry else alias, entry_bins)
-            if bins.error:
-                fail("rules_bun: {}: {}".format(file, bins.error))
-            originals = {target_name(b): b for b in entry_bins}
+        for alias, target in link_names.value[path].items():
+            if target.bins == None:
+                # A `workspace:` dependency links to the member's target (research R7).
+                targets[alias] = {"target": target.target, "workspace": "//{}:{}".format(
+                    "/".join([p for p in [lock_dir, resolution.members[path][alias]] if p]),
+                    tag.workspace_target_name,
+                )}
+                continue
+            link = aliases[alias]
             targets[alias] = {
-                "bins": {name: [bin_path, originals[name]] for name, bin_path in bins.value.items()},
+                "bins": target.bins,
                 "closure": link.closure,
                 "optional": link.optional,
                 "root": link.root,
                 "roots": link.roots,
+                "target": target.target,
             }
-
-        # A `workspace:` dependency links to the member's target (research R7).
-        for alias, member in resolution.value.members[path].items():
-            targets[alias] = {"workspace": "//{}:{}".format(
-                "/".join([p for p in [lock_dir, member] if p]),
-                tag.workspace_target_name,
-            )}
-        names = {}
-        for alias in sorted(targets.keys()):
-            name = target_name(alias)
-            if name in names:
-                fail('rules_bun: {}: the packages "{}" and "{}" of the workspace "{}" both become the target name "node_modules/{}"'.format(file, names[name], alias, path, name))
-            names[name] = alias
-            targets[alias]["target"] = name
         links[package] = targets
     npm_hub_repository(
         name = tag.name,
@@ -487,7 +566,7 @@ Generated targets (public API, under these naming rules):
   compatible only with the platforms it matches.
   Executables declared only through `directories.bin` get no target.
 - Every character of `<package>` or `<bin>` outside Bazel's target-name set is written `_`; two
-  names that become one fail evaluation naming both.
+  names that become one fail evaluation naming both (ID-12, below).
 
 Repositories named `<name>__...` and other targets of the hub are not public API.
 
@@ -497,7 +576,8 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 (`bun/tests/npm/conformance`) compares, for every `bun.lock` under `bun/tests/npm/fixtures/`,
 `bun/tests/npm/conformance/bun_1_4_2/`, `bun/tests/npm/conformance/accepted/`,
 `bun/tests/npm/scale/` and `bun/tests/integration/workspaces/`, and `e2e/smoke`'s, each link with
-the one Bun's install makes on the test's platform, and checks that the ruleset refuses each of
+the one Bun's install makes on the test's platform, after every check this extension's evaluation
+runs (so a lockfile it fails and Bun installs is a difference), and checks that the ruleset refuses each of
 those lockfiles Bun refuses to load, among them every one under
 `bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string, and a
 `lockfileVersion` 0 workspace member that no `packages` row holds), with Bun 1.4.4 as the oracle
@@ -539,9 +619,12 @@ only from Bazel's downloader (ID-10); and a `lockfileVersion` 0 lockfile with a 
 workspace fails evaluation, while Bun 1.4.4 loads it, because on version 0 that row carries the
 workspace's dependencies in an object Bun's format outline does not describe and the pinned Bun
 does not write, so no test can pin how Bun writes it; `bun install` with Bun 1.4.4 rewrites such a
-lockfile as version 1, which rules_bun reads (ID-11). A `lockfileVersion` 0 lockfile without such a
-row is read as Bun reads it. The conformance test exercises ID-1 to ID-4; analysis tests check
-ID-8; no lockfile it compares reaches ID-5, ID-6 or ID-9; ID-10 and ID-11 fail evaluation, which
+lockfile as version 1, which rules_bun reads (ID-11); and two `bin` names of one package that become
+one target name fail evaluation naming both ("Generated targets", above), while Bun installs the
+lockfile and links both, since one package cannot hold two targets of one name (ID-12; two packages
+of one workspace fail the same way, which no test covers). A `lockfileVersion` 0 lockfile without
+such a row is read as Bun reads it. The conformance test exercises ID-1 to ID-4 and ID-12, whose
+project's links it still compares; analysis tests check ID-8; no lockfile it compares reaches ID-5, ID-6 or ID-9; ID-10 and ID-11 fail evaluation, which
 `bun/tests/integration/credentials.test.ts` and `lockfile_errors.test.ts` check.
 
 Packages: a dependency, optional or not, whose entry has `os` or `cpu` is carried only on target

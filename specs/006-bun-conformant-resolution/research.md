@@ -644,7 +644,10 @@ an exact version (R8). On Windows `realpath` resolves Bun's junctions the same w
 
 A dev-only extension (extending `fixture_results.bzl`) writes, for every project, the ruleset's
 graph per platform class as JSON (contract: [contracts/conformance-graph.md](contracts/conformance-graph.md)),
-from `resolve.bzl`'s output — the same function the hub uses. The test picks the class of the host
+from `resolve.bzl`'s output — the same function the hub uses — after every check the extension's
+evaluation runs, by the extension's own functions (`evaluate_lockfile`, `link_targets`, T160), so a
+lockfile the extension fails and Bun installs is a difference ("the ruleset fails"), except ID-12. The
+test picks the class of the host
 (`process.platform`, `process.arch`, and on Linux the C library as canary C-LIBC detects it).
 
 Equality (FR-008): both graphs are labelled digraphs (holders labelled by path, entries by
@@ -655,7 +658,10 @@ iff every class has as many Bun nodes as ruleset nodes and every holder's class 
 each side. This compares entry counts (a package with two peer contexts must be two entries on both
 sides) without relying on either side's naming. A failure prints, per FR-012, the project, the first
 holder or entry whose links differ, the dependency name, and both targets as `name@version` with
-their own links (peer bindings).
+their own links (peer bindings). When the links agree but a class's entry counts differ, it names
+the first two links, walking the corresponding nodes down from the holders, that one side binds to
+two entries of that class and the other to one, each with its dependent and the holder that reaches
+it (T161).
 
 **Red mode** (FR-011): `RULES_BUN_CONFORMANCE_RED=1` redirects one edge of the ruleset's graph of a
 fixed project to another entry; the test must fail naming it.
@@ -977,8 +983,9 @@ BC-1 to BC-5 are the spec's. Found while planning:
 
 Found by the eighth Claude review (2026-11-22), each a lockfile the pinned Bun installs and `main`
 fails to evaluate. The conformance test shows BC-18 (the loader refuses the row: "the ruleset fails
-…, Bun installs the lockfile", `accepted/extra_slots`, T150), not BC-17, whose failure was the
-extension's check of the download, which its ruleset side does not run:
+…, Bun installs the lockfile", `accepted/extra_slots`, T150) and, since its ruleset side runs the
+extension's evaluation checks (T160), BC-17, whose failure was the extension's check of the
+download:
 
 - **BC-17: two rows of one `name@version` with different integrity or URL**. Bun's
   `append_package_dedupe` (LOCKFILE L2684–L2711) returns the package the first row appended, whose
@@ -1175,9 +1182,9 @@ difference no BC explains. BC-17 follows the loader the carry-over already has: 
 `name@version` is the first row's (`_append_package_dedupe`), so the extension's check that every
 row agree on the download is removed, and the package repository downloads from the first row's
 URL with its integrity, as the pinned Bun does. `conflict.test.ts` now builds both lockfiles and
-checks the one request; the conformance test compares the pinned Bun's install of each, and links
-both alike before the change and after it, as `main`'s failure is in the extension, which it does
-not run (T150).
+checks the one request; the conformance test compares the pinned Bun's install of each, which it
+linked alike before the change and after it while it did not run the extension's checks (T150), and
+since T160 fails both with `main`'s check and passes them after the change.
 
 **T155 and T156 decided by the lead, under the user's delegation (2026-11-22)**: the convergence
 check of phase 34 found two lockfile forms the pinned Bun loads that the ruleset fails without
@@ -1196,6 +1203,19 @@ matching version for workspace dependency"), so no such project is compared. A U
 information in `bun.lock` keeps failing evaluation, as feature 005 FR-002 and constitution III
 require (credentials only through Bazel's downloader), and is listed as ID-10, since the pinned Bun
 loads it.
+
+**T160 decided by the lead, under the user's delegation (2026-11-22)**: with the extension's
+evaluation checks on the conformance test's ruleset side, one compared lockfile the pinned Bun
+installs fails: `bun/tests/npm/fixtures/bins_clash`, whose package `clash-bin@1.0.0` has the bins
+`a b` and `a:b`, which the naming rule of the generated targets (`_NPM_DOC` "Generated targets")
+writes as one target name `a_b`. Bun links both bins; the ruleset cannot declare two targets of one
+name in one package, and renaming either would change the public naming rule (constitution I, P4),
+so the failure stays and is listed as ID-12. The test excludes only that failure, recorded by the
+ruleset side as `target_names`, and still compares the project's links. Two packages of one
+workspace whose names become one target name fail the same way; no lockfile a test holds reaches it
+(unverified). The 23 other lockfiles it failed at first were the integration tests' `{REGISTRY}`
+placeholder, which the oracle fills in with its registry and the ruleset side then did not; it now
+reads the files as the oracle installs them (`tdd-log.md` T160).
 
 ## Part 7: Evidence log
 

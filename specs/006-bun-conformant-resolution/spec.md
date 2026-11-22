@@ -323,7 +323,7 @@ writes for the corpus projects it can install, and reports zero differences.
 ### Intentional Differences
 
 The only differences between the ruleset and the pinned Bun's isolated install. The conformance
-test excludes ID-1 to ID-4 by name; its corpus does not exercise ID-5, ID-6 and ID-9 (the oracle
+test excludes ID-1 to ID-4 and ID-12 by name; its corpus does not exercise ID-5, ID-6 and ID-9 (the oracle
 refuses ID-5's lockfile, the corpus uses Bun's default for ID-6, and no lockfile the pinned Bun
 writes reaches ID-9), ID-8 is checked by analysis tests, not by the graph comparison, and ID-10
 and ID-11 are evaluation failures, which integration and unit tests check. ID-7 (a
@@ -381,6 +381,15 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   unresolved, and Bun 1.4.2 refuses even a member without one (research Part 6, E17)
   (`lockfile_test.bzl` `version_0_workspace_row_test`, `lockfile_errors.test.ts`; the lead, under
   the user's delegation, 2026-11-22, T155).
+- **ID-12 Names that become one target name**: two `bin` entries of one package whose names become
+  one target name (each character outside Bazel's target-name set written `_`, the naming rule of
+  the generated targets) fail evaluation naming the package and both entries, while the pinned Bun
+  installs the lockfile and links both bins, because the generated target names are public API
+  (constitution I, P4) and one package cannot hold two targets of one name. The conformance test
+  excludes only that failure, by this name, and still compares the project's links
+  (`bun/tests/npm/fixtures/bins_clash`; `bins.test.ts`, `naming_test.bzl`). Two packages of one
+  workspace whose names become one target name fail evaluation the same way; no test holds such a
+  lockfile (unverified) (the lead, under the user's delegation, 2026-11-22, T160).
 
 ### Behavior Changes
 
@@ -494,9 +503,10 @@ the test that shows it:
   such a lockfile, downloading the package once from that row's URL; `main` fails evaluation ("the
   entries … record different integrity values") (`conflict.test.ts`; the lead, under the user's
   delegation, 2026-11-22, T148). `main` fails in the extension's check of the download, which the
-  conformance test's ruleset side (the loader and the resolver) does not run, so the conformance
-  test links `integration/workspaces/conflict/integrity` and `integration/workspaces/conflict/url`
-  as the pinned Bun does before the change and after it, and shows no difference (T150).
+  conformance test's ruleset side runs since T160 (`evaluate_lockfile`, every check the extension's
+  evaluation runs), so with `main`'s check the conformance test fails
+  `integration/workspaces/conflict/integrity` and `integration/workspaces/conflict/url` ("the
+  ruleset fails (…), Bun installs the lockfile"), and passes them after the change (T160).
 - **BC-18**: an npm row with more than 4 slots is read by its first 4, as Bun reads the slots by
   index and ignores the others (LOCK L2433–L2669); `main` fails evaluation ("has 5 slots, not 4")
   (`lockfile_test.bzl` `extra_slots_test`, and the hand-written

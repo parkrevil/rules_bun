@@ -36,8 +36,9 @@ former ID-7), and ID-8 (declared workspace members, BC-4) and ID-9 (BC-12's two 
 failures) were decided by the lead under the user's delegation on 2026-11-22, as were BC-17 (two
 rows of one `name@version` with different integrity or URL, T148) and BC-18 (npm rows with more
 than 4 slots, T149), and BC-19 (`lockfileVersion` 0, T155), ID-10 (credentials in `bun.lock`,
-T156) and ID-11 (a workspace row of `lockfileVersion` 0, T155), so the Behavior Changes are
-BC-1…BC-19 and the Intentional Differences ID-1…ID-11 (ID-7 withdrawn).
+T156) and ID-11 (a workspace row of `lockfileVersion` 0, T155), and ID-12 (names that become one
+target name, T160), so the Behavior Changes are BC-1…BC-19 and the Intentional Differences
+ID-1…ID-12 (ID-7 withdrawn).
 
 ## Technical Context
 
@@ -149,9 +150,9 @@ next to the fixtures they read.
 ## Phases after this plan
 
 1. Conformance test, oracle, corpus, canaries and the ruleset-side graph export, on `main`'s
-   resolver: Q1 must fail exactly with BC-1…BC-19, except BC-17, which `main` fails in the
-   extension that the conformance test does not run (T150), and any further difference, added to
-   the spec before it is fixed; recorded in `tdd-log.md`.
+   resolver: Q1 must fail exactly with BC-1…BC-19 (BC-17 since T160, when the test's ruleset side
+   began to run the extension's evaluation checks), and any further difference, added to the spec
+   before it is fixed; recorded in `tdd-log.md`.
 2. Carry-over in Bun's order: semver → install types → loader → resolve/hoist → clean → store →
    adapter; each step unit-tested and cited.
 3. Q1–Q9 green; docs; PR with the BC table and measured times.

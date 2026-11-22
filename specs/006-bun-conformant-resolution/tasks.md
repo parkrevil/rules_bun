@@ -1573,7 +1573,7 @@ corrected BC-11 (every entry with peers takes the `+<peer hash>` directory, as i
 (a failing test before each BC, a conformance difference where the test can show one) directly,
 and left the rest here (the lead, under the user's delegation, 2026-11-22). `_NPM_DOC`'s runner labels stay with T067.
 
-- [ ] T160 The conformance test's ruleset side runs only `read_lockfile` and `resolve`
+- [X] T160 The conformance test's ruleset side runs only `read_lockfile` and `resolve`
   (`bun/tests/npm/fixture_results.bzl` about L86–L90), not the extension's evaluation-time checks in
   `_translate` (`bun/private/npm_extension.bzl`: the download URL, `_members`,
   `compare_manifests`, the target-name collision checks), so an evaluation failure on a lockfile
@@ -1581,8 +1581,22 @@ and left the rest here (the lead, under the user's delegation, 2026-11-22). `_NP
   ruleset side (one function both the extension and `fixture_results.bzl` call, not a copy), and
   show red with BC-17's lockfile on `main`'s check (`the ruleset fails (…), Bun installs the
   lockfile`), then green, per P2 / FR-008 (contradicts)
-- [ ] T161 `bun/tests/npm/conformance/graph.ts` (about L241): the entry-count failure ("is <n>
+- [X] T161 `bun/tests/npm/conformance/graph.ts` (about L241): the entry-count failure ("is <n>
   entries in the ruleset, Bun installs it as <m>") names neither a dependent, the dependency nor
   both bindings, as FR-012 requires of every failure. Name a holder that reaches the extra or
   missing entry and both sides' bindings; add a `graph_test_ts` case red first, per FR-012
   (partial)
+
+---
+
+## Phase 38: Convergence
+
+- [X] T162 In T066's PR body, also give the tests of T160 and T161, next to their BC and IDs: BC-17's
+  conformance red and green (`//bun/tests/npm/conformance:conformance_test` with `main`'s agreement
+  check put back into `evaluate_lockfile`: `integration/workspaces/conflict/integrity` and
+  `conflict/url` "the ruleset fails (…), Bun installs the lockfile", then `0 differences`, the
+  `tdd-log.md` T160 rows); ID-12 (`bun/tests/npm/fixtures/bins_clash`, `bins.test.ts`,
+  `naming_test.bzl`, the conformance test's `ID-12, links compared:` line, and its unverified case
+  of two packages of one workspace); and T161's change of `graph.test.ts` "entry counts count: two
+  identical entries against one" in the FR-016 list of changed tests, per spec "Behavior Changes"
+  ("listed again in the PR with the test that shows it") / SC-003 / FR-016 (partial)

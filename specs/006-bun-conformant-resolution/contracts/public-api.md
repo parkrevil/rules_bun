@@ -22,15 +22,15 @@ by the conformance test (a difference before, none after) and listed in the PR; 
 installs and `main` fails to evaluate: BC-18 by `bun/tests/npm/lockfile_test.bzl`
 `extra_slots_test` and the conformance test's hand-written
 `bun/tests/npm/conformance/accepted/extra_slots` (both oracles, T150); BC-17 by
-`bun/tests/integration/conflict.test.ts` only, as `main` fails it in the extension's check of the
-download, which the conformance test does not run: it links BC-17's two lockfiles as the pinned Bun
-does before the change and after it (T150). BC-19 is a `lockfileVersion` 0 lockfile, by
+`bun/tests/integration/conflict.test.ts` and the conformance test, whose ruleset side runs the
+extension's evaluation checks since T160: with `main`'s check of the download it fails BC-17's two
+lockfiles, after the change it passes them (T160). BC-19 is a `lockfileVersion` 0 lockfile, by
 `lockfile_test.bzl` `versions_test` and the hand-written
 `bun/tests/npm/conformance/accepted/lockfile_version_0` (both oracles, T155). The Intentional
-Differences ID-1 to ID-11 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
+Differences ID-1 to ID-12 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
 members, ID-9 the two evaluation failures below (BC-12), ID-10 a URL holding user information in
-`bun.lock`, and ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, both
-evaluation failures below.
+`bun.lock`, ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, and ID-12 two
+names that become one target name, each an evaluation failure below.
 
 | Surface | Before (`main`) | After | BC |
 |---|---|---|---|
@@ -53,7 +53,7 @@ evaluation failures below.
 | Two rows of one `name@version` that record different integrity values or download URLs | evaluation fails ("the entries … record different integrity values") | one package with the first row's integrity and URL, downloaded once, as Bun's `append_package_dedupe` keeps it | BC-17 |
 | An npm row with more than 4 slots | evaluation fails ("has 5 slots, not 4") | read by its first 4 slots, as Bun reads them | BC-18 |
 | A `lockfileVersion` 0 lockfile | evaluation fails ("lockfileVersion 0 is not supported") | read as Bun 1.4.4 loads it; a `packages` row of a workspace in it fails evaluation (ID-11) | BC-19 |
-| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-11 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
+| `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-12 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
 
@@ -82,7 +82,10 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
 - ID-11: a `packages` row of a workspace in a `lockfileVersion` 0 lockfile fails evaluation naming
   the row and the remedy (`bun install` with Bun 1.4.4 and commit bun.lock), without the row's
   values (T155). ID-10's failure, a URL holding user information in `bun.lock`, is feature 005's
-  and unchanged; it is listed because the pinned Bun loads such a lockfile (T156).
+  and unchanged; it is listed because the pinned Bun loads such a lockfile (T156). ID-12's
+  failure, two `bin` entries of one package (or two packages of one workspace) whose names become
+  one target name, is unchanged too; it is listed because the pinned Bun installs such a lockfile
+  (T160).
 
 Diagnostics that change: BC-3's, BC-5's, BC-17's, BC-18's and BC-19's evaluation failures disappear
 (BC-19's but for ID-11); the analysis failure of two instances of one package version in one target

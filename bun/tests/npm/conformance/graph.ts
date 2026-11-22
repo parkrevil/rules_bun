@@ -237,9 +237,8 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
     if (!counts.has(c)) counts.set(c, { ruleset: 0, bun: 0, node });
     counts.get(c)![node.side]++;
   }
-  for (const { ruleset: r, bun: b, node } of counts.values()) {
-    if (r !== b) return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}`;
-  }
+  const unequal = [...counts.values()].find(({ ruleset: r, bun: b }) => r !== b);
+  if (unequal !== undefined) return countDifference(project, all, classes, counts, paths) ?? unreached(project, all, unequal);
   // Linked alike, but one target cannot hold the entries a holder's links reach, while Bun links each.
   for (const [path, found] of Object.entries(ruleset.conflicts ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     const where = path === "" ? "the root's" : `workspace "${path}"'s`;
@@ -254,6 +253,82 @@ export function compare(project: string, ruleset: Graph, bun: Graph): string | u
     if (node.entry?.status !== undefined && !node.entry.unfetched) return `${project}: ${describe(all, node)} fails analysis in the ruleset (${node.entry.status}), Bun installs it`;
   }
   return undefined;
+}
+
+/** A link that `countDifference` names: `name` of `dependent`, which the walk reached from `holder`. */
+interface Via {
+  dependent: string;
+  name: string;
+  holder: string;
+}
+
+/** A dependent with its other bindings and the holder that reaches it: `b@1.0.0 (y → y@1.0.0,
+ * reached from the root)`, or the holder itself. */
+function dependent(all: Map<string, Node>, via: Via): string {
+  const node = all.get(via.dependent)!;
+  if (node.holder !== undefined) return nameVersion(node);
+  const bindings = Object.keys(node.links)
+    .filter((name) => name !== via.name)
+    .sort()
+    .map((name) => `${name} → ${nameVersion(all.get(node.links[name]))}`);
+  const holder = via.holder === "" ? "the root" : `workspace "${via.holder}"`;
+  return `${nameVersion(node)} (${[...bindings, `reached from ${holder}`].join(", ")})`;
+}
+
+/**
+ * The entry-count failure with the two links that show it (FR-012): walking the corresponding
+ * nodes from the holders down (each pair is of one class, so their links have the same names and
+ * target classes), the first link that binds to an entry of a class with more entries on one side
+ * whose counterpart another link already reached with a different entry of that side, where the
+ * other side binds both to one entry. `undefined` when no such pair of links is reached.
+ */
+function countDifference(
+  project: string,
+  all: Map<string, Node>,
+  classes: Map<string, number>,
+  counts: Map<number, { ruleset: number; bun: number }>,
+  paths: string[],
+): string | undefined {
+  // Each node of one side → the first node of the other side it was paired with, and by which link.
+  const pairedR = new Map<string, { other: string; via: Via }>();
+  const pairedB = new Map<string, { other: string; via: Via }>();
+  const queue: [string, string, string][] = paths.map((path) => [`ruleset:h:${path}`, `bun:h:${path}`, path]);
+  const seen = new Set<string>();
+  for (let i = 0; i < queue.length; i++) {
+    const [r, b, holder] = queue[i];
+    const rNode = all.get(r)!;
+    const bNode = all.get(b)!;
+    for (const name of Object.keys(rNode.links).sort()) {
+      const rTarget = rNode.links[name];
+      const bTarget = bNode.links[name];
+      if (!all.has(rTarget) || !all.has(bTarget)) continue;
+      const via = { dependent: r, name, holder };
+      const { ruleset: rCount, bun: bCount } = counts.get(classes.get(rTarget)!)!;
+      const entry = describe(all, all.get(rTarget));
+      const prefix = `${project}: ${entry} is ${rCount} entries in the ruleset, Bun installs it as ${bCount}`;
+      const priorB = pairedB.get(bTarget);
+      if (rCount > bCount && priorB !== undefined && priorB.other !== rTarget) {
+        return `${prefix}: ${dependent(all, via)} links "${name}" to another entry of it than ${dependent(all, priorB.via)} links "${priorB.via.name}" to, Bun links both to one`;
+      }
+      const priorR = pairedR.get(rTarget);
+      if (rCount < bCount && priorR !== undefined && priorR.other !== bTarget) {
+        return `${prefix}: ${dependent(all, via)} links "${name}" to the entry of it ${dependent(all, priorR.via)} links "${priorR.via.name}" to, Bun links them to two`;
+      }
+      if (!pairedB.has(bTarget)) pairedB.set(bTarget, { other: rTarget, via });
+      if (!pairedR.has(rTarget)) pairedR.set(rTarget, { other: bTarget, via });
+      if (!seen.has(`${rTarget} ${bTarget}`)) {
+        seen.add(`${rTarget} ${bTarget}`);
+        queue.push([rTarget, bTarget, holder]);
+      }
+    }
+  }
+  return undefined;
+}
+
+/** The entry-count failure when every link that reaches the class pairs one entry with one: the
+ * side with more holds an entry no holder reaches. */
+function unreached(project: string, all: Map<string, Node>, { ruleset: r, bun: b, node }: { ruleset: number; bun: number; node: Node }): string {
+  return `${project}: ${describe(all, node)} is ${r} entries in the ruleset, Bun installs it as ${b}: no holder reaches ${r > b ? "the ruleset's" : "Bun's"} extra entry`;
 }
 
 /** The host's platform tuple in npm values (research R8); the C library on Linux as Node reports it. */

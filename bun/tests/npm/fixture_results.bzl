@@ -6,8 +6,9 @@ every project under `bun/tests/npm/fixtures/` (as the pinned Bun wrote them) and
 `@npm_fixture_results//:results.bzl`, which the unit tests load. The readers are thus tested on
 real lockfiles through the real read path.
 
-It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph per platform class
-of every project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
+It also writes `@npm_fixture_results//:graphs.json`, the ruleset's linked graph per platform class,
+or the error the `npm` extension's evaluation fails with (`evaluate_lockfile`, T160), of every
+project the conformance test compares (feature 006 research R9, contract "Ruleset side"):
 every directory under `bun/tests/npm/fixtures/` holding a `bun.lock`, `bun/tests/npm/scale/` and its
 platform variant `bun/tests/npm/scale/platform/`, every
 `bun.lock` under `bun/tests/integration/workspaces/`, every directory under
@@ -19,6 +20,7 @@ test reads that project's `bun.lock` and `package.json` from the copies this ext
 """
 
 load("//bun/private:lockfile.bzl", "read_lockfile")
+load("//bun/private:npm_extension.bzl", "evaluate_lockfile", "link_targets")
 load("//bun/private:resolve.bzl", "resolve")
 load("//bun/tests/npm/conformance:graph.bzl", "conformance_graphs", "platform_tuples")
 
@@ -27,6 +29,12 @@ _LIMIT = 1 << 20
 
 # The consumer module's project, which the root module's tests cannot read as a package (T113).
 _E2E = "e2e/smoke"
+
+# The integration tests' placeholder for the loopback registry's URL, which the conformance oracle
+# fills in with its registry's (`bun/tests/npm/conformance/oracle.ts`, `REGISTRY_PLACEHOLDER`), on
+# the port the fixture lockfiles name (`bun/tests/support/npm_registry.ts`, `FIXTURE_PORT`).
+_REGISTRY_PLACEHOLDER = "{REGISTRY}"
+_FIXTURE_REGISTRY = "http://127.0.0.1:28761"
 
 def _results_repo_impl(repository_ctx):
     repository_ctx.file("BUILD.bazel", 'exports_files(["graphs.json"])\n')
@@ -83,12 +91,27 @@ def _graphs(module_ctx, root):
     tuples = platform_tuples()
     graphs = {}
     for name, project in sorted(_projects(root).items()):
-        lockfile = read_lockfile(module_ctx.read(project.get_child("bun.lock")), name + "/bun.lock")
-        if lockfile.error:
-            graphs[name] = {"error": lockfile.error}
+        # Every check the extension's evaluation runs (T160), on the files as the oracle installs
+        # them, so a lockfile the extension fails is a conformance difference (contract "Failure
+        # text": "the ruleset fails").
+        evaluated = evaluate_lockfile(
+            module_ctx,
+            project.get_child("bun.lock"),
+            name + "/bun.lock",
+            lambda member: "/".join([p for p in [name, member] if p]) + "/package.json",
+            read = lambda path: module_ctx.read(path).replace(_REGISTRY_PLACEHOLDER, _FIXTURE_REGISTRY),
+        )
+        if evaluated.error:
+            graphs[name] = {"error": evaluated.error}
             continue
-        result = conformance_graphs(resolve(lockfile.value, file = name + "/bun.lock"), tuples)
+        result = conformance_graphs(struct(value = evaluated.value.resolution, error = None), tuples)
         graphs[name] = result if type(result) == "dict" else {"classes": result}
+
+        # Two names of one workspace or package that become one target name fail evaluation
+        # (ID-12), which the conformance test excludes by name while still comparing the links.
+        names = link_targets(name + "/bun.lock", evaluated.value.resolution, evaluated.value.lockfile.entries)
+        if names.error:
+            graphs[name]["target_names"] = names.error
     return graphs
 
 # Lockfiles outside `bun/tests/npm/fixtures/` the unit tests read, by `RESULTS` key:

@@ -46,7 +46,37 @@ test("entry counts count: two identical entries against one", () => {
     holders: { "": { a: "e:0", b: "e:1" } },
     entries: [entry("a", "1.0.0", { x: "e:2" }), entry("b", "1.0.0", { x: "e:3" }), entry("x", "1.0.0"), entry("x", "1.0.0")],
   };
-  expect(compare("p", ruleset, bun)).toBe("p: x@1.0.0 is 2 entries in the ruleset, Bun installs it as 1");
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: x@1.0.0 is 2 entries in the ruleset, Bun installs it as 1: b@1.0.0 (reached from the root) links "x" to another entry of it than a@1.0.0 (reached from the root) links "x" to, Bun links both to one',
+  );
+});
+
+test("entry counts count: one entry against two names both dependents and their other bindings (FR-012)", () => {
+  const ruleset: Graph = {
+    holders: { "": { a: "e:0", b: "e:1" } },
+    entries: [entry("a", "1.0.0", { x: "e:2" }), entry("b", "1.0.0", { x: "e:2", y: "e:3" }), entry("x", "1.0.0"), entry("y", "1.0.0")],
+  };
+  const bun: Graph = {
+    holders: { "": { a: "e:0", b: "e:1" } },
+    entries: [entry("a", "1.0.0", { x: "e:2" }), entry("b", "1.0.0", { x: "e:3", y: "e:4" }), entry("x", "1.0.0"), entry("x", "1.0.0"), entry("y", "1.0.0")],
+  };
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: x@1.0.0 is 1 entries in the ruleset, Bun installs it as 2: b@1.0.0 (y → y@1.0.0, reached from the root) links "x" to the entry of it a@1.0.0 (reached from the root) links "x" to, Bun links them to two',
+  );
+});
+
+test("entry counts count: two holders linking two entries against one name both holders (FR-012)", () => {
+  const ruleset: Graph = { holders: { "": { x: "e:0" }, "packages/w": { x: "e:1" } }, entries: [entry("x", "1.0.0"), entry("x", "1.0.0")] };
+  const bun: Graph = { holders: { "": { x: "e:0" }, "packages/w": { x: "e:0" } }, entries: [entry("x", "1.0.0")] };
+  expect(compare("p", ruleset, bun)).toBe(
+    'p: x@1.0.0 is 2 entries in the ruleset, Bun installs it as 1: workspace "packages/w" links "x" to another entry of it than the root links "x" to, Bun links both to one',
+  );
+});
+
+test("entry counts count: an extra entry no holder reaches is named as such", () => {
+  const ruleset: Graph = { holders: { "": { a: "e:0" } }, entries: [entry("a", "1.0.0"), entry("a", "1.0.0")] };
+  const bun: Graph = { holders: { "": { a: "e:0" } }, entries: [entry("a", "1.0.0")] };
+  expect(compare("p", ruleset, bun)).toBe("p: a@1.0.0 is 2 entries in the ruleset, Bun installs it as 1: no holder reaches the ruleset's extra entry");
 });
 
 test("a holder linking a different target differs", () => {

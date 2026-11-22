@@ -9,6 +9,9 @@
 //   ID-3 No hoisting: node_modules/.bun/node_modules is not read (graph.ts, readBunGraph).
 //   ID-4 Unfetched entries fail analysis: only that status is skipped (graph.ts, compare); the
 //        entry's links are compared.
+//   ID-12 Names that become one target name: the evaluation failure the ruleset side records as
+//        `target_names` (fixture_results.bzl, npm_extension.bzl link_targets) is skipped; the
+//        project's links are compared.
 //
 // RULES_BUN_CONFORMANCE_RED=1 redirects one edge of `workspace`'s ruleset graph (FR-011, red mode).
 //
@@ -75,7 +78,9 @@ const EXTRA_FILES: Record<string, Record<string, string>> = {
 // The red mode's project: one without a Behavior Change, so its red is not a BC difference.
 const RED_PROJECT = "bun/tests/npm/fixtures/workspace";
 
-type RulesetSide = { classes: { platforms: [string | null, string | null, string | null][]; graph: Graph }[] } | { error: string };
+type RulesetSide =
+  | { classes: { platforms: [string | null, string | null, string | null][]; graph: Graph }[]; target_names?: string }
+  | { error: string };
 
 function repoMapping(apparent: string): string {
   // The runfiles repository mapping (bazel.build/extending/rules#runfiles_location): lines of
@@ -152,6 +157,8 @@ const notApplicable: Record<string, string> = MODE_1_4_2
 const host = hostTuple();
 const compared: string[] = [];
 const differences: string[] = [];
+// Projects whose evaluation fails only by ID-12, with the error.
+const targetNames: string[] = [];
 const scaleDir = (platform: boolean) => join(process.env.TEST_TMPDIR!, platform ? "scale-platform-archives" : "scale-archives");
 
 test("every project is on both sides (FR-009, US2-4)", () => {
@@ -211,6 +218,7 @@ for (const project of projects) {
           console.log(`red mode: ${redirectOneEdge(ruleset)}`);
         }
         difference = compare(project, ruleset, bun);
+        if (side.target_names !== undefined) targetNames.push(`${project}: ${side.target_names}`);
       }
       if (MODE_1_4_2 && difference !== undefined) {
         difference = `${project}: Bun 1.4.2 links this lockfile differently from Bun 1.4.4, which the ruleset follows (${difference.slice(project.length + 2)}); the ruleset cannot follow both (constitution V)`;
@@ -229,7 +237,8 @@ afterAll(() => {
   console.log(`compared ${compared.length} projects:\n  ${compared.join("\n  ")}`);
   console.log(`not applicable:\n${Object.entries(notApplicable).map(([p, r]) => `  ${p}: ${r}`).join("\n")}`);
   console.log(
-    "excluded by name: ID-1 (no lifecycle scripts), ID-2 (selection by target platform), ID-3 (no hoisting), ID-4 (unfetched entries fail analysis)",
+    "excluded by name: ID-1 (no lifecycle scripts), ID-2 (selection by target platform), ID-3 (no hoisting), ID-4 (unfetched entries fail analysis), ID-12 (names that become one target name)",
   );
+  console.log(`ID-12, links compared:${targetNames.length ? `\n  ${targetNames.join("\n  ")}` : " none"}`);
   console.log(`${differences.length} differences${differences.length ? `:\n  ${differences.join("\n  ")}` : ""}`);
 });
