@@ -881,6 +881,28 @@ const projects: Record<string, Project> = {
       assert(Object.values(lock.packages).some((row) => row[0] === "state@2.0.0"), "the tree holds no state@2.0.0");
     },
   },
+  // A workspace member depending on the root package (T171): Bun writes the root as a `root:` row
+  // holding the root's `{ bin, binDir }` object in slot 1 (LOCK writer L751–L780, research Part 4
+  // L38) and links the member's dependency to the root.
+  conformance_root_row: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-root-row",
+        private: true,
+        bin: { "root-bin": "cli.js" },
+        workspaces: ["packages/*"],
+        dependencies: { a: "1.0.0" },
+      }),
+      "cli.js": 'console.log("root-bin");\n',
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", dependencies: { "conformance-root-row": "workspace:*", b: "1.0.0" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      const row = lock.packages["conformance-root-row"];
+      assert(row?.[0] === "conformance-root-row@root:", "conformance-root-row is not a root: row");
+      assert(JSON.stringify(row?.[1]) === '{"bin":{"root-bin":"cli.js"}}', "the root: row does not hold the root's bins in slot 1");
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

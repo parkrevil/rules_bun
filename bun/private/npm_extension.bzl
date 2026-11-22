@@ -580,7 +580,8 @@ lockfile loader, hoister, lockfile clean and isolated store, and a conformance t
 the one Bun's install makes on the test's platform, after every check this extension's evaluation
 runs (so a lockfile it fails and Bun installs is a difference), and checks that the ruleset refuses each of
 those lockfiles Bun refuses to load, among them every one under
-`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string, and a
+`bun/tests/npm/conformance/refused/` (a `patchedDependencies` value that is not a string, a
+`root:` row without its binaries object, a `root:` row with a string where that object goes, and a
 `lockfileVersion` 0 workspace member that no `packages` row holds), with Bun 1.4.4 as the oracle
 and again with Bun 1.4.2 on the lockfiles Bun 1.4.2 writes and those under
 `bun/tests/npm/conformance/accepted/` (`conformance_1_4_2_test`), each comparing the platform class of the machine it runs on. Both have
@@ -624,9 +625,10 @@ lockfile as version 1, which rules_bun reads (ID-11); and two `bin` names of one
 one target name fail evaluation naming both ("Generated targets", above), while Bun installs the
 lockfile and links both, since one package cannot hold two targets of one name (ID-12; two packages
 of one workspace fail the same way, which no test covers). A `lockfileVersion` 0 lockfile without
-such a row is read as Bun reads it. A `bun.lock` that writes a catalog entry or the root workspace
-twice is read with that key's last value, while Bun refuses it, since Starlark's `json.decode`
-keeps only the last value of a key an object holds twice; no Bun writes such a lockfile (ID-13).
+such a row is read as Bun reads it. A `bun.lock` that writes any key twice in one object is read
+with that key's last value, since Starlark's `json.decode` keeps only the last value of a key an
+object holds twice, while Bun refuses it (a catalog entry, the root workspace, a `packages` key) or
+reads the first value (`lockfileVersion`); no Bun writes such a lockfile (ID-13).
 The conformance test exercises ID-1 to ID-4 and ID-12, whose
 project's links it still compares; analysis tests check ID-8; no lockfile it compares reaches ID-5, ID-6 or ID-9; ID-10 and ID-11 fail evaluation, which
 `bun/tests/integration/credentials.test.ts` and `lockfile_errors.test.ts` check; unit tests check

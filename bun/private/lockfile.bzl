@@ -151,11 +151,12 @@ def _entry(key, entry, file, version):
         if version == 0:
             return _error(("{}: the packages entry \"{}\" is a workspace row of lockfileVersion 0, which rules_bun does not read; " +
                            "run `bun install` with Bun 1.4.4 and commit bun.lock, which writes lockfileVersion 1 or later").format(file, key))
-    elif resolution.startswith("root:"):
+    elif resolution.startswith("root:"):  # L38
         # A `root:` row has the root's `{ bin, binDir }` object in slot 1, which Bun refuses to be
-        # missing or other than an object (LOCK L2612-L2627, feature 006 T170); rules_bun does not
-        # read it (the root's own bins). The slot's value is not printed.
-        if len(entry) < 2 or type(entry[1]) != "dict":
+        # missing or other than an object (LOCK L2612-L2627, feature 006 T170); rules_bun reads the
+        # slot only to refuse that, not its content (the root's own bins). The slot's value is not
+        # printed.
+        if len(entry) < 2 or type(entry[1]) != "dict":  # L38
             return _error("{}: the packages entry \"{}\" is a root: row without its binaries object in slot 1; run `bun install` to rewrite bun.lock".format(file, key))
     else:
         # Every other resolution has its info object in slot 1 (LOCK L2557-L2591); rules_bun does not

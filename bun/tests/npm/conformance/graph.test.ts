@@ -1,7 +1,9 @@
 // Unit tests of graph.ts's comparison (research R8, contract "Failure text").
 
 import { expect, test } from "bun:test";
-import { compare, type Graph, projectDifference } from "./graph.ts";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+import { compare, type Graph, projectDifference, readBunGraph } from "./graph.ts";
 
 const entry = (name: string, version: string, links: Record<string, string> = {}) => ({ name, version, links });
 
@@ -123,11 +125,68 @@ test("a holder on one side only without links says so", () => {
   expect(compare("p", ruleset, bun)).toBe('p: workspace "packages/w" is a holder in Bun only and links nothing');
 });
 
-test("a package at no registry version is identified by its name", () => {
+test("a package at no registry version is identified by its resolution", () => {
   // Bun's store directory of a `file:` package is not DOC-ISO's `<package>@<version>` form.
-  const bun: Graph = { holders: { "": { local: "e:0" } }, entries: [{ ...entry("local", "1.0.0"), registry: false }] };
+  const bun: Graph = { holders: { "": { local: "e:0" } }, entries: [{ ...entry("local", "1.0.0"), resolution: "file:local" }] };
   const ruleset: Graph = { holders: { "": { local: "e:0" } }, entries: [entry("local", "file:local")] };
   expect(compare("p", ruleset, bun)).toBeUndefined();
+});
+
+/** Writes the files of an isolated install as Bun lays it out: `links` maps a link's path to its
+ * target, both relative to the project. */
+function installed(files: Record<string, unknown>, links: Record<string, string>): string {
+  const dir = mkdtempSync(join(process.env.TEST_TMPDIR!, "graph-"));
+  for (const [path, value] of Object.entries(files)) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true });
+    writeFileSync(join(dir, path), typeof value === "string" ? value : JSON.stringify(value));
+  }
+  for (const [path, target] of Object.entries(links)) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true });
+    symlinkSync(relative(dirname(join(dir, path)), join(dir, target)), join(dir, path), "dir");
+  }
+  return dir;
+}
+
+test("non-registry entries are compared by their resolution: two file: folders swapped differ (T172)", () => {
+  // As the pinned Bun installs `"x": "file:./a", "y": "file:./b"`, two folders of one package name
+  // and version: bun.lock rows `foo@file:a` and `foo@file:b`, store directories `foo@file+a` and
+  // `foo@file+b` (research Part 7 E19). The ruleset links them the other way round.
+  const dir = installed(
+    {
+      "bun.lock": {
+        lockfileVersion: 1,
+        workspaces: { "": { name: "t", dependencies: { x: "file:./a", y: "file:./b" } } },
+        packages: { x: ["foo@file:a", {}], y: ["foo@file:b", {}] },
+      },
+      "node_modules/.bun/foo@file+a/node_modules/foo/package.json": { name: "foo", version: "1.0.0" },
+      "node_modules/.bun/foo@file+b/node_modules/foo/package.json": { name: "foo", version: "1.0.0" },
+    },
+    { "node_modules/x": "node_modules/.bun/foo@file+a/node_modules/foo", "node_modules/y": "node_modules/.bun/foo@file+b/node_modules/foo" },
+  );
+  const bun = readBunGraph(dir, [""]);
+  const ruleset: Graph = { holders: { "": { x: "e:0", y: "e:1" } }, entries: [entry("foo", "file:b"), entry("foo", "file:a")] };
+  expect(compare("p", ruleset, bun)).toBe('p: the root links "x" to foo@file:b, Bun links it to foo@file:a');
+  const same: Graph = { holders: { "": { x: "e:0", y: "e:1" } }, entries: [entry("foo", "file:a"), entry("foo", "file:b")] };
+  expect(compare("p", same, bun)).toBeUndefined();
+});
+
+test("a store directory Bun bounds is read back to its resolution (T172)", () => {
+  // The directory the pinned Bun names for `"@s/long": "file:./dir-<70 x>/c"` (research Part 7
+  // E19): the first 63 bytes of `file+dir-…+c` and the wyhash of all of it.
+  const path = `dir-${"x".repeat(70)}/c`;
+  const store = `@s+long@file+dir-${"x".repeat(54)}+29f4eee30e89905a`;
+  const dir = installed(
+    {
+      "bun.lock": {
+        lockfileVersion: 1,
+        workspaces: { "": { name: "t", dependencies: { "@s/long": `file:./${path}` } } },
+        packages: { "@s/long": [`@s/long@file:${path}`, {}] },
+      },
+      [`node_modules/.bun/${store}/node_modules/@s/long/package.json`]: { name: "@s/long", version: "1.0.0" },
+    },
+    { "node_modules/@s/long": `node_modules/.bun/${store}/node_modules/@s/long` },
+  );
+  expect(readBunGraph(dir, [""]).entries).toEqual([{ name: "@s/long", version: "1.0.0", links: {}, resolution: `file:${path}` }]);
 });
 
 test("a registry entry bound where Bun binds a non-registry one of its name and version differs (T127)", () => {
@@ -135,7 +194,7 @@ test("a registry entry bound where Bun binds a non-registry one of its name and 
   // registry's foo@1.0.0. The ruleset binds d2's foo to the root's file: foo.
   const bun: Graph = {
     holders: { "": { foo: "e:0", d1: "e:1", d2: "e:2" } },
-    entries: [{ ...entry("foo", "1.0.0"), registry: false }, entry("d1", "1.0.0", { foo: "e:3" }), entry("d2", "1.0.0", { foo: "e:3" }), entry("foo", "1.0.0")],
+    entries: [{ ...entry("foo", "1.0.0"), resolution: "file:vendor/foo" }, entry("d1", "1.0.0", { foo: "e:3" }), entry("d2", "1.0.0", { foo: "e:3" }), entry("foo", "1.0.0")],
   };
   const ruleset: Graph = {
     holders: { "": { foo: "e:0", d1: "e:1", d2: "e:2" } },

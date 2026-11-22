@@ -640,13 +640,17 @@ For each holder, each symlink in its `node_modules` (scoped names one level down
 entries skipped) is a link; its `realpath` is a store directory (target = that entry) or a
 workspace directory (target = that workspace). An entry's identity is the `name` and `version` of
 the `package.json` in `node_modules/.bun/<dir>/node_modules/<name>` (npm's format), never parsed
-from the directory name. The directory tells only whether the entry is a registry package (T127):
+from the directory name. The directory tells whether the entry is a registry package (T127):
 DOC-ISO names a package's store directory `<package>@<version>` (a scope's `/` written `+`, as
 Store.rs does), to which Bun appends `+<peer hash>`; Bun names the directory of a package from
 another resolution after that resolution (`foo@file+vendor+foo` for `file:./vendor/foo`, seen with
 the pinned Bun, Linux x64, 2026-11-21), so an entry whose directory is not the registry form of
-its `package.json` is labelled by its name only, as the ruleset labels an entry whose version is not
-an exact version (R8). On Windows `realpath` resolves Bun's junctions the same way.
+its `package.json` is from another resolution. It is identified by the resolution of the `bun.lock`
+row whose store key names the directory, alone or with a `+<peer hash>` (T172): `graph.ts` carries
+over Bun's store key for a `file:` folder and a tarball URL (`fmt_store_key`, `write_resolution`,
+`fmt_store_url`, Store.rs L341–L428, resolution.rs L541–L656, semver lib.rs L657–L686; E19), and
+fails the read for a directory no such row names. The ruleset's entry records the same resolution
+as its version (R8). On Windows `realpath` resolves Bun's junctions the same way.
 
 ### R8. The ruleset's graph and the comparison
 
@@ -659,8 +663,8 @@ test picks the class of the host
 (`process.platform`, `process.arch`, and on Linux the C library as canary C-LIBC detects it).
 
 Equality (FR-008): both graphs are labelled digraphs (holders labelled by path, entries by
-`name@version`, or by name for a package from another resolution, on each side by its own
-resolution, R7 and T127; edges by dependency name). The test refines a partition of the disjoint union
+`name@version`, or by name and resolution for a package from another resolution, on each side by
+its own resolution, R7, T127 and T172; edges by dependency name). The test refines a partition of the disjoint union
 (start: labels; refine by sorted `(edge name, class of target)`) until stable; the graphs are equal
 iff every class has as many Bun nodes as ruleset nodes and every holder's class holds one node of
 each side. This compares entry counts (a package with two peer contexts must be two entries on both
@@ -771,7 +775,9 @@ a project it cannot write or install would be listed with the reason in
 `bun/tests/npm/conformance/not_applicable_1_4_2.ts`. Planning expected two (an unlinked workspace,
 which 1.4.2's loader was read to reject, LOCK-142 L2479–2490; `unresolved`, which 1.4.2 was read
 not to write), but run with the 1.4.2 oracle, Bun 1.4.2 writes and installs every corpus project
-(T091, `tdd-log.md`), so the list is empty and no project is not applicable. Its usual lockfile
+(T091, `tdd-log.md`). The list holds one project added since: `conformance_root_row` (T171), a
+member depending on the root package, which Bun 1.4.2 cannot write by `workspace:*` and whose
+lockfile, written by `workspace:../..`, its own frozen install refuses (Part 6, E18). Its usual lockfile
 for `conformance_platform_peer` differs from the committed one; both conformance runs compare it
 as `bun/tests/npm/conformance/accepted/platform_peer_1_4_2` (BC-16, R4).
 
@@ -806,6 +812,7 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_member_chain` | the root's `chain-cli` (a bin) depends on member `chain-w1`, which declares the registry package `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members across two workspace boundaries) | T123 |
 | `conformance_member_workspace_chain` | the root's `chain-cli` depends on member `chain-w1`, which declares member `chain-mid` by `workspace:*`, which declares `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members through a `workspace:` link and more than one further member) | T131 |
 | `conformance_member_alias` | `conformance_registry_to_workspace`'s layout, whose member's target `pkg` is an `alias` of a target in the fixture's root package that carries the member's files | BC-4 (a member's target that is an alias) | T146 |
+| `conformance_root_row` | member `w` depends on the root package (`workspace:*`), whose `bin` Bun writes in the root's `root:` row | L38 (a `root:` row the pinned Bun writes); not applicable to Bun 1.4.2 (R10) | T171 |
 
 T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
 its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
@@ -872,6 +879,7 @@ New accesses:
 | L35 | top-level `trustedDependencies` (read only to refuse what Bun refuses, T125) | LOCK L1871–L1888 (writer L510–L527: an array of the names) | E15 | C-ROOTFIELDS (T130) |
 | L36 | a git or GitHub row's `.bun-tag`, the slot after its info object (read only to refuse what Bun refuses, T147) | LOCK L2671–L2722 (writer L860–L894: the `resolved` tag, for GitHub the root folder of the tarball, REPO L125–L130) | E16 | C-ROWTAIL (T147) |
 | L37 | the integrity after a tarball row's info object or a git or GitHub row's tag (read only to refuse what Bun refuses, T147) | LOCK L2724–L2735, L1688–L1711 (writer L799–L818, L889–L893: written only when supported) | E16 | C-ROWTAIL (T147) |
+| L38 | a `root:` row, `["<name>@root:", { bin, binDir }]`, the root package's row when a workspace depends on it, and the object in its slot 1 (read only to refuse what Bun refuses, T170) | LOCK L2375–L2432, L2612–L2627 (writer L751–L780: the root's `bin` or `binDir`, `{}` when it has none) | E18 (`conformance_root_row`) | C-ROOTROW (T171) |
 
 The list is closed (T050): every `root.get(...)`/`value.get(...)`/`info.get(...)` of LOCK
 L1797–3543 at `bun-v1.4.4`, and each slot of a `packages` row, is an access with a canary or read by
@@ -890,7 +898,7 @@ Bun and deciding no binding:
 | a workspace's `name` | L2137, L2211, L2275, L3496 | L5 |
 | a workspace's `version` | L2162 | L28 |
 | `packages`, its keys and row order | L2308, L2929, L2993 | L7, L8, L21, L25, L29 |
-| slot 0 | L2375–L2432 | L9, L22 |
+| slot 0 | L2375–L2432 | L9, L22, L38 (`<name>@root:`) |
 | an npm row's slots 1–3 | L2433–L2476, L2636–L2669 | L10, L11, L12 |
 | an npm row's slots after 3 | never read | not read: a row of more slots is read by its first 4 (BC-18, T149) |
 | slot 1 of any other row | L2557–L2591 | L31 |
@@ -899,7 +907,7 @@ Bun and deciding no binding:
 | `os`, `cpu`, `libc` | L2594–L2602 | L15, C-LIBC |
 | `hasInstallScript` | L2606 | decides no binding (lifecycle scripts, ID-1) |
 | `bin`, `binDir` | L1714–L1721, BIN L193–L263 | L16 (`binDir` decides no binding: which files are bins) |
-| the root row's `{ bin, binDir }` | L2612–L2634 | decides no binding (the root's own bins) |
+| the root row's `{ bin, binDir }` | L2612–L2634 | L38 (read only to refuse what Bun refuses, T170; its content decides no binding: the root's own bins) |
 | a git or GitHub row's `.bun-tag` | L2671–L2722 | L36 (read only to refuse what Bun refuses; decides no binding, "Not carried over") |
 | the integrity of a tarball, git or GitHub row | L2724–L2735 | L37 (read only to refuse what Bun refuses; these rows are not fetched, ID-4) |
 | `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies` of a row or workspace | L3405–L3490 | L6, L13, L14, L30, L32 |
@@ -922,7 +930,7 @@ for the reason given; the ruleset does not read that field, or reads only what d
 |---|---|---|---|
 | L1816 | Missing lockfile version | refused | `_LOADER_REFUSALS` L1816 |
 | L1829 | Invalid lockfile version | refused | `_LOADER_REFUSALS` L1829 |
-| L1855 | Unsupported lockfile version | refused | `_LOADER_REFUSALS` L1855; `versions_test` (4; 0 is loaded, BC-19); `lockfile_errors.test.ts` |
+| L1855 | Unsupported lockfile version | refused, except where `lockfileVersion` is written twice (**ID-13**): Bun reads the first value (L1815), the reader the last, so `2` then `99` fails evaluation where Bun loads, and `99` then `2` loads where Bun refuses | `_LOADER_REFUSALS` L1855; `versions_test` (4; 0 is loaded, BC-19); `lockfile_errors.test.ts`; `duplicate_keys_test`, both texts checked against Bun 1.4.4 and 1.4.2 (T174) |
 | L1864 | Invalid "configVersion". Expected a number | refused | `_LOADER_REFUSALS` L1864, three rows: a string, a fraction and a number below 0, which ConfigVersion.rs `from_expr` maps to none (red first, T125); a whole number above 1 and `1.0` are read as Bun reads them (`config_version_test`). The value decides no binding (table above) |
 | L1875, L1884 | Expected an array / a string (`trustedDependencies`) | refused | `_LOADER_REFUSALS` L1875, L1884 (red first, T125); an array of strings is read (`config_version_test`). The value decides no binding (ID-1) |
 | L1901 | Expected an object (`patchedDependencies`) | refused | `_CONTAINER_REFUSALS` L1901 (red first) |
@@ -930,24 +938,24 @@ for the reason given; the ruleset does not read that field, or reads only what d
 | L1936 | Expected an object (`overrides`) | refused | `_CONTAINER_REFUSALS` L1936 (red first) |
 | L1946, L1968, L1978, L1986, L1992, L2007, L2027 | the `overrides` refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L1738, L1746, L1765 | the `parse_catalog` refusals | refused | `_LOADER_REFUSALS`, one row each |
-| L1782 | Duplicate catalog entry | not refused (**ID-13**): loaded with the entry's last value | not written: it needs one key twice in one JSON object, which the writer never prints (it iterates a map, L586–L615, `write_catalog` L912); Starlark's `json.decode` keeps the last value of a key written twice (https://bazel.build/rules/lib/core/json), so the ruleset cannot see it; `lockfile_test.bzl` `duplicate_keys_test` (`catalog` and a `catalogs` group), each text refused by Bun 1.4.4 and 1.4.2 (T170) |
+| L1782 | Duplicate catalog entry | not refused (**ID-13**, which covers every key written twice in one object, T174): loaded with the entry's last value | not written: it needs one key twice in one JSON object, which the writer never prints (it iterates a map, L586–L615, `write_catalog` L912); Starlark's `json.decode` keeps the last value of a key written twice (https://bazel.build/rules/lib/core/json), so the ruleset cannot see it; `lockfile_test.bzl` `duplicate_keys_test` (`catalog` and a `catalogs` group), each text refused by Bun 1.4.4 and 1.4.2 (T170) |
 | L2039 | Expected an object (`catalog`) | refused | `_CONTAINER_REFUSALS` L2039 (red first) |
 | L2058 | Expected an object (`catalogs`) | refused | `_CONTAINER_REFUSALS` L2058 (red first) |
 | L2068, L2076 | the `catalogs` refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2101 | Missing a workspaces object property | refused | `_CONTAINER_REFUSALS` L2101 (red first; one check for missing and not an object) |
 | L2114 | Expected an object (a workspace) | refused | `_CONTAINER_REFUSALS` L2114 (red first) |
-| L2126 | Duplicate root package | not refused (**ID-13**): loaded with the last root workspace | not written: a second `""` key in `workspaces`; the writer prints each workspace path once, and `json.decode` keeps the last (as L1782); `duplicate_keys_test`, the text refused by Bun 1.4.4 and 1.4.2 (T170) |
+| L2126 | Duplicate root package | not refused (**ID-13**, every key written twice): loaded with the last root workspace | not written: a second `""` key in `workspaces`; the writer prints each workspace path once, and `json.decode` keeps the last (as L1782); `duplicate_keys_test`, the text refused by Bun 1.4.4 and 1.4.2 (T170) |
 | L2138, L2146, L2164, L2181, L2200 | the workspace refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2215 | Expected a string (the root's `name`) | refused | `_CONTAINER_REFUSALS` L2215 (red first) |
 | L2313 | Expected an object (`packages`) | refused | `_CONTAINER_REFUSALS` L2313 (red first) |
 | L2339, L2368, L2380, L2394, L2403, L2427, L2434, L2445, L2536, L2558, L2569, L2640, L2643 | the row refusals | refused | `_LOADER_REFUSALS`, one row each |
 | L2561, L2569 (a workspace row on `lockfileVersion` 0) | Missing dependencies object / Expected an object | refused, and so is a version-0 workspace row with the object, which Bun loads (ID-11) | `lockfile_test.bzl` `version_0_workspace_row_test`, `lockfile_errors.test.ts` (T155) |
-| L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | refused | `_LOADER_REFUSALS` L2614, L2623 and `conformance/refused/root_row_without_bins`, `refused/root_row_bins_not_object`, which the conformance test checks Bun and the ruleset both refuse (red first, T170); not written: the writer prints the object (L751–L778); its content is not read (the root's own bins, table above) |
+| L2614, L2623 | Missing package binaries object / Expected an object (a `root:` row) | refused | `_LOADER_REFUSALS` L2614, L2623 and `conformance/refused/root_row_without_bins`, `refused/root_row_bins_not_object`, which the conformance test checks Bun and the ruleset both refuse (red first, T170); not written: the writer prints the object (L751–L780); its content is not read (the root's own bins, table above) |
 | L2650 (L1688–L1711) | Unsupported or malformed integrity hash (an npm row) | refused, from lockfileVersion 2, where no whitespace-separated entry has a known algorithm and a digest `Integrity::parse_entry` accepts (standard base64 without padding, at most the algorithm's length, zero bits after the last byte; INTEGRITY L88–L164, BASE64 L548–L641); before 2 Bun warns and loads | `_LOADER_REFUSALS` L2650; `lockfile_test.bzl` `_INTEGRITY_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147) |
 | L2664 (L2652–L2669) | Missing integrity hash for npm package resolved to a tarball URL outside the configured registry | not refused; the row is unfetched (ID-4) | **ID-5** (user, 2026-11-21, Part 6): Bun's configured registry comes from `bunfig.toml` (`install.registry`, `install.scopes`), the environment and `.npmrc` (PackageManagerOptions L690–L780, L941–L943); the ruleset reads only the `npmrc` attribute's `.npmrc` (FR-003), so it cannot tell which URLs are under the configured registry. It loads such a lockfile and a target that needs the row fails analysis (ID-4), as `restricted` and `integration/workspaces/multi_nointegrity` show for rows without integrity (`conformance_test`, ID-4) |
 | L2674, L2685, L2707 | Missing / Expected a string / Invalid git dependency tag | refused: a missing or non-string slot on every lockfile, a tag over 256 bytes on every lockfile, and one `is_safe_resolved_tag` rejects (REPO L114–L123) for a GitHub row on every lockfile and for a git row from lockfileVersion 2 | `lockfile_test.bzl` `_GIT_TAG_REFUSALS` and `row_tail_accepted_test`, each text checked against the pinned Bun (red first, T147); canary C-ROWTAIL |
 | L2733 (L1688–L1711) | Unsupported or malformed integrity hash (a tarball, git or GitHub row) | refused as L2650; a slot that is not a string is skipped, as Bun skips it | `_INTEGRITY_REFUSALS` (L2733 rows) and `row_tail_accepted_test` (red first, T147); canary C-ROWTAIL |
-| L2759 | Duplicate package path | refused | `bun_lockfile_test.bzl` (T031), `lockfile_errors.test.ts` (T035) |
+| L2759 | Duplicate package path | refused where two keys reach one path (a key equal to a workspace's name holding a `file:` folder); not refused (**ID-13**) where one `packages` key is written twice, which `json.decode` reads as its last row | `bun_lockfile_test.bzl` (T031), `lockfile_errors.test.ts` (T035); `duplicate_keys_test` (a key written twice, refused by Bun 1.4.4 and 1.4.2, T174) |
 | L2843, L2908, L3010 | Failed to resolve … dependency (`dependency_resolution_failure`, L3302–L3345) | refused | `_LOADER_REFUSALS`, one row each, and a second L2843 row: a `lockfileVersion` 0 member without its `packages` row, which is no package on version 0 (L2263), as `refused/lockfile_version_0_member` shows (T155) |
 | L2888 | Workspace and dependency name too long | not refused | not written: `./<workspace>/<dependency>` must exceed the path buffer (4,096 bytes on Linux), but each name is a directory under `node_modules`, at most 255 bytes on every supported file system |
 | L2933 | `InvalidPackagesObject` | refused (unreachable) | unreachable in Bun: the first loop puts every row in the key map (L2360–L2762); `bun_lockfile.bzl` keeps the same refusal |
@@ -1238,11 +1246,25 @@ generated for it, from the row of its name `main` linked it to; its link keeps t
 with no platform (T111), so no generated target name of `main` is gone (SC-005; Part 3 "Declared
 dependencies the store links nowhere"). The reader skipped a `root:` row whole, so it loaded a row
 without its binaries object, or with a non-object there, which Bun refuses (L2614, L2623); it
-refuses both now. Two other refusals of the loader need a key written twice in one JSON object (a
-catalog entry, L1782; the root workspace, L2126); `json.decode` keeps the last value of such a key
-(bazel.build: "If the same key string occurs more than once in the object, the last value for the
-key is kept"), so the reader cannot see the first and loads the lockfile, which is listed as
-ID-13. No Bun writes any of these forms.
+refuses both now. Other refusals of the loader need a key written twice in one JSON object (a
+catalog entry, L1782; the root workspace, L2126; a `packages` key, L2759); `json.decode` keeps the
+last value of such a key (bazel.build: "If the same key string occurs more than once in the object,
+the last value for the key is kept"), so the reader cannot see the first and loads the lockfile.
+The twelfth review widened this to every key (T174): where Bun reads one field it reads the first
+value (`lockfileVersion` `2` then `99` installs in Bun and fails evaluation), so ID-13 lists every
+key written twice, refused or read. No Bun writes any of these forms.
+
+**T171 decided by the lead, under the user's delegation (2026-11-22)**: the `root:` row T170 reads
+is access L38, pinned by canary C-ROOTROW and compared through the corpus project
+`conformance_root_row`, which the pinned Bun writes and links as the ruleset does. The task asked
+for that project to be compared by both oracles, which Bun 1.4.2 does not allow: it cannot write a
+member's `workspace:*` dependency on the root, and the lockfile it writes for `workspace:../..`
+(the same `root:` row) its own frozen install refuses (E18). A consumer on Bun 1.4.2 therefore never
+holds such a lockfile, so the project is listed in `NOT_APPLICABLE_1_4_2` with the reason (FR-013,
+US5 scenario 2) rather than compared. Bun 1.4.2 installs the lockfile Bun 1.4.4 writes, linking the
+member's dependency to a copy of the root in its store (`node_modules/.bun/<name>@root`) where 1.4.4
+links the root itself; that lockfile is not one Bun 1.4.2 writes, so the spec's Edge Case (a
+lockfile 1.4.2 writes that 1.4.4 links differently) does not reach it.
 
 ## Part 7: Evidence log
 
@@ -1323,3 +1345,19 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   1`. Bun 1.4.4 loads a lockfile whose npm row's URL is `http://u:t@127.0.0.1:9/b/-/b-1.0.0.tgz`,
   and one whose root dependency and row are `http://u:t@127.0.0.1:9/b-1.0.0.tgz` (`--frozen-lockfile
   --dry-run`, exit 0).
+- **E18** (C-ROOTROW, `conformance_root_row`, T171, 2026-11-22): a root package `x` with
+  `"bin": { "xb": "cli.js" }` and member `w` declaring `"x": "workspace:*"`: Bun 1.4.4 writes
+  `"x": ["x@root:", { "bin": { "xb": "cli.js" } }]` and links `packages/w/node_modules/x` to the
+  root (`../../..`) and `packages/w/node_modules/.bin/xb` to its `cli.js`; with slot 1 removed, its
+  frozen install refuses the lockfile ("Missing package binaries object"). Bun 1.4.2 fails that
+  install ("Workspace dependency \"x\" not found"); with `"x": "workspace:../.."` it writes the
+  same row, and its own frozen install of that lockfile fails ("No matching version for workspace
+  dependency", Package.rs L1965 at bun-v1.4.2), while Bun 1.4.4 installs it. Bun 1.4.2's frozen
+  install of the lockfile Bun 1.4.4 writes links `packages/w/node_modules/x` to
+  `node_modules/.bun/x@root/node_modules/x`.
+- **E19** (T172, 2026-11-22): `bun install --linker isolated` with Bun 1.4.4 of a project declaring
+  `"x": "file:./a"`, `"y": "file:./b"` (two folders of package `foo`) and
+  `"@s/long": "file:./dir-<70 x>/c"` writes the rows `["foo@file:a", {}]`, `["foo@file:b", {}]`,
+  `["@s/long@file:dir-<70 x>/c", {}]` and names the store directories `foo@file+a`, `foo@file+b`
+  and `@s+long@file+dir-<54 x>+29f4eee30e89905a`: the 81-byte resolution `file+dir-<70 x>+c` cut to
+  63 bytes and `Bun.hash.wyhash` of all of it, as `write_resolution` does (Store.rs L366–L384).

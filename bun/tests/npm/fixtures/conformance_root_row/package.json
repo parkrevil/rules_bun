@@ -1,0 +1,13 @@
+{
+  "name": "conformance-root-row",
+  "private": true,
+  "bin": {
+    "root-bin": "cli.js"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "a": "1.0.0"
+  }
+}

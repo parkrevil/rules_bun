@@ -235,6 +235,14 @@ bun_test(
 )
 
 bun_test(
+    name = "c_rootrow_test",
+    srcs = ["c_rootrow.test.ts"],
+    deps = [
+        ":support",
+    ],
+)
+
+bun_test(
     name = "c_rowtail_test",
     srcs = ["c_rowtail.test.ts"],
     deps = [
@@ -313,6 +321,7 @@ test_suite(
         ":c_peers_test",
         ":c_pkgext_test",
         ":c_rootfields_test",
+        ":c_rootrow_test",
         ":c_rowdevdeps_test",
         ":c_rowinfo_test",
         ":c_roworder_test",

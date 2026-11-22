@@ -31,9 +31,9 @@ lockfiles, after the change it passes them (T160). BC-19 is a `lockfileVersion` 
 Differences ID-1 to ID-13 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
 members, ID-9 the two evaluation failures below (BC-12), ID-10 a URL holding user information in
 `bun.lock`, ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, and ID-12 two
-names that become one target name, each an evaluation failure below, and ID-13 a catalog entry or
-the root workspace written twice in `bun.lock`, read with its last value where Bun refuses the
-lockfile.
+names that become one target name, each an evaluation failure below, and ID-13 a key written
+twice in one object of `bun.lock`, read with its last value where Bun refuses the lockfile (a
+catalog entry, the root workspace, a `packages` key) or reads the first value (`lockfileVersion`).
 
 | Surface | Before (`main`) | After | BC |
 |---|---|---|---|

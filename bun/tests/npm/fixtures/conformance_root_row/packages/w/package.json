@@ -1,0 +1,8 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "conformance-root-row": "workspace:*",
+    "b": "1.0.0"
+  }
+}

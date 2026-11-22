@@ -16,10 +16,11 @@ export interface Entry {
   status?: string;
   /** Ruleset side only: `status` is because rules_bun does not fetch the entry (ID-4). */
   unfetched?: boolean;
-  /** Bun side only: `false` when Bun's store directory is not DOC-ISO's `<package>@<version>` form
-   * of the entry's name and version, so Bun installed it from another resolution (`file:`, a
-   * tarball URL, git); absent for a registry package (T127). */
-  registry?: boolean;
+  /** Bun side only: for an entry Bun installed from another resolution than a registry version (its
+   * store directory is not DOC-ISO's `<package>@<version>` form of its name and version, T127), the
+   * resolution of the `bun.lock` row whose store key names that directory, as slot 0 writes it after
+   * `<name>@` (`file:a`, a tarball URL), which identifies it (T172); absent for a registry package. */
+  resolution?: string;
 }
 
 export interface Graph {
@@ -69,17 +70,87 @@ function ownFolders(nodeModules: string): Map<string, string> {
   return found;
 }
 
+/** `String::fmt_store_path`: `bytes` as one path component of the isolated store.
+ *
+ * Bun: src/semver/lib.rs L657–L686 @ bun-v1.4.4 */
+function storePath(text: string): string {
+  return text.replace(/[/\\:#?]/g, "+");
+}
+
+/** `write_resolution`: a resolution of at most 80 bytes as written, a longer one as its first 63
+ * bytes (back to a character boundary) and `+<16 hex digits of its wyhash>`.
+ *
+ * Bun: src/install/isolated_install/Store.rs L341–L344, L366–L384 @ bun-v1.4.4 */
+function boundedResolution(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  if (bytes.length <= 80) return text;
+  let cut = 80 - 1 - 16;
+  while (cut > 0 && (bytes[cut] & 0xc0) === 0x80) cut--;
+  return `${new TextDecoder().decode(bytes.subarray(0, cut))}+${Bun.hash.wyhash(text).toString(16).padStart(16, "0")}`;
+}
+
+/** `fmt_store_url`: a tarball URL without its userinfo and query string, with the wyhash of the
+ * whole URL in their place when it has either.
+ *
+ * Bun: src/install/resolution.rs L587–L619, L640–L656 @ bun-v1.4.4 */
+function storeURL(url: string): string {
+  const colon = url.indexOf(":");
+  const authorityStart = colon >= 0 && url.startsWith("//", colon + 1) ? colon + "://".length : 0;
+  const authorityEnd = url.slice(authorityStart).search(/[/?#]/);
+  const authority = url.slice(authorityStart, authorityEnd < 0 ? url.length : authorityStart + authorityEnd);
+  const at = authority.lastIndexOf("@");
+  const hostStart = at < 0 ? authorityStart : authorityStart + at + 1;
+  const query = url.indexOf("?", hostStart);
+  const queryStart = query < 0 ? url.length : query;
+  const hash = hostStart !== authorityStart || queryStart !== url.length ? `+${Bun.hash.wyhash(url).toString(16).padStart(16, "0")}` : "";
+  return `${storePath(url.slice(0, authorityStart))}${storePath(url.slice(hostStart, queryStart))}${hash}`;
+}
+
+/** The store key Bun gives a package of `name` at a `bun.lock` resolution (slot 0 after `<name>@`)
+ * that is a folder (`file:`) or a tarball URL, without the `+<peer hash>`; `undefined` for any other
+ * resolution, whose key this test does not carry over (T172). `Resolution::from_text_lockfile`
+ * reads `file:` as a folder (bun_install_types.bzl `resolution_from_text_lockfile`).
+ *
+ * Bun: src/install/isolated_install/Store.rs L386–L428 @ bun-v1.4.4
+ * Bun: src/install/resolution.rs L541–L585 @ bun-v1.4.4 */
+function storeKey(name: string, resolution: string): string | undefined {
+  if (resolution.startsWith("file:")) return `${storePath(name)}@${boundedResolution(`file+${storePath(resolution.slice("file:".length))}`)}`;
+  if (/^https?:\/\//.test(resolution)) return `${storePath(name)}@${boundedResolution(storeURL(resolution))}`;
+  return undefined;
+}
+
+/** The resolution of the `bun.lock` row of `name` whose store key names `storeDir`, alone or with
+ * Bun's `+<peer hash>` (16 hexadecimal digits); an exact key wins over one with a peer hash. */
+function resolutionOf(lock: Record<string, any>, name: string, storeDir: string): string | undefined {
+  const exact: string[] = [];
+  const peered: string[] = [];
+  for (const row of Object.values((lock.packages ?? {}) as Record<string, unknown[]>)) {
+    const spec = typeof row[0] === "string" ? row[0] : "";
+    if (!spec.startsWith(`${name}@`)) continue;
+    const resolution = spec.slice(name.length + 1);
+    const key = storeKey(name, resolution);
+    if (key === undefined) continue;
+    if (storeDir === key) exact.push(resolution);
+    else if (storeDir.startsWith(`${key}+`) && /^[0-9a-f]{16}$/.test(storeDir.slice(key.length + 1))) peered.push(resolution);
+  }
+  const found = [...new Set(exact.length > 0 ? exact : peered)];
+  if (found.length > 1) throw new Error(`Bun's store directory ${storeDir} is the store key of several bun.lock resolutions of ${name}: ${found.join(", ")}`);
+  return found[0];
+}
+
 /**
  * Reads the graph Bun's isolated install linked in `dir` (research R7): holders are the root and
  * each workspace path; entries are the store directories `node_modules/.bun/<dir>` except
  * `node_modules/.bun/node_modules` (ID-3); an entry's identity is the `name` and `version` of its
- * package's `package.json`, never its directory name. The directory tells only whether the entry is
+ * package's `package.json`, never its directory name. The directory tells whether the entry is
  * a registry package: DOC-ISO names its store directory `<package>@<version>` (a scope's `/` written
  * `+`), to which Bun appends `+<peer hash>` for a package with peers; any other name is of a package
- * installed from another resolution (T127).
+ * installed from another resolution (T127), identified by the `bun.lock` resolution whose store key
+ * names the directory (`file:` folders and tarball URLs; any other fails the read, T172).
  */
 export function readBunGraph(dir: string, workspaces: string[]): Graph {
   const entries: Entry[] = [];
+  let lock: Record<string, any> | undefined;
   const index = new Map<string, number>();
   const ownLinks: { entry: number; nodeModules: string; own: string }[] = [];
   const store = join(dir, "node_modules", ".bun");
@@ -93,8 +164,18 @@ export function readBunGraph(dir: string, workspaces: string[]): Graph {
         index.set(real, entries.length);
         ownLinks.push({ entry: entries.length, nodeModules, own });
         const registryDir = `${String(manifest.name).replace("/", "+")}@${manifest.version}`;
-        const registry = storeDir === registryDir || storeDir.startsWith(`${registryDir}+`);
-        entries.push({ name: manifest.name, version: manifest.version, links: {}, ...(registry ? {} : { registry: false }) });
+        if (storeDir === registryDir || storeDir.startsWith(`${registryDir}+`)) {
+          entries.push({ name: manifest.name, version: manifest.version, links: {} });
+          continue;
+        }
+        lock ??= Bun.JSONC.parse(readFileSync(join(dir, "bun.lock"), "utf8")) as Record<string, any>;
+        const resolution = resolutionOf(lock, manifest.name, storeDir);
+        if (resolution === undefined) {
+          throw new Error(
+            `Bun's store directory ${storeDir} in ${dir} is neither ${registryDir} nor the store key of a file: or tarball URL resolution of ${manifest.name} in bun.lock, the forms graph.ts carries Bun's store key over for`,
+          );
+        }
+        entries.push({ name: manifest.name, version: manifest.version, links: {}, resolution });
       }
     }
   }
@@ -127,15 +208,12 @@ interface Node {
   links: Record<string, string>;
 }
 
-// An exact npm version (semver.org 2.0.0 grammar, loosely): what bun.lock records for a registry
-// package. Any other version is a resolution (file:, a URL, ...), for which bun.lock records no
-// version, so the ruleset cannot know the one the package.json Bun installed holds.
-const EXACT_VERSION = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
-
-/** Whether an entry is a registry package: by its version in the ruleset, by its store directory in
- * Bun (`readBunGraph`). */
-function isRegistry(side: Node["side"], entry: Entry): boolean {
-  return side === "bun" ? entry.registry !== false : EXACT_VERSION.test(entry.version);
+/** What identifies an entry beside its name (T127, T172): a registry package's version, or the
+ * resolution of a package installed from another, which bun.lock records instead of a version: in
+ * the ruleset its version, in Bun the resolution `readBunGraph` found for its store directory (the
+ * version its package.json holds is not compared, as the ruleset does not know it). */
+function identity(entry: Entry): string {
+  return entry.resolution ?? entry.version;
 }
 
 function nodes(side: Node["side"], graph: Graph): Map<string, Node> {
@@ -144,10 +222,11 @@ function nodes(side: Node["side"], graph: Graph): Map<string, Node> {
   const ids = (links: Record<string, Target>) => Object.fromEntries(Object.entries(links).map(([name, t]) => [name, id(t)]));
   for (const [path, links] of Object.entries(graph.holders)) result.set(`${side}:h:${path}`, { side, label: `h:${path}`, holder: path, links: ids(links) });
   graph.entries.forEach((entry, i) => {
-    // Each entry is labelled by its own resolution (T127): a registry package by its name and
-    // version, any other by its name only, on both sides, as the ruleset does not know the version
-    // the package.json Bun installed for it holds.
-    const label = isRegistry(side, entry) ? `e:${entry.name}@${entry.version}` : `e:${entry.name}@(not a registry version)`;
+    // Each entry is labelled by its own resolution (T127, T172): a registry package by its name and
+    // version, any other by its name and the resolution bun.lock records for it, on both sides, so
+    // a registry entry and a non-registry entry of one name never compare equal, nor two
+    // non-registry entries of one name from different resolutions.
+    const label = `e:${entry.name}@${identity(entry)}`;
     result.set(`${side}:e:${i}`, { side, label, entry, links: ids(entry.links) });
   });
   return result;
@@ -182,7 +261,7 @@ function refine(all: Map<string, Node>): Map<string, number> {
 function nameVersion(node: Node | undefined): string {
   if (node === undefined) return "no link";
   if (node.holder !== undefined) return node.holder === "" ? "the root" : `workspace "${node.holder}"`;
-  return `${node.entry!.name}@${node.entry!.version}`;
+  return `${node.entry!.name}@${identity(node.entry!)}`;
 }
 
 /** An entry with its bindings, one level deep: `p@1.0.0 (q → q@1.0.0)`. */

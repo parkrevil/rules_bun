@@ -209,8 +209,8 @@ writes for the corpus projects it can install, and reports zero differences.
 
 1. **Given** a corpus project's lockfile written by Bun 1.4.2, **When** the 1.4.2 conformance run
    compares it, **Then** the ruleset's resolution equals Bun 1.4.2's isolated install.
-2. **Given** a corpus project Bun 1.4.2 cannot write or install (none today: 1.4.2 writes and
-   installs every corpus project, research R10, T091), **When** the 1.4.2 run lists its projects,
+2. **Given** a corpus project Bun 1.4.2 cannot write or install (one: `conformance_root_row`, a
+   member depending on the root package, research R10, T171), **When** the 1.4.2 run lists its projects,
    **Then** that project is listed as not applicable with the reason, not silently skipped.
 
 ### Edge Cases
@@ -395,7 +395,7 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   ruleset reads the last value, because it reads `bun.lock` with Starlark's `json.decode`, which
   keeps the last value of a key an object holds more than once (bazel.build `json.decode`), so the
   earlier one is gone before the reader sees the object. The pinned Bun keeps every copy: it reads
-  the first where it reads one field (`lockfileVersion` written as `1` then `99` installs in Bun
+  the first where it reads one field (`lockfileVersion` written as `2` then `99` installs in Bun
   and fails in the ruleset), and refuses where it checks for a repeat ("Duplicate catalog entry",
   "Duplicate root package", "Duplicate package path", LOCK L1782, L2126, L2759), which the ruleset
   loads. This holds for every key of the file. No Bun writes such a lockfile: the writer prints

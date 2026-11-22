@@ -575,7 +575,8 @@ def _duplicate_keys_test_impl(ctx):
 
     # ID-13 (T170): a catalog entry or the root workspace written twice loads with the key's last
     # value, as `json.decode` keeps it, where the pinned Bun refuses the lockfile ("Duplicate
-    # catalog entry", "Duplicate root package", LOCK L1782, L2126).
+    # catalog entry", "Duplicate root package", LOCK L1782, L2126). Each text below was checked
+    # with Bun 1.4.4 and 1.4.2 (`bun install --frozen-lockfile`, tdd-log.md T170, T174).
     catalog = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "catalog": {"a": "1.0.0", "a": "2.0.0"}, "packages": {}}'
     asserts.equals(env, None, _load_error(catalog))
     asserts.equals(env, {"a": "2.0.0"}, _read(catalog)["value"]["catalog"])
@@ -585,6 +586,23 @@ def _duplicate_keys_test_impl(ctx):
     root = '{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}, "": {"name": "y"}}, "packages": {}}'
     asserts.equals(env, None, _load_error(root))
     asserts.equals(env, "y", _read(root)["value"]["workspaces"][""]["name"])
+
+    # ID-13 covers every key (T174). A `packages` key written twice: the pinned Bun refuses the
+    # lockfile ("Duplicate package path", LOCK L2759); the reader keeps the last row.
+    integrity = "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="
+    packages = ('{"lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {"b": ["b@1.0.0", "", {}, "%s"], ' +
+                '"b": ["b@2.0.0", "", {}, "%s"]}}') % (integrity, integrity)
+    asserts.equals(env, None, _load_error(packages))
+    asserts.equals(env, "2.0.0", _read(packages)["value"]["entries"]["b"]["version"])
+
+    # `lockfileVersion` written twice: the pinned Bun reads the first (LOCK L1815), the reader the
+    # last, so `2` then `99` fails evaluation where Bun loads the lockfile, and `99` then `2` loads
+    # where Bun refuses it ("Unsupported lockfile version 99", L1855).
+    first_supported = '{"lockfileVersion": 2, "lockfileVersion": 99, "workspaces": {"": {"name": "x"}}, "packages": {}}'
+    asserts.true(env, "lockfileVersion 99 is not supported" in (_load_error(first_supported) or ""), _load_error(first_supported))
+    first_unsupported = '{"lockfileVersion": 99, "lockfileVersion": 2, "workspaces": {"": {"name": "x"}}, "packages": {}}'
+    asserts.equals(env, None, _load_error(first_unsupported))
+    asserts.equals(env, 2, _read(first_unsupported)["value"]["version"])
     return unittest.end(env)
 
 def _check_refusals(env, cases):
