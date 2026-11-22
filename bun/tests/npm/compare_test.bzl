@@ -43,7 +43,7 @@ def _compare(project, edit = None):
 
 def _equal_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms"]:
+    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_catalog_default"]:
         asserts.equals(env, None, _compare(project).error, project)
     return unittest.end(env)
 
@@ -132,6 +132,20 @@ def _resolve_catalog_test_impl(ctx):
     missing = resolve_catalog("q", "catalog:", catalogs)
     asserts.equals(env, None, missing.value)
     asserts.true(env, '"q"' in missing.error and "catalog:" in missing.error, missing.error)
+
+    # Feature 006 T180: `catalog:` and `catalog:default` name one catalog, looked up under both
+    # spellings, the one the reference names first (`CatalogMap::locate`, CatalogMap.rs L48-L100;
+    # fixtures/conformance_catalog_default, which the pinned Bun writes and installs).
+    both = struct(catalog = {"b": "1.0.0"}, catalogs = {"default": {"q": "2.0.0"}, "two": {"r": "3.0.0"}})
+    asserts.equals(env, "2.0.0", resolve_catalog("q", "catalog:", both).value)
+    asserts.equals(env, "1.0.0", resolve_catalog("b", "catalog:default", both).value)
+    asserts.equals(env, "1.0.0", resolve_catalog("b", "catalog:", both).value)
+    asserts.equals(env, "2.0.0", resolve_catalog("q", "catalog:default", both).value)
+    for spec in ["catalog:", "catalog:default"]:
+        missing = resolve_catalog("r", spec, both)
+        asserts.equals(env, None, missing.value, spec)
+        asserts.true(env, '"r"' in missing.error and spec in missing.error, missing.error)
+    asserts.equals(env, None, resolve_catalog("b", "catalog:two", both).value)
     return unittest.end(env)
 
 equal_test = unittest.make(_equal_test_impl)

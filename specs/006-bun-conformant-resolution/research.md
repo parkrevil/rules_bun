@@ -775,9 +775,11 @@ a project it cannot write or install would be listed with the reason in
 `bun/tests/npm/conformance/not_applicable_1_4_2.ts`. Planning expected two (an unlinked workspace,
 which 1.4.2's loader was read to reject, LOCK-142 L2479–2490; `unresolved`, which 1.4.2 was read
 not to write), but run with the 1.4.2 oracle, Bun 1.4.2 writes and installs every corpus project
-(T091, `tdd-log.md`). The list holds one project added since: `conformance_root_row` (T171), a
+(T091, `tdd-log.md`). The list holds two projects added since: `conformance_root_row` (T171), a
 member depending on the root package, which Bun 1.4.2 cannot write by `workspace:*` and whose
-lockfile, written by `workspace:../..`, its own frozen install refuses (Part 6, E18). Its usual lockfile
+lockfile, written by `workspace:../..`, its own frozen install refuses (Part 6, E18); and
+`conformance_override_root_ref` (T179), whose lockfile Bun 1.4.2 writes with the `packages` key `b`
+twice and its own frozen install refuses (Part 6, E21). Bun 1.4.2's usual lockfile
 for `conformance_platform_peer` differs from the committed one; both conformance runs compare it
 as `bun/tests/npm/conformance/accepted/platform_peer_1_4_2` (BC-16, R4).
 
@@ -817,6 +819,8 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_catalog_missing` | optional and peer `catalog:` dependencies with no catalog entry (`catalog:`, `catalog:nope`), of the root and of workspace `w` | BC-21 (with BC-3) | T176 |
 | `conformance_override_forms` | overrides `b: "$b"` (the root's `b: file:./b`) and `p-user: { p: { q: "2.0.0" } }` (nested one level too deep), written `{ "b": "file:./b" }` | BC-22 | T177 |
 | `conformance_folder_ids` | the root's `x: file:./a/b` and `y: file:./a_b`, two folders of package `foo@1.0.0` with different dependencies | BC-23 | T178 |
+| `conformance_override_root_ref` | override `c: "$b"` with the root's `b: file:./b1` in `dependencies` and `b: file:./b2` in `devDependencies`, written `{ "c": "file:./b2" }` | BC-22; not applicable to Bun 1.4.2 (R10, E21) | T179 |
+| `conformance_catalog_default` | the root's `a: catalog:default` (entry in `catalog`) and `q: catalog:` (entry in `catalogs.default`), workspace `w`'s `single-bin: catalog:` (entry in `catalogs.default`) | BC-21 | T180 |
 
 T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
 its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
@@ -1031,10 +1035,17 @@ conformance difference is recorded red in `tdd-log.md`:
   tarball (RES L192–L201); the reader read it as an npm version and refused its 3 slots.
 - **BC-21: an optional or peer `catalog:` dependency without a catalog entry**. Bun writes no key and
   installs (`may_stay_unresolved`, LOCK L3297–L3299); the manifest comparison failed. Bun refuses a
-  `dependencies` or `devDependencies` one (E20), so that failure stays.
+  `dependencies` or `devDependencies` one (E20), so that failure stays. `catalog:` and
+  `catalog:default` name one catalog, looked up in `catalog` and `catalogs.default`, the named
+  spelling first (CATALOG L48–L101), so the comparison looks in both (T180, found by the fourteenth
+  review).
 - **BC-22: override forms `$<name>` and an object nested too deep**. Bun resolves `$<name>` to the
   declared specifier and ignores the nested object (OVERRIDE L902–L905, L1278–L1335,
-  L1405–L1452); the comparison failed on both.
+  L1405–L1452); the comparison failed on both. The root's declared specifier is its parsed
+  package's first dependency of the name (OVERRIDE L1286–L1297), sorted by `Dependency::cmp` after
+  `Package::parse` merged an optional duplicate and added a `peerDependenciesMeta`-only peer `"*"`
+  (PKG L2467–L2484, L3326–L3388), not `declared_dependency`'s first of the four maps, which Bun uses
+  for workspaces only (T179, found by the fourteenth review; E21).
 - **BC-23: unfetched entries' instance IDs**. Two unfetched entries whose `name@version` keep the same
   target-name characters got one ID, the second overwriting the first.
 
@@ -1305,19 +1316,31 @@ last six. After T175–T178, the final gate is approved unless a review finds a 
 `main` or a difference on a lockfile the pinned Bun writes that this branch introduced; any other
 difference found then is listed as a follow-up in the PR body, not fixed in this feature.
 
+**T179–T180 decided by the lead, under the user's delegation (2026-11-22)**: the fourteenth final
+review's two differences in this branch's own code and claims are fixed, each red first on a
+lockfile the pinned Bun writes. T179: a root override's `$<name>` reads the root package as Bun
+parses and sorts it (OVERRIDE L1286–L1297), where T177 had carried over `declared_dependency`, which
+Bun uses for workspaces only. Its corpus project `conformance_override_root_ref` is not applicable to
+Bun 1.4.2, whose lockfile for it holds the `packages` key `b` twice and is refused by its own frozen
+install (E21), listed in `NOT_APPLICABLE_1_4_2` as T171 listed `conformance_root_row`. T180:
+`catalog:` and `catalog:default` are looked up in both spellings of the default catalog
+(CATALOG L48–L101), as the branch's resolver already did, and BC-21's and `_NPM_DOC`'s "Bun refuses
+that" now applies only to a reference with no entry in either. Both refine BC-22 and BC-21; no new
+Behavior Change is numbered.
+
 **Follow-ups after feature 006 (the lead, under the user's delegation, 2026-11-22)**: the fourteenth final review found four differences
 on lockfiles the pinned Bun writes and installs that `main` has too, each in `compare_manifests` or
 the overrides reader. Under the stop rule above they are not fixed in this feature; they are known
 defects under P3, listed in the PR body and to be fixed in a later feature:
 - override values Bun ignores with a warning (a non-string, `""`, `"-"`) fail evaluation
-  (`overrides.bzl` about L105–L127);
+  (`overrides.bzl` about L145–L171);
 - a top-level `catalog`/`catalogs` is merged with `workspaces.` ones, while Bun reads the top level
   only when `workspaces` exists and holds neither (`Package.rs` L3418–L3440; `workspaces.bzl` about
   L253–L256);
 - a peer listed only in `peerDependenciesMeta` (Bun writes `"*"` and `optionalPeers`) fails
-  (`workspaces.bzl` about L320);
+  (`workspaces.bzl` about L331);
 - a name in both `dependencies` and `optionalDependencies` (Bun keeps the optional one, L2473)
-  fails (`workspaces.bzl` about L320).
+  fails (`workspaces.bzl` about L331).
 
 ## Part 7: Evidence log
 
@@ -1426,3 +1449,17 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   resolve") and writes no lockfile; a frozen install of a hand-written lockfile holding that
   workspace dependency and no `q` row is refused ("Failed to resolve root prod dependency 'q'",
   LOCK L3338).
+- **E21** (T179, 2026-11-22): `bun install` with Bun 1.4.4 of a root declaring `overrides: { "c":
+  "$b" }`, each in its own `/tmp/bun006-t179-*` directory with folders `b1`, `b2`, `b3`, writes
+  `"c"` as: `file:./b2` for `b` in `dependencies` (`file:./b1`) and `devDependencies`
+  (`file:./b2`), with the warning `Duplicate dependency: "b" specified in package.json`;
+  `file:./b2` for `dependencies` and `optionalDependencies` (`file:./b2`); `file:./b2` for
+  `devDependencies` and `optionalDependencies` (`file:./b2`); `file:./b2` for the three maps
+  (`file:./b1`, `file:./b2`, `file:./b3`); `*` for a name only in `peerDependenciesMeta` with
+  `"optional": true` (the root's lockfile entry gets `peerDependencies: { "b": "*" }` and
+  `optionalPeers`); `file:./b1` for `dependencies` and that `peerDependenciesMeta`; `file:./b1` for
+  `dependencies` and `peerDependencies` (`file:./b2`), with or without the meta; `file:./b2` for
+  `peerDependencies` only. `write_lockfiles.ts --bun-1-4-2 conformance_override_root_ref` with Bun
+  1.4.2 writes the `packages` key `"b"` twice (`["b@file:b2", {}]`, `["b@file:b1", {}]`), which
+  both Bun 1.4.2 and 1.4.4 refuse on a frozen install (`Duplicate package path`, bun-v1.4.2 LOCK
+  L3033; `InvalidLockfile: failed to parse lockfile: 'bun.lock'`).

@@ -10,7 +10,7 @@ def _normalize(manifest):
 
 def _fixtures_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms"]:
+    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref"]:
         lockfile = RESULTS[project]["lockfile"]["value"]
         result = _normalize(json.decode(RESULTS[project]["manifest"]))
         asserts.equals(env, None, result["error"], project)
@@ -44,11 +44,34 @@ def _dropped_test_impl(ctx):
 def _reference_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # Feature 006 T177: `$<name>` is the specifier the root declares for <name>, in its four maps
-    # (`declared_dependency`, OverrideMap.rs L1374-L1380), as the lockfile records it
-    # (conformance_override_forms: "$b" with "b": "file:./b" is written "file:./b").
+    # Feature 006 T177: `$<name>` is the specifier the root declares for <name>, as the lockfile
+    # records it (conformance_override_forms: "$b" with "b": "file:./b" is written "file:./b").
     root = {"dependencies": {"b": "file:./b"}, "devDependencies": {"q": "2.0.0"}, "overrides": {"b": "$b", "a": {"q": "$q"}}}
     asserts.equals(env, {"b": "file:./b", "a": {"q": "2.0.0"}}, normalize_overrides(root, "inline/package.json").value)
+
+    # Feature 006 T179: the root's is that of its parsed package's first dependency of that name
+    # (`ctx.root_package.dependencies`, OverrideMap.rs L1286-L1297): sorted dev, optional, prod,
+    # then peer entries (`Behavior::cmp`, resolver_hooks.rs L275-L297; Package.rs L3385-L3388), an
+    # `optionalDependencies` duplicate replacing the earlier entry (Package.rs L2473-L2483), a name
+    # only in `peerDependenciesMeta` read as "*" (Package.rs L3352-L3383). Each case is what the
+    # pinned Bun writes (`tdd-log.md` T179; fixtures/conformance_override_root_ref is the first).
+    for declared, written in [
+        ({"dependencies": {"b": "file:./b1"}, "devDependencies": {"b": "file:./b2"}}, "file:./b2"),
+        ({"dependencies": {"b": "file:./b1"}, "optionalDependencies": {"b": "file:./b2"}}, "file:./b2"),
+        ({"devDependencies": {"b": "file:./b1"}, "optionalDependencies": {"b": "file:./b2"}}, "file:./b2"),
+        ({"dependencies": {"b": "file:./b1"}, "devDependencies": {"b": "file:./b2"}, "optionalDependencies": {"b": "file:./b3"}}, "file:./b2"),
+        ({"peerDependenciesMeta": {"b": {"optional": True}}}, "*"),
+        ({"dependencies": {"b": "file:./b1"}, "peerDependenciesMeta": {"b": {"optional": True}}}, "file:./b1"),
+        ({"dependencies": {"b": "file:./b1"}, "peerDependencies": {"b": "file:./b2"}}, "file:./b1"),
+        ({"dependencies": {"b": "file:./b1"}, "peerDependencies": {"b": "file:./b2"}, "peerDependenciesMeta": {"b": {"optional": True}}}, "file:./b1"),
+        ({"peerDependencies": {"b": "file:./b2"}}, "file:./b2"),
+    ]:
+        manifest = dict(declared, overrides = {"c": "$b"})
+        asserts.equals(env, {"c": written}, normalize_overrides(manifest, "inline/package.json").value, json.encode(declared))
+
+    # A workspace's is the first of its four maps (`declared_dependency`, OverrideMap.rs L1373-L1380).
+    member = [{"dependencies": {"b": "file:./b1"}, "devDependencies": {"b": "file:./b2"}}]
+    asserts.equals(env, {"c": "file:./b1"}, normalize_overrides({"overrides": {"c": "$b"}}, "inline/package.json", member).value)
 
     # Else the one every workspace that declares <name> declares (`workspace_ref_literal`, L1405-L1452).
     members = [{"dependencies": {"b": "1.0.0"}}, {}, {"peerDependencies": {"b": "1.0.0"}}]

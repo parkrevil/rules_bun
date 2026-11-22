@@ -19,6 +19,10 @@ const CASES: [string, Record<string, unknown>, unknown][] = [
   // nested one level deeper than the parent's is not written.
   ["$ reference", { dependencies: { a: "1.0.0", b: "1.0.0" }, overrides: { b: "$b" } }, { b: "1.0.0" }],
   ["object nested in a parent's object", { overrides: { a: { b: "2.0.0", x: { y: "1.0.0" } } } }, { a: { b: "2.0.0" } }],
+  // T179: the root's `$<name>` is its parsed package's first dependency of the name, dev entries
+  // sorted first, and a name only in `peerDependenciesMeta` is a peer "*".
+  ["$ reference to dependencies and devDependencies", { dependencies: { a: "1.0.0", b: "1.0.0" }, devDependencies: { b: "2.0.0" }, overrides: { b: "$b" } }, { b: "2.0.0" }],
+  ["$ reference to a peerDependenciesMeta name", { peerDependenciesMeta: { b: { optional: true } }, overrides: { c: "$b" } }, { c: "*" }],
 ];
 
 for (const [name, fields, expected] of CASES) {

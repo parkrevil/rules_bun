@@ -985,6 +985,47 @@ const projects: Record<string, Project> = {
       assert(slot0(lock, "y") === "foo@file:a_b", "y is not foo@file:a_b");
     },
   },
+  // T179: a root override's `$<name>` is the specifier of the root package's first dependency of
+  // that name once sorted, dev entries first (`OverrideMap.rs` L1286, `Package.rs` L3387): with b
+  // in `dependencies` and in `devDependencies`, Bun writes the `devDependencies` one.
+  conformance_override_root_ref: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-override-root-ref",
+        private: true,
+        dependencies: { a: "1.0.0", b: "file:./b1" },
+        devDependencies: { b: "file:./b2" },
+        overrides: { c: "$b" },
+      }),
+      "b1/package.json": json({ name: "b", version: "1.0.0" }),
+      "b2/package.json": json({ name: "b", version: "2.0.0" }),
+    }),
+    check(lock) {
+      assert(JSON.stringify(lock.overrides) === '{"c":"file:./b2"}', `overrides are ${JSON.stringify(lock.overrides)}`);
+    },
+  },
+  // T180: `catalog:` and `catalog:default` name one catalog, looked up under both spellings, the
+  // one the reference names first (`CatalogMap::locate`, CatalogMap.rs L48–L100): `catalog:` finds
+  // an entry of `catalogs.default`, `catalog:default` one of `catalog`.
+  conformance_catalog_default: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog-default",
+        private: true,
+        workspaces: { packages: ["packages/*"], catalog: { a: "1.0.0" }, catalogs: { default: { q: "1.0.0", "single-bin": "1.0.0" } } },
+        dependencies: { a: "catalog:default", q: "catalog:" },
+      }),
+      "packages/w/package.json": json({ name: "w", version: "1.0.0", devDependencies: { "single-bin": "catalog:" } }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(lock.workspaces[""].dependencies?.a === "catalog:default", "the root's a is not catalog:default");
+      assert(lock.workspaces[""].dependencies?.q === "catalog:", "the root's q is not catalog:");
+      assert(slot0(lock, "a") === "a@1.0.0", "a is not a@1.0.0");
+      assert(slot0(lock, "q") === "q@1.0.0", "q is not q@1.0.0");
+      assert(slot0(lock, "single-bin") === "single-bin@1.0.0", "single-bin is not single-bin@1.0.0");
+    },
+  },
   alg_sha384: {
     algorithm: "sha384",
     files: () => ({ "package.json": json({ name: "alg-sha384", private: true, dependencies: { a: "1.0.0" } }) }),

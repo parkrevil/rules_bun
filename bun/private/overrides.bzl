@@ -7,9 +7,10 @@ parent level. It ignores `a>b>c`, `a/b/c`, and deeper object nesting with a warn
 maps to the nested object form the lockfile records, as the fixtures the pinned Bun wrote show; a
 form no fixture pins is an error rather than a guess. A value `$<name>` stands for the specifier
 the root declares for `<name>`, else the one every workspace that declares `<name>` declares, as
-Bun reads it (feature 006 T177). Errors are returned as values.
+Bun reads it (feature 006 T177, T179). Errors are returned as values.
 """
 
+load(":bun_install_types.bzl", "BEHAVIOR", "dependency_sort_key")
 load(":lockfile.bzl", "DEPENDENCY_KINDS", "split_key")
 
 _FORMS = ('use a form bun.com documents in pm/overrides that rules_bun reads: "b", "a>b", ' +
@@ -32,8 +33,16 @@ def _path(field, key):
         return [segments[1], segments[3]]
     return None
 
+# The root's dependency maps in the order `Package::parse` reads them, with their behavior.
+_ROOT_GROUPS = [
+    ("dependencies", BEHAVIOR.PROD),
+    ("devDependencies", BEHAVIOR.DEV),
+    ("optionalDependencies", BEHAVIOR.OPTIONAL),
+    ("peerDependencies", BEHAVIOR.PEER),
+]
+
 def _declared(manifest, name):
-    """`declared_dependency`: the first string specifier of `name` in a manifest's four maps.
+    """`declared_dependency`: the first string specifier of `name` in a workspace's four maps.
 
     Bun: src/install/lockfile/OverrideMap.rs L1373–L1380 @ bun-v1.4.4
     """
@@ -43,12 +52,43 @@ def _declared(manifest, name):
             return dependencies[name]
     return None
 
+def _root_declared(manifest, name):
+    """The specifier of the root package's first dependency named `name`, as Bun lists them.
+
+    `Package::parse` reads the four maps in order; an `optionalDependencies` entry replaces the
+    first earlier entry of its name, a name only in `peerDependenciesMeta` (`"optional": true`) is an
+    optional peer `"*"`, and the list is sorted by `Dependency::cmp` (dev, optional, prod, then peer
+    entries) before the overrides read the first entry of the name (feature 006 T179).
+
+    Bun: src/install/lockfile/OverrideMap.rs L1286–L1297 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L2642–L2700, L2467–L2484, L3326–L3388 @ bun-v1.4.4
+    """
+    found = []
+    for kind, behavior in _ROOT_GROUPS:
+        dependencies = manifest.get(kind)
+        if type(dependencies) != "dict" or type(dependencies.get(name)) != "string":
+            continue
+        dependency = struct(behavior = behavior, name = name, literal = dependencies[name])
+
+        # "duplicate dependencies are allowed in optionalDependencies" (Package.rs L2473–L2483).
+        if behavior == BEHAVIOR.OPTIONAL and found:
+            found[0] = dependency
+        else:
+            found.append(dependency)
+    meta = manifest.get("peerDependenciesMeta")
+    optional = type(meta) == "dict" and type(meta.get(name)) == "dict" and meta[name].get("optional") == True
+    if optional and not [d for d in found if d.behavior == BEHAVIOR.PEER]:
+        found.append(struct(behavior = BEHAVIOR.PEER | BEHAVIOR.OPTIONAL, name = name, literal = "*"))
+    if not found:
+        return None
+    return sorted(found, key = dependency_sort_key)[0].literal
+
 def _reference(value, manifest, members):
     """The specifier an override value stands for: `value`, or for `$<name>` the declared one.
 
-    A `$<name>` reference is the specifier the root declares for `<name>`, else the one every
-    workspace that declares `<name>` declares; Bun ignores the rule, with a warning, when nothing
-    declares it or the workspaces declare different specifiers (feature 006 T177).
+    A `$<name>` reference is the specifier the root declares for `<name>` (`_root_declared`), else
+    the one every workspace that declares `<name>` declares; Bun ignores the rule, with a warning,
+    when nothing declares it or the workspaces declare different specifiers (feature 006 T177, T179).
 
     Bun: src/install/lockfile/OverrideMap.rs L1278–L1335, L1405–L1452 @ bun-v1.4.4
 
@@ -58,7 +98,7 @@ def _reference(value, manifest, members):
     if not value.startswith("$"):
         return value
     name = value[1:]
-    declared = _declared(manifest, name)
+    declared = _root_declared(manifest, name)
     if declared != None:
         return declared
     found = None

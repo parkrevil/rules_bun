@@ -1,0 +1,14 @@
+{
+  "name": "conformance-override-root-ref",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "b": "file:./b1"
+  },
+  "devDependencies": {
+    "b": "file:./b2"
+  },
+  "overrides": {
+    "c": "$b"
+  }
+}

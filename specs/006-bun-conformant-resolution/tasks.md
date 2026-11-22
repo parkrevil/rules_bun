@@ -1768,7 +1768,7 @@ Codex approved; the fourteenth Claude review found six differences, none a regre
 claims (T177's root `$<name>`, BC-21's `catalog:default`) and lists the other four as follow-ups
 (research Part 6, the PR body) (the lead, under the user's delegation, 2026-11-22). Each is written red first and recorded in `tdd-log.md`.
 
-- [ ] T179 `bun/private/overrides.bzl` (about L35–L44, used for the root about L64) resolves a root
+- [X] T179 `bun/private/overrides.bzl` (about L35–L44, used for the root about L64) resolves a root
   override's `$<name>` from the first of `dependencies` → `devDependencies` →
   `optionalDependencies` → `peerDependencies` and cites `declared_dependency` (L1374, which Bun uses
   for workspaces only), while Bun reads `ctx.root_package.dependencies` (`OverrideMap.rs` L1286):
@@ -1777,7 +1777,7 @@ claims (T177's root `$<name>`, BC-21's `catalog:default`) and lists the other fo
   {"b": "file:./b1"}, "devDependencies": {"b": "file:./b2"}, "overrides": {"c": "$b"}` (Bun writes
   `"c": "file:./b2"`). Carry over Bun's root reading (cited), red first, per P1 / FR-002
   (contradicts)
-- [ ] T180 `bun/private/workspaces.bzl` (about L273) refuses `catalog:default` and `catalog:`
+- [X] T180 `bun/private/workspaces.bzl` (about L273) refuses `catalog:default` and `catalog:`
   resolved through `catalogs.default` ("names no entry of the catalog"), while Bun treats `""` and
   `"default"` as one catalog (`CatalogMap.rs` L48–L100) and the branch's resolver already does
   (`bun_lockfile.bzl` about L184–L186), so BC-21's and `_NPM_DOC`'s "Bun refuses that" are false for

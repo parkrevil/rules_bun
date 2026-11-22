@@ -209,8 +209,9 @@ writes for the corpus projects it can install, and reports zero differences.
 
 1. **Given** a corpus project's lockfile written by Bun 1.4.2, **When** the 1.4.2 conformance run
    compares it, **Then** the ruleset's resolution equals Bun 1.4.2's isolated install.
-2. **Given** a corpus project Bun 1.4.2 cannot write or install (one: `conformance_root_row`, a
-   member depending on the root package, research R10, T171), **When** the 1.4.2 run lists its projects,
+2. **Given** a corpus project Bun 1.4.2 cannot write or install (two: `conformance_root_row`, a
+   member depending on the root package, T171; `conformance_override_root_ref`, a root declaring one
+   name in `dependencies` and `devDependencies`, T179; research R10), **When** the 1.4.2 run lists its projects,
    **Then** that project is listed as not applicable with the reason, not silently skipped.
 
 ### Edge Cases
@@ -546,14 +547,25 @@ the test that shows it:
   catalog …; run `bun install`"), which still holds for a `dependencies` or `devDependencies` one,
   as Bun refuses that ("<name>@catalog: not in catalog") (`conformance_catalog_missing`,
   `compare_test.bzl` `catalog_missing_test`; the lead, under the user's delegation, 2026-11-22,
-  T176).
+  T176). A `catalog:` or `catalog:default` reference, of any kind, names one default catalog,
+  looked up in `catalog` and in `catalogs.default`, the spelling the reference names first, as Bun
+  looks it up (`CatalogMap::locate`, CATALOG L48–L101), so "no entry" means one in neither; `main`
+  looks only in the spelling the reference names and fails evaluation for an entry in the other
+  (`conformance_catalog_default`, `compare_test.bzl` `resolve_catalog_test`; the lead, under the
+  user's delegation, 2026-11-22, T180).
 - **BC-22**: overrides are compared with the lockfile's as Bun reads them where Bun reads two more
   forms (OverrideMap.rs): a value `$<name>` stands for the specifier the root declares for `<name>`,
   else the one every workspace that declares it declares (L1278–L1335, L1405–L1452), and an object
   nested in a parent's object is ignored ("Bun currently only supports one level of nested",
   L902–L905); `main` fails evaluation ("has a form rules_bun cannot compare with bun.lock")
   (`conformance_override_forms`, `overrides_test.bzl` `reference_test`, `dropped_test`, canary
-  C-OVERRIDES; the lead, under the user's delegation, 2026-11-22, T177).
+  C-OVERRIDES; the lead, under the user's delegation, 2026-11-22, T177). The root's specifier is
+  that of the first dependency named `<name>` of the root package as Bun parses it
+  (`ctx.root_package.dependencies`, L1286–L1297): sorted dev, optional, prod, then peer entries, an
+  `optionalDependencies` entry replacing the first earlier one of its name, a name only in
+  `peerDependenciesMeta` (`"optional": true`) a peer `"*"` (PKG L2467–L2484, L3326–L3388); a
+  workspace's is the first of its four maps (L1373–L1380) (`conformance_override_root_ref`,
+  `reference_test`, canary C-OVERRIDES; T179).
 - **BC-23**: two unfetched entries of one package whose resolutions differ only in characters a
   target name cannot hold (`foo@file:a/b`, `foo@file:a_b`) are two instances, each linked as Bun
   links its store entry; `main` gives both one instance ID, so the second overwrites the first and

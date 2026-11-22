@@ -1,0 +1,22 @@
+{
+  "name": "conformance-catalog-default",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "a": "1.0.0"
+    },
+    "catalogs": {
+      "default": {
+        "q": "1.0.0",
+        "single-bin": "1.0.0"
+      }
+    }
+  },
+  "dependencies": {
+    "a": "catalog:default",
+    "q": "catalog:"
+  }
+}

@@ -18,7 +18,8 @@ Evaluation fails with an English error naming the file and the remedy when the l
 documentation), when the file is not JSONC, when the root or a member `package.json` and the
 lockfile differ in dependencies, workspace members, catalogs or overrides ("run `bun install` and
 commit bun.lock"), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
-of its catalog, which Bun refuses to install, when the root `package.json` uses an override form
+of its catalog, which Bun refuses to install (`catalog:` and `catalog:default` name one catalog, the
+entries of `catalog` and of `catalogs.default`), when the root `package.json` uses an override form
 rules_bun does not compare,
 and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
 (`name`, `workspaces`, the dependency fields, `overrides`, `resolutions`, `catalog`, `catalogs`),
@@ -31,7 +32,9 @@ Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path o
 (`?token=...`) is not recognized. Overrides are compared as Bun reads them: `overrides` when present, else
 `resolutions`; a value `$<name>` stands for the specifier the root declares for `<name>`, else the
 one every workspace that declares `<name>` declares, and an object nested in a parent's object is
-ignored, as Bun ignores both such a nesting and a `$<name>` nothing declares.""",
+ignored, as Bun ignores both such a nesting and a `$<name>` nothing declares. Where the root
+declares `<name>` more than once, the specifier is the one Bun's parsed root package lists first,
+and a name only in `peerDependenciesMeta` (`"optional": true`) stands for `"*"`.""",
     attrs = {
         "name": attr.string(
             doc = "Name of the hub repository, which `use_repo` brings into scope. Two `translate_lock` tags, in one module or in several, that use one name fail evaluation naming each module and the name.",

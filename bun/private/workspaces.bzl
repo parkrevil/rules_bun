@@ -270,14 +270,25 @@ def resolve_catalog(name, spec, catalogs):
     if not spec.startswith("catalog:"):
         return struct(value = spec, error = None)
     which = spec[len("catalog:"):]
-    table = catalogs.catalog if which == "" else catalogs.catalogs.get(which, {})
-    if name not in table:
-        return _error('"{}": "{}" names no entry of the {} in the root package.json'.format(
-            name,
-            spec,
-            "catalog" if which == "" else 'catalog "{}"'.format(which),
-        ))
-    return struct(value = table[name], error = None)
+
+    # `catalog:` and `catalog:default` name one catalog, `catalog` and `catalogs.default`, looked up
+    # under the spelling the reference names first (feature 006 T180).
+    # Bun: src/install/lockfile/CatalogMap.rs L48–L101 @ bun-v1.4.4
+    default = catalogs.catalogs.get("default", {})
+    if which == "":
+        tables = [catalogs.catalog, default]
+    elif which == "default":
+        tables = [default, catalogs.catalog]
+    else:
+        tables = [catalogs.catalogs.get(which, {})]
+    for table in tables:
+        if type(table) == "dict" and name in table:
+            return struct(value = table[name], error = None)
+    return _error('"{}": "{}" names no entry of the {} in the root package.json'.format(
+        name,
+        spec,
+        'default catalog ("catalog" or "catalogs.default")' if which in ["", "default"] else 'catalog "{}"'.format(which),
+    ))
 
 def _difference(file, what, declared, recorded):
     """The first difference of two maps, as an English error, or `None`."""
