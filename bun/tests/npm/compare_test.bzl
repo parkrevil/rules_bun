@@ -43,7 +43,7 @@ def _compare(project, edit = None):
 
 def _equal_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep"]:
+    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms"]:
         asserts.equals(env, None, _compare(project).error, project)
     return unittest.end(env)
 
@@ -99,6 +99,24 @@ def _catalogs_test_impl(ctx):
     _expect_error(env, _compare("catalog", _set("", "dependencies", "r", "catalog:missing")), ["./package.json", '"r"', "catalog:missing"])
     return unittest.end(env)
 
+def _catalog_missing_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 006 T176: Bun writes no key for an optional or peer `catalog:` dependency the catalog
+    # has no entry for, of the root or a workspace, in the default or a named catalog, and installs
+    # (fixtures/conformance_catalog_missing); the comparison accepts it, so it is left unlinked (BC-3).
+    asserts.equals(env, None, _compare("conformance_catalog_missing").error)
+
+    # Bun refuses a `dependencies` or `devDependencies` one ("<name>@catalog: not in catalog",
+    # `tdd-log.md` T176), so the comparison still fails, naming the file, the kind and the entry.
+    for kind in ["dependencies", "devDependencies"]:
+        for spec in ["catalog:", "catalog:nope"]:
+            catalog = {"packages": [], "catalog": {"q": "1.0.0"}}
+            text = json.encode({"lockfileVersion": 2, "workspaces": {"": {"name": "x", kind: {"r": spec}}}, "catalog": {"q": "1.0.0"}, "packages": {}})
+            manifests = {"": struct(file = "./package.json", value = {"name": "x", "workspaces": catalog, kind: {"r": spec}})}
+            _expect_error(env, compare_manifests(read_lockfile(text, "bun.lock").value, manifests), ["./package.json", kind, '"r"', spec])
+    return unittest.end(env)
+
 def _overrides_test_impl(ctx):
     env = unittest.begin(ctx)
     _expect_error(env, _compare("overrides_gt", _set("", "overrides", "a>b", "1.0.0")), ["./package.json", '"a"', '"b"'])
@@ -119,8 +137,9 @@ def _resolve_catalog_test_impl(ctx):
 equal_test = unittest.make(_equal_test_impl)
 dependencies_test = unittest.make(_dependencies_test_impl)
 catalogs_test = unittest.make(_catalogs_test_impl)
+catalog_missing_test = unittest.make(_catalog_missing_test_impl)
 overrides_test = unittest.make(_overrides_test_impl)
 resolve_catalog_test = unittest.make(_resolve_catalog_test_impl)
 
 def compare_test_suite(name):
-    unittest.suite(name, equal_test, dependencies_test, catalogs_test, overrides_test, resolve_catalog_test)
+    unittest.suite(name, equal_test, dependencies_test, catalogs_test, catalog_missing_test, overrides_test, resolve_catalog_test)

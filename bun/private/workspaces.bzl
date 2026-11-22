@@ -22,6 +22,13 @@ _LIMIT = 1 << 30
 
 _GLOB_CHARACTERS = "*?[{"
 
+# The dependency kinds whose `catalog:` reference may name no catalog entry: Bun writes no key for
+# such an optional or peer dependency and installs, as for any optional or peer dependency without a
+# key (`may_stay_unresolved`, src/install/lockfile/bun.lock.rs L3297–L3299 @ bun-v1.4.4; feature 006
+# BC-21, T176), while it refuses a `dependencies` or `devDependencies` one, at install ("<name>@catalog:
+# not in catalog") and on loading ("Failed to resolve root prod dependency", L3301–L3345).
+_MAY_STAY_UNRESOLVED = ["optionalDependencies", "peerDependencies"]
+
 def workspace_patterns(manifest):
     """The `workspaces` patterns of a root `package.json`: an array, or an object's `packages`.
 
@@ -313,6 +320,8 @@ def compare_manifests(lockfile, manifests):
             difference = _difference(manifest.file, kind, declared, getattr(workspace, kind))
             if difference:
                 return _error(difference)
+            if kind in _MAY_STAY_UNRESOLVED:
+                continue
             for name, spec in sorted(declared.items()):
                 resolved = resolve_catalog(name, spec, catalogs)
                 if resolved.error:
@@ -321,7 +330,7 @@ def compare_manifests(lockfile, manifests):
     difference = _difference(root.file, "catalog", catalogs.catalog, lockfile.catalog) or _difference(root.file, "catalogs", catalogs.catalogs, lockfile.catalogs)
     if difference:
         return _error(difference)
-    overrides = normalize_overrides(root.value, root.file)
+    overrides = normalize_overrides(root.value, root.file, [manifests[path].value for path in sorted(manifests.keys()) if path])
     if overrides.error:
         return overrides
     difference = _difference(root.file, "overrides", overrides.value, lockfile.overrides)

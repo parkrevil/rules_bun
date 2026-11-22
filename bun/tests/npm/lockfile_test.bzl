@@ -170,6 +170,19 @@ def _kinds_test_impl(ctx):
     git = _read(_inline('"g": ["g@git+https://example.com/g.git#abc", {}, "abc"]'))["value"]["entries"]["g"]
     asserts.equals(env, "unsupported", git["kind"])
     asserts.equals(env, "git+https://example.com/g.git#abc", git["resolution"])
+
+    # Feature 006 T175: a resolution `Tag::infer` reads as a tarball that is no URL is a local
+    # tarball, as Bun reads it (RES L192-L201): the row the pinned Bun writes for
+    # `"b": "file:loc-1.0.0.tgz"` has 3 slots, its info object in slot 1.
+    loc = _lockfile(env, "conformance_local_tarball")["entries"]["b"]
+    asserts.equals(env, "local_tarball", loc["kind"])
+    asserts.equals(env, "loc", loc["name"])
+    asserts.equals(env, "loc-1.0.0.tgz", loc["resolution"])
+    asserts.equals(env, {"a": "1.0.0"}, loc["dependencies"])
+    for spec in ["loc@tarballs/loc-1.0.0.tgz", "loc@loc.tar.gz", "loc@1.0.0.tgz"]:
+        row = _read(_inline('"loc": ["%s", {}, "sha512-x"]' % spec))
+        asserts.equals(env, None, row["error"], spec)
+        asserts.equals(env, "local_tarball", row["value"]["entries"]["loc"]["kind"] if row["value"] else None, spec)
     return unittest.end(env)
 
 def _scoped_keys_test_impl(ctx):
@@ -232,6 +245,9 @@ def _unsupported_test_impl(ctx):
 
     git = _statuses(_resolved_inline('["g@git+https://example.com/g.git#abc", {}, "abc"]'))["g"]
     asserts.true(env, "git+https://example.com/g.git#abc" in git, git)
+    local_tarball = _statuses(RESULTS["conformance_local_tarball"]["resolution"]["value"])
+    asserts.equals(env, "ok", local_tarball["a"])
+    asserts.true(env, "local tarball" in local_tarball["loc"] and "loc-1.0.0.tgz" in local_tarball["loc"], local_tarball["loc"])
     sha1 = _statuses(_resolved_inline('["g@1.0.0", "", {}, "sha1-abc="]'))["g"]
     asserts.true(env, "sha1" in sha1 and "sha256, sha384 and sha512" in sha1, sha1)
     return unittest.end(env)

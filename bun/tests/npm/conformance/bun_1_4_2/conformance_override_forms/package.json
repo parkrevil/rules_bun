@@ -1,0 +1,17 @@
+{
+  "name": "conformance-override-forms",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "b": "file:./b",
+    "p-user": "1.0.0"
+  },
+  "overrides": {
+    "b": "$b",
+    "p-user": {
+      "p": {
+        "q": "2.0.0"
+      }
+    }
+  }
+}

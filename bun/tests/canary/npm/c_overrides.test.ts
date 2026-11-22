@@ -15,6 +15,10 @@ const CASES: [string, Record<string, unknown>, unknown][] = [
   ["range parent", { overrides: { "a@^1.0.0>b": "2.0.0" } }, { "a@^1.0.0": { b: "2.0.0" } }],
   ["resolutions path", { resolutions: { "a/b": "2.0.0" } }, { a: { b: "2.0.0" } }],
   ["resolutions glob path", { resolutions: { "**/a/**/b": "2.0.0" } }, { a: { b: "2.0.0" } }],
+  // T177: a `$<name>` reference is written as the specifier the root declares, and an object
+  // nested one level deeper than the parent's is not written.
+  ["$ reference", { dependencies: { a: "1.0.0", b: "1.0.0" }, overrides: { b: "$b" } }, { b: "1.0.0" }],
+  ["object nested in a parent's object", { overrides: { a: { b: "2.0.0", x: { y: "1.0.0" } } } }, { a: { b: "2.0.0" } }],
 ];
 
 for (const [name, fields, expected] of CASES) {

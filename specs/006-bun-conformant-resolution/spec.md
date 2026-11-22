@@ -340,8 +340,8 @@ package's dependency bound by platform) was withdrawn when BC-16 linked it:
   which Bun lets a store package import what it does not declare, are not reproduced; the ruleset
   links only declared dependencies, as Bazel's declared dependencies require. The compared graph is
   FR-008's (user, 2026-10-29, plan gate D1).
-- **ID-4 Unfetched entries fail analysis**: an entry rules_bun does not fetch (a tarball URL or
-  another unsupported resolution, an entry without integrity, a patched package) fails analysis of
+- **ID-4 Unfetched entries fail analysis**: an entry rules_bun does not fetch (a tarball URL, a
+  local tarball or another unsupported resolution, an entry without integrity, a patched package) fails analysis of
   a target that needs it, while Bun installs it, because constitution III allows only downloads
   verified with an integrity the lockfile records. The conformance test excludes only that status,
   by this name, and still compares the entry's links (user, 2026-11-21).
@@ -532,6 +532,35 @@ the test that shows it:
   `bun/tests/npm/conformance/accepted/lockfile_version_0/bun.lock`, which the conformance test
   compares with both oracles, and `refused/lockfile_version_0_member`; canary C-VER0; the lead,
   under the user's delegation, 2026-11-22, T155).
+- **BC-20**: a local tarball's row (`["loc@loc-1.0.0.tgz", { … }, "<integrity>"]`, written for a
+  `file:loc-1.0.0.tgz` dependency) is read as Bun reads it, a local tarball (`Resolution::
+  from_text_lockfile`, resolution.rs L192–L201): an entry rules_bun does not fetch (ID-4) whose
+  dependencies are linked (BC-8); `main` reads the row as an npm version and fails evaluation ("the
+  npm entry "b" has 3 slots, not 4") (`conformance_local_tarball`, `lockfile_test.bzl`
+  `kinds_test`, `graph.test.ts`, canary C-ROWINFO; the lead, under the user's delegation,
+  2026-11-22, T175).
+- **BC-21**: an optional or peer `catalog:` dependency of the root or a workspace whose catalog has
+  no entry for it (in the default catalog or a named one, `catalog:nope`) is not linked, as BC-3
+  leaves any optional or peer dependency without a key, where Bun writes no key for it and installs
+  (`may_stay_unresolved`, LOCK L3297–L3299); `main` fails evaluation ("names no entry of the
+  catalog …; run `bun install`"), which still holds for a `dependencies` or `devDependencies` one,
+  as Bun refuses that ("<name>@catalog: not in catalog") (`conformance_catalog_missing`,
+  `compare_test.bzl` `catalog_missing_test`; the lead, under the user's delegation, 2026-11-22,
+  T176).
+- **BC-22**: overrides are compared with the lockfile's as Bun reads them where Bun reads two more
+  forms (OverrideMap.rs): a value `$<name>` stands for the specifier the root declares for `<name>`,
+  else the one every workspace that declares it declares (L1278–L1335, L1405–L1452), and an object
+  nested in a parent's object is ignored ("Bun currently only supports one level of nested",
+  L902–L905); `main` fails evaluation ("has a form rules_bun cannot compare with bun.lock")
+  (`conformance_override_forms`, `overrides_test.bzl` `reference_test`, `dropped_test`, canary
+  C-OVERRIDES; the lead, under the user's delegation, 2026-11-22, T177).
+- **BC-23**: two unfetched entries of one package whose resolutions differ only in characters a
+  target name cannot hold (`foo@file:a/b`, `foo@file:a_b`) are two instances, each linked as Bun
+  links its store entry; `main` gives both one instance ID, so the second overwrites the first and
+  both links reach it (`conformance_folder_ids`, `resolve_test.bzl` `ids_test`). No
+  `:node_modules/...` name changes; only the hub's own instance targets of such entries, which are
+  not public, are numbered (`…__0`, `…__1`) (the lead, under the user's delegation, 2026-11-22,
+  T178).
 
 Where BC-1, BC-3, BC-5 or BC-7 leave a dependency of the root or a workspace unlinked on every
 target platform, its `:node_modules/<package>` target still exists and carries nothing, and its bin

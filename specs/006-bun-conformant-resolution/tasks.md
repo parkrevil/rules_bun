@@ -1738,23 +1738,23 @@ writes and installs, each from a check or ID scheme `main` already had. The lead
 to fix them (the lead, under the user's delegation, 2026-11-22). Each is written red first (a corpus project through `write_lockfiles.ts`
 where Bun writes the form) and recorded in `tdd-log.md`; a change from `main` is listed as a BC.
 
-- [ ] T175 A local tarball (`"b": "file:loc-1.0.0.tgz"`, written `["loc@loc-1.0.0.tgz", {}, "sha512-…"]`)
+- [X] T175 A local tarball (`"b": "file:loc-1.0.0.tgz"`, written `["loc@loc-1.0.0.tgz", {}, "sha512-…"]`)
   is classified as an npm entry by `bun/private/lockfile.bzl` (about L58–L67, `_kind`) and fails
   evaluation of the whole hub ("has 3 slots, fewer than 4", about L139), while Bun reads it as a
   local tarball (`resolution.rs` L192–L201). Classify it as Bun does (cited), as an unfetched
   entry (ID-4); teach `graph.ts` `storeKey` (about L116–L120) Bun's store name for it
   (`loc@loc-1.0.0.tgz+<hash>`), per ID-4 / P1 (contradicts)
-- [ ] T176 An optional or peer `catalog:` reference with no catalog entry (also a named catalog,
+- [X] T176 An optional or peer `catalog:` reference with no catalog entry (also a named catalog,
   `catalog:nope`) fails evaluation (`bun/private/workspaces.bzl` about L317–L319, "names no entry of
   the catalog …; run bun install"), while Bun writes no key and installs. Leave it unlinked as BC-3
   does, keeping the failure for a non-optional, non-peer dependency only if Bun refuses that too,
   per US1 scenario 3 / BC-3 (contradicts)
-- [ ] T177 Override forms Bun writes and installs fail evaluation: a `$<name>` reference
+- [X] T177 Override forms Bun writes and installs fail evaluation: a `$<name>` reference
   (`"overrides": {"b": "$b"}` with `"b": "file:./b"`, written `"overrides": {"b": "file:./b"}`;
   `bun/private/workspaces.bzl` about L327) and a nested override three levels deep
   (`{"a": {"b": {"c": "1.0.0"}}}`, written as no `overrides`; `bun/private/overrides.bzl` about
   L59). Compare as Bun resolves them (cited), per P1 / P3 (contradicts)
-- [ ] T178 Two unfetched entries of one package whose resolutions differ only in characters a target
+- [X] T178 Two unfetched entries of one package whose resolutions differ only in characters a target
   name cannot hold (`file:./a/b`, `file:./a_b`) get one instance ID (`bun/private/resolve.bzl`
   about L189–L200; the second overwrites the first about L399). Make the ID distinct per resolution
   (no generated target name changes), red first, per P1 / FR-008 (contradicts)

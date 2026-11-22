@@ -813,6 +813,10 @@ oracle's tarballs carry the dependencies the lockfile records.
 | `conformance_member_workspace_chain` | the root's `chain-cli` depends on member `chain-w1`, which declares member `chain-mid` by `workspace:*`, which declares `chain-helper`, which depends on member `chain-w2` | BC-4 (a bin's members through a `workspace:` link and more than one further member) | T131 |
 | `conformance_member_alias` | `conformance_registry_to_workspace`'s layout, whose member's target `pkg` is an `alias` of a target in the fixture's root package that carries the member's files | BC-4 (a member's target that is an alias) | T146 |
 | `conformance_root_row` | member `w` depends on the root package (`workspace:*`), whose `bin` Bun writes in the root's `root:` row | L38 (a `root:` row the pinned Bun writes); not applicable to Bun 1.4.2 (R10) | T171 |
+| `conformance_local_tarball` | the root's `b: file:loc-1.0.0.tgz`, a tarball the project holds (`loc@1.0.0`, depending on `a@1.0.0`), written `["loc@loc-1.0.0.tgz", { … }, "sha512-…"]` | BC-20 (with BC-8, ID-4) | T175 |
+| `conformance_catalog_missing` | optional and peer `catalog:` dependencies with no catalog entry (`catalog:`, `catalog:nope`), of the root and of workspace `w` | BC-21 (with BC-3) | T176 |
+| `conformance_override_forms` | overrides `b: "$b"` (the root's `b: file:./b`) and `p-user: { p: { q: "2.0.0" } }` (nested one level too deep), written `{ "b": "file:./b" }` | BC-22 | T177 |
+| `conformance_folder_ids` | the root's `x: file:./a/b` and `y: file:./a_b`, two folders of package `foo@1.0.0` with different dependencies | BC-23 | T178 |
 
 T006 added the archives the T007 rows need and `conformance_bundled`. Each row is checked against
 its `write_lockfiles.ts` entry (the `files` it writes and the `check` it asserts). The existing
@@ -872,13 +876,13 @@ New accesses:
 | — | top-level `patchedDependencies` | LOCK L1899 | read by Bun but decides no binding (a patch changes a package's files, not which package a dependency binds); rules_bun keeps treating a patched package as unsupported (feature 003 FR-010, canary C-PATCHED) | C-PATCHED (existing) |
 | L29 | order of `packages` rows (equal evidence: later row wins) | LOCK L2929, L2993 | E10: sorted by the parent path's depth, the parent path, then the name (writer LOCK L506–L508, L646) | C-ROWORDER |
 | L30 | `dependencies`, `optionalDependencies`, `peerDependencies` ranges (read as npm ranges, R5) | LOCK L3347–3543, L3174–3208 | existing fixtures; E11 (`range-user@1.0.0`) | C-INFODEPS / C-PEERS (range tests) |
-| L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, git, GitHub, `link:`) | LOCK L2346, L2557–L2591 (writer L720–L728) | `unsupported` (`local`, `tb`); E12 | C-ROWINFO (T075) |
+| L31 | the info object in slot 1 of a row that is not an npm version (`file:`, tarball URL, local tarball, git, GitHub, `link:`); a resolution `Tag::infer` reads as a tarball that is no URL is a local tarball (RES L192–L201, T175) | LOCK L2346, L2557–L2591 (writer L720–L728) | `unsupported` (`local`, `tb`); E12; E20 (`conformance_local_tarball`) | C-ROWINFO (T075, T175) |
 | L32 | a row's `devDependencies` | LOCK L1478–L1483, L3405–L3490 (writer L950–L1004 for a folder, resolver_hooks.rs L1251–L1256 `Features::FOLDER`) | E13 | C-ROWDEVDEPS (T075) |
 | L33 | a workspace's `optionalPeers` | LOCK L3372–L3400 (root and workspaces, L2225, L2284; writer L1184–L1240) | E14 | C-WSOPTPEERS (T075) |
 | L34 | top-level `configVersion` (read only to refuse what Bun refuses, T125) | LOCK L1861–L1869 (writer L373: a whole number) | E15 | C-ROOTFIELDS (T130) |
 | L35 | top-level `trustedDependencies` (read only to refuse what Bun refuses, T125) | LOCK L1871–L1888 (writer L510–L527: an array of the names) | E15 | C-ROOTFIELDS (T130) |
 | L36 | a git or GitHub row's `.bun-tag`, the slot after its info object (read only to refuse what Bun refuses, T147) | LOCK L2671–L2722 (writer L860–L894: the `resolved` tag, for GitHub the root folder of the tarball, REPO L125–L130) | E16 | C-ROWTAIL (T147) |
-| L37 | the integrity after a tarball row's info object or a git or GitHub row's tag (read only to refuse what Bun refuses, T147) | LOCK L2724–L2735, L1688–L1711 (writer L799–L818, L889–L893: written only when supported) | E16 | C-ROWTAIL (T147) |
+| L37 | the integrity after a tarball row's info object (a tarball URL or a local tarball) or a git or GitHub row's tag (read only to refuse what Bun refuses, T147) | LOCK L2724–L2735, L1688–L1711 (writer L799–L818, L889–L893: written only when supported) | E16; E20 | C-ROWTAIL (T147), C-ROWINFO (local tarball, T175) |
 | L38 | a `root:` row, `["<name>@root:", { bin, binDir }]`, the root package's row when a workspace depends on it, and the object in its slot 1 (read only to refuse what Bun refuses, T170) | LOCK L2375–L2432, L2612–L2627 (writer L751–L780: the root's `bin` or `binDir`, `{}` when it has none) | E18 (`conformance_root_row`) | C-ROOTROW (T171) |
 
 The list is closed (T050): every `root.get(...)`/`value.get(...)`/`info.get(...)` of LOCK
@@ -909,7 +913,7 @@ Bun and deciding no binding:
 | `bin`, `binDir` | L1714–L1721, BIN L193–L263 | L16 (`binDir` decides no binding: which files are bins) |
 | the root row's `{ bin, binDir }` | L2612–L2634 | L38 (read only to refuse what Bun refuses, T170; its content decides no binding: the root's own bins) |
 | a git or GitHub row's `.bun-tag` | L2671–L2722 | L36 (read only to refuse what Bun refuses; decides no binding, "Not carried over") |
-| the integrity of a tarball, git or GitHub row | L2724–L2735 | L37 (read only to refuse what Bun refuses; these rows are not fetched, ID-4) |
+| the integrity of a tarball (URL or local), git or GitHub row | L2724–L2735 | L37 (read only to refuse what Bun refuses; these rows are not fetched, ID-4) |
 | `dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies` of a row or workspace | L3405–L3490 | L6, L13, L14, L30, L32 |
 | `optionalPeers`, `unresolved` | L3372–L3400 | L14, L23, L24, L33 |
 
@@ -1017,6 +1021,22 @@ download:
 - **BC-18: an npm row with more than 4 slots**. Bun reads slots 1–3 by index (LOCK L2433–L2669) and
   never looks past them; the pinned Bun loads rows of 5 and 7 slots (`tdd-log.md` T149). The
   reader required exactly 4.
+
+Found by the thirteenth Claude review (2026-11-22), each on a lockfile the pinned Bun writes and
+installs, from a check or ID scheme `main` has (`main`'s `_kind`, `compare_manifests`,
+`normalize_overrides` and `_ids` are the branch's before T175–T178); each corpus project's
+conformance difference is recorded red in `tdd-log.md`:
+
+- **BC-20: a local tarball's row**. Bun reads `loc-1.0.0.tgz` (slot 0 after `loc@`) as a local
+  tarball (RES L192–L201); the reader read it as an npm version and refused its 3 slots.
+- **BC-21: an optional or peer `catalog:` dependency without a catalog entry**. Bun writes no key and
+  installs (`may_stay_unresolved`, LOCK L3297–L3299); the manifest comparison failed. Bun refuses a
+  `dependencies` or `devDependencies` one (E20), so that failure stays.
+- **BC-22: override forms `$<name>` and an object nested too deep**. Bun resolves `$<name>` to the
+  declared specifier and ignores the nested object (OVERRIDE L902–L905, L1278–L1335,
+  L1405–L1452); the comparison failed on both.
+- **BC-23: unfetched entries' instance IDs**. Two unfetched entries whose `name@version` keep the same
+  target-name characters got one ID, the second overwriting the first.
 
 ## Part 6: Decisions for the user
 
@@ -1266,6 +1286,19 @@ member's dependency to a copy of the root in its store (`node_modules/.bun/<name
 links the root itself; that lockfile is not one Bun 1.4.2 writes, so the spec's Edge Case (a
 lockfile 1.4.2 writes that 1.4.4 links differently) does not reach it.
 
+**T175–T178 decided by the lead, under the user's delegation (2026-11-22)**: each of the four
+lockfile forms the thirteenth review found is written by the pinned Bun and installs, so each is
+linked as Bun links it and listed as a Behavior Change (BC-20 to BC-23), as the spec requires of a
+change from `main`. A local tarball is an unfetched entry (ID-4), like a tarball URL, since
+constitution III allows only registry downloads verified by the lockfile's integrity, and its
+dependencies are linked (BC-8). A `dependencies` or `devDependencies` `catalog:` reference without
+an entry keeps failing evaluation, as Bun refuses it (E20). Of Bun's override parser only the two
+forms found are carried over (`$<name>`, a nested object); other forms Bun ignores with a warning
+(an empty key, `-`, `patch:`, a non-string value) keep failing evaluation as forms rules_bun does
+not compare, which no corpus project reaches. An unfetched entry's instance ID is numbered as a
+colliding hash is, so no `:node_modules/...` name changes and only those entries' hub-internal
+targets, which are not public, are renamed.
+
 **Stop rule for the final reviews (the lead, under the user's delegation, 2026-11-22)**: thirteen review rounds before the final gate each
 found new differences, mostly in forms only a hand-written lockfile reaches, while Codex approved the
 last six. After T175–T178, the final gate is approved unless a review finds a regression against
@@ -1367,3 +1400,15 @@ holder's links). Sources: `/tmp/bun006-src/` (files of Part 1 fetched at the tag
   `["@s/long@file:dir-<70 x>/c", {}]` and names the store directories `foo@file+a`, `foo@file+b`
   and `@s+long@file+dir-<54 x>+29f4eee30e89905a`: the 81-byte resolution `file+dir-<70 x>+c` cut to
   63 bytes and `Bun.hash.wyhash` of all of it, as `write_resolution` does (Store.rs L366–L384).
+- **E20** (T175–T178, 2026-11-22): `write_lockfiles.ts` with Bun 1.4.4 and with Bun 1.4.2 writes and
+  installs the four corpus projects of R11 (`conformance_local_tarball`,
+  `conformance_catalog_missing`, `conformance_override_forms`, `conformance_folder_ids`); Bun 1.4.2
+  writes the same lockfiles except the override project's nested `a/b` row, `["b@file:./b", {}]`
+  where 1.4.4 writes `["b@file:b", {}]`. Bun 1.4.4 writes the local tarball's row
+  `["loc@loc-1.0.0.tgz", { "dependencies": { "a": "1.0.0" } }, "sha512-89Wi…"]` and stores it in
+  `node_modules/.bun/loc@loc-1.0.0.tgz+f3d5a20e448a231c`, the first 8 bytes of the integrity
+  (ISO L1353–L1368). `bun install` of a project whose `dependencies` (or `devDependencies`) hold
+  `"q": "catalog:"` with no catalog entry fails ("q@catalog: not in catalog", "q@catalog: failed to
+  resolve") and writes no lockfile; a frozen install of a hand-written lockfile holding that
+  workspace dependency and no `q` row is refused ("Failed to resolve root prod dependency 'q'",
+  LOCK L3338).

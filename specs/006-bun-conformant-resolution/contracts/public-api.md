@@ -27,7 +27,10 @@ installs and `main` fails to evaluate: BC-18 by `bun/tests/npm/lockfile_test.bzl
 extension's evaluation checks since T160: with `main`'s check of the download it fails BC-17's two
 lockfiles, after the change it passes them (T160). BC-19 is a `lockfileVersion` 0 lockfile, by
 `lockfile_test.bzl` `versions_test` and the hand-written
-`bun/tests/npm/conformance/accepted/lockfile_version_0` (both oracles, T155). The Intentional
+`bun/tests/npm/conformance/accepted/lockfile_version_0` (both oracles, T155). BC-20 to BC-23 are
+lockfiles the pinned Bun writes and installs, the corpus projects `conformance_local_tarball`,
+`conformance_catalog_missing`, `conformance_override_forms` and `conformance_folder_ids`, which the
+conformance test compares with both oracles (T175–T178). The Intentional
 Differences ID-1 to ID-13 (ID-7 withdrawn) are the spec's: ID-8 is BC-4's declared workspace
 members, ID-9 the two evaluation failures below (BC-12), ID-10 a URL holding user information in
 `bun.lock`, ID-11 a `packages` row of a workspace in a `lockfileVersion` 0 lockfile, and ID-12 two
@@ -56,6 +59,10 @@ catalog entry, the root workspace, a `packages` key) or reads the first value (`
 | Two rows of one `name@version` that record different integrity values or download URLs | evaluation fails ("the entries … record different integrity values") | one package with the first row's integrity and URL, downloaded once, as Bun's `append_package_dedupe` keeps it | BC-17 |
 | An npm row with more than 4 slots | evaluation fails ("has 5 slots, not 4") | read by its first 4 slots, as Bun reads them | BC-18 |
 | A `lockfileVersion` 0 lockfile | evaluation fails ("lockfileVersion 0 is not supported") | read as Bun 1.4.4 loads it; a `packages` row of a workspace in it fails evaluation (ID-11) | BC-19 |
+| A local tarball's row (`["loc@loc-1.0.0.tgz", { … }, "<integrity>"]`) | evaluation fails ("has 3 slots, not 4") | an unfetched entry (ID-4) whose dependencies are linked, as Bun reads a local tarball | BC-20 |
+| An optional or peer `catalog:` dependency its catalog has no entry for | evaluation fails ("names no entry of the catalog") | not linked, as Bun writes no key for it; a `dependencies` or `devDependencies` one still fails, as Bun refuses it | BC-21 |
+| An override `$<name>`, or an object nested in a parent's object | evaluation fails ("has a form rules_bun cannot compare with bun.lock") | compared as Bun reads them: the specifier declared for `<name>`; the nested object ignored | BC-22 |
+| Two unfetched entries of one package whose resolutions differ only in characters a target name cannot hold | one instance ID: the second entry overwrites the first, both links reach it | two instances, each linked as Bun links it; no `:node_modules/...` name changes | BC-23 |
 | `_NPM_DOC` | states the old rules above | states Bun's, the Intentional Differences ID-1 to ID-13 (ID-7 withdrawn), and the CI runner labels the tests ran on | — |
 
 Diagnostics added, each in English and naming the `bun.lock` label (or, at analysis, the target):
@@ -90,7 +97,8 @@ Diagnostics added, each in English and naming the `bun.lock` label (or, at analy
   one target name, is unchanged too; it is listed because the pinned Bun installs such a lockfile
   (T160).
 
-Diagnostics that change: BC-3's, BC-5's, BC-17's, BC-18's and BC-19's evaluation failures disappear
-(BC-19's but for ID-11); the analysis failure of two instances of one package version in one target
+Diagnostics that change: BC-3's, BC-5's, BC-17's, BC-18's, BC-19's, BC-20's, BC-21's and BC-22's
+evaluation failures disappear (BC-19's but for ID-11, BC-21's but for a `dependencies` or
+`devDependencies` reference); the analysis failure of two instances of one package version in one target
 now applies only to instances with one store directory from several lockfiles and reads "one
 instance of each package version and peer bindings" (BC-11).

@@ -19,7 +19,7 @@ export interface Entry {
   /** Bun side only: for an entry Bun installed from another resolution than a registry version (its
    * store directory is not DOC-ISO's `<package>@<version>` form of its name and version, T127), the
    * resolution of the `bun.lock` row whose store key names that directory, as slot 0 writes it after
-   * `<name>@` (`file:a`, a tarball URL), which identifies it (T172); absent for a registry package. */
+   * `<name>@` (`file:a`, a tarball URL, a local tarball), which identifies it (T172, T175); absent for a registry package. */
   resolution?: string;
 }
 
@@ -107,15 +107,20 @@ function storeURL(url: string): string {
 }
 
 /** The store key Bun gives a package of `name` at a `bun.lock` resolution (slot 0 after `<name>@`)
- * that is a folder (`file:`) or a tarball URL, without the `+<peer hash>`; `undefined` for any other
- * resolution, whose key this test does not carry over (T172). `Resolution::from_text_lockfile`
- * reads `file:` as a folder (bun_install_types.bzl `resolution_from_text_lockfile`).
+ * that is a folder (`file:`), a tarball URL or a local tarball, without the `+<peer hash>`;
+ * `undefined` for any other resolution, whose key this test does not carry over (T172).
+ * `Resolution::from_text_lockfile` reads `file:` as a folder, and a resolution `Tag::infer` reads
+ * as a tarball that is no URL as a local tarball, whose store path is its path (T175): here a
+ * resolution without a protocol ending in `.tgz`, `.tar.gz` or `.tar` (`is_tarball`), such as
+ * `loc-1.0.0.tgz` for a `file:loc-1.0.0.tgz` dependency (bun_install_types.bzl
+ * `resolution_from_text_lockfile`, `is_tarball`).
  *
  * Bun: src/install/isolated_install/Store.rs L386–L428 @ bun-v1.4.4
- * Bun: src/install/resolution.rs L541–L585 @ bun-v1.4.4 */
+ * Bun: src/install/resolution.rs L192–L201, L541–L585 @ bun-v1.4.4 */
 function storeKey(name: string, resolution: string): string | undefined {
   if (resolution.startsWith("file:")) return `${storePath(name)}@${boundedResolution(`file+${storePath(resolution.slice("file:".length))}`)}`;
   if (/^https?:\/\//.test(resolution)) return `${storePath(name)}@${boundedResolution(storeURL(resolution))}`;
+  if (!resolution.includes(":") && /\.(tgz|tar\.gz|tar)$/i.test(resolution)) return `${storePath(name)}@${boundedResolution(storePath(resolution))}`;
   return undefined;
 }
 
@@ -146,7 +151,7 @@ function resolutionOf(lock: Record<string, any>, name: string, storeDir: string)
  * a registry package: DOC-ISO names its store directory `<package>@<version>` (a scope's `/` written
  * `+`), to which Bun appends `+<peer hash>` for a package with peers; any other name is of a package
  * installed from another resolution (T127), identified by the `bun.lock` resolution whose store key
- * names the directory (`file:` folders and tarball URLs; any other fails the read, T172).
+ * names the directory (`file:` folders, tarball URLs and local tarballs; any other fails the read, T172, T175).
  */
 export function readBunGraph(dir: string, workspaces: string[]): Graph {
   const entries: Entry[] = [];
@@ -172,7 +177,7 @@ export function readBunGraph(dir: string, workspaces: string[]): Graph {
         const resolution = resolutionOf(lock, manifest.name, storeDir);
         if (resolution === undefined) {
           throw new Error(
-            `Bun's store directory ${storeDir} in ${dir} is neither ${registryDir} nor the store key of a file: or tarball URL resolution of ${manifest.name} in bun.lock, the forms graph.ts carries Bun's store key over for`,
+            `Bun's store directory ${storeDir} in ${dir} is neither ${registryDir} nor the store key of a file:, tarball URL or local tarball resolution of ${manifest.name} in bun.lock, the forms graph.ts carries Bun's store key over for`,
           );
         }
         entries.push({ name: manifest.name, version: manifest.version, links: {}, resolution });

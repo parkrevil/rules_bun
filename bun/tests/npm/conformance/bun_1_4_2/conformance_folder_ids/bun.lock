@@ -1,0 +1,22 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-folder-ids",
+      "dependencies": {
+        "x": "file:./a/b",
+        "y": "file:./a_b",
+      },
+    },
+  },
+  "packages": {
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "state": ["state@1.0.0", "http://127.0.0.1:28761/state/-/state-1.0.0.tgz", {}, "sha512-sGZb7AOYLr4Imwh9FrhNETSJfhtvq+mXb+/hYcvjmeld/a3Q7GWCWfJ0P4pMKmshVrUC6R439QTySFxhzDq0zw=="],
+
+    "x": ["foo@file:a/b", { "dependencies": { "q": "1.0.0" } }],
+
+    "y": ["foo@file:a_b", { "dependencies": { "state": "1.0.0" } }],
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-local-tarball",
+      "dependencies": {
+        "b": "file:loc-1.0.0.tgz",
+        "q": "1.0.0",
+      },
+    },
+  },
+  "packages": {
+    "a": ["a@1.0.0", "http://127.0.0.1:28761/a/-/a-1.0.0.tgz", { "dependencies": { "b": "^1.0.0" } }, "sha512-ZN8qIKY1QfDNI87yGjMJ0P+giZGVXiLIIAmYZ8rAK152GIlo+Dwq6bxxFoBOKYIZouhXnJuFIAORlsLbhuBzbQ=="],
+
+    "b": ["loc@loc-1.0.0.tgz", { "dependencies": { "a": "1.0.0" } }, "sha512-89WiDkSKIxyDT/+sD9LZSL9zQ0b8zjfjPV9Nnr8LZHsfg61iHXDASUKSNkRUE4zK7TwcFQWuEXiAT7FHNFHy2w=="],
+
+    "q": ["q@1.0.0", "http://127.0.0.1:28761/q/-/q-1.0.0.tgz", {}, "sha512-XwItTK9DW2UT2gpkSwPG1B+SStGAXWP/k9BlmtStl2q3oOtDmGw84lD0/a5uNxVmXplk2tTH02+tekoani1sLg=="],
+
+    "a/b": ["b@1.0.0", "http://127.0.0.1:28761/b/-/b-1.0.0.tgz", {}, "sha512-adhSJ1usdqGRkLPIY2RVgacsucUkiidhiTbrqq/ibfaFRV94fo6p+dM3wTr8DyKRxMtCUKXeO70q4Dyc30dP4w=="],
+  }
+}

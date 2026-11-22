@@ -1,0 +1,22 @@
+{
+  "name": "conformance-catalog-missing",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "q": "1.0.0"
+    }
+  },
+  "dependencies": {
+    "a": "1.0.0",
+    "q": "catalog:"
+  },
+  "optionalDependencies": {
+    "single-bin": "catalog:"
+  },
+  "peerDependencies": {
+    "state": "catalog:nope"
+  }
+}

@@ -22,6 +22,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type ArchiveSpec, FIXTURE_PORT, type IntegrityAlgorithm, type Registry, startRegistry } from "../../support/npm_registry.ts";
+import { writeTgz } from "../../support/tar.ts";
 import { NOT_APPLICABLE_1_4_2 } from "../conformance/not_applicable_1_4_2.ts";
 
 export { NOT_APPLICABLE_1_4_2 };
@@ -32,7 +33,7 @@ const fixtures = join(here, "..", "fixtures");
 const BUN_1_4_2_FLAG = "--bun-1-4-2";
 const bun142 = join(here, "..", "conformance", "bun_1_4_2");
 
-type Files = Record<string, string>;
+type Files = Record<string, string | Uint8Array>;
 
 interface Project {
   /** Files of the project, given the loopback registry's URL. */
@@ -141,6 +142,11 @@ const STUB_BUILD = `${CONFORMANCE_LOAD}\n# A workspace member of the fixture pro
 // A workspace member that links its packages from the fixture's hub (feature 006 T111).
 function memberBuild(hub: string): string {
   return `load("@${hub}//:defs.bzl", "npm_link_all_packages")\n${CONFORMANCE_LOAD}\n# A workspace member of the fixture project.\n\nnpm_link_all_packages()\n\nconformance_files()\n`;
+}
+
+// A package archive the project holds itself, for a local tarball dependency (T175).
+function localTarball(manifest: Record<string, unknown>): Uint8Array {
+  return writeTgz([{ name: "package/package.json", type: "file", data: new TextEncoder().encode(json(manifest)) }]);
 }
 
 function overridesProject(manifest: Record<string, unknown>, check: (lock: Lockfile) => void): Project {
@@ -901,6 +907,82 @@ const projects: Record<string, Project> = {
       const row = lock.packages["conformance-root-row"];
       assert(row?.[0] === "conformance-root-row@root:", "conformance-root-row is not a root: row");
       assert(JSON.stringify(row?.[1]) === '{"bin":{"root-bin":"cli.js"}}', "the root: row does not hold the root's bins in slot 1");
+    },
+  },
+  // T175: a local tarball dependency. Bun writes its row as `["loc@loc-1.0.0.tgz", { … }, "<integrity>"]`
+  // and reads the resolution as a local tarball (`Resolution::from_text_lockfile`, resolution.rs
+  // L192–L201), an entry rules_bun does not fetch (ID-4) whose dependency a is linked (BC-8).
+  conformance_local_tarball: {
+    files: () => ({
+      "package.json": json({ name: "conformance-local-tarball", private: true, dependencies: { b: "file:loc-1.0.0.tgz", q: "1.0.0" } }),
+      "loc-1.0.0.tgz": localTarball({ name: "loc", version: "1.0.0", dependencies: { a: "1.0.0" } }),
+    }),
+    check(lock) {
+      const row = lock.packages.b;
+      assert(row?.[0] === "loc@loc-1.0.0.tgz", "b is not loc@loc-1.0.0.tgz");
+      assert(row.length === 3 && typeof row[2] === "string" && row[2].startsWith("sha512-"), "b's row is not [spec, info, integrity]");
+      assert(row[1]?.dependencies?.a === "1.0.0", "loc does not depend on a");
+    },
+  },
+  // T176: optional and peer `catalog:` references with no catalog entry, of the root and of a
+  // workspace, in the default catalog and in a named one Bun has not (`catalog:nope`): Bun writes no
+  // key for them and installs.
+  conformance_catalog_missing: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog-missing",
+        private: true,
+        workspaces: { packages: ["packages/*"], catalog: { q: "1.0.0" } },
+        dependencies: { a: "1.0.0", q: "catalog:" },
+        optionalDependencies: { "single-bin": "catalog:" },
+        peerDependencies: { state: "catalog:nope" },
+      }),
+      "packages/w/package.json": json({
+        name: "w",
+        version: "1.0.0",
+        dependencies: { "p-user": "1.0.0" },
+        optionalDependencies: { c: "catalog:nope" },
+        peerDependencies: { x: "catalog:" },
+      }),
+      "packages/w/BUILD.bazel": STUB_BUILD,
+    }),
+    check(lock) {
+      assert(lock.workspaces[""].optionalDependencies?.["single-bin"] === "catalog:", "the root's optional single-bin is not catalog:");
+      assert(lock.workspaces[""].peerDependencies?.state === "catalog:nope", "the root's peer state is not catalog:nope");
+      assert(lock.workspaces["packages/w"].optionalDependencies?.c === "catalog:nope", "w's optional c is not catalog:nope");
+      assert(lock.workspaces["packages/w"].peerDependencies?.x === "catalog:", "w's peer x is not catalog:");
+      for (const key of ["single-bin", "state", "c", "x"]) assert(!(key in lock.packages), `bun.lock has a key ${key}`);
+    },
+  },
+  // T177: override forms Bun writes and installs: a `$<name>` reference to the root's dependency
+  // (written as that dependency's specifier) and an object nested three levels deep (ignored,
+  // "Bun currently only supports one level of nested", OverrideMap.rs L1177).
+  conformance_override_forms: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-override-forms",
+        private: true,
+        dependencies: { a: "1.0.0", b: "file:./b", "p-user": "1.0.0" },
+        overrides: { b: "$b", "p-user": { p: { q: "2.0.0" } } },
+      }),
+      "b/package.json": json({ name: "b", version: "1.0.0" }),
+    }),
+    check(lock) {
+      assert(JSON.stringify(lock.overrides) === '{"b":"file:./b"}', `overrides are ${JSON.stringify(lock.overrides)}`);
+      assert(slot0(lock, "b") === "b@file:b", "b is not b@file:b");
+    },
+  },
+  // T178: two folder entries of one package whose resolutions differ only in characters a target
+  // name cannot hold (`/` and `_`), each with its own dependency.
+  conformance_folder_ids: {
+    files: () => ({
+      "package.json": json({ name: "conformance-folder-ids", private: true, dependencies: { x: "file:./a/b", y: "file:./a_b" } }),
+      "a/b/package.json": json({ name: "foo", version: "1.0.0", dependencies: { q: "1.0.0" } }),
+      "a_b/package.json": json({ name: "foo", version: "1.0.0", dependencies: { state: "1.0.0" } }),
+    }),
+    check(lock) {
+      assert(slot0(lock, "x") === "foo@file:a/b", "x is not foo@file:a/b");
+      assert(slot0(lock, "y") === "foo@file:a_b", "y is not foo@file:a_b");
     },
   },
   alg_sha384: {

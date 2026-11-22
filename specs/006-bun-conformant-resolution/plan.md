@@ -37,8 +37,10 @@ failures) were decided by the lead under the user's delegation on 2026-11-22, as
 rows of one `name@version` with different integrity or URL, T148) and BC-18 (npm rows with more
 than 4 slots, T149), and BC-19 (`lockfileVersion` 0, T155), ID-10 (credentials in `bun.lock`,
 T156) and ID-11 (a workspace row of `lockfileVersion` 0, T155), and ID-12 (names that become one
-target name, T160), and ID-13 (a key `bun.lock` writes twice, T170), so the Behavior Changes are
-BC-1…BC-19 and the Intentional Differences ID-1…ID-13 (ID-7 withdrawn).
+target name, T160), and ID-13 (a key `bun.lock` writes twice, T170), and BC-20 to BC-23 (a local
+tarball's row, a missing optional or peer catalog entry, two override forms, unfetched entries'
+instance IDs, T175–T178), so the Behavior Changes are BC-1…BC-23 and the Intentional Differences
+ID-1…ID-13 (ID-7 withdrawn).
 
 ## Technical Context
 
@@ -89,7 +91,7 @@ archives; ~6 new canaries; `MODULE.bazel` (dev-only 1.4.2 toolchain and its regi
 | IV. Minimum Dependency Versions | No `bazel_dep` change | PASS |
 | V. Supported APIs Only | Bun's source is the specification for what bun.com does not document, under the user's approval of 2026-10-29, each field with a canary and red mode (Part 4); the oracle reads the layout bun.com documents (DOC-ISO); Bazel APIs used as documented (toolchain order, `parents`, `target_compatible_with`, `module_ctx.read`); a 1.4.2/1.4.4 disagreement stops work instead of being worked around | PASS |
 | VI. Shell-Free Actions | No new action; tests are `bun_test` | PASS |
-| VII. Releases Come From Tags | No release step. No rules_bun version is published (`.bcr/metadata.template.json` lists none; the only tag, `v0.0.0-test`, is not a release tag), so BC-1…BC-19 change no released behavior and need no migration failure; each is a correction toward what the pinned Bun links, listed for the first release's notes (as feature 005 FR-019 read VII) | PASS |
+| VII. Releases Come From Tags | No release step. No rules_bun version is published (`.bcr/metadata.template.json` lists none; the only tag, `v0.0.0-test`, is not a release tag), so BC-1…BC-23 change no released behavior and need no migration failure; each is a correction toward what the pinned Bun links, listed for the first release's notes (as feature 005 FR-019 read VII) | PASS |
 
 No violation. Post-design re-check (after Phase 1): unchanged — the design adds only dev-only module
 usage and private files; D1–D3 are spec questions, not constitution conflicts.
@@ -105,7 +107,7 @@ specs/006-bun-conformant-resolution/
 ├── data-model.md        # Phase 1: Bun's lockfile/tree/store model as carried over
 ├── quickstart.md        # Phase 1: validation runs Q1–Q9
 ├── contracts/
-│   ├── public-api.md         # what consumers observe (BC-1…BC-19)
+│   ├── public-api.md         # what consumers observe (BC-1…BC-23)
 │   └── conformance-graph.md  # graph JSON, oracle procedure, test interface
 ├── tdd-log.md           # implementation: each BC's difference before the fix
 └── tasks.md             # /speckit-tasks
@@ -150,8 +152,9 @@ next to the fixtures they read.
 ## Phases after this plan
 
 1. Conformance test, oracle, corpus, canaries and the ruleset-side graph export, on `main`'s
-   resolver: Q1 must fail exactly with BC-1…BC-19 (BC-17 since T160, when the test's ruleset side
-   began to run the extension's evaluation checks), and any further difference, added to the spec
+   resolver: Q1 must fail exactly with BC-1…BC-23 (BC-17 since T160, when the test's ruleset side
+   began to run the extension's evaluation checks; BC-20 to BC-23 since T175–T178, when their
+   corpus projects were added), and any further difference, added to the spec
    before it is fixed; recorded in `tdd-log.md`.
 2. Carry-over in Bun's order: semver → install types → loader → resolve/hoist → clean → store →
    adapter; each step unit-tested and cited.

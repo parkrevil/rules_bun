@@ -1,0 +1,13 @@
+{
+  "name": "w",
+  "version": "1.0.0",
+  "dependencies": {
+    "p-user": "1.0.0"
+  },
+  "optionalDependencies": {
+    "c": "catalog:nope"
+  },
+  "peerDependencies": {
+    "x": "catalog:"
+  }
+}

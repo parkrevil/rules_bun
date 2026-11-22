@@ -63,6 +63,8 @@ def unsupported_reason(entry, patched):
         return "it is a file: dependency, which rules_bun does not fetch"
     if entry.kind == "tarball":
         return "it is a tarball URL dependency ({}), which rules_bun does not fetch; depend on the package from a registry".format(entry.resolution)
+    if entry.kind == "local_tarball":
+        return "it is a local tarball dependency ({}), which rules_bun does not fetch; depend on the package from a registry".format(entry.resolution)
     if entry.kind == "unsupported":
         return "its resolution {} is not a registry version, which rules_bun does not fetch".format(entry.resolution)
     if "{}@{}".format(entry.name, entry.version) in patched:
@@ -169,7 +171,9 @@ def _ids(lockfile, keys, statuses, hash_fn):
 
     This is the adapter: the ID is `name@version__<h>[__<n>]` as on `main`, `<h>` the hash of the
     entry's transitive peers and `<n>` numbering entries whose hashes collide; the ID of an instance
-    the hub cannot use keeps only target-name characters, as on `main`. The peer hash names the
+    the hub cannot use keeps only target-name characters, as on `main`, and `<n>` also numbers such
+    instances whose `name@version` differ only in other characters (`foo@file:a/b`,
+    `foo@file:a_b`), so each has its own ID (feature 006 T178). The peer hash names the
     entry's store directory as Bun's isolated store names it, `<name>@<version>+<peer hash>`, or
     no hash for an entry without peers (`PeerHash::NONE`). Bun hashes the peers' names and
     resolutions with Wyhash; the adapter hashes the same text with `hash_fn` and adds `<n>`, so two
@@ -186,16 +190,16 @@ def _ids(lockfile, keys, statuses, hash_fn):
     for key in keys:
         package = lockfile.packages[key[0]]
         name_version = "{}@{}".format(package.name, package.entry.version)
+        prefix = name_version if statuses[key] == "ok" else _target_safe(name_version)
         encoding = json.encode([[name, _label(lockfile, pkg_id)] for name, pkg_id in key[1]])
-        groups.setdefault(name_version, {}).setdefault(hash_fn(encoding) % 4294967296, []).append((encoding, key))
+        groups.setdefault(prefix, {}).setdefault(hash_fn(encoding) % 4294967296, []).append((encoding, key))
     ids = {}
     peer_hashes = {}
-    for name_version, by_hash in groups.items():
+    for prefix, by_hash in groups.items():
         for h, group in by_hash.items():
             group = sorted(group)
             for n, (_, key) in enumerate(group):
                 suffix = "" if len(group) == 1 else "__{}".format(n)
-                prefix = name_version if statuses[key] == "ok" else _target_safe(name_version)
                 ids[key] = "{}__{}{}".format(prefix, h, suffix)
                 peer_hashes[key] = _hex16(n * 4294967296 + h) if key[1] else ""
     return struct(ids = ids, peer_hashes = peer_hashes)

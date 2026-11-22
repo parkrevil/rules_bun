@@ -189,6 +189,25 @@ test("a store directory Bun bounds is read back to its resolution (T172)", () =>
   expect(readBunGraph(dir, [""]).entries).toEqual([{ name: "@s/long", version: "1.0.0", links: {}, resolution: `file:${path}` }]);
 });
 
+test("a local tarball's store directory is read back to its resolution (T175)", () => {
+  // As the pinned Bun installs `"b": "file:loc-1.0.0.tgz"` (fixtures/conformance_local_tarball): the
+  // bun.lock row `loc@loc-1.0.0.tgz`, the store directory `loc@loc-1.0.0.tgz+<the first 8 bytes of
+  // its integrity>` (isolated_install.rs L1353–L1368).
+  const store = "loc@loc-1.0.0.tgz+f3d5a20e448a231c";
+  const dir = installed(
+    {
+      "bun.lock": {
+        lockfileVersion: 2,
+        workspaces: { "": { name: "t", dependencies: { b: "file:loc-1.0.0.tgz" } } },
+        packages: { b: ["loc@loc-1.0.0.tgz", {}, "sha512-89WiDkSKIxyDT/+sD9LZSL9zQ0b8zjfjPV9Nnr8LZHsfg61iHXDASUKSNkRUE4zK7TwcFQWuEXiAT7FHNFHy2w=="] },
+      },
+      [`node_modules/.bun/${store}/node_modules/loc/package.json`]: { name: "loc", version: "1.0.0" },
+    },
+    { "node_modules/b": `node_modules/.bun/${store}/node_modules/loc` },
+  );
+  expect(readBunGraph(dir, [""]).entries).toEqual([{ name: "loc", version: "1.0.0", links: {}, resolution: "loc-1.0.0.tgz" }]);
+});
+
 test("a registry entry bound where Bun binds a non-registry one of its name and version differs (T127)", () => {
   // The root's foo is file:./vendor/foo, whose package.json says 1.0.0; d1 and d2 depend on the
   // registry's foo@1.0.0. The ruleset binds d2's foo to the root's file: foo.

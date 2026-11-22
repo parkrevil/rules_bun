@@ -5,6 +5,7 @@ carries the access's ID (`# L<n>`), so the inventory can be matched to the code 
 are returned as values, not raised.
 """
 
+load(":bun_install_types.bzl", "VERSION_TAG", "version_tag_infer")
 load(":jsonc.bzl", "jsonc_decode")
 
 # The versions Bun 1.4.4 loads (`Version::from_int`, src/install/lockfile/bun.lock.rs L116-L124 @
@@ -56,12 +57,21 @@ def split_spec(spec):
     return spec[:at], spec[at + 1:]
 
 def _kind(resolution):
+    """The kind of a `packages` row by its resolution (slot 0 after `<name>@`).
+
+    A resolution `Tag::infer` reads as a tarball that is no URL is a local tarball, as Bun reads it
+    (`Resolution::from_text_lockfile`, resolution.rs L192–L201 @ bun-v1.4.4): a row such as
+    `["loc@loc-1.0.0.tgz", { … }, "<integrity>"]` for a `file:loc-1.0.0.tgz` dependency, which
+    rules_bun does not fetch (feature 006 T175, ID-4).
+    """
     if resolution.startswith("workspace:"):
         return "workspace"
     if resolution.startswith("file:"):
         return "file"
     if resolution.startswith("http://") or resolution.startswith("https://"):
         return "tarball"
+    if not resolution.startswith("root:") and version_tag_infer(resolution) == VERSION_TAG.TARBALL:
+        return "local_tarball"
     if ":" in resolution or "/" in resolution or "#" in resolution:
         return "unsupported"
     return "npm"

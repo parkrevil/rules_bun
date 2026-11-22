@@ -22,7 +22,7 @@ ID-5, ID-6 and ID-9 exclude nothing (no compared lockfile reaches them), nor doe
 links a workspace member as Bun does; analysis tests check its declaration), nor do ID-10 and ID-11
 (evaluation failures that integration and unit tests check), nor does ID-13 (a lockfile no Bun
 writes, which a unit test checks); spec "Intentional Differences".
-Every BC-1…BC-19 difference recorded red in `tdd-log.md` is gone.
+Every BC-1…BC-23 difference recorded red in `tdd-log.md` is gone.
 
 ## Q2. Red mode (FR-011, SC-003)
 

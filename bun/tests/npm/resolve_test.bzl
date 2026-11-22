@@ -125,6 +125,21 @@ def _ids_test_impl(ctx):
     # Colliding hashes still give the two entries two store directories (BC-11).
     asserts.equals(env, "0000000000000007", resolution["instances"]["p@1.0.0__7__0"].get("peer_hash"))
     asserts.equals(env, "0000000100000007", resolution["instances"]["p@1.0.0__7__1"].get("peer_hash"))
+
+    # Feature 006 T178: two unfetched entries of one package whose resolutions differ only in
+    # characters a target name cannot hold (`foo@file:a/b`, `foo@file:a_b`) keep only target-name
+    # characters, so they are numbered as colliding hashes are: each instance has its own ID, with
+    # its own dependency.
+    folders = _resolution(env, "conformance_folder_ids")
+    instances = folders["instances"]
+    root = folders["links"][""]
+    asserts.equals(env, 4, len(instances))
+    asserts.false(env, root["x"]["root"] == root["y"]["root"], "x and y link two instances")
+    for alias, version, dependency in [("x", "file:a/b", "q"), ("y", "file:a_b", "state")]:
+        instance = instances.get(root[alias]["root"], {})
+        asserts.equals(env, version, instance.get("version"), alias)
+        asserts.equals(env, [dependency], sorted(instance.get("edges", {}).keys()), alias)
+        asserts.true(env, root[alias]["root"].startswith("foo@file_a_b__"), root[alias]["root"])
     return unittest.end(env)
 
 def _store_name_test_impl(ctx):

@@ -1,0 +1,8 @@
+{
+  "name": "conformance-local-tarball",
+  "private": true,
+  "dependencies": {
+    "b": "file:loc-1.0.0.tgz",
+    "q": "1.0.0"
+  }
+}

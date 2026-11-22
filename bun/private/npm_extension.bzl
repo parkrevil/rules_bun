@@ -17,7 +17,9 @@ Evaluation fails with an English error naming the file and the remedy when the l
 `packages` row of a workspace (`<name>@workspace:<path>`; ID-11 of the `npm` extension's
 documentation), when the file is not JSONC, when the root or a member `package.json` and the
 lockfile differ in dependencies, workspace members, catalogs or overrides ("run `bun install` and
-commit bun.lock"), when the root `package.json` uses an override form rules_bun does not compare,
+commit bun.lock"), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
+of its catalog, which Bun refuses to install, when the root `package.json` uses an override form
+rules_bun does not compare,
 and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
 (`name`, `workspaces`, the dependency fields, `overrides`, `resolutions`, `catalog`, `catalogs`),
 holds credentials, as a registry URL of `.npmrc` does (ID-10). A URL is recognized by RFC 3986's syntax (a
@@ -27,7 +29,9 @@ account. An entry's download URL must be an `http` or `https` URL without user i
 error names the file and where the string is, never the string, since credentials come only from
 Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path or query
 (`?token=...`) is not recognized. Overrides are compared as Bun reads them: `overrides` when present, else
-`resolutions`.""",
+`resolutions`; a value `$<name>` stands for the specifier the root declares for `<name>`, else the
+one every workspace that declares `<name>` declares, and an object nested in a parent's object is
+ignored, as Bun ignores both such a nesting and a `$<name>` nothing declares.""",
     attrs = {
         "name": attr.string(
             doc = "Name of the hub repository, which `use_repo` brings into scope. Two `translate_lock` tags, in one module or in several, that use one name fail evaluation naming each module and the name.",
@@ -593,8 +597,8 @@ dependency of the root, a workspace or a package to a different entry on differe
 platforms (a package providing a peer is excluded on some), the link or the package selects that
 entry by target platform; a
 peer resolves to the version a dependent above it provides, else to the version the lockfile lists;
-a peer nothing provides, and an optional or peer dependency the lockfile does not resolve, is not
-linked; a package the root or a workspace declares that the store links on no target platform (one
+a peer nothing provides, and an optional or peer dependency the lockfile does not resolve (among
+them a `catalog:` one its catalog has no entry for), is not linked; a package the root or a workspace declares that the store links on no target platform (one
 no platform matches, or one not linked as just said) keeps its `:node_modules/<package>` target,
 which carries nothing, and its bin targets are compatible with no platform; a dependency a package bundles (`bundleDependencies`) is not linked; a package's optional
 dependency excluded on a target platform is not linked from that package there, also where the
@@ -657,7 +661,7 @@ library it has; on any other OS, `libc` excludes nothing, as Bun matches every C
 (`Libc::CURRENT`, L869–L874), so only the entry's `os` and `cpu` decide. To get only one variant,
 add the C library to the Linux platform: `constraint_values = ["@platforms//os:linux",
 "@platforms//cpu:x86_64", "@rules_bun//bun/platforms/libc:glibc"]`. A non-optional dependency is
-carried whatever its `libc` says, as Bun carries it (`Libc::for_dependency`, L882–L890). An entry rules_bun does not fetch (`file:`, a tarball URL, `git+` or `github:`
+carried whatever its `libc` says, as Bun carries it (`Libc::for_dependency`, L882–L890). An entry rules_bun does not fetch (`file:`, a local tarball, a tarball URL, `git+` or `github:`
 and any other resolution, a patched package, an entry without integrity, an integrity algorithm
 other than `sha256`, `sha384` and `sha512`) gets no download; a target that needs it fails analysis
 naming the package and the reason, and other targets are unaffected. A link that reaches such an

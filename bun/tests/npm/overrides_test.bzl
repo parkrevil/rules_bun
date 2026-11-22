@@ -10,7 +10,7 @@ def _normalize(manifest):
 
 def _fixtures_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep"]:
+    for project in ["overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms"]:
         lockfile = RESULTS[project]["lockfile"]["value"]
         result = _normalize(json.decode(RESULTS[project]["manifest"]))
         asserts.equals(env, None, result["error"], project)
@@ -33,6 +33,31 @@ def _dropped_test_impl(ctx):
     # the lockfile of overrides_deep records no overrides.
     asserts.equals(env, {"b": "2.0.0"}, _normalize({"overrides": {"a>b>c": "1.0.0", "b": "2.0.0"}})["value"])
     asserts.equals(env, {}, _normalize({"resolutions": {"a/b/c": "1.0.0"}})["value"])
+
+    # Feature 006 T177: an object nested in a parent's object is ignored, as Bun ignores it
+    # ("Bun currently only supports one level of nested", OverrideMap.rs L902-L905); the lockfile
+    # of conformance_override_forms records no rule for it.
+    asserts.equals(env, {}, _normalize({"overrides": {"a": {"b": {"c": "1.0.0"}}}})["value"])
+    asserts.equals(env, {"a": {"b": "2.0.0"}}, _normalize({"overrides": {"a": {"b": "2.0.0", "x": {"y": "1.0.0"}}}})["value"])
+    return unittest.end(env)
+
+def _reference_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 006 T177: `$<name>` is the specifier the root declares for <name>, in its four maps
+    # (`declared_dependency`, OverrideMap.rs L1374-L1380), as the lockfile records it
+    # (conformance_override_forms: "$b" with "b": "file:./b" is written "file:./b").
+    root = {"dependencies": {"b": "file:./b"}, "devDependencies": {"q": "2.0.0"}, "overrides": {"b": "$b", "a": {"q": "$q"}}}
+    asserts.equals(env, {"b": "file:./b", "a": {"q": "2.0.0"}}, normalize_overrides(root, "inline/package.json").value)
+
+    # Else the one every workspace that declares <name> declares (`workspace_ref_literal`, L1405-L1452).
+    members = [{"dependencies": {"b": "1.0.0"}}, {}, {"peerDependencies": {"b": "1.0.0"}}]
+    asserts.equals(env, {"b": "1.0.0"}, normalize_overrides({"overrides": {"b": "$b"}}, "inline/package.json", members).value)
+
+    # Bun ignores the rule when nothing declares <name> or the workspaces disagree (L1310-L1333).
+    asserts.equals(env, {}, normalize_overrides({"overrides": {"b": "$b"}}, "inline/package.json").value)
+    disagree = [{"dependencies": {"b": "1.0.0"}}, {"dependencies": {"b": "2.0.0"}}]
+    asserts.equals(env, {}, normalize_overrides({"resolutions": {"b": "$b"}}, "inline/package.json", disagree).value)
     return unittest.end(env)
 
 def _scoped_test_impl(ctx):
@@ -48,7 +73,6 @@ def _scoped_test_impl(ctx):
 def _unpinned_test_impl(ctx):
     env = unittest.begin(ctx)
     for manifest, form in [
-        ({"overrides": {"a": {"b": {"c": "1.0.0"}}}}, "a"),
         ({"resolutions": {"**/b": "1.0.0"}}, "**/b"),
         ({"overrides": {"a": ["1.0.0"]}}, "a"),
     ]:
@@ -63,6 +87,7 @@ precedence_test = unittest.make(_precedence_test_impl)
 dropped_test = unittest.make(_dropped_test_impl)
 scoped_test = unittest.make(_scoped_test_impl)
 unpinned_test = unittest.make(_unpinned_test_impl)
+reference_test = unittest.make(_reference_test_impl)
 
 def overrides_test_suite(name):
-    unittest.suite(name, fixtures_test, precedence_test, dropped_test, scoped_test, unpinned_test)
+    unittest.suite(name, fixtures_test, precedence_test, dropped_test, scoped_test, unpinned_test, reference_test)
