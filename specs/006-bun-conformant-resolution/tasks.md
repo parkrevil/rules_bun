@@ -1840,3 +1840,14 @@ the evaluation made faster (the lead, under the user's delegation, 2026-11-22).
   runner (about 2.5× slower) stays under the bound, per plan R13 / SC (partial). Done on WSL:
   4,922 ms → 2,985 ms, 0 differences on both oracles (`tdd-log.md` T183); `ubuntu-latest` is
   checked by T067 on the PR's next CI run
+- [ ] T184 After T183, PR #7's second CI run passed every job, but `scale_test` was FLAKY on all three
+  Linux jobs (`test (ubuntu-latest, .)`, `manifest-only (.)`, `network-denied (.)`: failed the first
+  attempt, passed the retry). The platform variant measured 10,444–12,716 ms there, and the
+  measurement itself is noisy: it is the difference of wall-clock `bazel mod deps` medians of three
+  runs with and without the tag (`scale.test.ts` about L176; `without` samples ranged 3,033–10,224
+  ms on one runner). Measure the extension's own evaluation instead of the difference of whole
+  Bazel invocations (for example from `bazel mod deps --profile` JSON's module-extension
+  evaluation span, as bazel.build documents the profile), with enough samples that a run on a
+  shared runner is stable; cut evaluation further if the measured time on `ubuntu-latest` is not
+  clearly within R13's 10,000 ms. Keep the bound; record WSL and CI times in `tdd-log.md`; the
+  test must pass on its first attempt on every job, per plan R13 (contradicts) (the lead, under the user's delegation, 2026-11-23)
