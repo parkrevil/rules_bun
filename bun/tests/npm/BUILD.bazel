@@ -2,6 +2,7 @@ load(":bins_test.bzl", "bins_test_suite")
 load(":bun_install_types_test.bzl", "bun_install_types_test_suite")
 load(":bun_isolated_store_test.bzl", "bun_isolated_store_test_suite")
 load(":bun_lockfile_test.bzl", "bun_lockfile_test_suite")
+load(":bun_override_map_test.bzl", "bun_override_map_test_suite")
 load(":bun_package_test.bzl", "bun_package_test_suite")
 load(":bun_semver_test.bzl", "bun_semver_test_suite")
 load(":bun_tree_test.bzl", "bun_tree_test_suite")
@@ -14,7 +15,6 @@ load(":layout_test.bzl", "layout_test_suite")
 load(":lockfile_test.bzl", "lockfile_test_suite")
 load(":naming_test.bzl", "naming_test_suite")
 load(":npmrc_test.bzl", "npmrc_test_suite")
-load(":overrides_test.bzl", "overrides_test_suite")
 load(":platform_rule_test.bzl", "platform_rule_test_suite")
 load(":platforms_test.bzl", "platforms_test_suite")
 load(":resolve_test.bzl", "resolve_test_suite")
@@ -44,8 +44,6 @@ naming_test_suite(name = "naming")
 
 npmrc_test_suite(name = "npmrc")
 
-overrides_test_suite(name = "overrides")
-
 platforms_test_suite(name = "platforms")
 
 platform_rule_test_suite(name = "platform_rule")
@@ -69,6 +67,8 @@ bun_install_types_test_suite(name = "bun_install_types")
 bun_lockfile_test_suite(name = "bun_lockfile")
 
 bun_package_test_suite(name = "bun_package")
+
+bun_override_map_test_suite(name = "bun_override_map")
 
 bun_tree_test_suite(name = "bun_tree")
 

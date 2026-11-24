@@ -328,7 +328,7 @@ def evaluate_lockfile(module_ctx, lock, file, manifest_file, read = None):
     error = _members_error(module_ctx, lock_dir, manifests[""].file, manifests[""].value, lockfile.value)
     if error:
         return _error(error)
-    comparison = compare_manifests(lockfile.value, manifests)
+    comparison = compare_manifests(lockfile.value, manifests, file)
     if comparison.error:
         return _error("rules_bun: " + comparison.error)
     resolution = resolve(lockfile.value, file)

@@ -974,6 +974,21 @@ def _version_value(tag, literal, **fields):
     value.update(fields)
     return struct(tag = tag, literal = literal, **value)
 
+def new_dependency(name, version, behavior):
+    """`Dependency`: a name, its version and its behavior.
+
+    Bun: src/install_types/resolver_hooks.rs L517–L528 @ bun-v1.4.4
+
+    Args:
+        name: The dependency's name.
+        version: Its version, as `dependency_parse` returns it.
+        behavior: Its `BEHAVIOR` bits.
+
+    Returns:
+        The dependency.
+    """
+    return struct(name = name, version = version, behavior = behavior)
+
 def dependency_version(tag, literal, **fields):
     """A dependency version: `tag`, `literal` and the arm of `tag`; the other arms are `None`.
 

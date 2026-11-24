@@ -205,14 +205,14 @@ R5, R6); `overrides.bzl` is removed.
 
 ### Tests for User Story 1 (write first, see them fail) ⚠️
 
-- [ ] T015 [US1] Create `bun/private/bun_override_map.bzl` with a module docstring (the carry-over
+- [X] T015 [US1] Create `bun/private/bun_override_map.bzl` with a module docstring (the carry-over
   of `override_selector.rs` and both sides of `OverrideMap.rs`, research R1, R5) and stubs that
   return `None` (not `fail()`, which in a skylib `unittest` aborts analysis instead of failing the
   test) for `parse_selector(key)` and
   `override_map_parse_append(manifest, file, members)` and `override_map_changed(declared, recorded)`,
   each docstring already citing its Bun lines (T019, T021, T022); add its `bzl_library` with
   `bazel run //:gazelle` in `bun/private/BUILD.bazel`
-- [ ] T016 [P] [US1] Write `bun/tests/npm/bun_override_map_test.bzl` with
+- [X] T016 [P] [US1] Write `bun/tests/npm/bun_override_map_test.bzl` with
   `bun_override_map_test_suite(name)` and register `bun_override_map_test_suite(name = "bun_override_map")`
   in `bun/tests/npm/BUILD.bazel`. Cases, each expectation read from `SRC` before it is written:
   (a) `parse_selector` → `struct(parent, target)` of `struct(name, range)` or an error kind of
@@ -230,7 +230,7 @@ R5, R6); `overrides.bzl` is removed.
   → `None`; a different count of flat or scoped rules, and an equal count with one differing
   literal → the first differing pair in `sort` order. Run
   `bazel test //bun/tests/npm:bun_override_map --test_output=errors`: red (the stubs); record red
-- [ ] T017 [US1] In `bun/tests/npm/compare_test.bzl` add `override_forms_test`: one inline case per
+- [X] T017 [US1] In `bun/tests/npm/compare_test.bzl` add `override_forms_test`: one inline case per
   form below, each a root `package.json` with `dependencies: {"a": "1.0.0", "q": "1.0.0"}` and a
   lockfile built like `_plain_lock` whose root workspace holds the same dependencies and whose
   `overrides` is the given one (none = no key), expecting `compare_manifests(...).error == None`:
@@ -253,7 +253,7 @@ R5, R6); `overrides.bzl` is removed.
   projects to `_equal_test_impl`'s list. Run `bazel test //bun/tests/npm:compare --test_output=errors`
   on `main`'s comparison: red, one failure per form except the three marked; record one red row per
   form (this is each form's own red, T012)
-- [ ] T018 [US1] In `bun/tests/npm/compare_test.bzl` add `override_stale_test` (US1-7, SC-002,
+- [X] T018 [US1] In `bun/tests/npm/compare_test.bzl` add `override_stale_test` (US1-7, SC-002,
   FR-006): for each of the 12 US1 corpus projects, an `edit` that changes one rule Bun applies
   (`"2.0.0"` → `"1.0.0"` for a project that has one; for a project whose rules Bun all skips, a
   new rule `"b": "2.0.0"` added to the field it uses), expecting an error that contains
@@ -265,7 +265,7 @@ R5, R6); `overrides.bzl` is removed.
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Carry over `override_selector.rs` into `bun/private/bun_override_map.bzl`:
+- [X] T019 [US1] Carry over `override_selector.rs` into `bun/private/bun_override_map.bzl`:
   `SELECTOR_ERROR` (L17–L23); `parse_package_segment` (L25–L52: `is_bare_scope` L25–L27, inlined, and the function L29–L52), moved from `bun_lockfile.bzl`'s
   `_parse_package_segment` (L222–L241) with its body and re-cited; `parse_selector` (L54–L68);
   `_pnpm_delimiter` (L72–L82, a `>` after ` `, `|`, `@` or `:` is no delimiter); the pnpm split
@@ -275,7 +275,7 @@ R5, R6); `overrides.bzl` is removed.
   `bun_override_map.bzl` MUST NOT load `bun_lockfile.bzl` (which loads it). Run
   `bazel test //bun/tests/npm:bun_override_map --test_output=errors`: the `parse_selector` cases
   green; record
-- [ ] T020 [US1] Move to `bun/private/bun_override_map.bzl`: `_lockfile_range`, split into the two Bun
+- [X] T020 [US1] Move to `bun/private/bun_override_map.bzl`: `_lockfile_range`, split into the two Bun
   functions it carries over, `_is_selector_range` (OverrideMap.rs L1081–L1087) and `lockfile_range`
   (L1089–L1115), each re-cited, and `_put_lockfile_rule` as `put_lockfile_rule` (L671–L737), with
   its scoped insertion split out as `push_scoped` (L644–L668) for T021 to share; `bun_lockfile.bzl`'s
@@ -286,7 +286,7 @@ R5, R6); `overrides.bzl` is removed.
   the same pass/fail set as before T020
   (a move: the targets red on purpose since T012 and T016–T018 stay red, every other stays green);
   record both lists
-- [ ] T021 [US1] Carry over the `package.json` side of `OverrideMap.rs` into
+- [X] T021 [US1] Carry over the `package.json` side of `OverrideMap.rs` into
   `bun/private/bun_override_map.bzl`, following data-model.md "How one `package.json` entry becomes
   rules" step by step: `_is_comment_key` (L206–L209); `override_map_parse_append(manifest, file,
   members)` (`parse_append` L802–L838 with `Field::of` L166–L170, the refusal `not_an_object`
@@ -300,7 +300,7 @@ R5, R6); `overrides.bzl` is removed.
   L1373–L1380). Returns `struct(value = struct(map, scoped, scoped_names), error)`, the struct
   `lockfile_overrides` returns. Run `bazel test //bun/tests/npm:bun_override_map
   --test_output=errors`: the parse cases green; record
-- [ ] T022 [US1] Carry over `sort` (L553–L579) as `_sort` and `changed` (L503–L551) as
+- [X] T022 [US1] Carry over `sort` (L553–L579) as `_sort` and `changed` (L503–L551) as
   `override_map_changed(declared, recorded)` in `bun/private/bun_override_map.bzl`, with research
   R3's literal equality (parent name and range literal, target name and range literal, value
   literal). Where Bun returns only `true`, it returns the subject research R6 needs: the first
@@ -308,7 +308,7 @@ R5, R6); `overrides.bzl` is removed.
   `struct(rule, declared, recorded)` (`rule` the text `[<parent>[@<range>]>]<target>[@<range>]`,
   each value a literal or `None`); `None` when unchanged. Run
   `bazel test //bun/tests/npm:bun_override_map --test_output=errors`: all green; record
-- [ ] T023 [US1] In `bun/private/workspaces.bzl` `compare_manifests`, replace the
+- [X] T023 [US1] In `bun/private/workspaces.bzl` `compare_manifests`, replace the
   `normalize_overrides` block (L346–L351) and the `overrides.bzl` load: parse the root with
   `override_map_parse_append(root.value, root.file, [member values])` (an error is returned as is),
   the lockfile's `overrides` with `lockfile_overrides(lockfile.overrides, <lockfile label>)` (add a
@@ -320,7 +320,7 @@ R5, R6); `overrides.bzl` is removed.
   `<file>: bun.lock records <field> "<rule>": <value>, which the file does not declare; …`, with
   `<field>` the one `Field::of` picked. Run `bazel test //bun/tests/npm:compare --test_output=errors`:
   T017 and T018 green; record
-- [ ] T024 [US1] Delete `bun/private/overrides.bzl` and `bun/tests/npm/overrides_test.bzl`, the
+- [X] T024 [US1] Delete `bun/private/overrides.bzl` and `bun/tests/npm/overrides_test.bzl`, the
   `bzl_library(name = "overrides")` and its `":overrides"` dependency in `bun/private/BUILD.bazel`,
   and `overrides_test_suite` in `bun/tests/npm/BUILD.bazel`; first list, in the commit message,
   each case of `overrides_test.bzl` and the case of `bun_override_map_test.bzl` that took it over

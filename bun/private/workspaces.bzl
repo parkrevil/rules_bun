@@ -12,9 +12,10 @@ lockfile's for it (the lockfile records `catalog:` and `workspace:` specifiers l
 root's catalogs and overrides must equal the lockfile's. Errors are returned as values.
 """
 
+load(":bun_lockfile.bzl", "lockfile_overrides")
+load(":bun_override_map.bzl", "override_field", "override_map_changed", "override_map_parse_append")
 load(":bun_package.bzl", "package_dependencies", "workspace_groups")
 load(":lockfile.bzl", "DEPENDENCY_KINDS")
-load(":overrides.bzl", "normalize_overrides")
 
 _REMEDY = "run `bun install` and commit bun.lock"
 
@@ -309,13 +310,32 @@ def _difference(file, what, declared, recorded):
             )
     return None
 
-def compare_manifests(lockfile, manifests):
+def _override_difference(file, field, subject):
+    """The error naming the first rule `override_map_changed` found (research R6)."""
+    if subject.recorded == None:
+        return '{}: {} "{}": {} is not in bun.lock; {}'.format(file, field, subject.rule, json.encode(subject.declared), _REMEDY)
+    if subject.declared == None:
+        return '{}: bun.lock records {} "{}": {}, which the file does not declare; {}'.format(file, field, subject.rule, json.encode(subject.recorded), _REMEDY)
+    return '{}: {} "{}" is {}, but bun.lock records {}; {}'.format(
+        file,
+        field,
+        subject.rule,
+        json.encode(subject.declared),
+        json.encode(subject.recorded),
+        _REMEDY,
+    )
+
+def compare_manifests(lockfile, manifests, lock_file):
     """Compares the root and member manifests with the lockfile.
+
+    The root's overrides are compared as the pinned Bun's frozen install compares them: both
+    sides parsed into rules, then `OverrideMap::changed` (feature 007, research R1).
 
     Args:
         lockfile: The value `read_lockfile` returns.
         manifests: Member path (`""` for the root) -> `struct(file, value)`, `value` the decoded
             `package.json`.
+        lock_file: The lockfile's label, for errors.
 
     Returns:
         `struct(value = None, error)`; `error` names the file, the package and the difference.
@@ -343,10 +363,13 @@ def compare_manifests(lockfile, manifests):
     difference = _difference(root.file, "catalog", catalogs.catalog, lockfile.catalog) or _difference(root.file, "catalogs", catalogs.catalogs, lockfile.catalogs)
     if difference:
         return _error(difference)
-    overrides = normalize_overrides(root.value, root.file, [manifests[path].value for path in sorted(manifests.keys()) if path])
-    if overrides.error:
-        return overrides
-    difference = _difference(root.file, "overrides", overrides.value, lockfile.overrides)
-    if difference:
-        return _error(difference)
+    declared = override_map_parse_append(root.value, root.file, [manifests[path].value for path in sorted(manifests.keys()) if path])
+    if declared.error:
+        return declared
+    recorded = lockfile_overrides(lockfile.overrides, lock_file)
+    if recorded.error:
+        return recorded
+    subject = override_map_changed(declared.value, recorded.value)
+    if subject:
+        return _error(_override_difference(root.file, override_field(root.value) or "overrides", subject))
     return struct(value = None, error = None)

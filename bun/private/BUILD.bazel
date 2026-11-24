@@ -114,21 +114,13 @@ bzl_library(
 )
 
 bzl_library(
-    name = "overrides",
-    srcs = ["overrides.bzl"],
-    deps = [
-        ":bun_package",
-        ":lockfile",
-    ],
-)
-
-bzl_library(
     name = "workspaces",
     srcs = ["workspaces.bzl"],
     deps = [
+        ":bun_lockfile",
+        ":bun_override_map",
         ":bun_package",
         ":lockfile",
-        ":overrides",
     ],
 )
 
@@ -171,6 +163,7 @@ bzl_library(
     srcs = ["bun_lockfile.bzl"],
     deps = [
         ":bun_install_types",
+        ":bun_override_map",
         ":bun_semver",
         ":platforms",
     ],
@@ -206,6 +199,16 @@ bzl_library(
     name = "bun_package",
     srcs = ["bun_package.bzl"],
     deps = [":bun_install_types"],
+)
+
+bzl_library(
+    name = "bun_override_map",
+    srcs = ["bun_override_map.bzl"],
+    deps = [
+        ":bun_install_types",
+        ":bun_package",
+        ":lockfile",
+    ],
 )
 
 bzl_library(

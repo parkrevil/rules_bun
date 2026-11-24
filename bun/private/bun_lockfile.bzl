@@ -28,14 +28,14 @@ load(
     "dependency_sort_key",
     "dependency_version",
     "is_safe_install_folder_name",
+    "new_dependency",
     "repository_with_resolved",
     "resolution_eql",
     "resolution_from_text_lockfile",
     "resolution_order",
     "resolution_satisfies_dependency_version",
-    "split_name_and_maybe_version",
-    "version_tag_infer",
 )
+load(":bun_override_map.bzl", "parse_package_segment", "put_lockfile_rule")
 load(":bun_semver.bzl", "parse_query", "parse_version", "query_intersects", "query_is_star", "query_satisfies")
 load(":platforms.bzl", "package_platforms")
 
@@ -120,13 +120,6 @@ def _package(name, resolution, off, length, meta, key = "", entry = None):
         entry = entry,
     )
 
-def _dependency(name, version, behavior):
-    """`Dependency`.
-
-    Bun: src/install_types/resolver_hooks.rs L517–L528 @ bun-v1.4.4
-    """
-    return struct(name = name, version = version, behavior = behavior)
-
 def dependency_ids(lockfile, pkg_id):
     """The dependency IDs of a package, `DependencySlice::begin()..end()`.
 
@@ -157,7 +150,7 @@ def _parse_catalog(catalog, rows, file, where):
         parsed = dependency_parse(name, version)
         if parsed == None:
             return _refusal(file, where, "Invalid catalog version")
-        catalog[name] = _dependency(name, parsed, 0)
+        catalog[name] = new_dependency(name, parsed, 0)
     return None
 
 def _catalog_find(catalogs, catalog_name, dep_name):
@@ -213,86 +206,11 @@ def _strip_reference(dependency):
         return dependency
     literal = dependency.version.literal
     if not behavior_is_peer(dependency.behavior):
-        return _dependency(dependency.name, dependency_version(VERSION_TAG.UNINITIALIZED, literal), dependency.behavior)
+        return new_dependency(dependency.name, dependency_version(VERSION_TAG.UNINITIALIZED, literal), dependency.behavior)
     star = struct(name = dependency.name, version = parse_query("*"), is_alias = False)
-    return _dependency(dependency.name, dependency_version(VERSION_TAG.NPM, literal, npm = star), dependency.behavior | BEHAVIOR.OPTIONAL)
+    return new_dependency(dependency.name, dependency_version(VERSION_TAG.NPM, literal, npm = star), dependency.behavior | BEHAVIOR.OPTIONAL)
 
 # --- OverrideMap ---------------------------------------------------------------------------------
-
-def _parse_package_segment(segment):
-    """`parse_package_segment`: `name` or `name@range` of an override key; `None` if invalid.
-
-    Bun: src/install/lockfile/override_selector.rs L25–L52 @ bun-v1.4.4
-    """
-    if not segment:
-        return None
-    name, version = split_name_and_maybe_version(segment)
-    if not name:
-        return None
-    if name.startswith("@") and "/" not in name:
-        return None
-    selected = version or ""
-    if selected.startswith("npm:"):
-        rest = selected[len("npm:"):]
-        if not rest or version_tag_infer(rest) == VERSION_TAG.NPM:
-            selected = rest
-    if not selected and len(segment) > len(name):
-        return None
-    return struct(name = name, range = selected)
-
-def _lockfile_range(name, text, is_target):
-    """`lockfile_range`: the range of an override selector; `None` if it selects nothing.
-
-    Bun: src/install/lockfile/OverrideMap.rs L1081–L1116 @ bun-v1.4.4
-    """
-    if not text:
-        return dependency_version(VERSION_TAG.UNINITIALIZED, "")
-    version = dependency_parse(name, text)
-    if version == None:
-        return None
-    if version.tag == VERSION_TAG.NPM and (is_target or not version.npm.is_alias):
-        return version
-    if version.tag == VERSION_TAG.CATALOG and is_target:
-        return version
-    return None
-
-def _put_lockfile_rule(overrides, parent, target, value):
-    """`OverrideMap::put_lockfile_rule` with `push_scoped`.
-
-    Bun: src/install/lockfile/OverrideMap.rs L671–L737 @ bun-v1.4.4
-    Bun: src/install/lockfile/OverrideMap.rs L644–L668 @ bun-v1.4.4
-    """
-    target_range = _lockfile_range(target.name, target.range, True)
-    if target_range == None:
-        return False
-    parent_dep = None
-    if parent != None:
-        parent_version = _lockfile_range(parent.name, parent.range, False)
-        if parent_version == None:
-            return False
-        parent_dep = _dependency(parent.name, parent_version, 0)
-    is_flat = parent_dep == None and target_range.tag == VERSION_TAG.UNINITIALIZED
-    version = dependency_parse(target.name, value)
-    if version == None:
-        return False
-    dep = _dependency(target.name, version, 0)
-    if is_flat:
-        overrides.map[target.name] = dep
-        return True
-    rule = struct(parent = parent_dep, target_range = target_range, dep = dep)
-    if target.name in overrides.scoped_names:
-        for i, existing in enumerate(overrides.scoped):
-            same_parent = (existing.parent == None and parent_dep == None) or (
-                existing.parent != None and parent_dep != None and
-                existing.parent.name == parent_dep.name and existing.parent.version.literal == parent_dep.version.literal
-            )
-            if existing.dep.name == target.name and same_parent and existing.target_range.literal == target_range.literal:
-                overrides.scoped[i] = rule
-                return True
-    else:
-        overrides.scoped_names[target.name] = True
-    overrides.scoped.append(rule)
-    return True
 
 def _parse_overrides(overrides, rows, file):
     """The `overrides` object (LOCK L1934–L2035).
@@ -304,27 +222,48 @@ def _parse_overrides(overrides, rows, file):
         if not name:
             return _refusal(file, "overrides", "Expected a non-empty string")
         if type(value) == "string":
-            if not _put_lockfile_rule(overrides, None, struct(name = name, range = ""), value):
+            if not put_lockfile_rule(overrides, None, struct(name = name, range = ""), value):
                 return _refusal(file, where, "Invalid override version")
             continue
         if type(value) != "dict":
             return _refusal(file, where, "Expected a string or an object")
-        parent = _parse_package_segment(name)
-        if parent == None:
+        parent = parse_package_segment(name)
+        if parent.error:
             return _refusal(file, where, "Invalid override key")
+        parent = parent.value
         for child_key, child_value in value.items():
             if type(child_value) != "string":
                 return _refusal(file, where, "Expected a string")
             if child_key == ".":
                 rule_parent, rule_target = None, parent
             else:
-                rule_target = _parse_package_segment(child_key)
-                if rule_target == None:
+                rule_target = parse_package_segment(child_key)
+                if rule_target.error:
                     return _refusal(file, where, "Invalid override key")
+                rule_target = rule_target.value
                 rule_parent = parent
-            if not _put_lockfile_rule(overrides, rule_parent, rule_target, child_value):
+            if not put_lockfile_rule(overrides, rule_parent, rule_target, child_value):
                 return _refusal(file, where, "Invalid override version")
     return None
+
+def lockfile_overrides(rows, file):
+    """The override rules of a lockfile's `overrides` object, as the loader reads them.
+
+    Bun: src/install/lockfile/bun.lock.rs L1934–L2035 @ bun-v1.4.4
+
+    Args:
+        rows: The `overrides` object of `read_lockfile`'s value.
+        file: The lockfile's label, for errors.
+
+    Returns:
+        `struct(value, error)`; `value` is `struct(map, scoped, scoped_names)`, as
+        `override_map_parse_append` returns for a `package.json`.
+    """
+    overrides = struct(map = {}, scoped = [], scoped_names = {})
+    error = _parse_overrides(overrides, rows, file)
+    if error:
+        return error
+    return struct(value = overrides, error = None)
 
 def overrides_has_rule_for_name(lockfile, name):
     """`OverrideMap::has_rule_for_name`.
@@ -548,14 +487,14 @@ def _parse_append_dependencies(lockfile, obj, unresolved_rows, bundled, member_r
             version = dependency_parse(name, version_str)
             if version == None:
                 return _refusal(file, where, "Invalid dependency version")
-            dep = _dependency(name, version, behavior)
+            dep = new_dependency(name, version, behavior)
             if not catalogs_apply:
                 dep = _strip_reference(dep)
             if bundled != None and bundled[0] + "/" + name in bundled[1]:
-                dep = _dependency(dep.name, dep.version, dep.behavior | BEHAVIOR.BUNDLED)
+                dep = new_dependency(dep.name, dep.version, dep.behavior | BEHAVIOR.BUNDLED)
             added.append(dep)
     for row in (member_rows or []):
-        added.append(_dependency(row.name, dependency_version(VERSION_TAG.WORKSPACE, "", workspace = row.path), BEHAVIOR.WORKSPACE))
+        added.append(new_dependency(row.name, dependency_version(VERSION_TAG.WORKSPACE, "", workspace = row.path), BEHAVIOR.WORKSPACE))
 
     # `Dependency::cmp`: behavior group, then name (LOCK L3522-L3528).
     lockfile.dependencies.extend(sorted(added, key = dependency_sort_key))
@@ -1243,7 +1182,7 @@ def tag_workspace_links(lockfile):
 
         # The root package's path.
         if res.tag == RESOLUTION_TAG.ROOT and dep.version.tag == VERSION_TAG.WORKSPACE:
-            dep = _dependency(dep.name, dependency_version(VERSION_TAG.WORKSPACE, dep.version.literal, workspace = "."), dep.behavior)
+            dep = new_dependency(dep.name, dependency_version(VERSION_TAG.WORKSPACE, dep.version.literal, workspace = "."), dep.behavior)
             dependencies[dep_id] = dep
         if res.tag != RESOLUTION_TAG.WORKSPACE:
             continue
@@ -1252,7 +1191,7 @@ def tag_workspace_links(lockfile):
         if dep.version.tag == VERSION_TAG.WORKSPACE and is_peer and not is_optional_peer and dep_id not in local_rows:
             reparsed = dependency_parse(dep.name, dep.version.literal)
             if reparsed != None and reparsed.tag == VERSION_TAG.NPM:
-                dep = _dependency(dep.name, reparsed, dep.behavior)
+                dep = new_dependency(dep.name, reparsed, dep.behavior)
                 dependencies[dep_id] = dep
         tag = dep.version.tag
         if tag == VERSION_TAG.WORKSPACE:
@@ -1269,7 +1208,7 @@ def tag_workspace_links(lockfile):
         else:
             linked = False
         if linked:
-            dependencies[dep_id] = _dependency(dep.name, dependency_version(VERSION_TAG.WORKSPACE, dep.version.literal, workspace = res.value), dep.behavior)
+            dependencies[dep_id] = new_dependency(dep.name, dependency_version(VERSION_TAG.WORKSPACE, dep.version.literal, workspace = res.value), dep.behavior)
 
 def rebind_peers_to_printed_packages(lockfile):
     """`rebind_peers_to_printed_packages`: peers whose target no tree prints, bound as on reload.
@@ -1480,7 +1419,7 @@ def _clone_dependency(dependency):
     version = dependency_parse(dependency.name, dependency.version.literal, dependency.version.tag)
     if version == None:
         version = dependency_version(VERSION_TAG.UNINITIALIZED, dependency.version.literal)
-    return _dependency(dependency.name, version, dependency.behavior)
+    return new_dependency(dependency.name, version, dependency.behavior)
 
 def _clone_package(old, new, cloner, old_id):
     """`Package::clone`: copy one package and its dependencies; queue the targets not yet copied.
