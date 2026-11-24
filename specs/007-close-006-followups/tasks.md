@@ -527,7 +527,7 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
 
 **Purpose**: documentation (FR-018), public surface (FR-017), gates (FR-019), the PR.
 
-- [ ] T047 [P] Rewrite `translate_lock`'s `doc` (`bun/private/npm_extension.bzl` L10–L40) and
+- [X] T047 [P] Rewrite `translate_lock`'s `doc` (`bun/private/npm_extension.bzl` L10–L40) and
   `_NPM_DOC` per research R11: overrides read as Bun reads them (both fields' key forms; the rules
   Bun skips with a warning are skipped: a non-string, `""` or `"-"` value, an empty key, a `patch:`
   value, a `"//"` key, a key Bun's selector parser rejects, deeper nesting); catalogs read where Bun
@@ -536,12 +536,12 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
   `//bun/tests/npm:bun_override_map`, `//bun/tests/npm:bun_package`) and the runners
   `ubuntu-latest`, `macos-latest`, `windows-latest`. Remove "when the root `package.json` uses an
   override form rules_bun does not compare"
-- [ ] T048 [P] Run `rtk grep -rn "cannot compare with bun.lock\|normalize_overrides\|manifest_catalogs\|overrides\.bzl\|_catalog_find\|_strip_reference"
+- [X] T048 [P] Run `rtk grep -rn "cannot compare with bun.lock\|normalize_overrides\|manifest_catalogs\|overrides\.bzl\|_catalog_find\|_strip_reference"
   bun e2e README.md`: nothing printed; fix any hit
-- [ ] T049 Public surface (quickstart V8): `git diff main --stat -- bun/*.bzl bun/toolchain
+- [X] T049 Public surface (quickstart V8): `git diff main --stat -- bun/*.bzl bun/toolchain
   bun/platforms` prints nothing, and `bazel mod show_extension @rules_bun//bun:extensions.bzl%npm`
   equals `/tmp/bun007-show_extension-main.txt` (T004); record
-- [ ] T050 `bazel test //bun/tests/integration:scale_test --test_output=all`: passes; record the
+- [X] T050 `bazel test //bun/tests/integration:scale_test --test_output=all`: passes; record the
   evaluation time next to T004's
 - [ ] T051 Gates (FR-019, quickstart V9): in the root `bazel run //:gazelle`,
   `prek run --all-files`, `bazel test //...`; in `e2e/smoke/` `bazel test //...`; record each. A
