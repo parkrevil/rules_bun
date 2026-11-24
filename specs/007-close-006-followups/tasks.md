@@ -15,7 +15,7 @@ fixed "test first"; spec FR-009, FR-014 and the plan's constraint (`tdd-log.md`:
 project red before the change, the reproduction red before the fix). New Starlark functions have
 their unit tests written and seen failing first.
 
-**Organization**: Phase 2 writes the 16 corpus projects of research R7 and runs them red on
+**Organization**: Phase 2 writes the 15 corpus projects of research R7 (16 planned; research Part 6 D2) and runs them red on
 `main`'s comparison before any `bun/private/` change (research R7 "Test-first order"). Then US1
 (overrides and resolutions), US2 (catalogs), US3 (Windows test output), and Polish. Paths are
 relative to the repository root.
@@ -69,11 +69,11 @@ relative to the repository root.
 
 **Purpose**: Branch, Bun's source at the tags, the TDD log, a green baseline.
 
-- [ ] T001 Confirm `git branch --show-current` prints `007-close-006-followups`,
+- [X] T001 Confirm `git branch --show-current` prints `007-close-006-followups`,
   `git merge-base HEAD main` is `1bff1cf`, and `git status --short` shows only
   `specs/007-close-006-followups/`; commit that directory as
   `docs: specify feature 007, close feature 006's follow-ups`
-- [ ] T002 Fetch, into the new empty directories `/tmp/bun007-src/bun-v1.4.4/` and
+- [X] T002 Fetch, into the new empty directories `/tmp/bun007-src/bun-v1.4.4/` and
   `/tmp/bun007-src/bun-v1.4.2/`, from `https://raw.githubusercontent.com/oven-sh/bun/<tag>/`, the
   files `src/install/lockfile/OverrideMap.rs`, `src/install/lockfile/override_selector.rs`,
   `src/install/lockfile/bun.lock.rs`, `src/install/lockfile/Package.rs`,
@@ -81,12 +81,12 @@ relative to the repository root.
   `src/install_types/resolver_hooks.rs`, keeping their paths; check `wc -l` gives 1,452 lines for
   `SRC/src/install/lockfile/OverrideMap.rs` and 165 for `override_selector.rs` (research Part 1),
   else stop and report
-- [ ] T003 Create `specs/007-close-006-followups/tdd-log.md`: title `# TDD Log: Feature 007`, one
+- [X] T003 Create `specs/007-close-006-followups/tdd-log.md`: title `# TDD Log: Feature 007`, one
   paragraph stating the rule (every corpus project red on `main`'s comparison before the change,
   every new function's unit test red before the function, the US3 reproduction red before the fix;
   a red for another reason does not count), and the table header
   `| Task | Target | Command | Platform | Result | Excerpt |`
-- [ ] T004 Baseline on `main`'s code: run `bazel test //...` in the root and in `e2e/smoke/`,
+- [X] T004 Baseline on `main`'s code: run `bazel test //...` in the root and in `e2e/smoke/`,
   `bazel test //bun/tests/integration:scale_test --test_output=all` (note the extension evaluation
   time it prints), and save `bazel mod show_extension @rules_bun//bun:extensions.bzl%npm` to
   `/tmp/bun007-show_extension-main.txt`; record each as a green row in
@@ -96,7 +96,7 @@ relative to the repository root.
 
 ## Phase 2: Foundational — the corpus, red on `main`'s comparison
 
-**Purpose**: research R7's 16 corpus projects, written by the pinned Bun (and Bun 1.4.2), each
+**Purpose**: research R7's 15 corpus projects, written by the pinned Bun (and Bun 1.4.2), each
 seen failing the conformance test on `main`'s comparison (FR-009, FR-010, SC-001, quickstart V1,
 V2). Each project's `check` asserts what Bun wrote, research R2's "Lockfile writes" column; each
 project whose written `overrides` holds a scoped rule (a parent or a target range) also asserts
@@ -105,7 +105,7 @@ run in order.
 
 **⚠️ CRITICAL**: `git diff main -- bun/private` MUST be empty until T014 is recorded.
 
-- [ ] T005 Add to `PROJECTS` in `bun/tests/npm/registry/write_lockfiles.ts`, after
+- [X] T005 Add to `PROJECTS` in `bun/tests/npm/registry/write_lockfiles.ts`, after
   `conformance_override_root_ref`, under a comment `// Feature 007, research R7: forms Bun skips with
   a warning (BC-1).`, three projects, each with `dependencies: { a: "1.0.0", q: "1.0.0" }` and
   `check` asserting `lock.overrides === undefined` (no rule written) and that `a`'s `b` and the
@@ -117,7 +117,7 @@ run in order.
   L1257–L1275); `conformance_resolution_ignored_values` with the same object as
   `conformance_override_ignored_values` under `resolutions` (L982–L992, L1257–L1275). If Bun writes
   an `overrides` key holding `{}` instead of none, assert that instead and note it in research R2
-- [ ] T006 Add to `bun/tests/npm/registry/write_lockfiles.ts`, each with
+- [X] T006 Add to `bun/tests/npm/registry/write_lockfiles.ts`, each with
   `dependencies: { a: "1.0.0" }`: `conformance_override_skipped_keys` with
   `overrides: { "": "2.0.0", "@s": "2.0.0", "b@": "2.0.0", "a>b>c": "2.0.0", "a//b": "2.0.0",
   "a/**": "2.0.0", "a/b/c": "2.0.0", q: "patch:q@1.0.0#patches/q.patch" }` and `dependencies` also
@@ -128,28 +128,27 @@ run in order.
   `conformance_override_comments` with
   `overrides: { "//": "top comment", "// note": "x", a: { "//": "child comment", b: "2.0.0" } }`,
   check: `JSON.stringify(lock.overrides) === '{"a":{"b":"2.0.0"}}'` and `a`'s `b` is b@2.0.0
-  (L206–L209, L862–L864, L894–L896); `conformance_resolution_comments` with
-  `resolutions: { "//": "comment", b: "2.0.0" }`, check: `'{"b":"2.0.0"}'`, `b` at 2.0.0
-  (L977–L979)
-- [ ] T007 Add to `bun/tests/npm/registry/write_lockfiles.ts`, each with
+  (L206–L209, L862–L864, L894–L896); (`conformance_resolution_comments` was removed in T012: `main` passes it, research Part 6 D2)
+- [X] T007 Add to `bun/tests/npm/registry/write_lockfiles.ts`, each with
   `dependencies: { a: "1.0.0" }`: `conformance_override_dot_only` with
   `overrides: { b: { ".": "2.0.0" } }`, check `'{"b":"2.0.0"}'` (L918–L927, `is_flat` L1045);
   `conformance_override_flat_and_scoped` with `overrides: { a: "1.0.0", "a>b": "2.0.0" }`, check
   `'{"a":{".":"1.0.0","b":"2.0.0"}}'` (BC-8, bun.lock.rs L1311–L1458);
   `conformance_override_target_range` with `overrides: { "b@^1.0.0": "2.0.0" }`, check
   `'{"b@^1.0.0":{".":"2.0.0"}}'` (BC-3, L1044–L1068); each also asserts `a`'s `b` is b@2.0.0
-- [ ] T008 Add to `bun/tests/npm/registry/write_lockfiles.ts`: `conformance_resolution_globs` with
+- [X] T008 Add to `bun/tests/npm/registry/write_lockfiles.ts`: `conformance_resolution_globs` with
   `dependencies: { a: "1.0.0", q: "1.0.0" }`, `resolutions: { "**/q": "2.0.0", "a/**/b": "2.0.0" }`,
   check: `lock.overrides` deep-equals `{ q: "2.0.0", a: { b: "2.0.0" } }` (BC-5, override_selector.rs
   L108–L165); `conformance_override_selectors` with
   `dependencies: { a: "1.0.0", q: "1.0.0", "p-user": "1.0.0" }`,
-  `overrides: { "a/b": "2.0.0", "q@>=1.0.0": "2.0.0", "q@npm:^1.0.0": "2.0.0", "p-user > p": "1.0.0" }`,
-  check: deep-equals `{ a: { b: "2.0.0" }, "q@>=1.0.0": { ".": "2.0.0" }, "q@^1.0.0": { ".": "2.0.0" }, "p-user": { p: "1.0.0" } }`
+  `overrides: { "a/b": "2.0.0", "q@>=1.0.0": "2.0.0", "q@npm:^1.0.0": "2.0.0", "p-user > p": "1.0.0", "p-user> p": "1.0.0" }`,
+  check: deep-equals `{ a: { b: "2.0.0" }, "q@>=1.0.0": { ".": "2.0.0" }, "q@^1.0.0": { ".": "2.0.0" }, "p-user > p": "1.0.0", "p-user": { p: "1.0.0" } }`
+  (research Part 6 D1)
   (BC-7, override_selector.rs L41–L47, L54–L98); `conformance_resolution_pnpm` with
   `dependencies: { a: "1.0.0" }`, `resolutions: { "a>b": "2.0.0" }`, check deep-equals
   `{ a: { b: "2.0.0" } }` (BC-7). Compare with deep equality (key order of Bun's writer is not
   asserted)
-- [ ] T009 Add to `bun/tests/npm/registry/write_lockfiles.ts`, under a comment naming FR-007 and
+- [X] T009 Add to `bun/tests/npm/registry/write_lockfiles.ts`, under a comment naming FR-007 and
   Package.rs L3418–L3440: `conformance_catalog_top_and_nested` with
   `workspaces: { packages: [], catalog: { b: "2.0.0" } }`, top-level
   `catalog: { b: "1.0.0", q: "2.0.0" }` and `catalogs: { g: { q: "1.0.0" } }`,
@@ -160,18 +159,18 @@ run in order.
   with `workspaces: { packages: [], catalog: { b: "2.0.0", q: 1 } }`,
   `dependencies: { b: "catalog:" }`, check: `lock.catalog` deep-equals `{ b: "2.0.0" }` (BC-6,
   CatalogMap.rs L356–L358)
-- [ ] T010 Write the 16 projects: `$B bun/tests/npm/registry/write_lockfiles.ts` followed by the 16
+- [X] T010 Write the 15 projects: `$B bun/tests/npm/registry/write_lockfiles.ts` followed by the 15
   project names of T005–T009; every `check` must pass. A `check` that fails, or a `bun install` that
   refuses a project, is a finding (stop and report; research R2 or R7 is then wrong). Then
   `bazel run //:gazelle`, and confirm each `bun/tests/npm/fixtures/conformance_<name>/` holds
   `BUILD.bazel`, `package.json`, `bun.lock`
-- [ ] T011 Write the 1.4.2 lockfiles: `$B142 bun/tests/npm/registry/write_lockfiles.ts --bun-1-4-2`
-  followed by the 16 project names. Each project Bun 1.4.2 writes and installs lands in
+- [X] T011 Write the 1.4.2 lockfiles: `$B142 bun/tests/npm/registry/write_lockfiles.ts --bun-1-4-2`
+  followed by the 15 project names. Each project Bun 1.4.2 writes and installs lands in
   `bun/tests/npm/conformance/bun_1_4_2/<name>/`; for each it cannot, add an entry to
   `NOT_APPLICABLE_1_4_2` in `bun/tests/npm/conformance/not_applicable_1_4_2.ts` quoting the error
   Bun 1.4.2 printed and the line of `SRC142` it comes from, in the style of the existing entries
   (FR-010)
-- [ ] T012 Red: with `git diff main -- bun/private` empty, run
+- [X] T012 Red: with `git diff main -- bun/private` empty, run
   `bazel test //bun/tests/npm/conformance:conformance_test --test_output=errors`. Expected: FAIL
   with exactly one difference per new project, each `<project>: the ruleset fails (…), Bun installs
   the lockfile`, and none on any other project. Record one red row per project in
@@ -180,14 +179,14 @@ run in order.
   `_child_values`, `conformance_resolution_ignored_values`, `conformance_override_skipped_keys`,
   `conformance_resolution_skipped_keys`, `conformance_override_selectors`, `conformance_resolution_globs`) which form `main`'s error names;
   the forms it hides get their own red in T017
-- [ ] T013 Red, Bun 1.4.2: run `bazel test //bun/tests/npm/conformance:conformance_1_4_2_test
+- [X] T013 Red, Bun 1.4.2: run `bazel test //bun/tests/npm/conformance:conformance_1_4_2_test
   --platforms=//bun/tests/npm/conformance:host_bun_1_4_2
   --extra_execution_platforms=//bun/tests/npm/conformance:host_bun_1_4_2 --test_output=errors`;
   expected: the same differences for the projects T011 wrote, and every not-applicable one listed
   as such; record. A "Bun 1.4.2 links this lockfile differently from Bun 1.4.4" failure is feature
   006's stop condition: stop and report
-- [ ] T014 Commit `bun/tests/npm/registry/write_lockfiles.ts`, `bun/tests/npm/fixtures/conformance_*`
-  (the 16 new), `bun/tests/npm/conformance/bun_1_4_2/`, `not_applicable_1_4_2.ts` and
+- [X] T014 Commit `bun/tests/npm/registry/write_lockfiles.ts`, `bun/tests/npm/fixtures/conformance_*`
+  (the 15 new), `bun/tests/npm/conformance/bun_1_4_2/`, `not_applicable_1_4_2.ts` and
   `tdd-log.md` as `test: add feature 007's corpus projects, red on main's comparison`
 
 **Checkpoint**: every form of BC-1…BC-8 is a red row on `main`'s comparison.
@@ -200,7 +199,7 @@ run in order.
 Bun parses them and compared with the lockfile's rules by `OverrideMap::changed` (research R1–R3,
 R5, R6); `overrides.bzl` is removed.
 
-**Independent Test**: the conformance test reports 0 differences on the 13 US1 projects of T005–T008
+**Independent Test**: the conformance test reports 0 differences on the 12 US1 projects of T005–T008
 (quickstart V3); `//bun/tests/npm:compare` fails every stale variant with the remedy (V4);
 `//bun/tests/npm:bun_override_map` passes; C-OVERRIDES passes and fails in red mode (V5).
 
@@ -218,7 +217,7 @@ R5, R6); `overrides.bzl` is removed.
   in `bun/tests/npm/BUILD.bazel`. Cases, each expectation read from `SRC` before it is written:
   (a) `parse_selector` → `struct(parent, target)` of `struct(name, range)` or an error kind of
   `SELECTOR_ERROR` (override_selector.rs L17–L23) for `"b"`, `"@s/b"`, `"b@^1.0.0"`,
-  `"b@npm:^1.0.0"` (range `^1.0.0`), `"a>b"`, `"a > b"`, `"a@^1.0.0>b"`, `"q@>=1.0.0"` (no
+  `"b@npm:^1.0.0"` (range `^1.0.0`), `"a>b"`, `"a > b"` (the flat target `"a > b"`, research Part 6 D1), `"a> b"`, `"a@^1.0.0>b"`, `"q@>=1.0.0"` (no
   delimiter), `"a@>=1>b"`, `"a/b"`, `"**/b"`, `"a/**/b"`, `"**/a/**/b"`, `"@s/a/b"`, and the errors
   `""`, `"@s"`, `"b@"`, `"a>b>c"`, `"a/b/c"`, `"a//b"`, `"a/**"`; (b) `override_map_parse_append`
   on one manifest per row of research R2's table, asserting the resulting `map` (name → value
@@ -245,17 +244,17 @@ R5, R6); `overrides.bzl` is removed.
   `{"**/q": "2.0.0"}` (→ `{"q": "2.0.0"}`) and `{"a/**/b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`);
   `overrides` `{"a/b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`) and `{"**/b": "2.0.0"}`
   (→ `{"b": "2.0.0"}`); `resolutions` `{"a>b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`);
-  `{"a > b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`); `{"q@>=1.0.0": "2.0.0"}`
+  `{"a > b": "2.0.0"}` (→ `{"a > b": "2.0.0"}`, research Part 6 D1); `{"a> b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`); `{"q@>=1.0.0": "2.0.0"}`
   (→ `{"q@>=1.0.0": {".": "2.0.0"}}`); `{"a@>=1>b": "2.0.0"}` (→ `{"a@>=1": {"b": "2.0.0"}}`);
   `{"q@npm:^1.0.0": "2.0.0"}` (→ `{"q@^1.0.0": {".": "2.0.0"}}`);
   `{"a": "1.0.0", "a>b": "2.0.0"}` (→ `{"a": {".": "1.0.0", "b": "2.0.0"}}`); and, passing on
   `main` too, `{"a": {".": "1.0.0", "b": "2.0.0"}}`, `{"q@^1.0.0": {".": "2.0.0"}}` and
-  `resolutions` `{"**/a/**/b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`). Add the 13 US1 corpus
+  `resolutions` `{"**/a/**/b": "2.0.0"}` (→ `{"a": {"b": "2.0.0"}}`) and `{"//": "x", "// y": "z", "b": "2.0.0"}` (→ `{"b": "2.0.0"}`, research Part 6 D2). Add the 12 US1 corpus
   projects to `_equal_test_impl`'s list. Run `bazel test //bun/tests/npm:compare --test_output=errors`
   on `main`'s comparison: red, one failure per form except the three marked; record one red row per
   form (this is each form's own red, T012)
 - [ ] T018 [US1] In `bun/tests/npm/compare_test.bzl` add `override_stale_test` (US1-7, SC-002,
-  FR-006): for each of the 13 US1 corpus projects, an `edit` that changes one rule Bun applies
+  FR-006): for each of the 12 US1 corpus projects, an `edit` that changes one rule Bun applies
   (`"2.0.0"` → `"1.0.0"` for a project that has one; for a project whose rules Bun all skips, a
   new rule `"b": "2.0.0"` added to the field it uses), expecting an error that contains
   `./package.json`, the field, the rule as `[<parent>[@<range>]>]<target>[@<range>]` and
@@ -337,7 +336,7 @@ R5, R6); `overrides.bzl` is removed.
   `{"b@^1.0.0": {".": "2.0.0"}}`; `{b: {".": "2.0.0"}}` → `{b: "2.0.0"}`;
   `{a: "1.0.0", "a>b": "2.0.0"}` → `{a: {".": "1.0.0", b: "2.0.0"}}`; `resolutions`
   `{"**/b": "2.0.0"}` → `{b: "2.0.0"}` and `{"a/**/b": "2.0.0"}` → `{a: {b: "2.0.0"}}`;
-  `overrides` `{"a/b": "2.0.0"}`, `{"a > b": "2.0.0"}` → `{a: {b: "2.0.0"}}`;
+  `overrides` `{"a/b": "2.0.0"}`, `{"a> b": "2.0.0"}` → `{a: {b: "2.0.0"}}`; `{"a > b": "2.0.0"}` → `{"a > b": "2.0.0"}` (research Part 6 D1);
   `{"b@>=1.0.0": "2.0.0"}` → `{"b@>=1.0.0": {".": "2.0.0"}}`; `{"b@npm:^1.0.0": "2.0.0"}` →
   `{"b@^1.0.0": {".": "2.0.0"}}`; `resolutions` `{"a>b": "2.0.0"}` → `{a: {b: "2.0.0"}}`; and one
   case per skipped form (a non-string, `""`, `"-"`, an empty key, a `patch:` value, a `"//"` key,
@@ -351,7 +350,7 @@ R5, R6); `overrides.bzl` is removed.
   `bazel test //bun/tests/canary/npm:c_overrides_test --test_output=errors` (green) and with
   `--test_env=RULES_BUN_CANARY_RED=1` (every case fails naming C-OVERRIDES); record both
 - [ ] T027 [US1] Green: `bazel test //bun/tests/npm/conformance:conformance_test
-  --test_output=errors` and the 1.4.2 command of T013: the 13 US1 projects compared with 0
+  --test_output=errors` and the 1.4.2 command of T013: the 12 US1 projects compared with 0
   differences (the 3 catalog projects still differ until US2); record green per project. A
   difference on any other project: stop and report
 - [ ] T028 [US1] Commit as `fix: compare package.json overrides with bun.lock as Bun 1.4.4 does
@@ -441,7 +440,7 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
   writes `q`; it writes every catalog entry, bun.lock.rs L580–L610). Run `bazel test
   //bun/tests/canary/npm:c_catalog_test --test_output=errors` green and with
   `--test_env=RULES_BUN_CANARY_RED=1` (every test fails naming C-CATALOG); record both
-- [ ] T036 [US2] Green: the conformance test and the 1.4.2 command of T013: all 16 new projects
+- [ ] T036 [US2] Green: the conformance test and the 1.4.2 command of T013: all 15 new projects
   compared with 0 differences, every other project as before; record green per catalog project.
   Commit as `fix: read the root's catalogs where Bun 1.4.4 reads them (BC-6)`, with `tdd-log.md`
 
@@ -609,8 +608,8 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
 
 ### MVP First (User Story 1)
 
-1. Phase 1 and Phase 2: the 16 projects red on `main`.
-2. Phase 3: US1. **Stop and validate**: quickstart V3 (13 US1 projects, 0 differences), V4, V5.
+1. Phase 1 and Phase 2: the 15 projects red on `main`.
+2. Phase 3: US1. **Stop and validate**: quickstart V3 (12 US1 projects, 0 differences), V4, V5.
 
 ### Incremental Delivery
 

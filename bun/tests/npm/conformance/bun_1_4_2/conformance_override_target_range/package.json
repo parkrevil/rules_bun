@@ -1,0 +1,10 @@
+{
+  "name": "conformance-override-target-range",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "overrides": {
+    "b@^1.0.0": "2.0.0"
+  }
+}

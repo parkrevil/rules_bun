@@ -1,0 +1,12 @@
+{
+  "name": "conformance-override-dot-only",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "overrides": {
+    "b": {
+      ".": "2.0.0"
+    }
+  }
+}

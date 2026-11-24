@@ -1,0 +1,14 @@
+{
+  "name": "conformance-catalog-non-string",
+  "private": true,
+  "workspaces": {
+    "packages": [],
+    "catalog": {
+      "b": "2.0.0",
+      "q": 1
+    }
+  },
+  "dependencies": {
+    "b": "catalog:"
+  }
+}

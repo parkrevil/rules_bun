@@ -1,0 +1,22 @@
+{
+  "name": "conformance-catalog-top-and-nested",
+  "private": true,
+  "workspaces": {
+    "packages": [],
+    "catalog": {
+      "b": "2.0.0"
+    }
+  },
+  "catalog": {
+    "b": "1.0.0",
+    "q": "2.0.0"
+  },
+  "catalogs": {
+    "g": {
+      "q": "1.0.0"
+    }
+  },
+  "dependencies": {
+    "b": "catalog:"
+  }
+}

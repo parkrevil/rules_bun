@@ -1,0 +1,12 @@
+{
+  "name": "conformance-resolution-globs",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "q": "1.0.0"
+  },
+  "resolutions": {
+    "**/q": "2.0.0",
+    "a/**/b": "2.0.0"
+  }
+}

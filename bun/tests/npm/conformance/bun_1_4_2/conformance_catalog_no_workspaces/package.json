@@ -1,0 +1,10 @@
+{
+  "name": "conformance-catalog-no-workspaces",
+  "private": true,
+  "catalog": {
+    "b": "2.0.0"
+  },
+  "dependencies": {
+    "a": "1.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "conformance-override-selectors",
+  "private": true,
+  "dependencies": {
+    "a": "1.0.0",
+    "q": "1.0.0",
+    "p-user": "1.0.0"
+  },
+  "overrides": {
+    "a/b": "2.0.0",
+    "q@>=1.0.0": "2.0.0",
+    "q@npm:^1.0.0": "2.0.0",
+    "p-user > p": "1.0.0",
+    "p-user> p": "1.0.0"
+  }
+}

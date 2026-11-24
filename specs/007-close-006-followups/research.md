@@ -92,7 +92,8 @@ Each row is a rule of `package.json` and the rule set both sides produce; "main"
 | `"**/a/**/q"` (`resolutions`) | scoped `a>q` | `{"a": {"q": …}}` | passes |
 | BC-7: `"a/b"`, `"**/b"` in `overrides` | Yarn path (SELECTOR L67) | as in `resolutions` | flat key `"a/b"`, differs |
 | BC-7: `"a>b"` in `resolutions` | pnpm (SELECTOR L64–L66) | `{"a": {"b": …}}` | flat key `"a>b"`, differs |
-| BC-7: `"a > b"` | trimmed (SELECTOR L85–L86) | `{"a": {"b": …}}` | names `"a "`, `" b"`, differs |
+| BC-7: `"a > b"` | a `>` after a space is no delimiter (SELECTOR L77): one Yarn segment, the flat rule of the name `"a > b"` (corrected in implementation, Part 6 D1) | `"a > b": …` | names `"a "`, `" b"`, differs |
+| BC-7: `"a> b"` | pnpm, segments trimmed (SELECTOR L85–L86) | `{"a": {"b": …}}` | names `"a"`, `" b"`, differs |
 | BC-7: `"q@>=1.0.0"`, `"a@>=1>b"` | a `>` after `@`, `:`, a pipe or a space is no delimiter (SELECTOR L72–L82) | `{"q@>=1.0.0": {".": …}}` | split at the `>`, differs |
 | BC-7: `"q@npm:^1.0.0"` | range `^1.0.0` (SELECTOR L41–L47) | `{"q@^1.0.0": {".": …}}` | differs |
 | BC-8: `{"a": "1.0.0", "a>b": "2.0.0"}` | flat `a` + scoped `a>b` | `{"a": {".": "1.0.0", "b": "2.0.0"}}` | error (string then object) |
@@ -204,7 +205,6 @@ failing on `main` (FR-009); a project may hold several forms of one branch.
 | `conformance_override_skipped_keys` | empty key, `"@s"`, `"b@"`, the selector errors `"a>b>c"`, `"a//b"`, `"a/**"`, `"a/b/c"`, `patch:` value | FR-001 (further) |
 | `conformance_resolution_skipped_keys` | the same keys and value in `resolutions` | FR-001 (further), spec Edge Cases |
 | `conformance_override_comments` | `"//"` keys at the top and in a parent's object; a key that is only `"//"` | US1-5, FR-004 |
-| `conformance_resolution_comments` | `"//"` keys in `resolutions` | FR-004 |
 | `conformance_override_dot_only` | `{"b": {".": "2.0.0"}}` | US1-3, FR-002 |
 | `conformance_override_flat_and_scoped` | `{"a": "1.0.0", "a>b": "2.0.0"}` | BC-8 |
 | `conformance_override_target_range` | `"b@^1.0.0": "2.0.0"` | US1-4, FR-003 |
@@ -215,8 +215,8 @@ failing on `main` (FR-009); a project may hold several forms of one branch.
 | `conformance_catalog_no_workspaces` | top-level `catalog`, no `workspaces`, no reference | US2-2, FR-007 |
 | `conformance_catalog_non_string` | a catalog entry whose value is not a string | BC-6 |
 
-US2 scenario 3 (`workspaces` array, top-level `catalog`) passes on `main` and stays a unit test
-(`compare_test.bzl`). Each project then runs in the Bun 1.4.2 run, or is listed in
+US2 scenario 3 (`workspaces` array, top-level `catalog`) and `"//"` keys in `resolutions` (Part 6 D2)
+pass on `main` and stay unit tests (`compare_test.bzl`). Each project then runs in the Bun 1.4.2 run, or is listed in
 `NOT_APPLICABLE_1_4_2` with the reason 1.4.2 shows (FR-010), as feature 006 did; the writer is run
 with `--bun-1-4-2` per project during implementation, where the reason is observed, not assumed.
 
@@ -375,3 +375,23 @@ Not fixed, listed as a follow-up: R3's literal equality.
 - **E4** (2026-11-24): `tw.cc` at Bazel tags 9.2.0, 9.3.0, 9.3.3 has no `TeeImpl::~TeeImpl`; at
   8.9.0, 10.0.0rc4, `release-9.4.0` and `master` it has (`master` L1516–L1532). `RunSubprocess` is
   identical on 9.2.0 and `master`. No tag `9.4.*` exists yet.
+
+## Part 6: Findings and decisions during implementation
+
+- **D1** (2026-11-24, T010; decided by the lead under the user's delegation): the pinned Bun wrote
+  `conformance_override_selectors`' `"p-user > p": "1.0.0"` as the flat rule
+  `"p-user > p": "1.0.0"`, not as `{"p-user": {"p": "1.0.0"}}` as R2 said. The cited function
+  explains it: `pnpm_delimiter` (SELECTOR L72–L82) skips a `>` that follows a space, so the key is
+  one Yarn path segment and `parse_package_segment` keeps the whole key as the name. R2's row was a
+  misreading of SELECTOR L77, not a form outside BC-7 (whitespace around `>`, read as the pinned
+  Bun's source reads it, under the planning approval), so R2 is corrected and no BC is added. The
+  project keeps `"p-user > p"` and gains `"p-user> p"`, whose `>` is a delimiter and whose segments
+  are trimmed (L85–L86), so both branches are pinned. The expectations of `"a > b"` in T016, T017
+  and T026 follow the corrected row: the flat rule `"a > b"`.
+- **D2** (2026-11-24, T012; decided by the lead under the user's delegation): R7's
+  `conformance_resolution_comments` (`"resolutions": {"//": "comment", "b": "2.0.0"}`) passed the
+  conformance test on `main`'s comparison: `normalize_overrides` splits a `resolutions` key with
+  `split_key`, which reads `"//"` as three empty segments, and ignores it as a chain deeper than one
+  parent. The form is therefore not one `main` fails on; FR-009 keeps such a form as a unit test, so
+  the project is removed from the corpus (15 projects, 12 for US1) and `override_forms_test`
+  (T017) holds `"//"` keys in `resolutions` among the cases passing on `main` too.

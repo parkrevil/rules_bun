@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "conformance-catalog-non-string",
+      "dependencies": {
+        "b": "catalog:",
+      },
+    },
+  },
+  "catalog": {
+    "b": "2.0.0",
+  },
+  "packages": {
+    "b": ["b@2.0.0", "http://127.0.0.1:28761/b/-/b-2.0.0.tgz", {}, "sha512-g8tIRY2ykq6mNxa6KX1c24mIUo0ACIbke+sbVufFQnmrM5ypDzOfgXi9I5bjSggJj6fgMI8bzPl1HLd+ufWBwg=="],
+  }
+}

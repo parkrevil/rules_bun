@@ -156,6 +156,56 @@ function overridesProject(manifest: Record<string, unknown>, check: (lock: Lockf
   };
 }
 
+// Feature 007, research R7: asserts the overrides Bun wrote, by deep equality (the key order of
+// Bun's writer is not asserted), and lockfileVersion 3 when a rule is scoped (bun.lock.rs L104,
+// L180–L198).
+function assertOverrides(lock: Lockfile, expected: Record<string, unknown>) {
+  assert(Bun.deepEquals(lock.overrides, expected), `overrides are ${JSON.stringify(lock.overrides)}`);
+  if (Object.values(expected).some((value) => typeof value === "object")) {
+    assert(lock.lockfileVersion === 3, `lockfileVersion ${lock.lockfileVersion}`);
+  }
+}
+
+// The keys and value Bun skips with a warning, in either field (research R7).
+const SKIPPED_KEYS = {
+  "": "2.0.0",
+  "@s": "2.0.0",
+  "b@": "2.0.0",
+  "a>b>c": "2.0.0",
+  "a//b": "2.0.0",
+  "a/**": "2.0.0",
+  "a/b/c": "2.0.0",
+  q: "patch:q@1.0.0#patches/q.patch",
+};
+
+// A project whose every rule Bun skips: it writes no overrides, and a's b and the root's q stay
+// at 1.0.0.
+function skippedRulesProject(name: string, rules: Record<string, unknown>): Project {
+  return {
+    files: () => ({ "package.json": json({ name, private: true, dependencies: { a: "1.0.0", q: "1.0.0" }, ...rules }) }),
+    check(lock) {
+      assert(lock.overrides === undefined, `overrides are ${JSON.stringify(lock.overrides)}`);
+      assert(slot0(lock, "b") === "b@1.0.0", "b is not b@1.0.0");
+      assert(slot0(lock, "q") === "q@1.0.0", "q is not q@1.0.0");
+    },
+  };
+}
+
+// A project depending on a whose rules override a's b to 2.0.0; Bun writes `expected`.
+function overrideRulesProject(name: string, rules: Record<string, unknown>, expected: Record<string, unknown>): Project {
+  return {
+    files: () => ({ "package.json": json({ name, private: true, dependencies: { a: "1.0.0" }, ...rules }) }),
+    check(lock) {
+      assert(JSON.stringify(lock.overrides) === JSON.stringify(expected), `overrides are ${JSON.stringify(lock.overrides)}`);
+      if (Object.values(expected).some((value) => typeof value === "object")) {
+        assert(lock.lockfileVersion === 3, `lockfileVersion ${lock.lockfileVersion}`);
+      }
+      const b = walk(lock, "a", "b");
+      assert(b && slot0(lock, b) === "b@2.0.0", "a's b is not b@2.0.0");
+    },
+  };
+}
+
 const projects: Record<string, Project> = {
   basic: {
     files: () => ({
@@ -1021,7 +1071,156 @@ const projects: Record<string, Project> = {
       assert(JSON.stringify(lock.overrides) === '{"c":"file:./b2"}', `overrides are ${JSON.stringify(lock.overrides)}`);
     },
   },
-  // T180: `catalog:` and `catalog:default` name one catalog, looked up under both spellings, the
+  // Feature 007, research R7: forms Bun skips with a warning (BC-1).
+  // A non-string, "" or "-" value at the top level of "overrides" (OverrideMap.rs L867–L880, L1257–L1275).
+  conformance_override_ignored_values: skippedRulesProject("conformance-override-ignored-values", {
+    overrides: { b: 2, q: true, x: null, y: ["2.0.0"], z: "", c: "-" },
+  }),
+  // The same values under a parent's object (OverrideMap.rs L906–L916, L1257–L1275).
+  conformance_override_child_values: skippedRulesProject("conformance-override-child-values", {
+    overrides: { a: { b: 2, q: true, x: null, y: ["2.0.0"], z: "", c: "-" } },
+  }),
+  // The same values in "resolutions" (OverrideMap.rs L982–L992, L1257–L1275).
+  conformance_resolution_ignored_values: skippedRulesProject("conformance-resolution-ignored-values", {
+    resolutions: { b: 2, q: true, x: null, y: ["2.0.0"], z: "", c: "-" },
+  }),
+  // An empty key, keys Bun's selector parser rejects and a patch: value in "overrides"
+  // (OverrideMap.rs L853–L860, L1152–L1190, L1031–L1042; override_selector.rs L48–L50, L90–L92,
+  // L108–L165).
+  conformance_override_skipped_keys: skippedRulesProject("conformance-override-skipped-keys", {
+    overrides: SKIPPED_KEYS,
+  }),
+  // The same keys and value in "resolutions" (OverrideMap.rs L969–L976, L1152–L1190, L1031–L1042).
+  conformance_resolution_skipped_keys: skippedRulesProject("conformance-resolution-skipped-keys", {
+    resolutions: SKIPPED_KEYS,
+  }),
+  // npm's "//" comment keys at the top level and in a parent's object (FR-004; OverrideMap.rs
+  // L206–L209, L862–L864, L894–L896).
+  conformance_override_comments: overrideRulesProject(
+    "conformance-override-comments",
+    { overrides: { "//": "top comment", "// note": "x", a: { "//": "child comment", b: "2.0.0" } } },
+    { a: { b: "2.0.0" } },
+  ),
+  // An object whose only child is "." is the flat rule (FR-002; OverrideMap.rs L918–L927, is_flat L1045).
+  conformance_override_dot_only: overrideRulesProject(
+    "conformance-override-dot-only",
+    { overrides: { b: { ".": "2.0.0" } } },
+    { b: "2.0.0" },
+  ),
+  // A flat rule next to a rule scoped under its name is written as one object with a "." child
+  // (BC-8; bun.lock.rs L1311–L1458).
+  conformance_override_flat_and_scoped: overrideRulesProject(
+    "conformance-override-flat-and-scoped",
+    { overrides: { a: "1.0.0", "a>b": "2.0.0" } },
+    { a: { ".": "1.0.0", b: "2.0.0" } },
+  ),
+  // A top-level target with a range is a scoped rule written as {".": …} (BC-3; OverrideMap.rs L1044–L1068).
+  conformance_override_target_range: overrideRulesProject(
+    "conformance-override-target-range",
+    { overrides: { "b@^1.0.0": "2.0.0" } },
+    { "b@^1.0.0": { ".": "2.0.0" } },
+  ),
+  // Yarn path keys with "**" segments in "resolutions" (BC-5; override_selector.rs L108–L165).
+  conformance_resolution_globs: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-resolution-globs",
+        private: true,
+        dependencies: { a: "1.0.0", q: "1.0.0" },
+        resolutions: { "**/q": "2.0.0", "a/**/b": "2.0.0" },
+      }),
+    }),
+    check(lock) {
+      assertOverrides(lock, { q: "2.0.0", a: { b: "2.0.0" } });
+    },
+  },
+  // One selector parser for both fields: a Yarn path, a ">" after "@", an "npm:" range and
+  // whitespace around ">" in "overrides" (BC-7; override_selector.rs L41–L47, L54–L98): a ">"
+  // after a space is no delimiter, so "p-user > p" is a flat rule of that name (L77), and the
+  // segments of "p-user> p" are trimmed (L85–L86; research Part 6, D1).
+  conformance_override_selectors: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-override-selectors",
+        private: true,
+        dependencies: { a: "1.0.0", q: "1.0.0", "p-user": "1.0.0" },
+        overrides: { "a/b": "2.0.0", "q@>=1.0.0": "2.0.0", "q@npm:^1.0.0": "2.0.0", "p-user > p": "1.0.0", "p-user> p": "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assertOverrides(lock, {
+        a: { b: "2.0.0" },
+        "q@>=1.0.0": { ".": "2.0.0" },
+        "q@^1.0.0": { ".": "2.0.0" },
+        "p-user > p": "1.0.0",
+        "p-user": { p: "1.0.0" },
+      });
+    },
+  },
+  // A pnpm ">" key in "resolutions" (BC-7).
+  conformance_resolution_pnpm: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-resolution-pnpm",
+        private: true,
+        dependencies: { a: "1.0.0" },
+        resolutions: { "a>b": "2.0.0" },
+      }),
+    }),
+    check(lock) {
+      assertOverrides(lock, { a: { b: "2.0.0" } });
+    },
+  },
+  // FR-007: the root's catalogs are those Bun reads (Package.rs L3418–L3440): the workspaces
+  // object's when it holds catalog or catalogs, else the top level's when workspaces exists, else none.
+  // The workspaces object's catalog, the top level's ignored (US2-1).
+  conformance_catalog_top_and_nested: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog-top-and-nested",
+        private: true,
+        workspaces: { packages: [], catalog: { b: "2.0.0" } },
+        catalog: { b: "1.0.0", q: "2.0.0" },
+        catalogs: { g: { q: "1.0.0" } },
+        dependencies: { b: "catalog:" },
+      }),
+    }),
+    check(lock) {
+      assert(Bun.deepEquals(lock.catalog, { b: "2.0.0" }), `catalog is ${JSON.stringify(lock.catalog)}`);
+      assert(lock.catalogs === undefined, `catalogs are ${JSON.stringify(lock.catalogs)}`);
+      assert(slot0(lock, "b") === "b@2.0.0", "b is not b@2.0.0");
+    },
+  },
+  // No workspaces: the top-level catalog is not read (US2-2).
+  conformance_catalog_no_workspaces: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog-no-workspaces",
+        private: true,
+        catalog: { b: "2.0.0" },
+        dependencies: { a: "1.0.0" },
+      }),
+    }),
+    check(lock) {
+      assert(lock.catalog === undefined, `catalog is ${JSON.stringify(lock.catalog)}`);
+      assert(slot0(lock, "b") === "b@1.0.0", "a's b is not b@1.0.0");
+    },
+  },
+  // A catalog entry whose value is not a string is skipped (BC-6; CatalogMap.rs L356–L358).
+  conformance_catalog_non_string: {
+    files: () => ({
+      "package.json": json({
+        name: "conformance-catalog-non-string",
+        private: true,
+        workspaces: { packages: [], catalog: { b: "2.0.0", q: 1 } },
+        dependencies: { b: "catalog:" },
+      }),
+    }),
+    check(lock) {
+      assert(Bun.deepEquals(lock.catalog, { b: "2.0.0" }), `catalog is ${JSON.stringify(lock.catalog)}`);
+    },
+  },
+  // T180:`catalog:` and `catalog:default` name one catalog, looked up under both spellings, the
   // one the reference names first (`CatalogMap::locate`, CatalogMap.rs L48–L100): `catalog:` finds
   // an entry of `catalogs.default`, `catalog:default` one of `catalog`.
   conformance_catalog_default: {
