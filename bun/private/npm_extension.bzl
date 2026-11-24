@@ -39,10 +39,11 @@ Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path o
 Overrides are compared as Bun 1.4.4 reads them: both sides are parsed into rules as Bun parses them
 and compared as Bun's frozen install compares them. Only `overrides` is read when
 present, else `resolutions`. Both fields take every key form Bun's selector parser reads: a name,
-`name@range` (including an `npm:` range), the npm object form with `"."` for the parent's own rule,
-pnpm's `parent>child` (also with a range on the parent), and Yarn's path form `parent/child` with
-`**` segments dropped. Rules Bun skips with a warning are skipped: a value that is not a string, a
-`""` or `"-"` value, an empty key, a `patch:` value, a key starting with `//` (npm's comments), a key
+`name@range` (including an `npm:` range), pnpm's `parent>child` (also with a range on the parent),
+and Yarn's path form `parent/child` with `**` segments dropped. Only `overrides` takes the npm object
+form, an object value with `"."` for the parent's own rule; an object value in `resolutions` is
+skipped like any other value that is not a string. Rules Bun skips with a warning are skipped: a
+value that is neither a string nor, in `overrides`, an object, a `""` or `"-"` value, an empty key, a `patch:` value, a key starting with `//` (npm's comments), a key
 Bun's selector parser rejects (such as `@scope`, `name@`, `a//b`, a trailing `**`), and deeper
 nesting (`a>b>c`, `a/b/c`, an object inside a parent's object). A value `$<name>` stands for the
 specifier the root declares for `<name>`, else the one every workspace that declares `<name>`

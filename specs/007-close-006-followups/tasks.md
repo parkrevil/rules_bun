@@ -645,3 +645,22 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
   `json.encode` sorts a dict's keys (observed on Bazel 9.2.0, 2026-11-25:
   `json.encode({"b": "1", "a": "2"})` is `{"a":"2","b":"1"}`), so `_difference` does not depend on
   entry order and D3 is no follow-up per FR-007, research D3 (partial)
+
+---
+
+## Phase 8: Convergence
+
+- [X] T055 CRITICAL: In `translate_lock`'s `doc` (`bun/private/npm_extension.bzl` L39–L46), say which
+  field takes which form: the npm object form (an object value, with `"."` for the parent's own
+  rule) is read in `overrides` only, and an object value in `resolutions` is skipped like any other
+  non-string value (OverrideMap.rs L959–L995); list the skipped values as "a value that is neither a
+  string nor, in `overrides`, an object". Claim only what `parse_forms_test` and
+  `parse_skipped_test` in `bun/tests/npm/bun_override_map_test.bzl` pin. Run
+  `prek run --files bun/private/npm_extension.bzl` and `bazel build //bun/private:npm_extension`;
+  record in `tdd-log.md`; commit as `docs: state that only overrides takes the npm object form` per
+  Constitution II, FR-018 (contradicts)
+- [ ] T056 Re-run the local gates on the final tree (T054 changed `bun/tests/npm/compare_test.bzl`
+  and T055 changes `bun/private/npm_extension.bzl` after T051's run): in the root
+  `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...`; in `e2e/smoke/`
+  `bazel test //...`; record each in `tdd-log.md` before T040's push. A failure: report it with its
+  output, do not widen the task, per FR-019, SC-005 (partial)
