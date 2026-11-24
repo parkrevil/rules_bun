@@ -543,7 +543,7 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
   equals `/tmp/bun007-show_extension-main.txt` (T004); record
 - [X] T050 `bazel test //bun/tests/integration:scale_test --test_output=all`: passes; record the
   evaluation time next to T004's
-- [ ] T051 Gates (FR-019, quickstart V9): in the root `bazel run //:gazelle`,
+- [X] T051 Gates (FR-019, quickstart V9): in the root `bazel run //:gazelle`,
   `prek run --all-files`, `bazel test //...`; in `e2e/smoke/` `bazel test //...`; record each. A
   failure: report it with its output, do not widen the task (AGENTS.md)
 - [ ] T052 Commit the remaining changes as `docs: state the override and catalog forms evaluation
