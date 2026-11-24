@@ -627,3 +627,21 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
 - US3's push (T040) and the PR (T052) wait for the user's approval.
 - The 30-run CI step is evidence for SC-003 only and is removed before merge (T045, or by the
   revert of T042).
+
+---
+
+## Phase 7: Convergence
+
+- [ ] T053 When T042 removes the reproduction, revert only its code and CI files, not the records:
+  `git revert --no-commit ce4f79c 97c074c`, then `git checkout HEAD -- specs/007-close-006-followups/`
+  (97c074c also marked T037–T039 done in `tasks.md` and added T038's row to `tdd-log.md`, and later
+  commits edit both files), so the T038 row, T040's red rows and the `[X]` marks stay; check that
+  `git diff main -- bun/tests/integration .bazelrc .github/workflows/ci.yaml` is empty and commit as
+  `test: remove the Windows reproduction until Bazel 9.4.0 is released (FR-016)` per FR-014, FR-016 (contradicts)
+- [X] T054 Add to `catalog_where_test` in `bun/tests/npm/compare_test.bzl` a case whose `workspaces`
+  object lists a named catalog out of name order (`catalogs: {"g": {"q": "1.0.0", "b": "2.0.0"}}`)
+  against a lockfile that lists it in name order (`{"g": {"b": "2.0.0", "q": "1.0.0"}}`), expecting
+  no error, and record it in `tdd-log.md`; then correct research.md Part 6 D3 with the evidence:
+  `json.encode` sorts a dict's keys (observed on Bazel 9.2.0, 2026-11-25:
+  `json.encode({"b": "1", "a": "2"})` is `{"a":"2","b":"1"}`), so `_difference` does not depend on
+  entry order and D3 is no follow-up per FR-007, research D3 (partial)

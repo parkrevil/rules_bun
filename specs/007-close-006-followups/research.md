@@ -395,10 +395,12 @@ Not fixed, listed as a follow-up: R3's literal equality.
   parent. The form is therefore not one `main` fails on; FR-009 keeps such a form as a unit test, so
   the project is removed from the corpus (15 projects, 12 for US1) and `override_forms_test`
   (T017) holds `"//"` keys in `resolutions` among the cases passing on `main` too.
-- **D3** (2026-11-25, T033; decided by the lead under the user's delegation): `compare_manifests`
-  compares each named catalog of `catalogs` with `bun.lock`'s as one JSON object, as `main` does,
-  so the order of its entries counts. Bun sorts each catalog before it writes `bun.lock` (LOCK
-  L580–L583), so a root whose named catalog lists its entries out of name order would fail
-  evaluation on a current lockfile (inferred from the source, not run against the pinned Bun). No
-  BC of the spec covers the change and no corpus project pins it (FR-009, FR-012), so it is not
-  made here: listed as a follow-up with R3's literal equality.
+- **D3** (2026-11-25, T033; corrected 2026-11-25, T054): `compare_manifests` compares each named
+  catalog of `catalogs` with `bun.lock`'s as one JSON object, as `main` does. T033 read this as
+  making the order of its entries count, since Bun sorts each catalog before it writes `bun.lock`
+  (LOCK L580–L583), and listed it as a follow-up. That was wrong: `json.encode` writes a dict's keys
+  in sorted order (observed on Bazel 9.2.0, 2026-11-25: `json.encode({"b": "1", "a": "2"})` is
+  `{"a":"2","b":"1"}`), so `_difference` does not depend on entry order. `catalog_where_test`'s
+  case `D3` pins it: a `workspaces` object listing `catalogs: {"g": {"q": …, "b": …}}` against a
+  lockfile listing `{"g": {"b": …, "q": …}}` passes, and with one value changed its error prints
+  the declared catalog as `{"b":"2.0.0","q":"1.0.0"}`, sorted. D3 is no follow-up (FR-007).

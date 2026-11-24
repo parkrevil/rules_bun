@@ -316,6 +316,9 @@ def _catalog_where_test_impl(ctx):
         ({"workspaces": [], "catalog": {"b": "1.0.0"}, "dependencies": {"b": "catalog:"}}, {"catalog": {"b": "1.0.0"}}, "US2-3"),
         # BC-6: an entry whose value is not a string is skipped.
         ({"workspaces": {"packages": [], "catalog": {"b": "2.0.0", "q": 1}}, "dependencies": {"b": "catalog:"}}, {"catalog": {"b": "2.0.0"}}, "BC-6"),
+        # Research Part 6 D3: a named catalog listed out of name order, against the lockfile Bun
+        # writes in name order (bun.lock.rs L580-L583); the comparison does not depend on order.
+        ({"workspaces": {"packages": [], "catalogs": {"g": {"q": "1.0.0", "b": "2.0.0"}}}, "dependencies": {"b": "catalog:g"}}, {"catalogs": {"g": {"b": "2.0.0", "q": "1.0.0"}}}, "D3"),
     ]:
         asserts.equals(env, None, compare(manifest, lock).error, form)
 
