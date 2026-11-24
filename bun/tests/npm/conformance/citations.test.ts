@@ -12,7 +12,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { rlocation } from "../../support/spawn.ts";
 
-const MODULES = ["bun_semver", "bun_install_types", "bun_lockfile", "bun_tree", "bun_isolated_store", "resolve", "platforms"];
+const MODULES = ["bun_semver", "bun_install_types", "bun_lockfile", "bun_override_map", "bun_tree", "bun_isolated_store", "resolve", "platforms"];
 
 // The modules where a function may be the adapter instead of citing Bun (research R3, R4).
 const ADAPTERS = new Set(["resolve", "platforms"]);
