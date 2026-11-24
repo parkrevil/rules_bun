@@ -292,11 +292,11 @@ bun_test(
     data = glob(["c_*.test.ts"]) + [
         "//bun/private:bun_isolated_store",
         "//bun/private:bun_lockfile",
+        "//bun/private:bun_override_map",
         "//bun/private:bun_semver",
         "//bun/private:lockfile",
         "//bun/private:npm_extension",
         "//bun/private:npmrc",
-        "//bun/private:overrides",
         "//bun/private:resolve",
         "//bun/private:workspaces",
     ],
