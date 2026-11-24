@@ -37,10 +37,12 @@ bzl_library(
 
 exports_files(
     [
+        "bun_catalog_map.bzl",
         "bun_install_types.bzl",
         "bun_isolated_store.bzl",
         "bun_lockfile.bzl",
         "bun_override_map.bzl",
+        "bun_package.bzl",
         "bun_semver.bzl",
         "bun_tree.bzl",
         "isolated_bunfig.toml",
