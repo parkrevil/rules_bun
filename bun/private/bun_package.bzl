@@ -2,11 +2,13 @@
 
 `Package::parse` (src/install/lockfile/Package.rs) reads a manifest's dependency maps into the
 package's dependency list, which `bun.lock` records per workspace (`write_workspace_deps`) and the
-overrides read for `$<name>` (feature 006 T179, T182). Only what the list holds is carried over:
+overrides read for `$<name>` (feature 006 T179, T182), and the root's catalogs (`root_catalogs`,
+feature 007). Only what the list holds is carried over:
 each entry's behavior, name and literal specifier. Values are kept as the manifest writes them, so
 the comparison with `bun.lock` still names a value Bun would not read.
 """
 
+load(":bun_catalog_map.bzl", "catalog_parse_append")
 load(":bun_install_types.bzl", "BEHAVIOR", "dependency_sort_key")
 
 # The dependency groups `Package::parse` reads, in its order (`dependency_groups`), with their
@@ -29,9 +31,12 @@ def package_dependencies(manifest, is_main):
     `peerDependencies` entry consumed becomes an optional peer `"*"`. The list is sorted by
     `Dependency::cmp`.
 
-    Bun: src/install/lockfile/Package.rs L2642–L2660, L2664–L2700 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L2642–L2660 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L2664–L2700 @ bun-v1.4.4
     Bun: src/install/lockfile/Package.rs L2465–L2520 @ bun-v1.4.4
-    Bun: src/install/lockfile/Package.rs L3302–L3349, L3352–L3383, L3385–L3388 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L3302–L3349 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L3352–L3383 @ bun-v1.4.4
+    Bun: src/install/lockfile/Package.rs L3385–L3388 @ bun-v1.4.4
     Bun: src/install_types/resolver_hooks.rs L1240–L1264 @ bun-v1.4.4
 
     Args:
@@ -78,7 +83,8 @@ def workspace_groups(dependencies):
     A dependency is written under each group its behavior intersects, an optional peer under
     `peerDependencies` only (`write_workspace_deps`).
 
-    Bun: src/install/lockfile/bun.lock.rs L1184–L1233, L1478–L1483 @ bun-v1.4.4
+    Bun: src/install/lockfile/bun.lock.rs L1184–L1233 @ bun-v1.4.4
+    Bun: src/install/lockfile/bun.lock.rs L1478–L1483 @ bun-v1.4.4
 
     Args:
         dependencies: The list `package_dependencies` returns.
@@ -97,3 +103,38 @@ def workspace_groups(dependencies):
             written[dependency.name] = dependency.literal
         groups[kind] = written
     return groups
+
+def root_catalogs(manifest, file):
+    """The catalogs Bun reads from the root `package.json`.
+
+    Those under `workspaces` when `workspaces` holds `catalog` or `catalogs`; else the top level's
+    when the root has a `workspaces` field; else none (feature 007, research R4).
+
+    Bun: src/install/lockfile/Package.rs L3418–L3440 @ bun-v1.4.4
+
+    Args:
+        manifest: The decoded root `package.json`.
+        file: Its name, for errors.
+
+    Returns:
+        `struct(value, error)`; `value` is `struct(default, groups)`: `default` maps a name to
+        its `Dependency`, `groups` a catalog name to such a map.
+    """
+    catalogs = struct(default = {}, groups = {})
+    found_any_catalog_or_catalog_object = False
+    has_workspaces = False
+
+    # `json.decode` reads `null` as `None`, so a `workspaces` field is found by its key.
+    if "workspaces" in manifest:
+        result = catalog_parse_append(catalogs, manifest["workspaces"], file)
+        if result.error:
+            return struct(value = None, error = result.error)
+        found_any_catalog_or_catalog_object = result.found_any
+        has_workspaces = True
+
+    # A root using workspaces may also declare `catalog` and `catalogs` at its top level.
+    if not found_any_catalog_or_catalog_object and has_workspaces:
+        result = catalog_parse_append(catalogs, manifest, file)
+        if result.error:
+            return struct(value = None, error = result.error)
+    return struct(value = catalogs, error = None)

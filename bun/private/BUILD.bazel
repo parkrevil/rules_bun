@@ -118,6 +118,7 @@ bzl_library(
     name = "workspaces",
     srcs = ["workspaces.bzl"],
     deps = [
+        ":bun_catalog_map",
         ":bun_lockfile",
         ":bun_override_map",
         ":bun_package",
@@ -163,6 +164,7 @@ bzl_library(
     name = "bun_lockfile",
     srcs = ["bun_lockfile.bzl"],
     deps = [
+        ":bun_catalog_map",
         ":bun_install_types",
         ":bun_override_map",
         ":bun_semver",
@@ -174,6 +176,7 @@ bzl_library(
     name = "bun_tree",
     srcs = ["bun_tree.bzl"],
     deps = [
+        ":bun_catalog_map",
         ":bun_install_types",
         ":bun_lockfile",
         ":bun_semver",
@@ -199,7 +202,10 @@ bzl_library(
 bzl_library(
     name = "bun_package",
     srcs = ["bun_package.bzl"],
-    deps = [":bun_install_types"],
+    deps = [
+        ":bun_catalog_map",
+        ":bun_install_types",
+    ],
 )
 
 bzl_library(
@@ -209,6 +215,15 @@ bzl_library(
         ":bun_install_types",
         ":bun_package",
         ":lockfile",
+    ],
+)
+
+bzl_library(
+    name = "bun_catalog_map",
+    srcs = ["bun_catalog_map.bzl"],
+    deps = [
+        ":bun_install_types",
+        ":bun_semver",
     ],
 )
 

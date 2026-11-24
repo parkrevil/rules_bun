@@ -14,6 +14,7 @@ Starlark has no `while` and no recursion: each Bun loop is a `for` over a bound,
 function the caller passes in (`bun_tree.bzl` loads this file).
 """
 
+load(":bun_catalog_map.bzl", "catalog_strip_reference", "catalogs_resolve_range")
 load(
     ":bun_install_types.bzl",
     "BEHAVIOR",
@@ -36,7 +37,7 @@ load(
     "resolution_satisfies_dependency_version",
 )
 load(":bun_override_map.bzl", "parse_package_segment", "put_lockfile_rule")
-load(":bun_semver.bzl", "parse_query", "parse_version", "query_intersects", "query_is_star", "query_satisfies")
+load(":bun_semver.bzl", "parse_version", "query_intersects", "query_is_star", "query_satisfies")
 load(":platforms.bzl", "package_platforms")
 
 # `invalid_package_id`.
@@ -152,63 +153,6 @@ def _parse_catalog(catalog, rows, file, where):
             return _refusal(file, where, "Invalid catalog version")
         catalog[name] = new_dependency(name, parsed, 0)
     return None
-
-def _catalog_find(catalogs, catalog_name, dep_name):
-    """`CatalogMap::find`: the default catalog is `""` and `default`, the one named first.
-
-    Bun: src/install/lockfile/CatalogMap.rs L54–L115 @ bun-v1.4.4
-    """
-    has_default = len(catalogs.default) > 0
-    has_groups = len(catalogs.groups) > 0
-    if not has_default and not has_groups:
-        return None
-
-    def in_group(name):
-        """The entry of `dep_name` in the catalog group `name`, or None.
-
-        Bun: src/install/lockfile/CatalogMap.rs L83–L96 @ bun-v1.4.4
-        """
-        if not has_groups or name not in catalogs.groups:
-            return None
-        return catalogs.groups[name].get(dep_name)
-
-    in_default = catalogs.default.get(dep_name) if has_default else None
-    if catalog_name == "":
-        return in_default if in_default != None else in_group("default")
-    found = in_group(catalog_name)
-    if found == None and catalog_name == "default":
-        return in_default
-    return found
-
-def catalogs_resolve_range(lockfile, dependency):
-    """`CatalogMap::resolve_range`: a `catalog:` dependency's catalog entry, else its own version.
-
-    Bun: src/install/lockfile/CatalogMap.rs L195–L207 @ bun-v1.4.4
-
-    Args:
-        lockfile: A loaded lockfile.
-        dependency: A dependency.
-
-    Returns:
-        The version the dependency asks for.
-    """
-    if dependency.version.tag != VERSION_TAG.CATALOG:
-        return dependency.version
-    entry = _catalog_find(lockfile.catalogs, dependency.version.catalog, dependency.name)
-    return entry.version if entry != None else dependency.version
-
-def _strip_reference(dependency):
-    """`CatalogMap::strip_reference`: outside the root and workspaces, `catalog:` resolves nothing.
-
-    Bun: src/install/lockfile/CatalogMap.rs L209–L237 @ bun-v1.4.4
-    """
-    if dependency.version.tag != VERSION_TAG.CATALOG:
-        return dependency
-    literal = dependency.version.literal
-    if not behavior_is_peer(dependency.behavior):
-        return new_dependency(dependency.name, dependency_version(VERSION_TAG.UNINITIALIZED, literal), dependency.behavior)
-    star = struct(name = dependency.name, version = parse_query("*"), is_alias = False)
-    return new_dependency(dependency.name, dependency_version(VERSION_TAG.NPM, literal, npm = star), dependency.behavior | BEHAVIOR.OPTIONAL)
 
 # --- OverrideMap ---------------------------------------------------------------------------------
 
@@ -489,7 +433,7 @@ def _parse_append_dependencies(lockfile, obj, unresolved_rows, bundled, member_r
                 return _refusal(file, where, "Invalid dependency version")
             dep = new_dependency(name, version, behavior)
             if not catalogs_apply:
-                dep = _strip_reference(dep)
+                dep = catalog_strip_reference(dep)
             if bundled != None and bundled[0] + "/" + name in bundled[1]:
                 dep = new_dependency(dep.name, dep.version, dep.behavior | BEHAVIOR.BUNDLED)
             added.append(dep)

@@ -395,3 +395,10 @@ Not fixed, listed as a follow-up: R3's literal equality.
   parent. The form is therefore not one `main` fails on; FR-009 keeps such a form as a unit test, so
   the project is removed from the corpus (15 projects, 12 for US1) and `override_forms_test`
   (T017) holds `"//"` keys in `resolutions` among the cases passing on `main` too.
+- **D3** (2026-11-25, T033; decided by the lead under the user's delegation): `compare_manifests`
+  compares each named catalog of `catalogs` with `bun.lock`'s as one JSON object, as `main` does,
+  so the order of its entries counts. Bun sorts each catalog before it writes `bun.lock` (LOCK
+  L580–L583), so a root whose named catalog lists its entries out of name order would fail
+  evaluation on a current lockfile (inferred from the source, not run against the pinned Bun). No
+  BC of the spec covers the change and no corpus project pins it (FR-009, FR-012), so it is not
+  made here: listed as a follow-up with R3's literal equality.

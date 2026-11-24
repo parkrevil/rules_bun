@@ -372,7 +372,7 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
 
 ### Tests for User Story 2 (write first, see them fail) ⚠️
 
-- [ ] T029 [P] [US2] Add a stub `root_catalogs(manifest, file)` that returns `None` (as T015's stubs) to
+- [X] T029 [P] [US2] Add a stub `root_catalogs(manifest, file)` that returns `None` (as T015's stubs) to
   `bun/private/bun_package.bzl` (docstring citing Package.rs L3418–L3440), and to
   `bun/tests/npm/bun_package_test.bzl` a `root_catalogs` test, each case asserting `default`
   (name → literal) and `groups` (group → name → literal): `workspaces` an object with `catalog`,
@@ -382,7 +382,7 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
   → the top level's (research R4's Starlark note); no `workspaces` → none; a non-string entry →
   skipped (BC-6); `catalogs.default` → group `"default"`. Run
   `bazel test //bun/tests/npm:bun_package --test_output=errors`: red; record
-- [ ] T030 [US2] In `bun/tests/npm/compare_test.bzl`: add the 3 catalog corpus projects to
+- [X] T030 [US2] In `bun/tests/npm/compare_test.bzl`: add the 3 catalog corpus projects to
   `_equal_test_impl`'s list; add `catalog_where_test` with inline cases for US2-1, US2-2, US2-3 and
   BC-6 expecting no error, and one with no `workspaces`, a top-level `catalog: {"b": "2.0.0"}` and
   `dependencies: {"b": "catalog:"}` expecting an error containing `names no entry of the default
@@ -394,7 +394,7 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
 
 ### Implementation for User Story 2
 
-- [ ] T031 [US2] Create `bun/private/bun_catalog_map.bzl` (research R5), loading only
+- [X] T031 [US2] Create `bun/private/bun_catalog_map.bzl` (research R5), loading only
   `bun_install_types.bzl` and `bun_semver.bzl`, with `catalog_parse_append(catalogs, obj, file)`:
   `CatalogMap::parse_append` (CatalogMap.rs L285–L342) with `parse_append_group` (L344–L396),
   filling the `struct(default, groups)` `_parse_catalog` fills, skipping entries whose value is not
@@ -405,14 +405,14 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
   and `bun_tree.bzl` load them from there, and `_parse_catalog` (bun.lock.rs) stays in
   `bun_lockfile.bzl`. Add its `bzl_library` with `bazel run //:gazelle`. Run
   `bazel test //bun/tests/npm/... --keep_going`: the same pass/fail set as before T031; record
-- [ ] T032 [US2] Replace the stub `root_catalogs(manifest, file)` in `bun/private/bun_package.bzl`
+- [X] T032 [US2] Replace the stub `root_catalogs(manifest, file)` in `bun/private/bun_package.bzl`
   with the carry-over of Package.rs L3418–L3440 (data-model.md "Which catalogs the root has";
   `"workspaces" in manifest`, not `!= None`), returning `struct(value = struct(default, groups),
   error)`; `bun_package.bzl` loads `catalog_parse_append` from `bun_catalog_map.bzl`, never
   `bun_lockfile.bzl`, so there is no load cycle (`bun_lockfile.bzl` → `bun_override_map.bzl` →
   `bun_package.bzl` → `bun_catalog_map.bzl`). Run
   `bazel test //bun/tests/npm:bun_package --test_output=errors`: green; record
-- [ ] T033 [US2] In `bun/private/workspaces.bzl`: `compare_manifests` reads the root's catalogs with
+- [X] T033 [US2] In `bun/private/workspaces.bzl`: `compare_manifests` reads the root's catalogs with
   `root_catalogs`, compares `default` with `lockfile.catalog` (what `catalog`) and each group with
   `lockfile.catalogs` (what `catalogs`) by literal through `_difference` on `{name: literal}` maps;
   `resolve_catalog(name, spec, catalogs)` looks the reference up with `catalog_find` (`bun_catalog_map.bzl`) and returns

@@ -11,6 +11,7 @@ Bun's recursion in `hoist_dependency` (one call per ancestor folder) is a loop u
 and its breadth-first queue a list read by index; Starlark has neither recursion nor `while`.
 """
 
+load(":bun_catalog_map.bzl", "catalogs_resolve_range")
 load(
     ":bun_install_types.bzl",
     "RESOLUTION_TAG",
@@ -31,7 +32,6 @@ load(
 load(
     ":bun_lockfile.bzl",
     "INVALID",
-    "catalogs_resolve_range",
     "dependency_ids",
     "is_overridden_dependency",
     "is_valid",

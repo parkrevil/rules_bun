@@ -9,12 +9,14 @@ pattern enters `node_modules`; a
 matched directory is a member when it holds `package.json`. Each member's four dependency maps,
 as Bun reads and writes them (`package_dependencies`, `workspace_groups`), must equal the
 lockfile's for it (the lockfile records `catalog:` and `workspace:` specifiers literally); the
-root's catalogs and overrides must equal the lockfile's. Errors are returned as values.
+root's catalogs and overrides, as Bun reads them (`root_catalogs`, `override_map_parse_append`),
+must equal the lockfile's. Errors are returned as values.
 """
 
+load(":bun_catalog_map.bzl", "catalog_find")
 load(":bun_lockfile.bzl", "lockfile_overrides")
 load(":bun_override_map.bzl", "override_field", "override_map_changed", "override_map_parse_append")
-load(":bun_package.bzl", "package_dependencies", "workspace_groups")
+load(":bun_package.bzl", "package_dependencies", "root_catalogs", "workspace_groups")
 load(":lockfile.bzl", "DEPENDENCY_KINDS")
 
 _REMEDY = "run `bun install` and commit bun.lock"
@@ -241,56 +243,37 @@ def match_members(patterns, list_dir, has_manifest, file):
 def _error(message):
     return struct(value = None, error = message)
 
-def manifest_catalogs(manifest):
-    """The catalogs of a root `package.json`: top level and under `workspaces` (bun.com pm/catalogs).
-
-    Args:
-        manifest: The decoded root `package.json`.
-
-    Returns:
-        `struct(catalog, catalogs)`.
-    """
-    workspaces = manifest.get("workspaces")
-    nested = workspaces if type(workspaces) == "dict" else {}
-    catalog = dict(manifest.get("catalog", {}))
-    catalog.update(nested.get("catalog", {}))
-    catalogs = dict(manifest.get("catalogs", {}))
-    catalogs.update(nested.get("catalogs", {}))
-    return struct(catalog = catalog, catalogs = catalogs)
-
 def resolve_catalog(name, spec, catalogs):
     """The version range a dependency specifier stands for, through `catalog:` references.
+
+    A reference is looked up as Bun looks it up (`catalog_find`): `catalog:` and `catalog:default`
+    name one catalog, `catalog` and `catalogs.default`, under the spelling the reference names
+    first (feature 006 T180).
 
     Args:
         name: The dependency's name.
         spec: Its specifier, such as `1.0.0`, `catalog:` or `catalog:<name>`.
-        catalogs: `struct(catalog, catalogs)` of the root `package.json`.
+        catalogs: The catalogs of the root `package.json`, as `root_catalogs` returns them.
 
     Returns:
-        `struct(value, error)`; `value` is the specifier itself unless it is a `catalog:` reference.
+        `struct(value, error)`; `value` is the specifier itself unless it is a `catalog:` reference,
+        else the entry's literal.
     """
     if not spec.startswith("catalog:"):
         return struct(value = spec, error = None)
     which = spec[len("catalog:"):]
-
-    # `catalog:` and `catalog:default` name one catalog, `catalog` and `catalogs.default`, looked up
-    # under the spelling the reference names first (feature 006 T180).
-    # Bun: src/install/lockfile/CatalogMap.rs L48–L101 @ bun-v1.4.4
-    default = catalogs.catalogs.get("default", {})
-    if which == "":
-        tables = [catalogs.catalog, default]
-    elif which == "default":
-        tables = [default, catalogs.catalog]
-    else:
-        tables = [catalogs.catalogs.get(which, {})]
-    for table in tables:
-        if type(table) == "dict" and name in table:
-            return struct(value = table[name], error = None)
+    entry = catalog_find(catalogs, which, name)
+    if entry != None:
+        return struct(value = entry.version.literal, error = None)
     return _error('"{}": "{}" names no entry of the {} in the root package.json'.format(
         name,
         spec,
         'default catalog ("catalog" or "catalogs.default")' if which in ["", "default"] else 'catalog "{}"'.format(which),
     ))
+
+def _literals(catalog):
+    """A catalog's entries as `{name: literal}`, in the order `package.json` lists them."""
+    return {name: dep.version.literal for name, dep in catalog.items()}
 
 def _difference(file, what, declared, recorded):
     """The first difference of two maps, as an English error, or `None`."""
@@ -341,7 +324,10 @@ def compare_manifests(lockfile, manifests, lock_file):
         `struct(value = None, error)`; `error` names the file, the package and the difference.
     """
     root = manifests[""]
-    catalogs = manifest_catalogs(root.value)
+    catalogs = root_catalogs(root.value, root.file)
+    if catalogs.error:
+        return catalogs
+    catalogs = catalogs.value
     for path in sorted(manifests.keys()):
         manifest = manifests[path]
         workspace = lockfile.workspaces.get(path)
@@ -360,7 +346,11 @@ def compare_manifests(lockfile, manifests, lock_file):
                 if resolved.error:
                     return _error("{}: {} {}; {}".format(manifest.file, kind, resolved.error, _REMEDY))
 
-    difference = _difference(root.file, "catalog", catalogs.catalog, lockfile.catalog) or _difference(root.file, "catalogs", catalogs.catalogs, lockfile.catalogs)
+    # The catalogs Bun reads (feature 007, FR-007), by literal.
+    difference = (
+        _difference(root.file, "catalog", _literals(catalogs.default), lockfile.catalog) or
+        _difference(root.file, "catalogs", {group: _literals(entries) for group, entries in catalogs.groups.items()}, lockfile.catalogs)
+    )
     if difference:
         return _error(difference)
     declared = override_map_parse_append(root.value, root.file, [manifests[path].value for path in sorted(manifests.keys()) if path])

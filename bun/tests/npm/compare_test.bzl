@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
 load("@npm_fixture_results//:results.bzl", "RESULTS")
+load("//bun/private:bun_package.bzl", "root_catalogs")
 load("//bun/private:lockfile.bzl", "read_lockfile")
 load("//bun/private:workspaces.bzl", "compare_manifests", "resolve_catalog")
 
@@ -54,12 +55,19 @@ _US1_PROJECTS = [
     "conformance_resolution_pnpm",
 ]
 
+# Feature 007's corpus projects of US2 (research R7).
+_US2_PROJECTS = [
+    "conformance_catalog_top_and_nested",
+    "conformance_catalog_no_workspaces",
+    "conformance_catalog_non_string",
+]
+
 def _compare(project, edit = None):
     return compare_manifests(_lockfile(project), _manifests(project, edit), "bun.lock")
 
 def _equal_test_impl(ctx):
     env = unittest.begin(ctx)
-    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_catalog_default", "conformance_peer_meta_only", "conformance_optional_duplicate"] + _US1_PROJECTS:
+    for project in ["basic", "workspace", "catalog", "overrides_top", "overrides_object", "overrides_gt", "overrides_range", "overrides_path", "overrides_glob", "overrides_both", "overrides_deep", "conformance_override_forms", "conformance_override_root_ref", "conformance_catalog_default", "conformance_peer_meta_only", "conformance_optional_duplicate"] + _US1_PROJECTS + _US2_PROJECTS:
         asserts.equals(env, None, _compare(project).error, project)
     return unittest.end(env)
 
@@ -282,9 +290,62 @@ def _override_stale_test_impl(ctx):
         asserts.equals(env, expected, result.error, field)
     return unittest.end(env)
 
+def _root(change):
+    """An edit of the root manifest: `change(manifest)` returns the new one."""
+
+    def edit(path, manifest):
+        return None if path else change(dict(manifest))
+
+    return edit
+
+def _catalog_where_test_impl(ctx):
+    env = unittest.begin(ctx)
+
+    # Feature 007 (FR-007, BC-6): the root's catalogs are those Bun reads (Package.rs L3418-L3440).
+    def compare(manifest, lock):
+        lock = dict({"lockfileVersion": 2, "packages": {}}, **lock)
+        lock["workspaces"] = {"": {"name": "x", "dependencies": manifest["dependencies"]}}
+        return compare_manifests(read_lockfile(json.encode(lock), "bun.lock").value, {"": struct(file = "./package.json", value = dict(manifest, name = "x"))}, "bun.lock")
+
+    for manifest, lock, form in [
+        # US2-1: the workspaces object's catalog; the top level's catalog and catalogs are not read.
+        ({"workspaces": {"packages": [], "catalog": {"b": "2.0.0"}}, "catalog": {"b": "1.0.0", "q": "2.0.0"}, "catalogs": {"g": {"q": "1.0.0"}}, "dependencies": {"b": "catalog:"}}, {"catalog": {"b": "2.0.0"}}, "US2-1"),
+        # US2-2: no workspaces field, so no catalog.
+        ({"catalog": {"b": "2.0.0"}, "dependencies": {"a": "1.0.0"}}, {}, "US2-2"),
+        # US2-3: a workspaces array, so the top level's (passing on main too).
+        ({"workspaces": [], "catalog": {"b": "1.0.0"}, "dependencies": {"b": "catalog:"}}, {"catalog": {"b": "1.0.0"}}, "US2-3"),
+        # BC-6: an entry whose value is not a string is skipped.
+        ({"workspaces": {"packages": [], "catalog": {"b": "2.0.0", "q": 1}}, "dependencies": {"b": "catalog:"}}, {"catalog": {"b": "2.0.0"}}, "BC-6"),
+    ]:
+        asserts.equals(env, None, compare(manifest, lock).error, form)
+
+    # Without workspaces, a `catalog:` reference names no entry, since Bun reads no catalog (spec
+    # Edge Cases, BC-6).
+    result = compare({"catalog": {"b": "2.0.0"}, "dependencies": {"b": "catalog:"}}, {})
+    for text in ["./package.json", '"b"', "names no entry of the default catalog", _REMEDY]:
+        asserts.true(env, result.error != None and text in result.error, "{} in: {}".format(text, result.error))
+
+    # A catalog Bun does not read may change without a stale lockfile.
+    asserts.equals(env, None, _compare("conformance_catalog_top_and_nested", _root(lambda m: dict(m, catalog = {"b": "3.0.0"}))).error)
+
+    # Each catalog project with its catalogs changed after the install fails (FR-006).
+    for project, change, difference in [
+        ("conformance_catalog_top_and_nested", lambda m: dict(m, workspaces = dict(m["workspaces"], catalog = {"b": "1.0.0"})), 'catalog "b" is "1.0.0", but bun.lock records "2.0.0"'),
+        ("conformance_catalog_no_workspaces", lambda m: dict(m, workspaces = []), 'catalog "b": "2.0.0" is not in bun.lock'),
+        ("conformance_catalog_non_string", lambda m: dict(m, workspaces = dict(m["workspaces"], catalog = {"b": "2.0.0", "q": "1.0.0"})), 'catalog "q": "1.0.0" is not in bun.lock'),
+    ]:
+        result = _compare(project, _root(change))
+        for text in ["./package.json: ", difference, _REMEDY]:
+            asserts.true(env, result.error != None and text in result.error, "{}: {} in: {}".format(project, text, result.error))
+    return unittest.end(env)
+
+def _root_catalogs(catalog, catalogs):
+    """The catalogs `root_catalogs` reads from a root whose `workspaces` object holds them."""
+    return root_catalogs({"workspaces": {"catalog": catalog, "catalogs": catalogs}}, "./package.json").value
+
 def _resolve_catalog_test_impl(ctx):
     env = unittest.begin(ctx)
-    catalogs = struct(catalog = {"b": "1.0.0"}, catalogs = {"two": {"q": "2.0.0"}})
+    catalogs = _root_catalogs({"b": "1.0.0"}, {"two": {"q": "2.0.0"}})
     asserts.equals(env, "1.0.0", resolve_catalog("b", "catalog:", catalogs).value)
     asserts.equals(env, "2.0.0", resolve_catalog("q", "catalog:two", catalogs).value)
     asserts.equals(env, "1.0.0", resolve_catalog("b", "1.0.0", catalogs).value)
@@ -295,7 +356,7 @@ def _resolve_catalog_test_impl(ctx):
     # Feature 006 T180: `catalog:` and `catalog:default` name one catalog, looked up under both
     # spellings, the one the reference names first (`CatalogMap::locate`, CatalogMap.rs L48-L100;
     # fixtures/conformance_catalog_default, which the pinned Bun writes and installs).
-    both = struct(catalog = {"b": "1.0.0"}, catalogs = {"default": {"q": "2.0.0"}, "two": {"r": "3.0.0"}})
+    both = _root_catalogs({"b": "1.0.0"}, {"default": {"q": "2.0.0"}, "two": {"r": "3.0.0"}})
     asserts.equals(env, "2.0.0", resolve_catalog("q", "catalog:", both).value)
     asserts.equals(env, "1.0.0", resolve_catalog("b", "catalog:default", both).value)
     asserts.equals(env, "1.0.0", resolve_catalog("b", "catalog:", both).value)
@@ -315,7 +376,8 @@ catalog_missing_test = unittest.make(_catalog_missing_test_impl)
 overrides_test = unittest.make(_overrides_test_impl)
 override_forms_test = unittest.make(_override_forms_test_impl)
 override_stale_test = unittest.make(_override_stale_test_impl)
+catalog_where_test = unittest.make(_catalog_where_test_impl)
 resolve_catalog_test = unittest.make(_resolve_catalog_test_impl)
 
 def compare_test_suite(name):
-    unittest.suite(name, equal_test, dependencies_test, manifest_forms_test, catalogs_test, catalog_missing_test, overrides_test, override_forms_test, override_stale_test, resolve_catalog_test)
+    unittest.suite(name, equal_test, dependencies_test, manifest_forms_test, catalogs_test, catalog_missing_test, overrides_test, override_forms_test, override_stale_test, catalog_where_test, resolve_catalog_test)
