@@ -659,7 +659,7 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
   `prek run --files bun/private/npm_extension.bzl` and `bazel build //bun/private:npm_extension`;
   record in `tdd-log.md`; commit as `docs: state that only overrides takes the npm object form` per
   Constitution II, FR-018 (contradicts)
-- [ ] T056 Re-run the local gates on the final tree (T054 changed `bun/tests/npm/compare_test.bzl`
+- [X] T056 Re-run the local gates on the final tree (T054 changed `bun/tests/npm/compare_test.bzl`
   and T055 changes `bun/private/npm_extension.bzl` after T051's run): in the root
   `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...`; in `e2e/smoke/`
   `bazel test //...`; record each in `tdd-log.md` before T040's push. A failure: report it with its
