@@ -502,7 +502,8 @@ def _reference(value, manifest, members):
     the one every workspace that declares `<name>` declares; Bun ignores the rule, with a warning,
     when nothing declares it or the workspaces declare different specifiers (feature 006 T177, T179).
 
-    Bun: src/install/lockfile/OverrideMap.rs L1278–L1335, L1405–L1452 @ bun-v1.4.4
+    Bun: src/install/lockfile/OverrideMap.rs L1278–L1335 @ bun-v1.4.4
+    Bun: src/install/lockfile/OverrideMap.rs L1405–L1452 @ bun-v1.4.4
 
     Returns:
         The specifier, or `None` for a rule Bun ignores.
