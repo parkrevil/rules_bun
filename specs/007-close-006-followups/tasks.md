@@ -420,12 +420,12 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
   `catalogs_test`, `catalog_missing_test` and `resolve_catalog_test` in
   `bun/tests/npm/compare_test.bzl` for the catalogs value `root_catalogs` returns, keeping each
   case's expectation. Run `bazel test //bun/tests/npm:compare --test_output=errors`: green; record
-- [ ] T034 [P] [US2] In `bun/tests/npm/conformance/citations.test.ts` add `"bun_package"` and
+- [X] T034 [P] [US2] In `bun/tests/npm/conformance/citations.test.ts` add `"bun_package"` and
   `"bun_catalog_map"` to `MODULES`; add `//bun/private:bun_package.bzl` and
   `//bun/private:bun_catalog_map.bzl` to `citations_test`'s `data`, and both files to
   `exports_files` in `bun/private/BUILD.bazel`. Run the citations test:
   green; record
-- [ ] T035 [P] [US2] In `bun/tests/canary/npm/c_catalog.test.ts` (FR-011, research R8) set
+- [X] T035 [P] [US2] In `bun/tests/canary/npm/c_catalog.test.ts` (FR-011, research R8) set
   `READER` to name `root_catalogs in bun/private/bun_package.bzl, catalog_parse_append in
   bun/private/bun_catalog_map.bzl and _parse_catalog in bun/private/bun_lockfile.bzl` instead of
   `compare_manifests`, and add three tests, each asserting the `catalog` and `catalogs` Bun writes,
@@ -440,7 +440,7 @@ string entries, and both the catalog comparison and `catalog:` resolution use th
   writes `q`; it writes every catalog entry, bun.lock.rs L580–L610). Run `bazel test
   //bun/tests/canary/npm:c_catalog_test --test_output=errors` green and with
   `--test_env=RULES_BUN_CANARY_RED=1` (every test fails naming C-CATALOG); record both
-- [ ] T036 [US2] Green: the conformance test and the 1.4.2 command of T013: all 15 new projects
+- [X] T036 [US2] Green: the conformance test and the 1.4.2 command of T013: all 15 new projects
   compared with 0 differences, every other project as before; record green per catalog project.
   Commit as `fix: read the root's catalogs where Bun 1.4.4 reads them (BC-6)`, with `tdd-log.md`
 
