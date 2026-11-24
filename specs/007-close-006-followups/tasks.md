@@ -326,12 +326,12 @@ R5, R6); `overrides.bzl` is removed.
   each case of `overrides_test.bzl` and the case of `bun_override_map_test.bzl` that took it over
   (T016 c). Run `bazel run //:gazelle`; `rtk grep -rn "overrides.bzl\|normalize_overrides\|_FORMS"
   bun e2e` prints nothing
-- [ ] T025 [P] [US1] In `bun/tests/npm/conformance/citations.test.ts` add `"bun_override_map"` to
+- [X] T025 [P] [US1] In `bun/tests/npm/conformance/citations.test.ts` add `"bun_override_map"` to
   `MODULES`; add `//bun/private:bun_override_map.bzl` to `citations_test`'s `data` in
   `bun/tests/npm/conformance/BUILD.bazel` and `bun_override_map.bzl` to `exports_files` in
   `bun/private/BUILD.bazel`. Run `bazel test //bun/tests/npm/conformance:citations_test
   --test_output=errors`: green, `bun_override_map` among the modules; record
-- [ ] T026 [P] [US1] Extend `CASES` in `bun/tests/canary/npm/c_overrides.test.ts` (research R8),
+- [X] T026 [P] [US1] Extend `CASES` in `bun/tests/canary/npm/c_overrides.test.ts` (research R8),
   each expected value the lockfile form research R2 gives: `"b@^1.0.0": "2.0.0"` →
   `{"b@^1.0.0": {".": "2.0.0"}}`; `{b: {".": "2.0.0"}}` → `{b: "2.0.0"}`;
   `{a: "1.0.0", "a>b": "2.0.0"}` → `{a: {".": "1.0.0", b: "2.0.0"}}`; `resolutions`
@@ -349,11 +349,11 @@ R5, R6); `overrides.bzl` is removed.
   rewrite the header comment (no `normalize_overrides`). Run
   `bazel test //bun/tests/canary/npm:c_overrides_test --test_output=errors` (green) and with
   `--test_env=RULES_BUN_CANARY_RED=1` (every case fails naming C-OVERRIDES); record both
-- [ ] T027 [US1] Green: `bazel test //bun/tests/npm/conformance:conformance_test
+- [X] T027 [US1] Green: `bazel test //bun/tests/npm/conformance:conformance_test
   --test_output=errors` and the 1.4.2 command of T013: the 12 US1 projects compared with 0
   differences (the 3 catalog projects still differ until US2); record green per project. A
   difference on any other project: stop and report
-- [ ] T028 [US1] Commit as `fix: compare package.json overrides with bun.lock as Bun 1.4.4 does
+- [X] T028 [US1] Commit as `fix: compare package.json overrides with bun.lock as Bun 1.4.4 does
   (BC-1, BC-2, BC-3, BC-4, BC-5, BC-7, BC-8)`, with `tdd-log.md`
 
 **Checkpoint**: US1 complete; every override and resolution form of the input passes evaluation,
