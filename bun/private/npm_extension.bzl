@@ -22,8 +22,8 @@ commit bun.lock"; the dependencies are compared as Bun lists them, so a name onl
 only the `optionalDependencies` entry of a name it also declares in `dependencies` or
 `devDependencies`), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
 of its catalog, which Bun refuses to install (`catalog:` and `catalog:default` name one catalog, the
-entries of `catalog` and of `catalogs.default`), when the root `package.json` uses an override form
-rules_bun does not compare,
+entries of `catalog` and of `catalogs.default`), when an `overrides` or `resolutions` value is not an object, which fails with Bun's own refusal,
+`"<field>" expects a map of package names to versions`, since Bun refuses to install such a project,
 and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
 (`name`, `workspaces`, the dependency fields, `peerDependenciesMeta`, `overrides`, `resolutions`,
 `catalog`, `catalogs`),
@@ -33,12 +33,30 @@ user information, except the user name alone of an `ssh://` or `git+ssh://` URL,
 account. An entry's download URL must be an `http` or `https` URL without user information. The
 error names the file and where the string is, never the string, since credentials come only from
 Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path or query
-(`?token=...`) is not recognized. Overrides are compared as Bun reads them: `overrides` when present, else
-`resolutions`; a value `$<name>` stands for the specifier the root declares for `<name>`, else the
-one every workspace that declares `<name>` declares, and an object nested in a parent's object is
-ignored, as Bun ignores both such a nesting and a `$<name>` nothing declares. Where the root
-declares `<name>` more than once, the specifier is the one Bun's parsed root package lists first,
-and a name only in `peerDependenciesMeta` (`"optional": true`) stands for `"*"`.""",
+(`?token=...`) is not recognized. Overrides are compared as Bun 1.4.4 reads them: both sides are parsed into rules as Bun
+parses them and compared as Bun's frozen install compares them. Only `overrides` is read when
+present, else `resolutions`. Both fields take every key form Bun's selector parser reads: a name,
+`name@range` (including an `npm:` range), the npm object form with `"."` for the parent's own rule,
+pnpm's `parent>child` (also with a range on the parent), and Yarn's path form `parent/child` with
+`**` segments dropped. Rules Bun skips with a warning are skipped: a value that is not a string, a
+`""` or `"-"` value, an empty key, a `patch:` value, a key starting with `//` (npm's comments), a key
+Bun's selector parser rejects (such as `@scope`, `name@`, `a//b`, a trailing `**`), and deeper
+nesting (`a>b>c`, `a/b/c`, an object inside a parent's object). A value `$<name>` stands for the
+specifier the root declares for `<name>`, else the one every workspace that declares `<name>`
+declares, and is skipped, as in Bun, when nothing declares `<name>`. Where the root declares
+`<name>` more than once, the specifier is the one Bun's parsed root package lists first, and a name
+only in `peerDependenciesMeta` (`"optional": true`) stands for `"*"`. A rule that differs from the
+one in `bun.lock` fails naming the file, the field and the rule as
+`[<parent>[@<range>]>]<target>[@<range>]`, with "run `bun install` and commit bun.lock".
+
+The root's catalogs are the ones Bun reads: the `catalog` and `catalogs` of the `workspaces` object
+when it holds either, else the top-level `catalog` and `catalogs` when the root has a `workspaces`
+field (of any value), else none; only entries whose value is a string count. Both the comparison
+with `bun.lock` and the resolution of `catalog:` specifiers use that reading.
+
+`//bun/tests/npm/conformance:conformance_test`, `//bun/tests/npm:compare`,
+`//bun/tests/npm:bun_override_map` and `//bun/tests/npm:bun_package` cover these forms; they ran on
+the CI runners `ubuntu-latest`, `macos-latest` and `windows-latest`.""",
     attrs = {
         "name": attr.string(
             doc = "Name of the hub repository, which `use_repo` brings into scope. Two `translate_lock` tags, in one module or in several, that use one name fail evaluation naming each module and the name.",
