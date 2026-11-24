@@ -22,9 +22,10 @@ commit bun.lock"; the dependencies are compared as Bun lists them, so a name onl
 only the `optionalDependencies` entry of a name it also declares in `dependencies` or
 `devDependencies`), when a `catalog:` dependency in `dependencies` or `devDependencies` names no entry
 of its catalog, which Bun refuses to install (`catalog:` and `catalog:default` name one catalog, the
-entries of `catalog` and of `catalogs.default`), when an `overrides` or `resolutions` value is not an object, which fails with Bun's own refusal,
-`"<field>" expects a map of package names to versions`, since Bun refuses to install such a project,
-and when a URL anywhere in `bun.lock`, or in a field of a `package.json` the extension reads
+entries of `catalog` and of `catalogs.default`), when an `overrides` or `resolutions` value is not
+an object, with Bun's own refusal, `"<field>" expects a map of package names to versions`, since Bun
+refuses to install such a project, and when a URL anywhere in `bun.lock`, or in a field of a
+`package.json` the extension reads
 (`name`, `workspaces`, the dependency fields, `peerDependenciesMeta`, `overrides`, `resolutions`,
 `catalog`, `catalogs`),
 holds credentials, as a registry URL of `.npmrc` does (ID-10). A URL is recognized by RFC 3986's syntax (a
@@ -33,8 +34,10 @@ user information, except the user name alone of an `ssh://` or `git+ssh://` URL,
 account. An entry's download URL must be an `http` or `https` URL without user information. The
 error names the file and where the string is, never the string, since credentials come only from
 Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path or query
-(`?token=...`) is not recognized. Overrides are compared as Bun 1.4.4 reads them: both sides are parsed into rules as Bun
-parses them and compared as Bun's frozen install compares them. Only `overrides` is read when
+(`?token=...`) is not recognized.
+
+Overrides are compared as Bun 1.4.4 reads them: both sides are parsed into rules as Bun parses them
+and compared as Bun's frozen install compares them. Only `overrides` is read when
 present, else `resolutions`. Both fields take every key form Bun's selector parser reads: a name,
 `name@range` (including an `npm:` range), the npm object form with `"."` for the parent's own rule,
 pnpm's `parent>child` (also with a range on the parent), and Yarn's path form `parent/child` with
@@ -43,7 +46,8 @@ pnpm's `parent>child` (also with a range on the parent), and Yarn's path form `p
 Bun's selector parser rejects (such as `@scope`, `name@`, `a//b`, a trailing `**`), and deeper
 nesting (`a>b>c`, `a/b/c`, an object inside a parent's object). A value `$<name>` stands for the
 specifier the root declares for `<name>`, else the one every workspace that declares `<name>`
-declares, and is skipped, as in Bun, when nothing declares `<name>`. Where the root declares
+declares, and the rule is skipped, as Bun skips it, when nothing declares `<name>` or the workspaces
+declare different specifiers. Where the root declares
 `<name>` more than once, the specifier is the one Bun's parsed root package lists first, and a name
 only in `peerDependenciesMeta` (`"optional": true`) stands for `"*"`. A rule that differs from the
 one in `bun.lock` fails naming the file, the field and the rule as
