@@ -460,14 +460,14 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
 
 ### Tests for User Story 3 (write first, see them fail) ⚠️
 
-- [ ] T037 [P] [US3] Create the inner workspace `bun/tests/integration/workspaces/test_output/`:
+- [X] T037 [P] [US3] Create the inner workspace `bun/tests/integration/workspaces/test_output/`:
   `MODULE.bazel` as `bun/tests/integration/workspaces/toolchain/MODULE.bazel`; `out.test.ts` that
   writes `process.env.SIZE` bytes (one `process.stdout.write` of a repeated line), then the line
   `process.env.MARKER`, then fails one `expect`; `BUILD.bazel` with 8 `bun_test` targets `out_1` …
   `out_8`, each `srcs = ["out.test.ts"]`, `env = {"MARKER": "rules_bun marker <i>", "SIZE":
   "524288"}`. No `bun.lock` and no `npm` extension (so `bun/tests/npm/fixture_results.bzl` does not
   read it)
-- [ ] T038 [US3] Write `bun/tests/integration/test_output.test.ts` (header comment: research R10,
+- [X] T038 [US3] Write `bun/tests/integration/test_output.test.ts` (header comment: research R10,
   FR-014): `new Inner("test_output")`, `inner.run(["test", "//:all", "--test_output=errors"])`,
   expect a non-zero exit code and that `stdout + stderr` contains each of the 8 markers (print the
   missing ones), `assertOffline(inner.log)`, timeout `INNER_TIMEOUT`; add `test_output_test` to
@@ -475,7 +475,7 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
   `deps = [":inner", "//bun/tests/support:spawn"]`, as `source_node_modules_test`. Run
   `bazel test //bun/tests/integration:test_output_test --test_output=errors` on Linux: green (the
   race is in the Windows wrapper only); record
-- [ ] T039 [US3] Add to the `output-root-with-space` job of `.github/workflows/ci.yaml`, after its
+- [X] T039 [US3] Add to the `output-root-with-space` job of `.github/workflows/ci.yaml`, after its
   `bazel test //...` step, the temporary step `- if: ${{ !cancelled() && matrix.folder == '.' }}` (so it runs although
   the job's `bazel test //...` step fails on the red `test_output_test`) / `run: bazel
   --output_user_root="C:/bazel root" test //bun/tests/integration:test_output_test

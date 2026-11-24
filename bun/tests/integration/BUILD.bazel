@@ -93,6 +93,17 @@ bun_test(
 )
 
 bun_test(
+    name = "test_output_test",
+    size = "enormous",
+    srcs = ["test_output.test.ts"],
+    tags = ["requires-network"],
+    deps = [
+        ":inner",
+        "//bun/tests/support:spawn",
+    ],
+)
+
+bun_test(
     name = "source_node_modules_test",
     size = "enormous",
     srcs = ["source_node_modules.test.ts"],

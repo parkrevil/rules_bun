@@ -159,6 +159,9 @@ jobs:
           repository-cache: true
           bazelrc: ${{ matrix.folder == '.' && 'common --config=ci' || '' }}
       - run: bazel --output_user_root="C:/bazel root" test //...
+      # Temporary (feature 007 SC-003): removed before merge.
+      - if: ${{ !cancelled() && matrix.folder == '.' }}
+        run: bazel --output_user_root="C:/bazel root" test //bun/tests/integration:test_output_test --runs_per_test=30 --test_output=errors
       - run: bazel --output_user_root="C:/bazel root" run ${{ matrix.folder == '.' && '//bun/tests/run/app:main -- extra' || '//app:main' }}
   windows-without-bash:
     runs-on: windows-latest
