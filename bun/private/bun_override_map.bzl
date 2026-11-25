@@ -4,8 +4,9 @@
 package and an optional parent, each a name with an optional range. `OverrideMap.rs` turns the
 root `package.json`'s rules (`parse_append`) and the lockfile's (`put_lockfile_rule`, called by
 `bun_lockfile.bzl`'s `_parse_overrides`) into one map of flat rules and a list of scoped rules,
-and `changed` compares two such maps, as the pinned Bun's frozen install compares the lockfile's
-rules with `package.json`'s (`Package::Diff`, Package.rs L1048–L1059).
+and `changed` compares two such maps where the pinned Bun's frozen install does (`Package::Diff`,
+Package.rs L1048–L1059), each rule by its literal; Bun's `Version::eql` also accepts two npm ranges
+that parse equal (research R3).
 
 The map is `struct(map, scoped, scoped_names)`: `map` maps a target name to the `Dependency` of
 its value, `scoped` lists `struct(parent, target_range, dep)`, `scoped_names` holds each target

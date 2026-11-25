@@ -97,6 +97,20 @@ test("a workspaces object holding only catalogs: only its catalogs are read", as
   );
 });
 
+for (const [kind, workspaces] of [["array", []], ["object holding neither", { packages: [] }]] as const) {
+  test(`a workspaces ${kind}: the top level's catalogs are read`, async () => {
+    await catalogsWritten(
+      { name: "c-catalog", workspaces, catalog: { b: "2.0.0" }, catalogs: { g: { q: "1.0.0" } }, dependencies: { b: "1.0.0" } },
+      // Red: without a workspaces field, Bun reads no catalog.
+      (p) => {
+        delete p.workspaces;
+        return p;
+      },
+      { catalog: { b: "2.0.0" }, catalogs: { g: { q: "1.0.0" } } },
+    );
+  });
+}
+
 test("a workspaces field that is neither an array nor an object: Bun installs nothing", async () => {
   // Bun refuses the manifest (Package.rs L2863-L2879), so no bun.lock of Bun's holds it and the
   // reading of its top-level catalogs is never compared.

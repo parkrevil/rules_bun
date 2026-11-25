@@ -62,6 +62,17 @@ const CASES: [string, Record<string, unknown>, unknown][] = [
   ["skipped empty value under a parent", { overrides: { a: { q: "" }, b: "2.0.0" } }, { b: "2.0.0" }],
   ["skipped dash value under a parent", { overrides: { a: { q: "-" }, b: "2.0.0" } }, { b: "2.0.0" }],
   ["skipped comment key under a parent", { overrides: { a: { "//": "note" }, b: "2.0.0" } }, { b: "2.0.0" }],
+  // Review of 2026-11-25 (research Part 6 D5): forms the unit tests read from Bun's source; a rule
+  // Bun skips is listed next to a kept `b`, so the red has something to change.
+  ["parent range that is no selector range", { overrides: { "a@latest>b": "2.0.0", b: "2.0.0" } }, { b: "2.0.0" }],
+  ["target range that is no selector range", { overrides: { "b@latest": "2.0.0", b: "2.0.0" } }, { b: "2.0.0" }],
+  ["parent object with a range that is no selector range", { overrides: { "a@latest": { b: "2.0.0" }, b: "2.0.0" } }, { b: "2.0.0" }],
+  ["alias target range", { overrides: { "b@npm:other@^1.0.0": "2.0.0" } }, { "b@npm:other@^1.0.0": { ".": "2.0.0" } }],
+  ["later flat rule replacing an earlier one", { resolutions: { b: "1.0.0", "**/b": "2.0.0" } }, { b: "2.0.0" }],
+  ["later scoped rule replacing an earlier one", { resolutions: { "a>b": "1.0.0", "a/b": "2.0.0" } }, { a: { b: "2.0.0" } }],
+  ["pnpm child key carrying a parent under an object", { overrides: { a: { "x>b": "2.0.0" }, b: "2.0.0" } }, { b: "2.0.0" }],
+  ["path child key carrying a parent under an object", { overrides: { a: { "c/b": "2.0.0" }, b: "2.0.0" } }, { b: "2.0.0" }],
+  ["patch value under a parent", { overrides: { a: { q: "patch:q@1.0.0#patches/q.patch" }, b: "2.0.0" } }, { b: "2.0.0" }],
 ];
 
 for (const [name, fields, expected] of CASES) {

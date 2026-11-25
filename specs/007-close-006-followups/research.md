@@ -121,8 +121,9 @@ refusing.
   agree.
 - **Not carried, listed as a follow-up**: `Version::eql`'s npm branch also accepts two different
   literals that parse to the same range (`npm().eql`, L758). A lockfile can keep such a literal only
-  if `package.json` was edited to an equal range after the install; whether the pinned Bun's frozen
-  install then passes is not established. `main` compares literals in the dependency, catalog and
+  if `package.json` was edited to an equal range after the install. The pinned Bun's frozen install
+  then passes and `bun install` keeps the recorded literal (D5), so the ruleset's error stays until
+  the range is written as `bun.lock` records it. `main` compares literals in the dependency, catalog and
   override comparisons alike, so this is not a change; it needs `SemverQuery`'s group equality
   carried over and is outside this feature's input.
 
@@ -349,7 +350,8 @@ as BC-6's second half (FR-012) and covered by R7's projects:
   written as the group's `"."` (LOCK L1366–L1431).
 - BC-6, second half: `parse_append_group` skips non-string entries silently.
 
-Not fixed, listed as a follow-up: R3's literal equality.
+Not fixed, listed as follow-ups: R3's literal equality, and the catalog entries Bun's frozen install
+skips (D5).
 
 ## Part 4: Not changed
 
@@ -428,3 +430,24 @@ Not fixed, listed as a follow-up: R3's literal equality.
      now (T059).
 
   The Codex review did not run: the Codex usage limit was reached until 2026-11-28 (T061).
+- **D5** (2026-11-25, a second review run on Claude Fable 5.2 in place of the Codex review;
+  decided by the lead under the user's delegation): it found no defect in the carried-over logic
+  (each function checked against its cited lines, and 47 differential runs against Bun 1.4.4 agreed).
+  Of its four findings:
+  1. the `translate_lock` doc and `bun_override_map.bzl` said overrides are "compared as Bun's
+     frozen install compares them"; R3 compares literals. Run by the lead with Bun 1.4.4: `^2.0.0`
+     recorded and `^2.0` declared, `bun install --frozen-lockfile` exits 0 ("no changes") and
+     `bun install` leaves `bun.lock` as it was, so the ruleset's error survives its own remedy.
+     `main` compares literals too, and the fix is R3's follow-up (`Version::eql`'s npm group
+     equality), a BC outside this feature's input; both texts now say what is compared and how to
+     write such a range (T063);
+  2. a catalog entry that `bun.lock` lacks fails, though Bun's frozen install skips one no
+     workspace uses (PKG L1107–L1118, "skipped 1 catalog entry not in bun.lock"); `bun install`
+     writes it, so the remedy works. As on `main`; the doc says so and it is a follow-up (T063);
+  3. the top level's catalogs under a `workspaces` that holds neither key were pinned only in red:
+     C-CATALOG gains a workspaces array and an object holding neither, green (T062);
+  4. forms the unit tests read from Bun's source had no canary: C-OVERRIDES gains a parent or
+     target range that is no selector range, a parent object with such a range, an alias target
+     range, a later flat and a later scoped rule replacing an earlier one, child keys carrying a
+     parent under an object, and a `patch:` value under a parent; Bun wrote each as the unit
+     tests expect (T062).

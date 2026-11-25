@@ -37,8 +37,10 @@ Bazel's downloader (`--credential_helper`, `.netrc`). A secret in a URL's path o
 (`?token=...`) is not recognized.
 
 Overrides are compared as Bun 1.4.4 reads them: both sides are parsed into rules as Bun parses them
-and compared as Bun's frozen install compares them. Only `overrides` is read when
-present, else `resolutions`. Both fields take every key form Bun's selector parser reads: a name,
+and compared rule by rule, each name, range and value by its literal. Bun's frozen install also
+accepts an equal range written differently (`^2.0` declared, `^2.0.0` recorded), and `bun install`
+then keeps the recorded literal: write such a range as `bun.lock` records it. Only `overrides` is
+read when present, else `resolutions`. Both fields take every key form Bun's selector parser reads: a name,
 `name@range` (including an `npm:` range), pnpm's `parent>child` (also with a range on the parent),
 and Yarn's path form `parent/child` with `**` segments dropped. Only `overrides` takes the npm object
 form, an object value with `"."` for the parent's own rule; an object value in `resolutions` is
@@ -58,7 +60,8 @@ The root's catalogs are the ones Bun reads: the `catalog` and `catalogs` of the 
 when it holds either, else the top-level `catalog` and `catalogs` when the root has a `workspaces`
 array or object (Bun installs nothing for any other value), else none; only entries whose value is
 a string count. Both the comparison with `bun.lock` and the resolution of `catalog:` specifiers use
-that reading.
+that reading. A catalog entry that `bun.lock` lacks fails, though Bun's frozen install skips one no
+workspace uses; `bun install` writes it.
 
 `//bun/tests/npm/conformance:conformance_test`, `//bun/tests/npm:compare`,
 `//bun/tests/npm:bun_override_map` and `//bun/tests/npm:bun_package` cover these forms; they ran on

@@ -680,3 +680,10 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
   FR-019, SC-005
 - [ ] T061 Once the Codex usage limit resets (2026-11-28), run `/codex:adversarial-review --wait`
   on the branch before T052; fix each finding that holds and record each answer in research Part 6
+- [X] T062 Add to C-OVERRIDES the forms of research Part 6 D5 item 4 and to C-CATALOG a workspaces
+  array and an object holding neither key (green pins of the top level's catalogs); record the
+  green and red runs, per FR-011, constitution V
+- [X] T063 Say in `translate_lock`'s doc and `bun_override_map.bzl`'s module doc that rules are
+  compared by literal and what Bun's frozen install accepts besides (D5 items 1, 2); update R3 and
+  Part 3's follow-ups, per constitution II
+- [X] T064 Re-run the local gates after T062–T063 and record them, per FR-019, SC-005
