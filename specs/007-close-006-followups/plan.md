@@ -66,7 +66,7 @@ supported avoidance stops US3 (FR-016, constitution V); shell-free (VI); English
 `bun_package.bzl` (`root_catalogs`), new `bun_catalog_map.bzl` (`catalog_parse_append` and the
 three `CatalogMap` helpers moved from `bun_lockfile.bzl`, research R5),
 `workspaces.bzl` (`compare_manifests`), `overrides.bzl` deleted, `npm_extension.bzl` (docs);
-16 corpus projects and their 1.4.4 (and where possible 1.4.2) lockfiles; two canaries extended (C-OVERRIDES, C-CATALOG); one
+15 corpus projects (16 planned; research D2) and their 1.4.4 (and where possible 1.4.2) lockfiles; two canaries extended (C-OVERRIDES, C-CATALOG); one
 new integration test and inner workspace; `update.ts`, `MODULE.bazel`'s integration region and
 `bun/tests/integration/registry/` regenerated for 9.4.0
 
@@ -125,7 +125,7 @@ bun/tests/
 │   ├── bun_override_map_test.bzl          # NEW, replaces overrides_test.bzl
 │   ├── compare_test.bzl, bun_package_test.bzl
 │   ├── fixtures/conformance_override_*/, conformance_resolution_*/, conformance_catalog_*/   # NEW (R7)
-│   ├── registry/write_lockfiles.ts        # the 16 projects and their checks
+│   ├── registry/write_lockfiles.ts        # the 15 projects and their checks
 │   └── conformance/
 │       ├── bun_1_4_2/<project>/           # NEW where Bun 1.4.2 writes them
 │       ├── not_applicable_1_4_2.ts        # the others, with reasons
@@ -148,7 +148,7 @@ FR-008.
 
 ## Phases after this plan
 
-1. **US1/US2 red**: the 16 corpus projects written by the pinned Bun (and Bun 1.4.2), on `main`'s
+1. **US1/US2 red**: the 15 corpus projects (research D2) written by the pinned Bun (and Bun 1.4.2), on `main`'s
    comparison; the conformance test fails on each (V1); `tdd-log.md` rows. The new unit tests are
    written against stubs and seen failing.
 2. **US1/US2 green**: selector parser → `package.json` side of `OverrideMap` → `changed`/`sort` →
