@@ -141,6 +141,9 @@ refusing.
   `workspaces` object and reads the top level without `workspaces` (US2 scenarios 1 and 2).
 - **Kept as today**: the `catalog` and `catalogs.default` conflict (L310–L339) and "Duplicate
   catalog" (L382–L385) are errors in Bun, which then installs nothing; no lockfile reaches them.
+  So is a `workspaces` that is neither an array nor an object, `null` among them (PKG L2863–L2879,
+  `"workspaces" expects an array of strings`); "any value" above therefore matters only for
+  arrays and objects, and C-CATALOG pins the refusal (review, 2026-11-25, research Part 6 D4).
 - **Starlark note**: `json.decode` maps `null` to `None`, so "has `workspaces`" is
   `"workspaces" in manifest`, not `manifest.get("workspaces") != None`.
 
@@ -399,8 +402,29 @@ Not fixed, listed as a follow-up: R3's literal equality.
   catalog of `catalogs` with `bun.lock`'s as one JSON object, as `main` does. T033 read this as
   making the order of its entries count, since Bun sorts each catalog before it writes `bun.lock`
   (LOCK L580–L583), and listed it as a follow-up. That was wrong: `json.encode` writes a dict's keys
-  in sorted order (observed on Bazel 9.2.0, 2026-11-25: `json.encode({"b": "1", "a": "2"})` is
-  `{"a":"2","b":"1"}`), so `_difference` does not depend on entry order. `catalog_where_test`'s
+  in sorted order, as bazel.build documents it (https://bazel.build/rules/lib/core/json: "A dict is
+  encoded as a JSON object, in lexicographical key order"; seen on Bazel 9.2.0, 2026-11-25:
+  `json.encode({"b": "1", "a": "2"})` is `{"a":"2","b":"1"}`), so `_difference` does not depend on entry order. `catalog_where_test`'s
   case `D3` pins it: a `workspaces` object listing `catalogs: {"g": {"q": …, "b": …}}` against a
   lockfile listing `{"g": {"b": …, "q": …}}` passes, and with one value changed its error prints
   the declared catalog as `{"b":"2.0.0","q":"1.0.0"}`, sorted. D3 is no follow-up (FR-007).
+- **D4** (2026-11-25, the workflow's Claude review; decided by the lead under the user's
+  delegation): of its five findings,
+  1. the `translate_lock` doc naming the three CI runners stays: it states what holds at merge,
+     and T052 makes the PR ready only once every job on those runners has passed;
+  2. the inner test of `test_output_test` failed with `expect(process.env.MARKER).toBe("")`,
+     which printed the marker again in Bun's `Received:` line, so a log that lost the marker line
+     could still hold the marker; it now fails with `expect(size).toBe(0)`, and the outer test's
+     name says what it checks ("holds", not "ends with") (T058);
+  3. `test_output_test` failing on Windows with the inner Bazel 9.2.0 is the reproduction that
+     T040–T042 run and T053 removes; no change;
+  4. no canary pinned two of R4's cases against Bun. C-CATALOG gains a `workspaces` object holding
+     only `catalogs` (only its catalogs are written) and a `workspaces` of `null`, which Bun 1.4.4
+     refuses with `"workspaces" expects an array of strings` and installs nothing for
+     (PKG L2863–L2879). The ruleset's `translate_lock` doc said "(of any value)"; it now says "an
+     array or object (Bun installs nothing for any other value)", and R4 and
+     `root_catalogs_test`'s comment say so; `root_catalogs` is unchanged (T057);
+  5. D3 cited an observation where bazel.build documents `json.encode`'s key order; it cites both
+     now (T059).
+
+  The Codex review did not run: the Codex usage limit was reached until 2026-11-28 (T061).

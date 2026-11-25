@@ -106,8 +106,10 @@ def _root_catalogs_test_impl(ctx):
         (dict(top, workspaces = {"catalogs": {"h": {"b": "2.0.0"}}}), {"default": {}, "groups": {"h": {"b": "2.0.0"}}}),
         # Holding neither: the top level's.
         (dict(top, workspaces = {"packages": []}), top_read),
-        # A workspaces array, or null, holds neither: the top level's (US2-3; research R4).
+        # A workspaces array holds neither: the top level's (US2-3; research R4).
         (dict(top, workspaces = []), top_read),
+        # null: Bun refuses the manifest (Package.rs L2863-L2879; C-CATALOG), so no lockfile
+        # reaches this; the carry-over of L3418-L3440 reads the top level, as Bun's code does.
         (dict(top, workspaces = None), top_read),
         # No workspaces field: none (US2-2).
         (top, none),

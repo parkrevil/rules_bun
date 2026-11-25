@@ -8,5 +8,6 @@ test("prints a large output ending in a marker, then fails", () => {
   const line = "x".repeat(63) + "\n";
   process.stdout.write(line.repeat(Math.ceil(size / line.length)).slice(0, size));
   process.stdout.write(`${process.env.MARKER}\n`);
-  expect(process.env.MARKER).toBe("");
+  // Fails without printing the marker again, so the marker reaches the log only from the line above.
+  expect(size).toBe(0);
 });

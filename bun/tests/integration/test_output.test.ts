@@ -15,7 +15,7 @@ afterAll(async () => {
 });
 
 test(
-  "each failing bun_test's log ends with its marker",
+  "each failing bun_test's log holds its marker",
   async () => {
     const result = await inner.run(["test", "//:all", "--test_output=errors"]);
     // Bazel prints the test logs (--test_output=errors) on standard output.

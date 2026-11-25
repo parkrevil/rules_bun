@@ -664,3 +664,19 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
   `bazel run //:gazelle`, `prek run --all-files`, `bazel test //...`; in `e2e/smoke/`
   `bazel test //...`; record each in `tdd-log.md` before T040's push. A failure: report it with its
   output, do not widen the task, per FR-019, SC-005 (partial)
+
+---
+
+## Phase 9: Review fixes (research Part 6 D4)
+
+- [X] T057 In `bun/tests/canary/npm/c_catalog.test.ts`, add a `workspaces` object holding only
+  `catalogs` and a `workspaces` of `null` (Bun refuses it, PKG L2863–L2879), each with a red;
+  correct `translate_lock`'s doc, research R4 and `root_catalogs_test`'s comment; record the
+  green and red runs in `tdd-log.md`, per FR-011, constitution V
+- [X] T058 Make the inner test of `bun/tests/integration/workspaces/test_output` fail without
+  printing its marker again, and name the outer test for what it checks, per FR-014
+- [X] T059 Cite https://bazel.build/rules/lib/core/json in research Part 6 D3, per constitution V
+- [X] T060 Re-run the local gates on the tree after T057–T059 and record them in `tdd-log.md`, per
+  FR-019, SC-005
+- [ ] T061 Once the Codex usage limit resets (2026-11-28), run `/codex:adversarial-review --wait`
+  on the branch before T052; fix each finding that holds and record each answer in research Part 6

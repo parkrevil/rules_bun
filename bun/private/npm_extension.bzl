@@ -56,8 +56,9 @@ one in `bun.lock` fails naming the file, the field and the rule as
 
 The root's catalogs are the ones Bun reads: the `catalog` and `catalogs` of the `workspaces` object
 when it holds either, else the top-level `catalog` and `catalogs` when the root has a `workspaces`
-field (of any value), else none; only entries whose value is a string count. Both the comparison
-with `bun.lock` and the resolution of `catalog:` specifiers use that reading.
+array or object (Bun installs nothing for any other value), else none; only entries whose value is
+a string count. Both the comparison with `bun.lock` and the resolution of `catalog:` specifiers use
+that reading.
 
 `//bun/tests/npm/conformance:conformance_test`, `//bun/tests/npm:compare`,
 `//bun/tests/npm:bun_override_map` and `//bun/tests/npm:bun_package` cover these forms; they ran on

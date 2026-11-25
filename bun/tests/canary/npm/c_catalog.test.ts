@@ -3,8 +3,9 @@
 // `catalog` and `catalogs`, as written, and keeps `catalog:` specifiers in
 // `workspaces`. It also pins which catalogs and entries Bun reads from
 // package.json, which the comparison relies on: the `workspaces` object's when
-// it holds `catalog` or `catalogs`, else the top level's only when a
-// `workspaces` field exists; entries whose value is not a string are skipped.
+// it holds `catalog` or `catalogs` (either alone), else the top level's only
+// when the root has a `workspaces` array or object (Bun installs nothing for
+// any other value); entries whose value is not a string are skipped.
 
 import { test } from "bun:test";
 import { canaryFail, LOCKFILE_SOURCE, manifest, red, runInstall } from "./support.ts";
@@ -76,4 +77,40 @@ test("catalog entries whose value is not a string are skipped", async () => {
     },
     { catalog: { b: "2.0.0" }, catalogs: undefined },
   );
+});
+
+test("a workspaces object holding only catalogs: only its catalogs are read", async () => {
+  await catalogsWritten(
+    {
+      name: "c-catalog",
+      workspaces: { packages: [], catalogs: { h: { b: "2.0.0" } } },
+      catalog: { b: "1.0.0", q: "2.0.0" },
+      catalogs: { g: { q: "1.0.0" } },
+      dependencies: { b: "1.0.0" },
+    },
+    // Red: the workspaces object no longer holds catalogs, so Bun reads the top level.
+    (p) => {
+      p.workspaces = { packages: [], catalogsNot: p.workspaces.catalogs };
+      return p;
+    },
+    { catalog: undefined, catalogs: { h: { b: "2.0.0" } } },
+  );
+});
+
+test("a workspaces field that is neither an array nor an object: Bun installs nothing", async () => {
+  // Bun refuses the manifest (Package.rs L2863-L2879), so no bun.lock of Bun's holds it and the
+  // reading of its top-level catalogs is never compared.
+  let refusal = "";
+  try {
+    await runInstall(
+      { "package.json": manifest({ name: "c-catalog", workspaces: null, catalog: { b: "2.0.0" }, dependencies: { b: "1.0.0" } }) },
+      // Red: an empty workspaces array, which Bun installs.
+      { alter: red({ files: (f) => ({ "package.json": manifest({ ...JSON.parse(f["package.json"]), workspaces: [] }) }) }) },
+    );
+  } catch (error) {
+    refusal = String(error);
+  }
+  if (!refusal.includes('"workspaces" expects an array of strings')) {
+    canaryFail("C-CATALOG", ACCESS, READER, LOCKFILE_SOURCE, refusal || "bun install succeeded");
+  }
 });
