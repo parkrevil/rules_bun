@@ -451,3 +451,14 @@ skips (D5).
      range, a later flat and a later scoped rule replacing an earlier one, child keys carrying a
      parent under an object, and a `patch:` value under a parent; Bun wrote each as the unit
      tests expect (T062).
+- **D6** (2026-11-26, T040; decided by the lead under the user's delegation): the reproduction's first
+  CI run (https://github.com/parkrevil/rules_bun/actions/runs/45814656477) did not reproduce R10's race: on Windows `output-root-with-space` with the inner
+  Bazel 9.2.0, `test_output_test` passed 30 of 30. Its check was weaker than R10 needs. The race
+  drops what is still in the pipe when the test exits, the tail of the log, but the marker was not
+  the tail: Bun writes the failure report and its summary after it. T040's remedy is applied with two
+  changes. The targets go from 8 to 16. `SIZE` stays 512 KiB, since the inner Bazel prints no log
+  over `--experimental_ui_max_stdouterr_bytes` (1 MiB), which 2 MiB exceeds. Each target's log
+  section must also end in Bun's last line (`Ran 1 test across 1 file.`), so a lost tail fails the
+  test. A mutation that exits one target before Bun's summary fails it locally (`tdd-log.md`).
+  If the next 30 runs still pass, R10's cause stays unproven by reproduction (FR-013), and US3 stops
+  with that reported (FR-016).

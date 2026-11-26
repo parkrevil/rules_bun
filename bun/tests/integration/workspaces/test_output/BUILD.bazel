@@ -71,3 +71,75 @@ bun_test(
         "SIZE": "524288",
     },
 )
+
+bun_test(
+    name = "out_9",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 9",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_10",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 10",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_11",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 11",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_12",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 12",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_13",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 13",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_14",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 14",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_15",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 15",
+        "SIZE": "524288",
+    },
+)
+
+bun_test(
+    name = "out_16",
+    srcs = ["out.test.ts"],
+    env = {
+        "MARKER": "rules_bun marker 16",
+        "SIZE": "524288",
+    },
+)
