@@ -482,26 +482,26 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
   --runs_per_test=30 --test_output=errors`, with a comment `# Temporary (feature 007 SC-003):
   removed before merge.`; commit as `test: reproduce the Windows test wrapper's lost output
   (research R10)`
-- [ ] T040 [US3] Ask the user to approve pushing the branch and opening the PR as a draft (title
+- [X] T040 [US3] Ask the user to approve pushing the branch and opening the PR as a draft (title
   `Close feature 006's follow-ups`); after approval push and open it. From the CI run, record in
   `tdd-log.md` the run URL and, per runner, the result of `test_output_test`: expected 30 of 30 FAIL
   on Windows `output-root-with-space` (each naming a missing marker) and PASS on `ubuntu-latest` and
   `macos-latest`. If fewer than 30 of 30 fail, raise the target count and `SIZE` in
   `bun/tests/integration/workspaces/test_output/BUILD.bazel` (16 targets, 2 MiB), push (approved
   above for this branch) and re-run, recording each measured rate
-- [ ] T041 [US3] Add to research.md Part 5 an entry `E5` with the reproduction's measured result
+- [X] T041 [US3] Add to research.md Part 5 an entry `E5` with the reproduction's measured result
   and run URL (FR-013); commit
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] Gate (FR-016): run `gh release view 9.4.0 --repo bazelbuild/bazel`. Released: go
+- [X] T042 [US3] Gate (FR-016): run `gh release view 9.4.0 --repo bazelbuild/bazel`. Released: go
   to T043. Not released: revert the commits of T037–T039 on the branch (`git revert`; the
   reproduction is not merged red), leave `bun/tests/integration/source_node_modules.test.ts` and its
   BUILD target unchanged (no retry, no `flaky`), record the stop in `tdd-log.md` with the red run's
   URL, write the PR-body section "US3" (cause: Bazel 9.2.0's `tw.exe` drops the pipe's tail,
   bazelbuild/bazel#32203; fix pending Bazel 9.4.0; reproduction red in <run URL>, commit <hash>),
   stop and report to the user, and skip T043–T046
-- [ ] T043 [US3] Set `BAZEL_VERSION = "9.4.0"` in `bun/tests/integration/registry/update.ts` and run
+- [-] **Skipped** (T042 stopped US3 under FR-016; research E5): T043 [US3] Set `BAZEL_VERSION = "9.4.0"` in `bun/tests/integration/registry/update.ts` and run
   `$B bun/tests/integration/registry/update.ts` (network). Review the diff: the region of
   `MODULE.bazel` between `# BEGIN integration archives` and `# END integration archives`
   (`integration_bazel_*` URLs of release 9.4.0, each `integrity` equal to the release's `.sha256`
@@ -509,15 +509,15 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
   `/tmp/bun007-sha/`), `bun/tests/integration/registry/modules/`, `bazel_registry.json` and
   `archives.bzl`; `.bazelversion`, `bazel_compatibility` and `e2e/smoke/` are unchanged. Run
   `bazel test //bun/tests/integration/...` on Linux: green; record
-- [ ] T044 [US3] Change the temporary step of T039 to run
+- [-] **Skipped** (T042 stopped US3 under FR-016; research E5): T044 [US3] Change the temporary step of T039 to run
   `//bun/tests/integration:test_output_test //bun/tests/integration:source_node_modules_test` with
   `--runs_per_test=30`; commit as `test: run the integration tests' inner builds on Bazel 9.4.0
   (research R10)`; push (approved in T040). Record: 60 of 60 PASS on Windows
   `output-root-with-space` (SC-003), with the run URL; `git diff main --
   bun/tests/integration/source_node_modules.test.ts` is empty. A failure: stop and report
-- [ ] T045 [US3] Remove the temporary step from `.github/workflows/ci.yaml`; commit as
+- [-] **Skipped** (T042 stopped US3 under FR-016; research E5): T045 [US3] Remove the temporary step from `.github/workflows/ci.yaml`; commit as
   `ci: remove feature 007's repeated-runs step`
-- [ ] T046 [US3] Add to research.md Part 5 an entry `E6` with T044's run URL and counts; commit
+- [-] **Skipped** (T042 stopped US3 under FR-016; research E5): T046 [US3] Add to research.md Part 5 an entry `E6` with T044's run URL and counts; commit
 
 **Checkpoint**: US3 complete (fixed, or stopped per FR-016 with the evidence in the PR body).
 
@@ -632,7 +632,7 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
 
 ## Phase 7: Convergence
 
-- [ ] T053 When T042 removes the reproduction, revert only its code and CI files, not the records:
+- [X] T053 When T042 removes the reproduction, revert only its code and CI files, not the records:
   `git revert --no-commit ce4f79c 97c074c`, then `git checkout HEAD -- specs/007-close-006-followups/`
   (97c074c also marked T037–T039 done in `tasks.md` and added T038's row to `tdd-log.md`, and later
   commits edit both files), so the T038 row, T040's red rows and the `[X]` marks stay; check that

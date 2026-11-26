@@ -380,6 +380,18 @@ skips (D5).
 - **E4** (2026-11-24): `tw.cc` at Bazel tags 9.2.0, 9.3.0, 9.3.3 has no `TeeImpl::~TeeImpl`; at
   8.9.0, 10.0.0rc4, `release-9.4.0` and `master` it has (`master` L1516–L1532). `RunSubprocess` is
   identical on 9.2.0 and `master`. No tag `9.4.*` exists yet.
+- **E5** (2026-11-26, T040, T041): the reproduction did not fail. On Windows `output-root-with-space`
+  with the inner Bazel 9.2.0, `bazel test //bun/tests/integration:test_output_test --runs_per_test=30`
+  passed 30 of 30 twice, with no FLAKY result:
+  - run 1, https://github.com/parkrevil/rules_bun/actions/runs/45814656477: 8 targets of 512 KiB each, the marker checked;
+  - run 2, https://github.com/parkrevil/rules_bun/actions/runs/45819534418: 16 targets of 512 KiB each, the marker and Bun's last line checked in each target's
+    log (D6).
+
+  Every other job passed on `ubuntu-latest`, `macos-latest` and `windows-latest` in both runs. R10's
+  mechanism stays supported by E3 and by bazelbuild/bazel#32203's description, but not by a
+  reproduction, so FR-013's "with evidence (… and a reproduction)" is not met. US3 stops under FR-016
+  (T042): Bazel 9.4.0 is not released (`gh release view 9.4.0 --repo bazelbuild/bazel`: release not
+  found, 2026-11-26). The reproduction is removed (T053), and `source_node_modules_test` is unchanged.
 
 ## Part 6: Findings and decisions during implementation
 
