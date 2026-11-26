@@ -546,7 +546,7 @@ integration tests' dev-only inner Bazel to 9.4.0, or stop per FR-016 if 9.4.0 is
 - [X] T051 Gates (FR-019, quickstart V9): in the root `bazel run //:gazelle`,
   `prek run --all-files`, `bazel test //...`; in `e2e/smoke/` `bazel test //...`; record each. A
   failure: report it with its output, do not widen the task (AGENTS.md)
-- [ ] T052 Commit the remaining changes as `docs: state the override and catalog forms evaluation
+- [X] T052 Commit the remaining changes as `docs: state the override and catalog forms evaluation
   reads (FR-018)`; ask the user to approve pushing and marking the PR ready. PR body: the BC-1…BC-8
   table (form, corpus project, red row, green row), the 1.4.2 not-applicable list with reasons,
   US3's outcome (T044 or T042), and "Known differences not fixed": research R3's literal range
@@ -678,7 +678,7 @@ Task: "T026 c_overrides.test.ts: new cases and red-mode regex"
 - [X] T059 Cite https://bazel.build/rules/lib/core/json in research Part 6 D3, per constitution V
 - [X] T060 Re-run the local gates on the tree after T057–T059 and record them in `tdd-log.md`, per
   FR-019, SC-005
-- [ ] T061 Once the Codex usage limit resets (2026-11-28), run `/codex:adversarial-review --wait`
+- [-] **Skipped** (user, 2026-11-26: do not wait on Codex; the review step is optional in the workflow, `continue_on_error`, and the Fable review of research Part 6 D5 took its place): T061 Once the Codex usage limit resets (2026-11-28), run `/codex:adversarial-review --wait`
   on the branch before T052; fix each finding that holds and record each answer in research Part 6
 - [X] T062 Add to C-OVERRIDES the forms of research Part 6 D5 item 4 and to C-CATALOG a workspaces
   array and an object holding neither key (green pins of the top level's catalogs); record the

@@ -156,3 +156,4 @@ a missing load) does not count.
 | T053 | gazelle, prek | `bazel run //:gazelle`; `prek run --all-files` | Linux x64 (WSL) | no change; every hook passed | (no diff); exit 0 |
 | T053 | `//...` (root) | `bazel test //...` | Linux x64 (WSL) | green, exit 0, without `test_output_test` | `Executed 22 out of 500 tests: 496 tests pass and 4 were skipped.` |
 | T053 | `//...` (`e2e/smoke`) | `cd e2e/smoke && bazel test //...` | Linux x64 (WSL) | green, exit 0 | `Executed 0 out of 5 tests: 5 tests pass.` (cached) |
+| T052 | CI on the final code (after T053) | https://github.com/parkrevil/rules_bun/actions/runs/45824424903 | `ubuntu-latest`, `macos-latest`, `windows-latest` | green: every job passed, `test_output_test` removed | `conclusion: success` |
